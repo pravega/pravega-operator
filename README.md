@@ -1,2 +1,3 @@
-# pravega-operator
+# Pravega Operator
+
 Pravega Kubernetes Operator
