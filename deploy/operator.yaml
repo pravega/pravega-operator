@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pravega-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pravega-operator
+  template:
+    metadata:
+      labels:
+        name: pravega-operator
+    spec:
+      containers:
+        - name: pravega-operator
+          image: pravega/pravega-operator
+          command:
+          - pravega-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace

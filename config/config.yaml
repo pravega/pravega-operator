@@ -1,0 +1,3 @@
+apiVersion: pravega.pravega.io/v1alpha1
+kind: PravegaCluster
+projectName: pravega-operator

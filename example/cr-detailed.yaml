@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pravega-tier2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: "pravega.pravega.io/v1alpha1"
+kind: "PravegaCluster"
+metadata:
+  name: "example"
+spec:
+  zookeeperUri: example-client:2181
+
+  # Bookkeeper Options
+  bookkeeper:
+    image:
+      repository: pravega/bookkeeper
+      tag: 0.3.0
+      pullPolicy: IfNotPresent
+
+    replicas: 3
+
+    storage:
+      ledgerVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+      journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+    options:
+      diskUsageThreshold: "0.95"
+      diskUsageLwmThreshold: "0.9"
+
+    autoRecovery: true
+
+  pravega:
+    controllerReplicas: 1
+    segmentStoreReplicas: 3
+
+    # Turn on Pravega Debug Logging
+    debugLogging: false
+
+    image:
+      repository: pravega/pravega
+      tag: 0.3.0
+      pullPolicy: IfNotPresent
+
+    tier2:
+      filesystem:
+        persistentVolumeClaim:
+          claimName: pravega-tier2
+
+#      ecs:
+#        uri: http://10.247.10.52:9020
+#        bucket: shared
+#        root: "pravega/example"
+#        namespace: pravega
+#        credentials: ecs-credentials
+
+#      hdfs:
+#        uri: hdfs://10.240.10.52:8020/
+#        root: /example
+#        replicationFactor: 3
+
+    options:
+      pravegaservice.containerCount: 4
+      pravegaservice.cacheMaxSize: 17179869184
+      pravegaservice.zkSessionTimeoutMs: 10000
+      attributeIndex.readBlockSize: 1048576
+      readIndex.storageReadAlignment: 1048576
+      durableLog.checkpointMinCommitCount: 300
+      bookkeeper.bkAckQuorumSize: 4
+      metrics.dynamicCacheSize: 100000
