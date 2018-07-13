@@ -4,15 +4,37 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	pravegaPassword = "pravega-passwd"
-)
+func createController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	err := sdk.Create(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+
+	err = sdk.Create(makeControllerStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+
+	err = sdk.Create(makeControllerService(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+}
+
+func destroyController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	cascadeDelete(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
+	cascadeDelete(makeControllerStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	cascadeDelete(makeControllerService(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+}
 
 func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{

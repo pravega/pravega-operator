@@ -3,9 +3,12 @@ package stub
 import (
 	"strings"
 
+	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,6 +16,22 @@ const (
 	tier2FileMountPoint = "/mnt/tier2"
 	tier2VolumeName     = "tier2"
 )
+
+func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	err := sdk.Create(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+
+	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+}
+
+func destroySegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	cascadeDelete(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
+}
 
 func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{

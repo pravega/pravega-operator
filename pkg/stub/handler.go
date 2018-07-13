@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -20,16 +20,13 @@ type Handler struct {
 }
 
 func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
-	logrus.Infof("Handling Event")
-
 	switch o := event.Object.(type) {
 	case *v1alpha1.PravegaCluster:
-		createPravegaCluster(o)
-		//err := action.Create(createPravegaCluster(o))
-		//if err != nil && !errors.IsAlreadyExists(err) {
-		//	logrus.Errorf("Failed to create busybox pod : %v", err)
-		//	return err
-		//}
+		if event.Deleted {
+			destroyPravegaCluster(o)
+		} else {
+			createPravegaCluster(o)
+		}
 	}
 	return nil
 }
@@ -37,51 +34,17 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 func createPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) {
 	var ownerRef = makeOwnerRef(pravegaCluster)
 
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating Bookie Config")
-	var err = sdk.Create(makeBookieConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Bookkeeper))
-	if err != nil {
-		logrus.Error(err)
-	}
+	createBookie(ownerRef, pravegaCluster)
+	createController(ownerRef, pravegaCluster)
+	createSegmentStore(ownerRef, pravegaCluster)
+}
 
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating Bookie StatefulSet")
-	err = sdk.Create(makeBookieStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Bookkeeper))
-	if err != nil {
-		logrus.Error(err)
-	}
+func destroyPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) {
+	var ownerRef = makeOwnerRef(pravegaCluster)
 
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating Controller ConfigMap")
-	err = sdk.Create(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating Controller StatefulSet")
-	err = sdk.Create(makeControllerStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating Controller Service")
-	err = sdk.Create(makeControllerService(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating SegmentStore ConfigMap")
-	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	logrus.WithFields(logrus.Fields{"cluster": pravegaCluster.Name}).Debug("Creating SegmentStore StatefulSet")
-	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
-	if err != nil {
-		logrus.Error(err)
-	}
-
-	logrus.WithFields(logrus.Fields{
-		"cluster":   pravegaCluster.Name,
-		"namespace": pravegaCluster.ObjectMeta.Namespace}).Debug("All Items Resources Created")
+	destroyBookie(ownerRef, pravegaCluster)
+	destroyController(ownerRef, pravegaCluster)
+	destroySegmentStore(ownerRef, pravegaCluster)
 }
 
 func makeOwnerRef(pravegaCluster *v1alpha1.PravegaCluster) *metav1.OwnerReference {
@@ -94,4 +57,27 @@ func makeOwnerRef(pravegaCluster *v1alpha1.PravegaCluster) *metav1.OwnerReferenc
 
 func generateKindName(kind string, name string) string {
 	return fmt.Sprintf("%s-%s", name, kind)
+}
+
+func cascadeDelete(object sdk.Object) error {
+	return sdk.Delete(object, cascadeDeleteOption())
+}
+
+func cascadeDeleteOption() sdk.DeleteOption {
+	propagationPolicy := metav1.DeletePropagationBackground
+
+	return sdk.WithDeleteOptions(&metav1.DeleteOptions{
+		PropagationPolicy: &propagationPolicy,
+	})
+}
+
+func deleteCollection(apiVersion string, kind string, namespace string, labels string) (err error) {
+	resourceClient, _, err := k8sclient.GetResourceClient(apiVersion, kind, namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get resource client: %v", err)
+	}
+
+	return resourceClient.DeleteCollection(nil, metav1.ListOptions{
+		LabelSelector: labels,
+	})
 }

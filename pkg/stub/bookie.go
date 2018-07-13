@@ -1,9 +1,13 @@
 package stub
 
 import (
+	"fmt"
+	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,6 +15,34 @@ const (
 	LedgerDiskName  = "ledger"
 	JournalDiskName = "journal"
 )
+
+func createBookie(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	var err = sdk.Create(makeBookieConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Bookkeeper))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+
+	err = sdk.Create(makeBookieStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Bookkeeper))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logrus.Error(err)
+	}
+}
+
+func destroyBookie(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+	cascadeDelete(makeBookieConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Bookkeeper))
+	cascadeDelete(makeBookieStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Bookkeeper))
+
+	destroyBookieVolumes(pravegaCluster.ObjectMeta)
+}
+
+func destroyBookieVolumes(metadata metav1.ObjectMeta) {
+	logrus.WithFields(logrus.Fields{"name": metadata.Name}).Info("Destroying Bookie volumes")
+
+	err := deleteCollection("v1", "PersistentVolumeClaim", metadata.Namespace, fmt.Sprintf("app=%v,kind=bookie", metadata.Name))
+	if err != nil {
+		logrus.Error(err)
+	}
+}
 
 func makeBookieStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, bookkeeperSpec *v1alpha1.BookkeeperSpec) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{
