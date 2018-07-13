@@ -19,7 +19,7 @@ func makeBookieStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerRefere
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("bookie", metadata.Name),
+			Name:      generateKindName("bookie", metadata.Name),
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -139,5 +139,5 @@ func makeBookieConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReferenc
 }
 
 func bookieConfigName(name string) string {
-	return prefixedName("bookie-config", name)
+	return generateKindName("bookie-config", name)
 }

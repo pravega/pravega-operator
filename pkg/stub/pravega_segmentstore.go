@@ -21,7 +21,7 @@ func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.Owner
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("pravega-segmentstore", metadata.Name),
+			Name:      generateKindName("pravega-segmentstore", metadata.Name),
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -192,5 +192,5 @@ func addTier2FilesystemVolumes(podSpec *corev1.PodSpec, pravegaSpec *v1alpha1.Pr
 }
 
 func segmentstoreConfigName(name string) string {
-	return prefixedName("segmentstore-config", name)
+	return generateKindName("segmentstore-config", name)
 }

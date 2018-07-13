@@ -92,6 +92,6 @@ func makeOwnerRef(pravegaCluster *v1alpha1.PravegaCluster) *metav1.OwnerReferenc
 	})
 }
 
-func prefixedName(idType string, name string) string {
-	return fmt.Sprintf("%s-%s", idType, name)
+func generateKindName(kind string, name string) string {
+	return fmt.Sprintf("%s-%s", name, kind)
 }

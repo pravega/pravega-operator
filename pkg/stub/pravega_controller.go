@@ -21,7 +21,7 @@ func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("pravega-controller", metadata.Name),
+			Name:      generateKindName("pravega-controller", metadata.Name),
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -125,7 +125,7 @@ func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerRefere
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("pravega-controller", metadata.Name),
+			Name:      generateKindName("pravega-controller", metadata.Name),
 			Namespace: metadata.Namespace,
 			Labels:    map[string]string{"app": metadata.Name},
 			OwnerReferences: []metav1.OwnerReference{
@@ -152,9 +152,9 @@ func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerRefere
 }
 
 func controllerConfigName(name string) string {
-	return prefixedName("controller-config", name)
+	return generateKindName("controller-config", name)
 }
 
 func makeControllerUrl(metadata metav1.ObjectMeta) string {
-	return fmt.Sprintf("tcp://%v.%v:%v", prefixedName("pravega-controller", metadata.Name), metadata.Namespace, "9090")
+	return fmt.Sprintf("tcp://%v.%v:%v", generateKindName("pravega-controller", metadata.Name), metadata.Namespace, "9090")
 }
