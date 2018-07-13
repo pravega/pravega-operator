@@ -21,7 +21,7 @@ func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("pravegacontroller", metadata.Name),
+			Name:      prefixedName("pravega-controller", metadata.Name),
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -33,7 +33,7 @@ func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 
 func makePravegaControllerStatefulSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSetSpec {
 	return &v1beta1.StatefulSetSpec{
-		ServiceName:         "controller",
+		ServiceName:         "pravega-controller",
 		Replicas:            &pravegaSpec.ControllerReplicas,
 		PodManagementPolicy: v1beta1.ParallelPodManagement,
 		Template:            *makeControllerStatefulTemplate(name, pravegaSpec),
@@ -44,8 +44,8 @@ func makeControllerStatefulTemplate(name string, pravegaSpec *v1alpha1.PravegaSp
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app":       prefixedName("pravega", name),
-				"component": "controller",
+				"app":  name,
+				"kind": "pravega-controller",
 			},
 		},
 		Spec: *makeControllerPodSpec(name, pravegaSpec),
@@ -56,7 +56,7 @@ func makeControllerPodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *core
 	return &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            "controller",
+				Name:            "pravega-controller",
 				Image:           pravegaSpec.Image.String(),
 				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
 				Args: []string{
@@ -81,23 +81,6 @@ func makeControllerPodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *core
 						},
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      pravegaPassword,
-						MountPath: "/etc/pravega/conf",
-						ReadOnly:  true,
-					},
-				},
-			},
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: pravegaPassword,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: "pravega-passwd",
-					},
-				},
 			},
 		},
 	}
@@ -115,6 +98,7 @@ func makeControllerConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRefe
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      controllerConfigName(metadata.Name),
+			Labels:    map[string]string{"app": metadata.Name},
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -141,8 +125,9 @@ func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerRefere
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("controller", metadata.Name),
+			Name:      prefixedName("pravega-controller", metadata.Name),
 			Namespace: metadata.Namespace,
+			Labels:    map[string]string{"app": metadata.Name},
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
 			},
@@ -159,8 +144,8 @@ func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerRefere
 				},
 			},
 			Selector: map[string]string{
-				"app":       prefixedName("pravega", metadata.Name),
-				"component": "controller",
+				"app":  metadata.Name,
+				"kind": "pravega-controller",
 			},
 		},
 	}
@@ -171,5 +156,5 @@ func controllerConfigName(name string) string {
 }
 
 func makeControllerUrl(metadata metav1.ObjectMeta) string {
-	return fmt.Sprintf("tcp://%v.%v:%v", prefixedName("controller", metadata.Name), metadata.Namespace, "9090")
+	return fmt.Sprintf("tcp://%v.%v:%v", prefixedName("pravega-controller", metadata.Name), metadata.Namespace, "9090")
 }

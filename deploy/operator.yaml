@@ -14,7 +14,10 @@ spec:
     spec:
       containers:
         - name: pravega-operator
-          image: pravega/pravega-operator
+          image: maddisondavid/pravega-operator
+          ports:
+          - containerPort: 60000
+            name: metrics
           command:
           - pravega-operator
           imagePullPolicy: Always
@@ -23,3 +26,5 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: "pravega-operator"

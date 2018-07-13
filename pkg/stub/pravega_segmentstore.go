@@ -21,7 +21,7 @@ func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.Owner
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      prefixedName("pravegasegmentstore", metadata.Name),
+			Name:      prefixedName("pravega-segmentstore", metadata.Name),
 			Namespace: metadata.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
@@ -44,8 +44,8 @@ func makeSegmentstoreStatefulTemplate(name string, pravegaSpec *v1alpha1.Pravega
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app":       prefixedName("pravega", name),
-				"component": "segmentstore",
+				"app":  name,
+				"kind": "pravega-segmentstore",
 			},
 		},
 		Spec: *makeSegmentstorePodSpec(name, pravegaSpec),
@@ -81,23 +81,6 @@ func makeSegmentstorePodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *co
 					},
 				},
 				EnvFrom: environment,
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      pravegaPassword,
-						MountPath: "/etc/pravega/conf",
-						ReadOnly:  true,
-					},
-				},
-			},
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: pravegaPassword,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: "pravega-passwd",
-					},
-				},
 			},
 		},
 	}
@@ -114,10 +97,11 @@ func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 	}
 
 	configData := map[string]string{
-		"CLUSTER_NAME":   metadata.Name,
-		"ZK_URL":         zkUri,
-		"JAVA_OPTS":      strings.Join(javaOpts, " "),
-		"CONTROLLER_URL": makeControllerUrl(metadata),
+		"AUTHORIZATION_ENABLED": "false",
+		"CLUSTER_NAME":          metadata.Name,
+		"ZK_URL":                zkUri,
+		"JAVA_OPTS":             strings.Join(javaOpts, " "),
+		"CONTROLLER_URL":        makeControllerUrl(metadata),
 	}
 
 	if pravegaSpec.DebugLogging {
@@ -136,6 +120,7 @@ func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      segmentstoreConfigName(metadata.Name),
 			Namespace: metadata.Namespace,
+			Labels:    map[string]string{"app": metadata.Name},
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
 			},

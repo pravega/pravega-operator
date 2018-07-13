@@ -43,8 +43,8 @@ func makeBookieStatefulTemplate(name string, spec *v1alpha1.BookkeeperSpec) *cor
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
-				"app":       prefixedName("pravega", name),
-				"component": "bookkeeper",
+				"app":  name,
+				"kind": "bookie",
 			},
 		},
 		Spec: *makeBookiePodSpec(name, spec),
@@ -98,13 +98,15 @@ func makeBookieVolumeClaimTemplates(name string, spec *v1alpha1.BookkeeperSpec) 
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: JournalDiskName,
+				Name:   JournalDiskName,
+				Labels: map[string]string{"app": name},
 			},
 			Spec: spec.Storage.JournalVolumeClaimTemplate,
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: LedgerDiskName,
+				Name:   LedgerDiskName,
+				Labels: map[string]string{"app": name},
 			},
 			Spec: spec.Storage.LedgerVolumeClaimTemplate,
 		},
@@ -122,6 +124,7 @@ func makeBookieConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReferenc
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      bookieConfigName(metadata.Name),
 			Namespace: metadata.Namespace,
+			Labels:    map[string]string{"app": metadata.Name},
 			OwnerReferences: []metav1.OwnerReference{
 				*owner,
 			},

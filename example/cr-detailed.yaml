@@ -16,7 +16,6 @@ metadata:
 spec:
   zookeeperUri: example-client:2181
 
-  # Bookkeeper Options
   bookkeeper:
     image:
       repository: pravega/bookkeeper
