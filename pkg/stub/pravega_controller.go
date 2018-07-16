@@ -19,7 +19,7 @@ func createController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.
 		logrus.Error(err)
 	}
 
-	err = sdk.Create(makeControllerStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	err = sdk.Create(makeControllerDeployment(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
 	}
@@ -32,14 +32,14 @@ func createController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.
 
 func destroyController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
 	cascadeDelete(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
-	cascadeDelete(makeControllerStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	cascadeDelete(makeControllerDeployment(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
 	cascadeDelete(makeControllerService(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
 }
 
-func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSet {
-	return &v1beta1.StatefulSet{
+func makeControllerDeployment(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.Deployment {
+	return &v1beta1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "StatefulSet",
+			Kind:       "Deployment",
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -49,20 +49,18 @@ func makeControllerStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 				*owner,
 			},
 		},
-		Spec: *makePravegaControllerStatefulSpec(metadata.Name, pravegaSpec),
+		Spec: *makePravegaControllerDeploymentSpec(metadata.Name, pravegaSpec),
 	}
 }
 
-func makePravegaControllerStatefulSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSetSpec {
-	return &v1beta1.StatefulSetSpec{
-		ServiceName:         "pravega-controller",
-		Replicas:            &pravegaSpec.ControllerReplicas,
-		PodManagementPolicy: v1beta1.ParallelPodManagement,
-		Template:            *makeControllerStatefulTemplate(name, pravegaSpec),
+func makePravegaControllerDeploymentSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.DeploymentSpec {
+	return &v1beta1.DeploymentSpec{
+		Replicas: &pravegaSpec.ControllerReplicas,
+		Template: *makeControllerDeploymentTemplate(name, pravegaSpec),
 	}
 }
 
-func makeControllerStatefulTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodTemplateSpec {
+func makeControllerDeploymentTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodTemplateSpec {
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
