@@ -57,6 +57,13 @@ spec:
       tag: 0.3.0
       pullPolicy: IfNotPresent
 
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
+
     tier2:
       filesystem:
         persistentVolumeClaim:
