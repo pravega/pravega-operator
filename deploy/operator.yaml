@@ -18,9 +18,14 @@ spec:
           ports:
           - containerPort: 60000
             name: metrics
+          - containerPort: 8443
+            name: webhook
           command:
           - pravega-operator
           imagePullPolicy: Always
+          volumeMounts:
+              - mountPath: /tls-secrets
+                name: tls-secrets
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -28,3 +33,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: OPERATOR_NAME
               value: "pravega-operator"
+      volumes:
+        - name: tls-secrets
+          secret:
+            secretName: pravega-operator-tls
