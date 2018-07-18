@@ -6,9 +6,8 @@ import (
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sclient"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func NewHandler() sdk.Handler {
@@ -20,55 +19,39 @@ type Handler struct {
 }
 
 func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
+	if event.Deleted {
+		// K8s will garbage collect and resources until zookeeper cluster delete
+		return nil
+	}
+
 	switch o := event.Object.(type) {
-	case *v1alpha1.PravegaCluster:
-		if event.Deleted {
-			destroyPravegaCluster(o)
-		} else {
-			createPravegaCluster(o)
-		}
+	case *api.PravegaCluster:
+		createPravegaCluster(o)
 	}
 	return nil
 }
 
-func createPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) {
-	var ownerRef = makeOwnerRef(pravegaCluster)
+func createPravegaCluster(pravegaCluster *api.PravegaCluster) {
+	var ownerRef = asOwnerRef(pravegaCluster)
 
 	createBookie(ownerRef, pravegaCluster)
 	createController(ownerRef, pravegaCluster)
 	createSegmentStore(ownerRef, pravegaCluster)
 }
 
-func destroyPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) {
-	var ownerRef = makeOwnerRef(pravegaCluster)
-
-	destroyBookie(ownerRef, pravegaCluster)
-	destroyController(ownerRef, pravegaCluster)
-	destroySegmentStore(ownerRef, pravegaCluster)
-}
-
-func makeOwnerRef(pravegaCluster *v1alpha1.PravegaCluster) *metav1.OwnerReference {
-	return metav1.NewControllerRef(pravegaCluster, schema.GroupVersionKind{
-		Group:   v1alpha1.SchemeGroupVersion.Group,
-		Version: v1alpha1.SchemeGroupVersion.Version,
-		Kind:    "PravegaCluster",
-	})
+func asOwnerRef(pravegaCluster *api.PravegaCluster) *metav1.OwnerReference {
+	falseVar := false
+	return &metav1.OwnerReference{
+		APIVersion: api.SchemeGroupVersion.String(),
+		Kind:       api.PravegaClusterKind,
+		Name:       pravegaCluster.Name,
+		UID:        pravegaCluster.UID,
+		Controller: &falseVar,
+	}
 }
 
 func generateKindName(kind string, name string) string {
 	return fmt.Sprintf("%s-%s", name, kind)
-}
-
-func cascadeDelete(object sdk.Object) error {
-	return sdk.Delete(object, cascadeDeleteOption())
-}
-
-func cascadeDeleteOption() sdk.DeleteOption {
-	propagationPolicy := metav1.DeletePropagationBackground
-
-	return sdk.WithDeleteOptions(&metav1.DeleteOptions{
-		PropagationPolicy: &propagationPolicy,
-	})
 }
 
 func deleteCollection(apiVersion string, kind string, namespace string, labels string) (err error) {

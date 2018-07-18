@@ -28,13 +28,6 @@ func createBookie(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.Prav
 	}
 }
 
-func destroyBookie(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
-	cascadeDelete(makeBookieConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Bookkeeper))
-	cascadeDelete(makeBookieStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Bookkeeper))
-
-	destroyBookieVolumes(pravegaCluster.ObjectMeta)
-}
-
 func destroyBookieVolumes(metadata metav1.ObjectMeta) {
 	logrus.WithFields(logrus.Fields{"name": metadata.Name}).Info("Destroying Bookie volumes")
 

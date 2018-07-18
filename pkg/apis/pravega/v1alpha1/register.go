@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	version   = "v1alpha1"
-	groupName = "pravega.pravega.io"
+	version            = "v1alpha1"
+	groupName          = "pravega.pravega.io"
+	PravegaClusterKind = "PravegaCluster"
 )
 
 var (

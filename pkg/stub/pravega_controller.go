@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+func createController(ownerRef *metav1.OwnerReference, pravegaCluster *api.PravegaCluster) {
 	err := sdk.Create(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
@@ -30,13 +30,7 @@ func createController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.
 	}
 }
 
-func destroyController(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
-	cascadeDelete(makeControllerConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
-	cascadeDelete(makeControllerDeployment(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
-	cascadeDelete(makeControllerService(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
-}
-
-func makeControllerDeployment(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.Deployment {
+func makeControllerDeployment(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *api.PravegaSpec) *v1beta1.Deployment {
 	return &v1beta1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -53,14 +47,14 @@ func makeControllerDeployment(metadata metav1.ObjectMeta, owner *metav1.OwnerRef
 	}
 }
 
-func makePravegaControllerDeploymentSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.DeploymentSpec {
+func makePravegaControllerDeploymentSpec(name string, pravegaSpec *api.PravegaSpec) *v1beta1.DeploymentSpec {
 	return &v1beta1.DeploymentSpec{
 		Replicas: &pravegaSpec.ControllerReplicas,
 		Template: *makeControllerDeploymentTemplate(name, pravegaSpec),
 	}
 }
 
-func makeControllerDeploymentTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodTemplateSpec {
+func makeControllerDeploymentTemplate(name string, pravegaSpec *api.PravegaSpec) *corev1.PodTemplateSpec {
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -72,7 +66,7 @@ func makeControllerDeploymentTemplate(name string, pravegaSpec *v1alpha1.Pravega
 	}
 }
 
-func makeControllerPodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodSpec {
+func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
 	return &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -106,7 +100,7 @@ func makeControllerPodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *core
 	}
 }
 
-func makeControllerConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, zkUri string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.ConfigMap {
+func makeControllerConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, zkUri string, pravegaSpec *api.PravegaSpec) *corev1.ConfigMap {
 	var javaOpts = []string{
 		"-Dconfig.controller.metricenableStatistics=false",
 	}
@@ -138,7 +132,7 @@ func makeControllerConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRefe
 	}
 }
 
-func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *corev1.Service {
+func makeControllerService(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *api.PravegaSpec) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",

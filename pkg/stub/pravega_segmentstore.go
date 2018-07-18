@@ -5,7 +5,7 @@ import (
 
 	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +21,7 @@ const (
 	segmentStoreKind      = "pravega-segmentstore"
 )
 
-func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
+func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *api.PravegaCluster) {
 	err := sdk.Create(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
@@ -33,11 +33,6 @@ func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha
 	}
 }
 
-func destroySegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *v1alpha1.PravegaCluster) {
-	cascadeDelete(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
-	destroySegmentstoreCacheVolumes(pravegaCluster.ObjectMeta)
-}
-
 func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
 	logrus.WithFields(logrus.Fields{"name": metadata.Name}).Info("Destroying SegmentStore Cache volumes")
 
@@ -47,7 +42,7 @@ func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
 	}
 }
 
-func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSet {
+func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *api.PravegaSpec) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -64,7 +59,7 @@ func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.Owner
 	}
 }
 
-func makePravegaSegmentstoreStatefulSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *v1beta1.StatefulSetSpec {
+func makePravegaSegmentstoreStatefulSpec(name string, pravegaSpec *api.PravegaSpec) *v1beta1.StatefulSetSpec {
 	return &v1beta1.StatefulSetSpec{
 		ServiceName:          "segmentstore",
 		Replicas:             &pravegaSpec.SegmentStoreReplicas,
@@ -74,7 +69,7 @@ func makePravegaSegmentstoreStatefulSpec(name string, pravegaSpec *v1alpha1.Prav
 	}
 }
 
-func makeSegmentstoreStatefulTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodTemplateSpec {
+func makeSegmentstoreStatefulTemplate(name string, pravegaSpec *api.PravegaSpec) *corev1.PodTemplateSpec {
 	return &corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -86,7 +81,7 @@ func makeSegmentstoreStatefulTemplate(name string, pravegaSpec *v1alpha1.Pravega
 	}
 }
 
-func makeSegmentstorePodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.PodSpec {
+func makeSegmentstorePodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -130,7 +125,7 @@ func makeSegmentstorePodSpec(name string, pravegaSpec *v1alpha1.PravegaSpec) *co
 	return &podSpec
 }
 
-func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, zkUri string, pravegaSpec *v1alpha1.PravegaSpec) *corev1.ConfigMap {
+func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, zkUri string, pravegaSpec *api.PravegaSpec) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dconfig.controller.metricenableStatistics=false",
 		"-Dpravegaservice.clusterName=" + metadata.Name,
@@ -169,7 +164,7 @@ func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 	}
 }
 
-func makeCacheVolumeClaimTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec) []corev1.PersistentVolumeClaim {
+func makeCacheVolumeClaimTemplate(name string, pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -181,7 +176,7 @@ func makeCacheVolumeClaimTemplate(name string, pravegaSpec *v1alpha1.PravegaSpec
 	}
 }
 
-func getTier2StorageOptions(pravegaSpec *v1alpha1.PravegaSpec) map[string]string {
+func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 	if pravegaSpec.Tier2.FileSystem != nil {
 		return map[string]string{
 			"TIER2_STORAGE": "FILESYSTEM",
@@ -211,7 +206,7 @@ func getTier2StorageOptions(pravegaSpec *v1alpha1.PravegaSpec) map[string]string
 	return make(map[string]string)
 }
 
-func addTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *v1alpha1.PravegaSpec) []corev1.EnvFromSource {
+func addTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {
 	if pravegaSpec.Tier2.Ecs != nil {
 		return append(environment, corev1.EnvFromSource{
 			Prefix: "EXTENDEDS3_",
@@ -226,7 +221,7 @@ func addTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *v1alpha1.P
 	return environment
 }
 
-func addTier2FilesystemVolumes(podSpec *corev1.PodSpec, pravegaSpec *v1alpha1.PravegaSpec) {
+func addTier2FilesystemVolumes(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
 
 	if pravegaSpec.Tier2.FileSystem != nil {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
