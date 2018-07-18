@@ -6,7 +6,7 @@ import (
 
 type BookkeeperSpec struct {
 	Image        ImageSpec             `json:"image"`
-	Replicas     int32                 `json:"relicas"`
+	Replicas     int32                 `json:"replicas"`
 	Storage      BookkeeperStorageSpec `json:"storage"`
 	Options      map[string]string     `json:"options"`
 	AutoRecovery bool                  `json:"autoRecovery"`
