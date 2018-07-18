@@ -23,15 +23,15 @@ type PravegaCluster struct {
 }
 
 type PravegaClusterSpec struct {
-	ZookeeperUri string         `json:",zookeeper_uri"`
-	Bookkeeper   BookkeeperSpec `json:",bookkeeper"`
-	Pravega      PravegaSpec    `json:",pravega"`
+	ZookeeperUri string         `json:"zookeeperUri"`
+	Bookkeeper   BookkeeperSpec `json:"bookkeeper"`
+	Pravega      PravegaSpec    `json:"pravega"`
 }
 
 type ImageSpec struct {
-	Repository string        `json:",repository"`
-	Tag        string        `json:",tag"`
-	PullPolicy v1.PullPolicy `json:",pullPolicy"`
+	Repository string        `json:"repository"`
+	Tag        string        `json:"tag"`
+	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }
 
 func (spec *ImageSpec) String() string {

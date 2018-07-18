@@ -1,4 +1,4 @@
-package stub
+package pravega
 
 import (
 	"strings"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -21,13 +22,13 @@ const (
 	segmentStoreKind      = "pravega-segmentstore"
 )
 
-func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *api.PravegaCluster) {
-	err := sdk.Create(makeSegmentstoreConfigMap(pravegaCluster.ObjectMeta, ownerRef, pravegaCluster.Spec.ZookeeperUri, &pravegaCluster.Spec.Pravega))
+func deploySegmentStore(pravegaCluster *api.PravegaCluster) {
+	err := sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
 	}
 
-	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster.ObjectMeta, ownerRef, &pravegaCluster.Spec.Pravega))
+	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
 	}
@@ -36,63 +37,54 @@ func createSegmentStore(ownerRef *metav1.OwnerReference, pravegaCluster *api.Pra
 func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
 	logrus.WithFields(logrus.Fields{"name": metadata.Name}).Info("Destroying SegmentStore Cache volumes")
 
-	err := deleteCollection("v1", "PersistentVolumeClaim", metadata.Namespace, fmt.Sprintf("app=%v,kind=%v", metadata.Name, segmentStoreKind))
+	err := k8sutil.DeleteCollection("v1", "PersistentVolumeClaim", metadata.Namespace, fmt.Sprintf("app=%v,kind=%v", metadata.Name, segmentStoreKind))
 	if err != nil {
 		logrus.Error(err)
 	}
 }
 
-func makeSegmentStoreStatefulSet(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, pravegaSpec *api.PravegaSpec) *v1beta1.StatefulSet {
+func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      generateKindName(segmentStoreKind, metadata.Name),
-			Namespace: metadata.Namespace,
+			Name:      k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*owner,
+				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Spec: *makePravegaSegmentstoreStatefulSpec(metadata.Name, pravegaSpec),
-	}
-}
-
-func makePravegaSegmentstoreStatefulSpec(name string, pravegaSpec *api.PravegaSpec) *v1beta1.StatefulSetSpec {
-	return &v1beta1.StatefulSetSpec{
-		ServiceName:          "segmentstore",
-		Replicas:             &pravegaSpec.SegmentStoreReplicas,
-		PodManagementPolicy:  v1beta1.ParallelPodManagement,
-		Template:             *makeSegmentstoreStatefulTemplate(name, pravegaSpec),
-		VolumeClaimTemplates: makeCacheVolumeClaimTemplate(name, pravegaSpec),
-	}
-}
-
-func makeSegmentstoreStatefulTemplate(name string, pravegaSpec *api.PravegaSpec) *corev1.PodTemplateSpec {
-	return &corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{
-				"app":  name,
-				"kind": segmentStoreKind,
+		Spec: v1beta1.StatefulSetSpec{
+			ServiceName:         "segmentstore",
+			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
+			PodManagementPolicy: v1beta1.ParallelPodManagement,
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: k8sutil.LabelsForSegmentStore(pravegaCluster),
+				},
+				Spec: makeSegmentstorePodSpec(pravegaCluster),
 			},
+			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
 		},
-		Spec: *makeSegmentstorePodSpec(name, pravegaSpec),
 	}
 }
 
-func makeSegmentstorePodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
+func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec {
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: segmentstoreConfigName(name),
+					Name: k8sutil.ConfigMapNameForSegmentstore(pravegaCluster.Name),
 				},
 			},
 		},
 	}
 
-	environment = addTier2Secrets(environment, pravegaSpec)
+	pravegaSpec := pravegaCluster.Spec.Pravega
+
+	environment = configureTier2Secrets(environment, &pravegaSpec)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -120,30 +112,30 @@ func makeSegmentstorePodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.
 		},
 	}
 
-	addTier2FilesystemVolumes(&podSpec, pravegaSpec)
+	configureTier2Filesystem(&podSpec, &pravegaSpec)
 
-	return &podSpec
+	return podSpec
 }
 
-func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerReference, zkUri string, pravegaSpec *api.PravegaSpec) *corev1.ConfigMap {
+func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dconfig.controller.metricenableStatistics=false",
-		"-Dpravegaservice.clusterName=" + metadata.Name,
+		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
 	}
 
 	configData := map[string]string{
 		"AUTHORIZATION_ENABLED": "false",
-		"CLUSTER_NAME":          metadata.Name,
-		"ZK_URL":                zkUri,
+		"CLUSTER_NAME":          pravegaCluster.Name,
+		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
-		"CONTROLLER_URL":        makeControllerUrl(metadata),
+		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 	}
 
-	if pravegaSpec.DebugLogging {
+	if pravegaCluster.Spec.Pravega.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}
 
-	for k, v := range getTier2StorageOptions(pravegaSpec) {
+	for k, v := range getTier2StorageOptions(&pravegaCluster.Spec.Pravega) {
 		configData[k] = v
 	}
 
@@ -153,23 +145,22 @@ func makeSegmentstoreConfigMap(metadata metav1.ObjectMeta, owner *metav1.OwnerRe
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      segmentstoreConfigName(metadata.Name),
-			Namespace: metadata.Namespace,
-			Labels:    map[string]string{"app": metadata.Name},
+			Name:      k8sutil.ConfigMapNameForSegmentstore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
 			OwnerReferences: []metav1.OwnerReference{
-				*owner,
+				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
 		Data: configData,
 	}
 }
 
-func makeCacheVolumeClaimTemplate(name string, pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
+func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   cacheVolumeName,
-				Labels: map[string]string{"app": name},
+				Name: cacheVolumeName,
 			},
 			Spec: pravegaSpec.CacheVolumeClaimTemplate,
 		},
@@ -206,7 +197,7 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 	return make(map[string]string)
 }
 
-func addTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {
+func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {
 	if pravegaSpec.Tier2.Ecs != nil {
 		return append(environment, corev1.EnvFromSource{
 			Prefix: "EXTENDEDS3_",
@@ -221,7 +212,7 @@ func addTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.Praveg
 	return environment
 }
 
-func addTier2FilesystemVolumes(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
+func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
 
 	if pravegaSpec.Tier2.FileSystem != nil {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
@@ -236,8 +227,4 @@ func addTier2FilesystemVolumes(podSpec *corev1.PodSpec, pravegaSpec *api.Pravega
 			},
 		})
 	}
-}
-
-func segmentstoreConfigName(name string) string {
-	return generateKindName("segmentstore-config", name)
 }
