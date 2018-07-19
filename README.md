@@ -216,20 +216,3 @@ the PravegaClient:
 ```
 tcp://<cluster-name>-pravega-controller.<namespace>:9090
 ```
-
-#### Admissions Webhook Setup
-The Pravega Controller container contains a [Dymamic Admissions Controller](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) 
-that validates the PravegaCluster resource before it's entered into the API.  The current deployment configuration 
-in [deploy/admissions.yaml](deploy/admissions.yaml) are setup with a Self Signed certificate that assumes the operator will 
-be deployed in the `default` namespace.
-
-If the operator is to be deployed in a different namespace, a new certificate configuration needs to be set using the 
-following process:
-
-1. Generate a self signed cert (FOR TESTING!) with
-
-    `openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out cert.pem`
-2. For the cert `Common Name` name use pravega-operator.<namespace>.svc
-3. Use `openssl base64 -A -in cert.pem` and `openssl base64 -A -in key.pem` to generate Base64 strings of each artifact
-4. Update `admissions.yaml` with the Base64 strings
-4. Update the WebHook `caBundle` Configuration in `admissions.yaml` with the certificate Base64 string

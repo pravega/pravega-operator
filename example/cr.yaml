@@ -59,6 +59,6 @@ spec:
       pullPolicy: IfNotPresent
 
     tier2:
-      filesystem:
-        persistentVolumeClaim:
-          claimName: pravega-tier2
+#      filesystem:
+#        persistentVolumeClaim:
+#          claimName: pravega-tier2
