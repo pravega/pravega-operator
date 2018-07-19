@@ -1,12 +1,7 @@
 # Pravega Operator
-
-Pravega Kubernetes Operator
-
-
-# Zookeeper Operator
 >**This operator is in WIP state and subject to (breaking) changes.**
 
-This Operator runs a Zookeeper 3.5 cluster, and uses Zookeeper dynamic reconfiguration to handle node membership.
+This Operator Provisions a [Pravega Cluster](https://github.com/pravega/pravega).
 
 The operator itself is built with the: https://github.com/operator-framework/operator-sdk
 
@@ -38,11 +33,10 @@ docker push ${your-operator-image-tag}:latest
 # No addition steps needed
 ```
 
-### Install the Kubernetes resources
+### Install the Operator
 
+The operator and required resources can be installed using the yaml files in the deploy directory:
 ```bash
-# Create Operator deployment, Roles, Service Account, and Custom Resource Definition for
-#   a Pravega cluster.
 $ kubectl apply -f deploy
 
 # View the pravega-operator Pod
@@ -65,30 +59,58 @@ On Google GKE the following command must be run before installing the operator, 
 
 ```kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org```
 
-### The PravegaCluster Custom Resource
+### Requirements
 
-#### Requirements
+There are several required components that must exist before the operator can be used to provision a PravegaCluster:
 
-Each Pravega cluster requires a running Zookeeper instance.  This must be deployed before deploying the Pravega Cluster
-resource and the `example/cr.yaml` file updated with the correct `zookeeperUri`.
+#### Zookeeper
 
-#### Deployments
-This will deploy a small (3 Bookies, 1 controller, 1 segmentstore) development instance to your Kuberentes cluster using 
-a standard PVC for Tier2 Storage (simulating an NFS mount)
+Pravega requires an existing Apache Zookeeper 3.5 cluster .  Which can easily be deployed using the [Pravega Zookeeper operator](https://github.com/pravega/zookeeper-operator).  
+The ZookeeperURI for the cluster is provided as part of the PravegaCluster resource.
 
-With this YAML template you can install a small development Pravega Cluster easily into your Kubernetes cluster:
+Note that the Zookeeper instance can be shared between multiple PravegaCluster instances.
+
+#### Tier2 Storage
+Pravega requires a long term storage provider known as Tier2 storage.  Several Tier2 storage providers are supported:
+
+- Filesystem (NFS)
+- DellEMC ECS
+- HDFS (must support Append operation)
+
+An instance of a Pravega cluster supports only one type of Tier2 storage which is configured during cluster provisioning and
+cannot be changed once provisioned.  The required provider is configured using the `Pravega/Tier2` section of the 
+PravegaCluster resource.  You must provide one and only one type of storage configuration.
+
+### Example
+
+#### NFS Storage
+
+The following example uses an NFS PVC provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) 
+helm chart to provide Tier2 storage:
+
+```
+helm install stable/nfs-server-provisioner
+```
+
+Note that this is ONLY intended as a demo and should NOT be used for production deployments.
+
+#### Deployment
+
+With this YAML template you can install a small development Pravega Cluster (3 Bookies, 1 controller, 3 segmentstore) easily 
+into your Kubernetes cluster. The cluster will be provisioned into the same namespace as the operator.
 
 ```yaml
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
   name: pravega-tier2
 spec:
+  storageClassName: "nfs"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 50Gi
 ---
 apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
@@ -124,7 +146,14 @@ spec:
 
   pravega:
     controllerReplicas: 1
-    segmentStoreReplicas: 1
+    segmentStoreReplicas: 3
+
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
 
     image:
       repository: pravega/pravega
@@ -135,6 +164,57 @@ spec:
       filesystem:
         persistentVolumeClaim:
           claimName: pravega-tier2
+```
+
+After creating, you can view the cluster:
+
+```
+# View the cluster instance
+$ kubectl get PravegaCluster
+NAME      AGE
+example   2h
+
+# View what it's made of
+$ kubectl get all -l pravega_cluster=example
+NAME                                              READY     STATUS    RESTARTS   AGE
+pod/example-bookie-0                              1/1       Running   0          2h
+pod/example-bookie-1                              1/1       Running   0          2h
+pod/example-bookie-2                              1/1       Running   0          2h
+pod/example-pravega-controller-6f58c4f464-2jg8f   1/1       Running   0          2h
+pod/example-segmentstore-0                        1/1       Running   0          2h
+pod/example-segmentstore-1                        1/1       Running   0          2h
+pod/example-segmentstore-2                        1/1       Running   0          2h
+
+NAME                                 TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)              AGE
+service/example-pravega-controller   ClusterIP   10.39.254.134   <none>        10080/TCP,9090/TCP   2h
+
+NAME                                               DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.extensions/example-pravega-controller   1         1         1            1           2h
+
+NAME                                                          DESIRED   CURRENT   READY     AGE
+replicaset.extensions/example-pravega-controller-6f58c4f464   1         1         1         2h
+
+NAME                                         DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/example-pravega-controller   1         1         1            1           2h
+
+NAME                                                    DESIRED   CURRENT   READY     AGE
+replicaset.apps/example-pravega-controller-6f58c4f464   1         1         1         2h
+
+NAME                                    DESIRED   CURRENT   AGE
+statefulset.apps/example-bookie         3         3         2h
+statefulset.apps/example-segmentstore   3         3         2h
+
+# There are a few other things here, like a configmap, etc...
+
+```
+
+#### Using The Pravega Instance
+
+A PravegaCluster instance is only accessible WITHIN the cluster (i.e. no outside access) using the following endpoint in 
+the PravegaClient:
+
+```
+tcp://<cluster-name>-pravega-controller.<namespace>:9090
 ```
 
 #### Admissions Webhook Setup

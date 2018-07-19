@@ -1,13 +1,14 @@
-apiVersion: v1
 kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
   name: pravega-tier2
 spec:
+  storageClassName: "nfs"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 50Gi
 ---
 apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
@@ -43,7 +44,7 @@ spec:
 
   pravega:
     controllerReplicas: 1
-    segmentStoreReplicas: 1
+    segmentStoreReplicas: 3
 
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
