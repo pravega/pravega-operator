@@ -134,7 +134,17 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 }
 
 func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
-	// TODO: Add Spec Options
+	configData := map[string]string{
+		"BK_BOOKIE_EXTRA_OPTS":     "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
+		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
+		"BK_useHostNameAsBookieID": "true",
+		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
+		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
+	}
+
+	for name, value := range pravegaCluster.Spec.Bookkeeper.Options {
+		configData[name] = value
+	}
 
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -148,12 +158,6 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Data: map[string]string{
-			"BK_BOOKIE_EXTRA_OPTS":     "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
-			"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
-			"BK_useHostNameAsBookieID": "true",
-			"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
-			"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
-		},
+		Data: configData,
 	}
 }

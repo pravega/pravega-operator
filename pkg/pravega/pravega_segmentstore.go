@@ -132,6 +132,10 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
 
+	for name, value := range pravegaCluster.Spec.Pravega.Options {
+		configData[name] = value
+	}
+
 	if pravegaCluster.Spec.Pravega.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}

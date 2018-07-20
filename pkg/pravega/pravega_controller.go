@@ -95,6 +95,23 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 		"-Dconfig.controller.metricenableStatistics=false",
 	}
 
+	configData := map[string]string{
+		"CLUSTER_NAME":           pravegaCluster.Name,
+		"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
+		"JAVA_OPTS":              strings.Join(javaOpts, " "),
+		"REST_SERVER_PORT":       "10080",
+		"CONTROLLER_SERVER_PORT": "9090",
+		"AUTHORIZATION_ENABLED":  "false",
+		"TOKEN_SIGNING_KEY":      "secret",
+		"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
+		"TLS_ENABLED":            "false",
+		"WAIT_FOR":               pravegaCluster.Spec.ZookeeperUri,
+	}
+
+	for name, value := range pravegaCluster.Spec.Pravega.Options {
+		configData[name] = value
+	}
+
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -108,18 +125,7 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Data: map[string]string{
-			"CLUSTER_NAME":           pravegaCluster.Name,
-			"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
-			"JAVA_OPTS":              strings.Join(javaOpts, " "),
-			"REST_SERVER_PORT":       "10080",
-			"CONTROLLER_SERVER_PORT": "9090",
-			"AUTHORIZATION_ENABLED":  "false",
-			"TOKEN_SIGNING_KEY":      "secret",
-			"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
-			"TLS_ENABLED":            "false",
-			"WAIT_FOR":               pravegaCluster.Spec.ZookeeperUri,
-		},
+		Data: configData,
 	}
 }
 
