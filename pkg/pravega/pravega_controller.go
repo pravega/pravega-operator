@@ -3,6 +3,7 @@ package pravega
 import (
 	"strings"
 
+	"fmt"
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
@@ -92,7 +93,11 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 
 func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
-		"-Dconfig.controller.metricenableStatistics=false",
+		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
+	}
+
+	for name, value := range pravegaCluster.Spec.Pravega.Options {
+		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
 	configData := map[string]string{

@@ -119,8 +119,11 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 
 func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
-		"-Dconfig.controller.metricenableStatistics=false",
 		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
+	}
+
+	for name, value := range pravegaCluster.Spec.Pravega.Options {
+		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
 	configData := map[string]string{
@@ -130,10 +133,6 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
-	}
-
-	for name, value := range pravegaCluster.Spec.Pravega.Options {
-		configData[name] = value
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {

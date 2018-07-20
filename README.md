@@ -216,3 +216,23 @@ the PravegaClient:
 ```
 tcp://<cluster-name>-pravega-controller.<namespace>:9090
 ```
+
+The REST management interface is available at:
+```
+http://<cluster-name>-pravega-controller.<namespace>:10080/
+```
+
+#### Pravega Configuration
+
+Pravega has many configuration options for setting up metrics, tuning, etc.  The available options can be found
+[here](https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties) and are
+expressed through the pravega/options part of the resource specification.  All values must be expressed as Strings.
+
+```
+spec:
+    pravega:
+        options:
+          metrics.enableStatistics: "true"
+          metrics.statsdHost: "telegraph.default"
+          metrics.statsdPort: "8125"
+```

@@ -142,10 +142,6 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	for name, value := range pravegaCluster.Spec.Bookkeeper.Options {
-		configData[name] = value
-	}
-
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
