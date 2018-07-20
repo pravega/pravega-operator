@@ -153,6 +153,7 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 			"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
 			"BK_useHostNameAsBookieID": "true",
 			"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
+			"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 		},
 	}
 }

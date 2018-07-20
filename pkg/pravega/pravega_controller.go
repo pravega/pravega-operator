@@ -118,6 +118,7 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 			"TOKEN_SIGNING_KEY":      "secret",
 			"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
 			"TLS_ENABLED":            "false",
+			"WAIT_FOR":               pravegaCluster.Spec.ZookeeperUri,
 		},
 	}
 }

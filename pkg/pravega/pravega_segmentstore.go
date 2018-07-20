@@ -129,6 +129,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
+		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {
