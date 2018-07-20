@@ -142,6 +142,10 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
+	if pravegaCluster.Spec.Bookkeeper.AutoRecovery {
+		configData["BK_AUTORECOVERY"] = "true"
+	}
+
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
