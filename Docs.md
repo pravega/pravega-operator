@@ -44,7 +44,7 @@ The operator and required resources can be installed using the `yaml` files avai
 $ kubectl apply -f deploy
 ```
 
-# View the pravega-operator Pod by using the following command.
+### View the pravega-operator Pod:
 
 ```bash
 $ kubectl get pod
@@ -56,7 +56,7 @@ pravega-operator-6787869796-mxqjv      1/1       Running             0          
 The Operator requires the elevated privileges in order to watch for the custom resources.  
 
 According to Google Container Engine docs:
->Ensure the creation of RoleBinding as it grants all the permissions included in the role that we want to create.Because of the way Container Engine checks permissions when we create a Role or ClusterRole. 
+> Ensure the creation of RoleBinding as it grants all the permissions included in the role that we want to create.Because of the way Container Engine checks permissions when we create a Role or ClusterRole. 
 > 
 > An example workaround is to create a RoleBinding that gives your Google identity a cluster-admin role before attempting to create additional Role or ClusterRole permissions.
 > 
@@ -80,7 +80,7 @@ The operator itself is built with the: https://github.com/operator-framework/ope
 
 ##### Build Requirements:
 
--Step 1: Install the Operator SDK: https://github.com/operator-framework/operator-sdk#quick-start
+- Step 1: Install the Operator SDK: https://github.com/operator-framework/operator-sdk#quick-start
 
 ##### Usage:
 
@@ -100,8 +100,9 @@ docker tag pravega/zookeeper-operator ${your-operator-image-tag}:latest
 docker push ${your-operator-image-tag}:latest
 ```
 b. Use the image from Docker Hub
-
+```bash
 # No additional steps are required to use the image from Docker Hub.
+```
 
 #### Install the Kubernetes Resources
 
