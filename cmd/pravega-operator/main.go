@@ -5,9 +5,9 @@ import (
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
-	"github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/stub"
+	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,7 +22,7 @@ func main() {
 
 	resource := "pravega.pravega.io/v1alpha1"
 	kind := "PravegaCluster"
-	namespace, err := k8sutil.GetWatchNamespace()
+	namespace, err := k8sutil.GetWatchNamespaceAllowBlank()
 	if err != nil {
 		logrus.Fatalf("Failed to get watch namespace: %v", err)
 	}
