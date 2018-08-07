@@ -197,14 +197,14 @@ metadata:
 spec:
   size: 3
 ```
-After installin gthe cluster, We can view its instance using the following:
+The cluster instance can be viewed after installing the cluster using the following command:
 
 ```bash
 $ kubectl get zk
 NAME      AGE
 example   2s
 ```
-We can view the components using the following:
+The components of the cluster can be viewed using the following:
 
 ```bash
 $ kubectl get all -l app=example
@@ -221,7 +221,7 @@ NAME                       DESIRED   CURRENT   AGE
 statefulset.apps/example   3         3         58m
 ```
 
-we can view the configmap,paddisruptiobudget
+The configmap, paddisruptiobudget, etc., can be viewed using the following command:
 ```bash
 
 # There are a few other things here, like a configmap, poddisruptionbudget, etc...
@@ -254,7 +254,7 @@ helm install stable/nfs-server-provisioner
 
 *Note:* This is ONLY intended as a demo and should NOT be used for production deployments.
 
-#### Deployment of Pravgea Cluster
+#### Deployment of Pravega Cluster
 
 Using the follwoing `YAML` template we can easily install a small development Pravega Cluster (3 Bookies, 1 controller, 3 segmentstore)
 in our Kubernetes cluster. The cluster will be provisioned into the same namespace as the operator.
@@ -326,7 +326,7 @@ spec:
           claimName: pravega-tier2
 ```
 
-After creating the cluster the cluster instance can be viewed using the following command:
+After creating the cluster, the cluster instance can be viewed using the following command:
 
 ```bash
 $ kubectl get PravegaCluster
@@ -364,7 +364,7 @@ NAME                                    DESIRED   CURRENT   AGE
 statefulset.apps/example-bookie         3         3         2h
 statefulset.apps/example-segmentstore   3         3         2h
 ```
-The configuration map can be viewd as follows:
+The configuration map,etc., can be viewd as follows:
 ```bash
 # There are a few other things here, like a configmap, etc...
 
