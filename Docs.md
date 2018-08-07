@@ -1,17 +1,80 @@
 # Pravega Operator
 
 
-## key Features of Pravega Operator
+## Key Features of Pravega Operator
 
 # Deployment of Pravega Operator
 
 The Pravega Operator Provisions a [Pravega Cluster](https://github.com/pravega/pravega).
-The operator is developed using the [operaotr-sdk](https://github.com/operator-framework/operator-sdk).
 
 ## Build Requirements:
- - Step 1: Install the Operator SDK from the following: https://github.com/operator-framework/operator-sdk#quick-start
+  
+  Install the Operator SDK from the following: https://github.com/operator-framework/operator-sdk#quick-start
 
-#### Usage:
+## Operator-sdk
+
+The Operator SDK is a framework designed to make writing operators in a easier way by providing:
+
+- High level APIs and abstractions to write the operational logic more intuitively.
+- Tools for scaffolding and code generation to bootstrap a new project fast.
+- Extensions to cover common operator use cases.
+
+### Installation of Operator-sdk
+- Step 1: Checkout and install the operator-sdk CLI:
+
+```bash
+$ mkdir -p $GOPATH/src/github.com/operator-framework
+$ cd $GOPATH/src/github.com/operator-framework
+$ git clone https://github.com/operator-framework/operator-sdk
+$ cd operator-sdk
+$ git checkout master
+$ make dep
+$ make install
+```
+- Step 2: Create and deploy an app-operator project that defined the App CR using the SDK CLI:
+
+```bash
+$ cd $GOPATH/src/github.com/example-inc/
+$ operator-sdk new app-operator --api-version=app.example.com/v1alpha1 --kind=App
+$ cd app-operator
+```
+- Step 3: Build and push the app-operator image to a public registry such as `quay.io`.
+
+```bash
+$ operator-sdk build quay.io/example/app-operator
+$ docker push quay.io/example/app-operator
+```
+- Step 4: Deploy the app-operator:
+
+```bash
+$ kubectl create -f deploy/rbac.yaml
+$ kubectl create -f deploy/crd.yaml
+$ kubectl create -f deploy/operator.yaml
+```
+- Step 5: By default, creating a custom resource (App) triggers the app-operator to deploy a busybox pod
+
+```bash
+$ kubectl create -f deploy/cr.yaml
+```
+- Step 6: Verify that the busybox pod is created
+
+```bash
+$ kubectl get pod -l app=busy-box
+NAME            READY     STATUS    RESTARTS   AGE
+busy-box   1/1       Running   0          50s
+```
+- Step 7: Perform the Cleanup
+
+```bash
+$ kubectl delete -f deploy/cr.yaml
+$ kubectl delete -f deploy/operator.yaml
+$ kubectl delete -f deploy/rbac.yaml
+```
+
+Please check the [user Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md) for building a simple memcached-operator using tools and libraries provided by the Operator SDK.
+
+
+### Usage:
 
 ```bash
 mkdir -p $GOPATH/src/github.com/pravega
@@ -19,10 +82,9 @@ cd $GOPATH/src/github.com/pravega
 git clone git@github.com:pravega/pravega-operator.git
 cd pravega-operator
 ```
+#### Get the operator Docker image
 
- - Step 2: Get the operator Docker image
-
-#### a. Build the image yourself
+##### a. Build the image yourself
 
 ```bash
 operator-sdk build pravega/pravega-operator
@@ -30,13 +92,13 @@ docker tag pravega/pravega-operator ${your-operator-image-tag}:latest
 docker push ${your-operator-image-tag}:latest
 ```
 
-#### b. Use the image from Docker Hub
+##### b. Use the image from Docker Hub
 
 ```bash
 # No additional steps are required to use th eimage from the Docker Hub
 ```
 
-## Install the Operator
+#### Install the Operator
 
 The operator and required resources can be installed using the `yaml` files available in the deploy directory:
 
@@ -78,9 +140,9 @@ The ZookeeperURI for the cluster is provided as part of the PravegaCluster resou
 
 The operator itself is built with the: https://github.com/operator-framework/operator-sdk
 
-##### Build Requirements:
+### Build Requirements:
 
-- Step 1: Install the Operator SDK: https://github.com/operator-framework/operator-sdk#quick-start
+ Install the Operator SDK: https://github.com/operator-framework/operator-sdk#quick-start
 
 ##### Usage:
 
@@ -90,7 +152,7 @@ cd $GOPATH/src/github.com/pravega
 git clone git@github.com:pravega/zookeeper-operator.git
 cd zookeeper-operator
 ```
-- Step 2: Get the operator Docker image
+ #### Get the operator Docker image
 
 a. Build the image yourself
 
@@ -104,18 +166,17 @@ b. Use the image from Docker Hub
 # No additional steps are required to use the image from Docker Hub.
 ```
 
-#### Install the Kubernetes Resources
+### Install the Kubernetes Resources
 
 - Step 1: Ensure to enable cluster role bindings if we are running on GKE:
 ```bash
 
 $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=<your.google.cloud.email@example.org>
 ```
-- Step 2: Install the operator components:
+- Step 2: Install the operator components that creates Operator deployment, Roles, Service Account, and Custom Resource Definition for
+ a Zookeeper cluster.
 
 ```bash
-# Create Operator deployment, Roles, Service Account, and Custom Resource Definition for
-#   a Zookeeper cluster.
 $ kubectl apply -f deploy
 ```
 - Step 3: View the zookeeper-operator Pod
@@ -136,15 +197,16 @@ metadata:
 spec:
   size: 3
 ```
-We can view the cluster and its components after creating using the following:
+After installin gthe cluster, We can view its instance using the following:
 
 ```bash
-# View the new zookeeper cluster instance
 $ kubectl get zk
 NAME      AGE
 example   2s
+```
+We can view the components using the following:
 
-# View what it's made of
+```bash
 $ kubectl get all -l app=example
 NAME            READY     STATUS              RESTARTS   AGE
 pod/example-0   1/1       Running             0          51m
@@ -157,15 +219,19 @@ service/example-headless   ClusterIP   None            <none>        2888/TCP,38
 
 NAME                       DESIRED   CURRENT   AGE
 statefulset.apps/example   3         3         58m
+```
+
+we can view the configmap,paddisruptiobudget
+```bash
 
 # There are a few other things here, like a configmap, poddisruptionbudget, etc...
 ```
 
 *Note:* The Zookeeper instance can be shared between multiple PravegaCluster instances.
 
-#### Tier2 Storage
+#### Tier 2 Storage
 
-Pravega requires a long term storage provider known as Tier2 storage. Several Tier2 storage providers are supported:
+Pravega requires a long term storage provider known as Tier  2 storage. Several Tier2 storage providers are supported:
 
 - Filesystem (NFS)
 - DellEMC ECS
@@ -188,7 +254,7 @@ helm install stable/nfs-server-provisioner
 
 *Note:* This is ONLY intended as a demo and should NOT be used for production deployments.
 
-#### Deployment
+#### Deployment of Pravgea Cluster
 
 Using the follwoing `YAML` template we can easily install a small development Pravega Cluster (3 Bookies, 1 controller, 3 segmentstore)
 in our Kubernetes cluster. The cluster will be provisioned into the same namespace as the operator.
@@ -260,15 +326,15 @@ spec:
           claimName: pravega-tier2
 ```
 
-After creating, you can view the cluster:
+After creating the cluster the cluster instance can be viewed using the following command:
 
-```
-# View the cluster instance
+```bash
 $ kubectl get PravegaCluster
 NAME      AGE
 example   2h
-
-# View what it's made of
+```
+The cluster components can be viewed using the following:
+```bash
 $ kubectl get all -l pravega_cluster=example
 NAME                                              READY     STATUS    RESTARTS   AGE
 pod/example-bookie-0                              1/1       Running   0          2h
@@ -297,7 +363,9 @@ replicaset.apps/example-pravega-controller-6f58c4f464   1         1         1   
 NAME                                    DESIRED   CURRENT   AGE
 statefulset.apps/example-bookie         3         3         2h
 statefulset.apps/example-segmentstore   3         3         2h
-
+```
+The configuration map can be viewd as follows:
+```bash
 # There are a few other things here, like a configmap, etc...
 
 ```
