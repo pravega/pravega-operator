@@ -21,6 +21,10 @@ func ServiceNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
+func HeadlessServiceNameForBookie(clusterName string) string {
+	return fmt.Sprintf("%s-bookie-headless", clusterName)
+}
+
 func DeploymentNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
