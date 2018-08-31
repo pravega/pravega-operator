@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"runtime"
+	"time"
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
@@ -29,7 +30,7 @@ func main() {
 
 	resyncPeriod := 5
 	logrus.Infof("Watching %s, %s, %s, %d", resource, kind, namespace, resyncPeriod)
-	sdk.Watch(resource, kind, namespace, 5)
+	sdk.Watch(resource, kind, namespace, time.Duration(resyncPeriod)*time.Second)
 	sdk.Handle(stub.NewHandler())
 	sdk.Run(context.TODO())
 }
