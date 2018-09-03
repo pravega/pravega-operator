@@ -74,11 +74,10 @@ Note that the Zookeeper instance can be shared between multiple PravegaCluster i
 Pravega requires a long term storage provider known as Tier2 storage.  Several Tier2 storage providers are supported:
 
 - Filesystem (NFS)
+  - Google Filestore (please refer to https://console.cloud.google.com/filestore)
 - DellEMC ECS
 - HDFS (must support Append operation)
-- NFS
-  - Google Filestore (please refer to https://console.cloud.google.com/filestore)
-
+  
 An instance of a Pravega cluster supports only one type of Tier2 storage which is configured during cluster provisioning and
 cannot be changed once provisioned.  The required provider is configured using the `Pravega/Tier2` section of the 
 PravegaCluster resource.  You must provide one and only one type of storage configuration.
