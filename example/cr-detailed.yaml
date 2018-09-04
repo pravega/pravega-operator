@@ -28,10 +28,8 @@ spec:
           requests:
             storage: 10Gi
 
-    options:
-      diskUsageThreshold: "0.95"
-      diskUsageLwmThreshold: "0.9"
-
+    # Turns on automatic recovery
+    # see https://bookkeeper.apache.org/docs/latest/admin/autorecovery/
     autoRecovery: true
 
   pravega:
@@ -52,6 +50,13 @@ spec:
       resources:
         requests:
           storage: 20Gi
+
+    # See https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties
+    # for available configuration properties
+    options:
+      metrics.enableStatistics: "true"
+      metrics.statsdHost: "telegraph.default"
+      metrics.statsdPort: "8125"
 
     tier2:
       filesystem:

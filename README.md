@@ -71,10 +71,15 @@ pravega-operator-6787869796-mxqjv      1/1       Running             0          
 The Operator requires elevated privileges in order to watch for the custom resources.  
 
 According to Google Container Engine docs:
+
 >Ensure the creation of RoleBinding as it grants all the permissions included in the role that we want to create. Because of the way Container Engine checks permissions when we create a Role or ClusterRole. 
 > 
+
+>Because of the way Container Engine checks permissions when you create a Role or ClusterRole, you must first create a RoleBinding that grants you all of the permissions included in the role you want to create.
+>
+
 > An example workaround is to create a RoleBinding that gives your Google identity a cluster-admin role before attempting to create additional Role or ClusterRole permissions.
-> 
+>
 > This is a known issue in the Beta release of Role-Based Access Control in Kubernetes and Container Engine version 1.6.
 
 On Google GKE the following command must be run before installing the operator, replacing the user with your own details.
@@ -180,9 +185,10 @@ statefulset.apps/example   3         3         58m
 Pravega requires a long term storage provider known as Tier2 storage.  Several Tier2 storage providers are supported:
 
 - Filesystem (NFS)
+  - Google Filestore (please refer to https://console.cloud.google.com/filestore)
 - DellEMC ECS
 - HDFS (must support Append operation)
-
+  
 An instance of a Pravega cluster supports only one type of Tier2 storage which is configured during cluster provisioning and
 cannot be changed once provisioned.  The required provider is configured using the `Pravega/Tier2` section of the 
 PravegaCluster resource.  You must provide one and only one type of storage configuration.
@@ -272,7 +278,106 @@ spec:
           claimName: pravega-tier2
 ```
 
+
 View the cluster instance and its components using the following command:
+
+#### NFS: Google Filestore Storage
+Create a Persistent Volume (refer to https://cloud.google.com/filestore/docs/accessing-fileshares)  to provide Tier2 storage:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pravega
+spec:
+  capacity:
+    storage: 1T
+  accessModes:
+  - ReadWriteMany
+  nfs:
+    path: /vol1
+    server: 10.123.189.202
+```
+
+Deploy the persistent volume specification:
+```kubectl create -f pv.yaml```
+
+Note: the "10.123.189.202:/vol1" is the Filestore that is created previously, and this is ONLY intended as a demo and should NOT be used for production deployments.
+
+#### Deployment
+
+With this YAML template you can install a small development Pravega Cluster (3 Bookies, 1 controller, 3 segmentstore) easily 
+into your Kubernetes cluster. The cluster will be provisioned into the same namespace as the operator.
+
+```yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pravega-tier2
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: "pravega.pravega.io/v1alpha1"
+kind: "PravegaCluster"
+metadata:
+  name: "example"
+spec:
+  zookeeperUri: example-client:2181
+
+  bookkeeper:
+    image:
+      repository: pravega/bookkeeper
+      tag: 0.3.0
+      pullPolicy: IfNotPresent
+
+    replicas: 3
+
+    storage:
+      ledgerVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+      journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+    autoRecovery: true
+
+  pravega:
+    controllerReplicas: 1
+    segmentStoreReplicas: 3
+
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
+
+    image:
+      repository: pravega/pravega
+      tag: 0.3.0
+      pullPolicy: IfNotPresent
+
+    tier2:
+      filesystem:
+        persistentVolumeClaim:
+          claimName: pravega-tier2
+```
+
+After creating, you can view the cluster:
+
 
 ```
 $ kubectl get PravegaCluster
@@ -319,4 +424,24 @@ the PravegaClient:
 
 ```
 tcp://<cluster-name>-pravega-controller.<namespace>:9090
+```
+
+The REST management interface is available at:
+```
+http://<cluster-name>-pravega-controller.<namespace>:10080/
+```
+
+#### Pravega Configuration
+
+Pravega has many configuration options for setting up metrics, tuning, etc.  The available options can be found
+[here](https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties) and are
+expressed through the pravega/options part of the resource specification.  All values must be expressed as Strings.
+
+```
+spec:
+    pravega:
+        options:
+          metrics.enableStatistics: "true"
+          metrics.statsdHost: "telegraph.default"
+          metrics.statsdPort: "8125"
 ```

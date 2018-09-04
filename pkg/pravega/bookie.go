@@ -18,6 +18,12 @@ const (
 )
 
 func deployBookie(pravegaCluster *v1alpha1.PravegaCluster) (err error) {
+
+	err = sdk.Create(makeBookieHeadlessService(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
 	err = sdk.Create(makeBookieConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -40,6 +46,33 @@ func destroyBookieVolumes(metadata metav1.ObjectMeta) {
 	}
 }
 
+func makeBookieHeadlessService(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			Labels:    k8sutil.LabelsForBookie(pravegaCluster),
+			OwnerReferences: []metav1.OwnerReference{
+				*k8sutil.AsOwnerRef(pravegaCluster),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name: "bookie",
+					Port: 3181,
+				},
+			},
+			Selector:  k8sutil.LabelsForBookie(pravegaCluster),
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
+
 func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta1.StatefulSet {
 	return &v1beta1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -55,7 +88,7 @@ func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta1.Sta
 			},
 		},
 		Spec: v1beta1.StatefulSetSpec{
-			ServiceName:          "bookkeeper",
+			ServiceName:          k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
 			Replicas:             &pravegaCluster.Spec.Bookkeeper.Replicas,
 			PodManagementPolicy:  v1beta1.ParallelPodManagement,
 			Template:             makeBookieStatefulTemplate(pravegaCluster),
@@ -142,8 +175,8 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	for name, value := range pravegaCluster.Spec.Bookkeeper.Options {
-		configData[name] = value
+	if pravegaCluster.Spec.Bookkeeper.AutoRecovery {
+		configData["BK_AUTORECOVERY"] = "true"
 	}
 
 	return &corev1.ConfigMap{

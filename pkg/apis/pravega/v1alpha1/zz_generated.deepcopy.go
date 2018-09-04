@@ -13,13 +13,6 @@ func (in *BookkeeperSpec) DeepCopyInto(out *BookkeeperSpec) {
 	*out = *in
 	out.Image = in.Image
 	in.Storage.DeepCopyInto(&out.Storage)
-	if in.Options != nil {
-		in, out := &in.Options, &out.Options
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
 	return
 }
 
