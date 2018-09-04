@@ -74,10 +74,6 @@ According to Google Container Engine docs:
 
 >Ensure the creation of RoleBinding as it grants all the permissions included in the role that we want to create. Because of the way Container Engine checks permissions when we create a Role or ClusterRole. 
 > 
-
->Because of the way Container Engine checks permissions when you create a Role or ClusterRole, you must first create a RoleBinding that grants you all of the permissions included in the role you want to create.
->
-
 > An example workaround is to create a RoleBinding that gives your Google identity a cluster-admin role before attempting to create additional Role or ClusterRole permissions.
 >
 > This is a known issue in the Beta release of Role-Based Access Control in Kubernetes and Container Engine version 1.6.
@@ -278,106 +274,7 @@ spec:
           claimName: pravega-tier2
 ```
 
-
 View the cluster instance and its components using the following command:
-
-#### NFS: Google Filestore Storage
-Create a Persistent Volume (refer to https://cloud.google.com/filestore/docs/accessing-fileshares)  to provide Tier2 storage:
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pravega
-spec:
-  capacity:
-    storage: 1T
-  accessModes:
-  - ReadWriteMany
-  nfs:
-    path: /vol1
-    server: 10.123.189.202
-```
-
-Deploy the persistent volume specification:
-```kubectl create -f pv.yaml```
-
-Note: the "10.123.189.202:/vol1" is the Filestore that is created previously, and this is ONLY intended as a demo and should NOT be used for production deployments.
-
-#### Deployment
-
-With this YAML template you can install a small development Pravega Cluster (3 Bookies, 1 controller, 3 segmentstore) easily 
-into your Kubernetes cluster. The cluster will be provisioned into the same namespace as the operator.
-
-```yaml
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: pravega-tier2
-spec:
-  storageClassName: ""
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 50Gi
----
-apiVersion: "pravega.pravega.io/v1alpha1"
-kind: "PravegaCluster"
-metadata:
-  name: "example"
-spec:
-  zookeeperUri: example-client:2181
-
-  bookkeeper:
-    image:
-      repository: pravega/bookkeeper
-      tag: 0.3.0
-      pullPolicy: IfNotPresent
-
-    replicas: 3
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-    autoRecovery: true
-
-  pravega:
-    controllerReplicas: 1
-    segmentStoreReplicas: 3
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-
-    image:
-      repository: pravega/pravega
-      tag: 0.3.0
-      pullPolicy: IfNotPresent
-
-    tier2:
-      filesystem:
-        persistentVolumeClaim:
-          claimName: pravega-tier2
-```
-
-After creating, you can view the cluster:
-
 
 ```
 $ kubectl get PravegaCluster
@@ -416,17 +313,39 @@ statefulset.apps/example-segmentstore   3         3         2h
 # There are a few other things here, like a configmap, etc...
 
 ```
+#### NFS: Google Filestore Storage
+Create a Persistent Volume (refer to https://cloud.google.com/filestore/docs/accessing-fileshares)  to provide Tier2 storage:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pravega
+spec:
+  capacity:
+    storage: 1T
+  accessModes:
+  - ReadWriteMany
+  nfs:
+    path: /vol1
+    server: 10.123.189.202
+```
+
+Deploy the persistent volume specification using the following command:
+```kubectl create -f pv.yaml```
+
+**Note:** The "10.123.189.202:/vol1" is the Filestore that is created previously, and this is ONLY intended as a demo and should NOT be used for production deployments.
 
 #### Using The Pravega Instance
 
-A PravegaCluster instance is only accessible WITHIN the cluster (i.e. no outside access) using the following endpoint in 
+A PravegaCluster instance is only accessible WITHIN the cluster (i.e. no outside access is allowed) using the following endpoint in 
 the PravegaClient:
 
 ```
 tcp://<cluster-name>-pravega-controller.<namespace>:9090
 ```
 
-The REST management interface is available at:
+The `REST` management interface is available at:
 ```
 http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
