@@ -60,6 +60,7 @@ Pravega requires a long term storage provider known as Tier 2 storage. The follo
 
 - Filesystem (NFS)
 - [Google Filestore](#using-google-filestore-storage-as-tier-2)
+- [DellEMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm)
 - HDFS (must support Append operation)
 
 The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide Tier 2 storage.
@@ -219,7 +220,7 @@ The `REST` management interface is available at:
 http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
 
-[Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes. 
+[Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
 
 ### Uninstall the Pravega cluster
 
