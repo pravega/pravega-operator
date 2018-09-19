@@ -59,8 +59,7 @@ zookeeper-operator   1         1         1            1           12m
 Pravega requires a long term storage provider known as Tier 2 storage. The following Tier 2 storage providers are supported:
 
 - Filesystem (NFS)
-- [Google Filestore](https://console.cloud.google.com/filestore)
-- DellEMC ECS
+- [Google Filestore](#using-google-filestore-storage-as-tier-2)
 - HDFS (must support Append operation)
 
 The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide Tier 2 storage.
@@ -220,14 +219,14 @@ The `REST` management interface is available at:
 http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
 
-### Uninstalling the Pravega cluster
+### Uninstall the Pravega cluster
 
 ```
 $ kubectl delete -f pravega.yaml
 $ kubectl delete -f pvc.yaml
 ```
 
-### Uninstalling the operator
+### Uninstall the operator
 
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
@@ -239,7 +238,7 @@ $ kubectl delete -f deploy
 
 ## Development
 
-### Building the operator image
+### Build the operator image
 
 Requirements:
   - Go 1.10+
@@ -307,7 +306,7 @@ where:
 $ kubectl create -f pv.yaml
 ```
 
-3. Create and deploy a `PersistentVolumeClaim` to consume the volume created.
+4. Create and deploy a `PersistentVolumeClaim` to consume the volume created.
 
 ```yaml
 kind: PersistentVolumeClaim
