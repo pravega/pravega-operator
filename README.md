@@ -219,6 +219,8 @@ The `REST` management interface is available at:
 http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
 
+[Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes. 
+
 ### Uninstall the Pravega cluster
 
 ```
@@ -360,5 +362,14 @@ According to Google Container Engine docs:
 
 On GKE, the following command must be run before installing the operator, replacing the user with your own details.
 
-```kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org
+```
+$ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org
+```
+
+### Direct access to the cluster
+
+For debugging and development you might want to access the Pravega cluster directly. For example, if you created the cluster with name `pravega` in the `default` namespace you can forward ports of the Pravega controller pod with name `pravega-pravega-controller-68657d67cd-w5x8b` as follows:
+
+```
+$ kubectl port-forward -n default pravega-pravega-controller-68657d67cd-w5x8b 9090:9090 10080:10080
 ```
