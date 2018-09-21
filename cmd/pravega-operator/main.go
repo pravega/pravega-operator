@@ -10,6 +10,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/stub"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 func printVersion() {
