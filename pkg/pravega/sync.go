@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 package pravega
 
 import (
@@ -5,9 +15,9 @@ import (
 
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 )
 
 func ReconcilePravegaCluster(pravegaCluster *api.PravegaCluster) (err error) {
@@ -59,7 +69,7 @@ func syncBookieSize(pravegaCluster *api.PravegaCluster) (err error) {
 	}
 
 	if *sts.Spec.Replicas != pravegaCluster.Spec.Bookkeeper.Replicas {
-		sts.Spec.Replicas = &(pravegaCluster.Spec.Bookkeeper.Replicas )
+		sts.Spec.Replicas = &(pravegaCluster.Spec.Bookkeeper.Replicas)
 		err = sdk.Update(sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
@@ -87,7 +97,7 @@ func syncSegmentStoreSize(pravegaCluster *api.PravegaCluster) (err error) {
 	}
 
 	if *sts.Spec.Replicas != pravegaCluster.Spec.Pravega.SegmentStoreReplicas {
-		sts.Spec.Replicas = &(pravegaCluster.Spec.Pravega.SegmentStoreReplicas )
+		sts.Spec.Replicas = &(pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 		err = sdk.Update(sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
