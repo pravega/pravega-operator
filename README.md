@@ -160,7 +160,8 @@ spec:
           claimName: pravega-tier2
 ```
 
-**Note:** - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
+**Note:**
+ - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
 
 Deploy the Pravega cluster using the following command.
 
@@ -269,8 +270,9 @@ docker tag pravega/pravega-operator [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/prav
 docker push [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
 ```
 
-**Note:** - `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
-          - `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
+**Note:**
+- `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
+- `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
 
 ### Using Google Filestore Storage as Tier 2
 
@@ -295,8 +297,9 @@ spec:
     server: [IP_ADDRESS]
 ```
 
-**Note:** - `[FILESHARE]` is the name of the fileshare on the Cloud Filestore instance (e.g. `vol1`).
-          - `[IP_ADDRESS]` is the IP address for the Cloud Filestore instance (e.g. `10.123.189.202`).
+**Note:**
+- `[FILESHARE]` is the name of the fileshare on the Cloud Filestore instance (e.g. `vol1`).
+- `[IP_ADDRESS]` is the IP address for the Cloud Filestore instance (e.g. `10.123.189.202`).
 
 
 3. Deploy the `PersistentVolume` specification using the following command.
