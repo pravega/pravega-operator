@@ -1,6 +1,6 @@
 # Pravega Operator
 
-### Project status: in development
+### Project Status
 
 The development of Pravega operator is a WIP and it is expected that breaking changes to the API will be made in the upcoming releases.
 
@@ -8,44 +8,43 @@ The development of Pravega operator is a WIP and it is expected that breaking ch
 
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
 
-The Pravega operator manages Pravega clusters deployed to Kubernetes and automates tasks related to operating a Pravega cluster.
+The Pravega operator manages Pravega clusters deployed to Kubernetes and automates tasks related to operating a Pravega cluster. The following are the major existing features of Pravega operator.
 
-- [x] Create and destroy a Pravega cluster
-- [x] Resize cluster
-- [ ] Rolling upgrades
+- Create and destroy a Pravega cluster
+- Resize cluster
 
-> Note that unchecked features are in the roadmap but not available yet.
+**Note:** The Rolling upgrades feature is in the roadmap but not available yet.
 
 ## Requirements
 
-- Kubernetes 1.8+
-- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the [Pravega Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- [Kubernetes 1.8+](https://github.com/kubernetes/kubernetes/releases).
+- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the [Pravega Zookeeper operator](https://github.com/pravega/zookeeper-operator).
 
 ## Usage
 
 ### Install the operator
 
-> Note: if you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
+**Note:** If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-Register the `PravegaCluster` custom resource definition (CRD).
+Register the `PravegaCluster` custom resource definition (CRD) using the following command.
 
 ```
 $ kubectl create -f deploy/crd.yaml
 ```
 
-Create the operator role and role binding.
+Create the operator role and role binding using the following command.
 
 ```
 $ kubectl create -f deploy/rbac.yaml
 ```
 
-Deploy the Pravega operator.
+Deploy the Pravega operator using the following command.
 
 ```
 $ kubectl create -f deploy/operator.yaml
 ```
 
-Verify that the Pravega operator is running.
+Verify that the Pravega operator is running by using the following command.
 
 ```
 $ kubectl get deploy
@@ -63,13 +62,13 @@ Pravega requires a long term storage provider known as Tier 2 storage. The follo
 - [DellEMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm)
 - HDFS (must support Append operation)
 
-The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide Tier 2 storage.
+The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) Helm Chart to provide Tier 2 storage.
 
 ```
 $ helm install stable/nfs-server-provisioner
 ```
 
-Verify that the `nfs` storage class is now available.
+Verify that the `nfs` storage class is now available using the following command.
 
 ```
 $ kubectl get storageclass
@@ -78,9 +77,11 @@ nfs                  cluster.local/elevated-leopard-nfs-server-provisioner   24s
 ...
 ```
 
-> Note: This is ONLY intended as a demo and should NOT be used for production deployments.
+**Note:** This is ONLY intended as a demo and should NOT be used for production deployments.
 
-Once the NFS server provisioner is installed, you can create a `PersistentVolumeClaim` that will be used as Tier 2 for Pravega. Create a `pvc.yaml` file with the following content.
+Once the NFS server provisioner is installed, you can create a `PersistentVolumeClaim` that will be used as Tier 2 for Pravega.
+
+Create a `pvc.yaml` file with the following content.
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -100,7 +101,9 @@ spec:
 $ kubectl create -f pvc.yaml
 ```
 
-Use the following YAML template to install a small development Pravega Cluster (3 bookies, 1 controller, 3 segment stores). Create a `pravega.yaml` file with the following content.
+Use the following `YAML` template to install a small development Pravega Cluster (**3 bookies, 1 controller, 3 segment stores**).
+
+Create a `pravega.yaml` file with the following content.
 
 ```yaml
 apiVersion: "pravega.pravega.io/v1alpha1"
@@ -157,17 +160,15 @@ spec:
           claimName: pravega-tier2
 ```
 
-where:
+**Note:** - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
 
-- `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
-
-Deploy the Pravega cluster.
+Deploy the Pravega cluster using the following command.
 
 ```
 $ kubectl create -f pravega.yaml
 ```
 
-Verify that the cluster instances and its components are running.
+Verify that the cluster instances and its components are running by using the following command.
 
 ```
 $ kubectl get PravegaCluster
@@ -206,9 +207,9 @@ NAME                             TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S
 svc/pravega-bookie-headless      ClusterIP   None           <none>        3181/TCP             1m
 svc/pravega-pravega-controller   ClusterIP   10.3.255.239   <none>        10080/TCP,9090/TCP   1m
 ```
+**Note:** Once the Bookie changes it's status to *Running*, then the Controller and the Segment store status are set.
 
-A `PravegaCluster` instance is only accessible WITHIN the cluster (i.e. no outside access is allowed) using the following endpoint in
-the PravegaClient.
+A `PravegaCluster` instance is only accessible **WITHIN** the cluster (i.e. no outside access is allowed) using the following endpoint in the `PravegaClient`.
 
 ```
 tcp://<cluster-name>-pravega-controller.<namespace>:9090
@@ -220,7 +221,7 @@ The `REST` management interface is available at:
 http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
 
-[Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
+Further details to enable direct access to the cluster for development purposes can be found [Here](#direct-access-to-the-cluster).
 
 ### Uninstall the Pravega cluster
 
@@ -231,7 +232,7 @@ $ kubectl delete -f pvc.yaml
 
 ### Uninstall the operator
 
-> Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
+**Note:** The Pravega clusters managed by the Pravega operator will **NOT** be deleted even if the operator is uninstalled.
 
 To delete all clusters, delete all cluster CR objects before uninstalling the operator.
 
@@ -243,17 +244,17 @@ $ kubectl delete -f deploy
 
 ### Build the operator image
 
-Requirements:
+##### Requirements:
   - Go 1.10+
   - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
 
-Use the `operator-sdk` command to build the Pravega operator image.
+Use the `operator-sdk` command to build the Pravega operator image using the following command.
 
 ```
 $ operator-sdk build pravega/pravega-operator
 ```
 
-The Pravega operator image will be available in your Docker environment.
+The Pravega operator image will be available in your Docker environment as follows.
 
 ```
 $ docker images pravega/pravega-operator
@@ -268,17 +269,14 @@ docker tag pravega/pravega-operator [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/prav
 docker push [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
 ```
 
-where:
-
-- `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
-- `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
+**Note:** - `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
+          - `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
 
 ### Using Google Filestore Storage as Tier 2
 
 1. [Create a Google Filestore](https://console.cloud.google.com/filestore/instances).
 
-> Refer to https://cloud.google.com/filestore/docs/accessing-fileshares for more information
-
+   Refer to [Google Cloud](https://cloud.google.com/filestore/docs/accessing-fileshares) for more information.
 
 2. Create a `pv.yaml` file with the `PersistentVolume` specification to provide Tier 2 storage.
 
@@ -297,19 +295,17 @@ spec:
     server: [IP_ADDRESS]
 ```
 
-where:
-
-- `[FILESHARE]` is the name of the fileshare on the Cloud Filestore instance (e.g. `vol1`)
-- `[IP_ADDRESS]` is the IP address for the Cloud Filestore instance (e.g. `10.123.189.202`)
+**Note:** - `[FILESHARE]` is the name of the fileshare on the Cloud Filestore instance (e.g. `vol1`).
+          - `[IP_ADDRESS]` is the IP address for the Cloud Filestore instance (e.g. `10.123.189.202`).
 
 
-3. Deploy the `PersistentVolume` specification.
+3. Deploy the `PersistentVolume` specification using the following command.
 
 ```
 $ kubectl create -f pv.yaml
 ```
 
-4. Create and deploy a `PersistentVolumeClaim` to consume the volume created.
+4. Create and deploy a `PersistentVolumeClaim` to consume the volume created using the following command.
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -336,7 +332,7 @@ Use the same `pravega.yaml` above to deploy the Pravega cluster.
 
 Pravega has many configuration options for setting up metrics, tuning, etc. The available options can be found
 [here](https://github.com/pravega/pravega/blob/master/config/config.properties) and are
-expressed through the pravega/options part of the resource specification. All values must be expressed as Strings.
+expressed through the `pravega/options` part of the resource specification. All values must be expressed as *Strings*.
 
 ```yaml
 ...
@@ -369,7 +365,7 @@ $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrol
 
 ### Direct access to the cluster
 
-For debugging and development you might want to access the Pravega cluster directly. For example, if you created the cluster with name `pravega` in the `default` namespace you can forward ports of the Pravega controller pod with name `pravega-pravega-controller-68657d67cd-w5x8b` as follows:
+For debugging and development you might want to access the Pravega cluster directly. For example, if you have created the cluster with name `pravega` in the `default` namespace you can forward ports of the Pravega controller pod with name `pravega-pravega-controller-68657d67cd-w5x8b` as follows:
 
 ```
 $ kubectl port-forward -n default pravega-pravega-controller-68657d67cd-w5x8b 9090:9090 10080:10080
