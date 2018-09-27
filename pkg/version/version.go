@@ -10,6 +10,5 @@
 
 package version
 
-var (
-	Version = "0.0.0-master"
-)
+// Version represents the software version of the Pravega Operator
+var Version string
