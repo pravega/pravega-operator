@@ -9,39 +9,40 @@
 SHELL=/bin/bash -o pipefail
 
 REPO?=pravega/pravega-operator
-TAG?=$(shell git rev-parse --short HEAD)
+# TAG?=$(shell git describe --always --tags --dirty)
 VERSION?=$(shell cat VERSION)
 GOOS:=linux
 GOARCH:=amd64
-pkgs=$(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
-.PHONY: all build image format clean test
+.PHONY: all build check clean test
 
-all: format image
+all: check build
 
-build: test
+build: test build-go build-image
+
+build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
 	-ldflags "-X github.com/pravega/pravega-operator/pkg/version.Version=$(VERSION)" \
 	-o bin/pravega-operator cmd/pravega-operator/main.go
 
-image: build
-	docker build -t $(REPO):$(TAG) .
+build-image: build-go
+	docker build -t $(REPO):$(VERSION) .
 	docker build -t $(REPO):latest .
 
-push: image
+test:
+	go test $$(go list ./... | grep -v /vendor/)
+
+push: build-image
 	docker push $(REPO):latest
-	docker push $(REPO):$(TAG)
+	docker push $(REPO):$(VERSION)
 
 clean:
 	rm -f bin/pravega-operator
 
-format: go-fmt check-license
+check: check-format check-license
 
-go-fmt:
-	go fmt $(pkgs)
+check-format:
+	./scripts/check_format.sh
 
 check-license:
 	./scripts/check_license.sh
-
-test:
-	go test $$(go list ./... | grep -v /vendor/)
