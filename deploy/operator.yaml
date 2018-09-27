@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: pravega-operator
-          image: maddisondavid/pravega-operator:latest
+          image: pravega/pravega-operator:latest
           ports:
           - containerPort: 60000
             name: metrics
