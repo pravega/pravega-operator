@@ -1,8 +1,8 @@
 # Pravega Operator
 
-### Project status: in development
+### Project status: alpha
 
-The development of Pravega operator is a WIP and it is expected that breaking changes to the API will be made in the upcoming releases.
+The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
 
 ### Overview
 
