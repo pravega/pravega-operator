@@ -113,7 +113,7 @@ spec:
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.0
+      tag: 0.3.2
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -148,7 +148,7 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.0
+      tag: 0.3.2
       pullPolicy: IfNotPresent
 
     tier2:
