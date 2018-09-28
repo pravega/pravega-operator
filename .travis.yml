@@ -1,12 +1,16 @@
 language: go
 
 go:
-  - "1.10"
+- '1.10'
 
 sudo: required
 
+env:
+  global:
+    secure: XB3nY3oG4y3+p9ETISvbABiAVHI9yu+1E8hZbNFGZczHLWijOW+yZ/HdltAeqrnijdTfbZiHOoVqQKv3nh+H1xZvM0joIKj84rXxX4m7pyAM/pBGRgy2v9vx+QC1QpHcBXP1rYF9FTOSmXIAaS89AvHmD5O2xdg1/ACdNHviUoBAjmS/qflKQMeodKNlpexoMSZ8gFYPIEbJL6/wS/bTPmHDlEFoE0IvpFG2TLyA+36IveR7yylG/mlMJ9EkgHUutRb57Tr7eBYbRgeFUXSgFUHAAFX4LM0xq/KFuKlQ2QozTTZa3BM0Nr4D71yjEcs5K9lBdUcVsixU6vtRmvtjbpM1EX6RWzOpDgxPtP3ZyQ7fxp/iklibPCPBZhxKUgJZe3xaX2tJmxoFAM7EWidTRca3HpGEZLlvdP1o9pi3ThDI3m6/LF44LTQTlB4Th6L+nmjGdureEJiKTJ6tFcCxguV8Xymb2xnJyFgyqYIqSk9Z3AHgvrMDb8uwSeiwAYDFMwTp0RObHnW2KVmle+3pHNX/jabImNa8/WiNo/l4teA9eWOi0YpoLlNCHFIbzMiYKieH+yr94+EKhk+BSBOUDcUsULwvE7SRO4eC450Hpm7WqogjyxMF5bSrZ+cDK3cZBHm0+aP06znkjayRWy+GFUW6oPhTzltfSGBuXpdp4jg=
+
 services:
-  - docker
+- docker
 
 script:
 - make check
