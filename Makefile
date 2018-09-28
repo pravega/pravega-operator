@@ -32,7 +32,10 @@ build-image: build-go
 test:
 	go test $$(go list ./... | grep -v /vendor/)
 
-push: build-image
+login:
+	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
+
+push: build-image login
 	docker push $(REPO):latest
 	docker push $(REPO):$(VERSION)
 

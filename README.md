@@ -1,8 +1,8 @@
 # Pravega Operator
 
-### Project status: in development
+### Project status: alpha
 
-The development of Pravega operator is a WIP and it is expected that breaking changes to the API will be made in the upcoming releases.
+The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
 
 ### Overview
 
@@ -19,7 +19,7 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 ## Requirements
 
 - Kubernetes 1.8+
-- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the [Pravega Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the following [Zookeeper operator](https://github.com/Nuance-Mobility/zookeeper-operator)
 
 ## Usage
 
@@ -113,7 +113,7 @@ spec:
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.0
+      tag: 0.3.2
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -148,7 +148,7 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.0
+      tag: 0.3.2
       pullPolicy: IfNotPresent
 
     tier2:
