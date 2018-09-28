@@ -19,7 +19,7 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 ## Requirements
 
 - Kubernetes 1.8+
-- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the [Pravega Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the following [Zookeeper operator](https://github.com/Nuance-Mobility/zookeeper-operator)
 
 ## Usage
 
