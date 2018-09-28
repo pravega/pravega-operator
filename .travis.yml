@@ -19,7 +19,6 @@ script:
 - make clean
 
 deploy:
-  skip_cleanup: true
   provider: script
   script: make push
   on:
