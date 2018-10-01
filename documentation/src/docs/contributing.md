@@ -1,4 +1,4 @@
-# Contributing to Pravega Oerator
+# Contributing to Pravega Operator
 
 [Contributions guidelines](https://github.com/pravega/pravega-operator/wiki/Contributing)
 > Issue triaging and labeling
