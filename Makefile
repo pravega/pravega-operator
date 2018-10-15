@@ -25,9 +25,9 @@ build-go:
 	-ldflags "-X github.com/pravega/pravega-operator/pkg/version.Version=$(VERSION)" \
 	-o bin/pravega-operator cmd/pravega-operator/main.go
 
-build-image: build-go
-	docker build -t $(REPO):$(VERSION) .
-	docker build -t $(REPO):latest .
+build-image:
+	docker build --build-arg VERSION=$(VERSION) -t $(REPO):$(VERSION) .
+	docker tag $(REPO):$(VERSION) $(REPO):latest
 
 test:
 	go test $$(go list ./... | grep -v /vendor/)
