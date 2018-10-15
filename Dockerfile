@@ -4,11 +4,15 @@ ARG PROJECT_NAME=pravega-operator
 ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
 ARG BUILD_PATH=${REPO_PATH}/cmd/${PROJECT_NAME}
 
+# Build version should be passed in when performing docker build
+ARG VERSION=0.0.0-localdev
+
 COPY pkg /go/src/${REPO_PATH}/pkg
 COPY cmd /go/src/${REPO_PATH}/cmd
 COPY vendor /go/src/${REPO_PATH}/vendor
 
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${GOBIN}/${PROJECT_NAME} $BUILD_PATH
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${GOBIN}/${PROJECT_NAME} \
+    -ldflags "-X ${REPO_PATH}/pkg/version.Version=${VERSION}" $BUILD_PATH
 
 # =============================================================================
 FROM alpine:3.7 AS final

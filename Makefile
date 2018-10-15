@@ -26,8 +26,8 @@ build-go:
 	-o bin/pravega-operator cmd/pravega-operator/main.go
 
 build-image:
-	docker build -t $(REPO):$(VERSION) .
-	docker build -t $(REPO):latest .
+	docker build --build-arg VERSION=$(VERSION) -t $(REPO):$(VERSION) .
+	docker tag $(REPO):$(VERSION) $(REPO):latest
 
 test:
 	go test $$(go list ./... | grep -v /vendor/)
