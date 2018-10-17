@@ -12,3 +12,6 @@ package version
 
 // Version represents the software version of the Pravega Operator
 var Version string
+
+// GitSHA represents the Git commit hash in short format
+var GitSHA string
