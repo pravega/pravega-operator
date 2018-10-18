@@ -1,25 +1,29 @@
 # Pravega Operator
+
 ### Project status: alpha
+
 The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
 
 ## Table of Contents
+
  * [Overview](#overview)
- * [Requirements   ](#requirements)
+ * [Requirements](#requirements)
  * [Usage](#usage)    
-    * [Installation of the Operator    ](#install-the-operator)
-    * [Deploy a sample Pravega Cluster   ](#deploy-a-sample-pravega-cluster)
-    * [Uninstall the Pravega Cluster    ](#uninstall-the-pravega-cluster)
-    * [Uninstall the Operator    ](#uninstall-the-operator)
+    * [Installation of the Operator](#install-the-operator)
+    * [Deploy a sample Pravega Cluster](#deploy-a-sample-pravega-cluster)
+    * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
+    * [Uninstall the Operator](#uninstall-the-operator)
  * [Development](#development)
-    * [Build the Operator Image    ](#build-the-operator-image)
-    * [Tier 2: Google Filestore Storage    ](#using-google-filestore-storage-as-tier-2)
-    * [Tuning Pravega Configurations    ](#tuning-pravega-configuration)
-    * [Installation on GKE    ](#installation-on-google-kubernetes-engine)
-    * [Direct Access to Cluster    ](#direct-access-to-the-cluster)
-    * [Run the Operator Locally   ](#run-the-operator-locally)
+    * [Build the Operator Image](#build-the-operator-image)
+    * [Tier 2: Google Filestore Storage](#using-google-filestore-storage-as-tier-2)
+    * [Tuning Pravega Configurations](#tuning-pravega-configuration)
+    * [Installation on GKE](#installation-on-google-kubernetes-engine)
+    * [Direct Access to Cluster](#direct-access-to-the-cluster)
+    * [Run the Operator Locally](#run-the-operator-locally)
 * [Releases](#releases)
 
 ## Overview
+
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
 
 The Pravega operator manages Pravega clusters deployed to Kubernetes and automates tasks related to operating a Pravega cluster.
@@ -31,11 +35,14 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 > Note that unchecked features are in the roadmap but not available yet.
 
 ## Requirements
+
 - Kubernetes 1.8+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using the following [Zookeeper operator](https://github.com/Nuance-Mobility/zookeeper-operator)
 
 ## Usage
+
 ### Install the operator
+
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
 Register the `PravegaCluster` custom resource definition (CRD).
@@ -66,6 +73,7 @@ zookeeper-operator   1         1         1            1           12m
 ```
 
 ### Deploy a sample Pravega cluster
+
 Pravega requires a long term storage provider known as Tier 2 storage. The following Tier 2 storage providers are supported:
 
 - Filesystem (NFS)
@@ -239,6 +247,7 @@ $ kubectl delete -f pvc.yaml
 ```
 
 ### Uninstall the operator
+
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
 To delete all clusters, delete all cluster CR objects before uninstalling the operator.
@@ -248,7 +257,9 @@ $ kubectl delete -f deploy
 ```
 
 ## Development
+
 ### Build the operator image
+
 Requirements:
   - Go 1.10+
   - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
@@ -339,6 +350,7 @@ Use the same `pravega.yaml` above to deploy the Pravega cluster.
 
 
 ### Tuning Pravega configuration
+
 Pravega has many configuration options for setting up metrics, tuning, etc. The available options can be found
 [here](https://github.com/pravega/pravega/blob/master/config/config.properties) and are
 expressed through the pravega/options part of the resource specification. All values must be expressed as Strings.
@@ -355,6 +367,7 @@ spec:
 ```
 
 ### Installation on Google Kubernetes Engine
+
 The Operator requires elevated privileges in order to watch for the custom resources.
 
 According to Google Container Engine docs:
@@ -372,12 +385,14 @@ $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrol
 ```
 
 ### Direct access to the cluster
+
 For debugging and development you might want to access the Pravega cluster directly. For example, if you created the cluster with name `pravega` in the `default` namespace you can forward ports of the Pravega controller pod with name `pravega-pravega-controller-68657d67cd-w5x8b` as follows:
 
 ```
 $ kubectl port-forward -n default pravega-pravega-controller-68657d67cd-w5x8b 9090:9090 10080:10080
 ```
-### Run the operator locally
+## Run the operator locally
+
 You can run the operator locally to help with development, testing, and debugging tasks.
 
 The following command will run the operator locally with the default Kubernetes config file present at `$HOME/.kube/config`. Use the `--kubeconfig` flag to provide a different path.
@@ -386,4 +401,5 @@ The following command will run the operator locally with the default Kubernetes 
 $ operator-sdk up local
 ```
 ## Releases  
+
 The latest pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
