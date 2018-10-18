@@ -8,11 +8,12 @@
 
 SHELL=/bin/bash -o pipefail
 
-REPO?=pravega/pravega-operator
-# TAG?=$(shell git describe --always --tags --dirty)
-VERSION?=$(shell cat VERSION)
-GOOS:=linux
-GOARCH:=amd64
+PROJECT_NAME=pravega-operator
+REPO=pravega/$(PROJECT_NAME)
+VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
+GIT_SHA=$(shell git rev-parse --short HEAD)
+GOOS=linux
+GOARCH=amd64
 
 .PHONY: all build check clean test
 
@@ -22,11 +23,11 @@ build: test build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
-	-ldflags "-X github.com/pravega/pravega-operator/pkg/version.Version=$(VERSION)" \
-	-o bin/pravega-operator cmd/pravega-operator/main.go
+	-ldflags "-X github.com/$(REPO)/pkg/version.Version=$(VERSION) -X github.com/$(REPO)/pkg/version.GitSHA=$(GIT_SHA)" \
+	-o bin/$(PROJECT_NAME) cmd/$(PROJECT_NAME)/main.go
 
 build-image:
-	docker build --build-arg VERSION=$(VERSION) -t $(REPO):$(VERSION) .
+	docker build --build-arg VERSION=$(VERSION) --build-arg GIT_SHA=$(GIT_SHA) -t $(REPO):$(VERSION) .
 	docker tag $(REPO):$(VERSION) $(REPO):latest
 
 test:
@@ -40,7 +41,7 @@ push: build-image login
 	docker push $(REPO):$(VERSION)
 
 clean:
-	rm -f bin/pravega-operator
+	rm -f bin/$(PROJECT_NAME)
 
 check: check-format check-license
 
