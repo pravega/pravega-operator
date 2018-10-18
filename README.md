@@ -384,7 +384,6 @@ The following command will run the operator locally with the default Kubernetes 
 
 ```
 $ operator-sdk up local
-
 ```
 ## Releases  
 The latest pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
