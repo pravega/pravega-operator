@@ -1,23 +1,23 @@
 
 *  [Pravega Operator](#overview)
-    *  [Project Status](#status)
+    *  [Project Status](#project-status)
         - [Requirements   ](#requirements)   
-    * [Installation of the Operator    ](#install)
-       - [Deploy a sample Pravega Cluster   ](#deploy-sample)
-    * [Uninstall the Pravega Cluster    ](#uninstall-cluster)
-    * [Uninstall the Operator    ](#uninstall-operator)
- * [Build the Operator Image    ](#build-operator-image)
- * [Tier 2: Google Filestore Storage   ](#tier2)
- * [Tuning Pravega Configurations    ](#Pravega-config)
- * [Installation on GKE    ](#install-GKE)
- * [Direct Access to Cluster    ](#direct-access)
- * [Run the Operator Locally   ](#run-local)
+    * [Installation of the Operator    ](#installation-of-the-Operator)
+       - [Deploy a sample Pravega Cluster   ](#deploy-a-sample-pravega-cluster)
+    * [Uninstall the Pravega Cluster    ](#uninstall-the-pravega-cluster)
+    * [Uninstall the Operator    ](#uninstall-the-operator)
+ * [Build the Operator Image    ](#build-the-operator-image)
+ * [Tier 2: Google Filestore Storage   ](#tier-2-google-filestore-storage)
+ * [Tuning Pravega Configurations    ](#tuning-Pravega-configurations)
+ * [Installation on GKE    ](#installation-on-gke)
+ * [Direct Access to Cluster    ](#direct-access-to-cluster)
+ * [Run the Operator Locally   ](#run-the-operator-locally)
  * [Releases    ](#releases)
 
 
 # Pravega Operator
 
-### Project status: alpha <a name ="status"></a>
+### Project status: alpha
 
 The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
 
@@ -31,7 +31,7 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 - [x] Resize cluster
 - [ ] Rolling upgrades
 
-> Note that the unchecked features are in the roadmap but not available yet.
+> Note that unchecked features are in the roadmap but not available yet.
 
 ## Requirements <a name ="requirements"></a>
 
