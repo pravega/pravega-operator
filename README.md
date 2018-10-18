@@ -9,14 +9,14 @@ The project is currently alpha. While no breaking API changes are currently plan
 # Table of Contents
 
  * [Overview](#overview)
-    *  [Project Status  ](#project-status:-alpha)
+    *  [Project Status  ](#project-status-alpha)
  * [Requirements   ](#requirements)
- * [Usage]    
+ * **Usage**    
     * [Installation of the Operator    ](#install-the-operator)
     * [Deploy a sample Pravega Cluster   ](#deploy-a-sample-pravega-cluster)
     * [Uninstall the Pravega Cluster    ](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator    ](#uninstall-the-operator)
- * [Development]
+ * **Development**
     * [Build the Operator Image    ](#build-the-operator-image)
     * [Tier 2: Google Filestore Storage    ](#using-google-filestore-storage-as-tier-2)
     * [Tuning Pravega Configurations    ](#tuning-pravega-configuration)
