@@ -9,7 +9,6 @@ The project is currently alpha. While no breaking API changes are currently plan
 # Table of Contents
 
  * [Overview](#overview)
-    *  [Project Status  ](#project-status-alpha)
  * [Requirements   ](#requirements)
  * **Usage**    
     * [Installation of the Operator    ](#install-the-operator)
