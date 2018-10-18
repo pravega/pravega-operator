@@ -1,25 +1,29 @@
 
-*  [Pravega Operator](#overview)
-    *  [Project Status](#project-status)
-        - [Requirements   ](#requirements)   
-    * [Installation of the Operator    ](#installation-of-the-Operator)
-       - [Deploy a sample Pravega Cluster   ](#deploy-a-sample-pravega-cluster)
-    * [Uninstall the Pravega Cluster    ](#uninstall-the-pravega-cluster)
-    * [Uninstall the Operator    ](#uninstall-the-operator)
- * [Build the Operator Image    ](#build-the-operator-image)
- * [Tier 2: Google Filestore Storage   ](#tier-2-google-filestore-storage)
- * [Tuning Pravega Configurations    ](#tuning-Pravega-configurations)
- * [Installation on GKE    ](#installation-on-gke)
- * [Direct Access to Cluster    ](#direct-access-to-cluster)
- * [Run the Operator Locally   ](#run-the-operator-locally)
- * [Releases](#releases)
-
 
 # Pravega Operator
 
 ### Project status: alpha
 
 The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
+
+# Table of Contents
+
+ * [Overview](#overview)
+    *  [Project Status  ](#project-status:-alpha)
+ * [Requirements   ](#requirements)
+ * [Usage]    
+    * [Installation of the Operator    ](#install-the-operator)
+    * [Deploy a sample Pravega Cluster   ](#deploy-a-sample-pravega-cluster)
+    * [Uninstall the Pravega Cluster    ](#uninstall-the-pravega-cluster)
+    * [Uninstall the Operator    ](#uninstall-the-operator)
+ * [Development]
+    * [Build the Operator Image    ](#build-the-operator-image)
+    * [Tier 2: Google Filestore Storage    ](#using-google-filestore-storage-as-tier-2)
+    * [Tuning Pravega Configurations    ](#tuning-pravega-configuration)
+    * [Installation on GKE    ](#installation-on-google-kubernetes-engine)
+    * [Direct Access to Cluster    ](#direct-access-to-the-cluster)
+    * [Run the Operator Locally   ](#run-the-operator-locally)
+* [Releases](#releases)
 
 ### Overview
 
