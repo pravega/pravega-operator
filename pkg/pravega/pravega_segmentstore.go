@@ -37,12 +37,16 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
+		return err
 	}
 
 	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
+		return err
 	}
+
+	return nil
 }
 
 func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
