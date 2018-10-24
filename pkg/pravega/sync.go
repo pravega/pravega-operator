@@ -21,23 +21,22 @@ import (
 )
 
 func ReconcilePravegaCluster(pravegaCluster *api.PravegaCluster) (err error) {
-
-	deployBookie(pravegaCluster)
+	err = deployBookie(pravegaCluster)
 	if err != nil {
 		return err
 	}
 
-	deployController(pravegaCluster)
+	err = deployController(pravegaCluster)
 	if err != nil {
 		return err
 	}
 
-	deploySegmentStore(pravegaCluster)
+	err = deploySegmentStore(pravegaCluster)
 	if err != nil {
 		return err
 	}
 
-	syncClusterSize(pravegaCluster)
+	err = syncClusterSize(pravegaCluster)
 	if err != nil {
 		return err
 	}

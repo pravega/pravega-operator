@@ -33,8 +33,8 @@ const (
 	segmentStoreKind      = "pravega-segmentstore"
 )
 
-func deploySegmentStore(pravegaCluster *api.PravegaCluster) {
-	err := sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
+func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
+	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		logrus.Error(err)
 	}
