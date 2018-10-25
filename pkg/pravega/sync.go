@@ -45,8 +45,16 @@ func ReconcilePravegaCluster(pravegaCluster *api.PravegaCluster) (err error) {
 }
 
 func syncClusterSize(pravegaCluster *api.PravegaCluster) (err error) {
-	syncBookieSize(pravegaCluster)
-	syncSegmentStoreSize(pravegaCluster)
+	err = syncBookieSize(pravegaCluster)
+	if err != nil {
+		return err
+	}
+
+	err = syncSegmentStoreSize(pravegaCluster)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
