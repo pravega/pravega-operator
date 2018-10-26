@@ -16,6 +16,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/pravega"
+	"github.com/sirupsen/logrus"
 )
 
 func NewHandler() sdk.Handler {
@@ -26,7 +27,7 @@ type Handler struct {
 	// Fill me
 }
 
-func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
+func (h *Handler) Handle(ctx context.Context, event sdk.Event) (err error) {
 	if event.Deleted {
 		// K8s will garbage collect and resources until pravega cluster delete
 		return nil
@@ -34,7 +35,12 @@ func (h *Handler) Handle(ctx context.Context, event sdk.Event) error {
 
 	switch o := event.Object.(type) {
 	case *api.PravegaCluster:
-		pravega.ReconcilePravegaCluster(o)
+		err = pravega.ReconcilePravegaCluster(o)
+		if err != nil {
+			logrus.Error(err)
+			return err
+		}
 	}
+
 	return nil
 }
