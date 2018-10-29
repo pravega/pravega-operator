@@ -17,7 +17,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/apps/v1beta1"
+	"k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,11 +84,11 @@ func makeBookieHeadlessService(pravegaCluster *v1alpha1.PravegaCluster) *corev1.
 	}
 }
 
-func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta1.StatefulSet {
-	return &v1beta1.StatefulSet{
+func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta2.StatefulSet {
+	return &v1beta2.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
-			APIVersion: "apps/v1beta1",
+			APIVersion: "apps/v1beta2",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sutil.StatefulSetNameForBookie(pravegaCluster.Name),
@@ -98,11 +98,14 @@ func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta1.Sta
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Spec: v1beta1.StatefulSetSpec{
-			ServiceName:          k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
-			Replicas:             &pravegaCluster.Spec.Bookkeeper.Replicas,
-			PodManagementPolicy:  v1beta1.ParallelPodManagement,
-			Template:             makeBookieStatefulTemplate(pravegaCluster),
+		Spec: v1beta2.StatefulSetSpec{
+			ServiceName:         k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
+			Replicas:            &pravegaCluster.Spec.Bookkeeper.Replicas,
+			PodManagementPolicy: v1beta2.ParallelPodManagement,
+			Template:            makeBookieStatefulTemplate(pravegaCluster),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: k8sutil.LabelsForBookie(pravegaCluster),
+			},
 			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
 		},
 	}
