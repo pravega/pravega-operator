@@ -23,6 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -183,6 +184,8 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
+		"PUBLISHED_ADDRESS":     "",
+		"PUBLISHED_PORT":        "",
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {
@@ -302,12 +305,14 @@ func makeSegmentStoreServices(pravegaCluster *api.PravegaCluster) []*corev1.Serv
 				},
 			},
 			Spec: corev1.ServiceSpec{
-				Type:                  corev1.ServiceTypeNodePort,
+				Type:                  corev1.ServiceTypeLoadBalancer,
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{
-						Name: "wire",
-						Port: 12345,
+						Name:       "server",
+						Port:       12345,
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(12345),
 					},
 				},
 				Selector: map[string]string{
