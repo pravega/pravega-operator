@@ -36,6 +36,10 @@ func ServiceNameForSegmentStore(clusterName string, index int32) string {
 	return fmt.Sprintf("%s-pravega-segmentstore-%d", clusterName, index)
 }
 
+func HeadlessServiceNameForSegmentStore(clusterName string) string {
+	return fmt.Sprintf("%s-pravega-segmentstore-headless", clusterName)
+}
+
 func HeadlessServiceNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie-headless", clusterName)
 }

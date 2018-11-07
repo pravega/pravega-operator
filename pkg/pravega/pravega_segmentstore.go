@@ -37,7 +37,12 @@ const (
 func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 	configMap := makeSegmentstoreConfigMap(pravegaCluster)
 
-	services := makeSegmentStoreServices(pravegaCluster)
+	err = sdk.Create(makeSegmentStoreHeadlessService(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	services := makeSegmentStoreLoadBalancerServices(pravegaCluster)
 	for _, service := range services {
 		err = sdk.Create(service)
 		if err != nil && !errors.IsAlreadyExists(err) {
@@ -317,7 +322,35 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 	}
 }
 
-func makeSegmentStoreServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
+			OwnerReferences: []metav1.OwnerReference{
+				*k8sutil.AsOwnerRef(pravegaCluster),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "server",
+					Port:     12345,
+					Protocol: "TCP",
+				},
+			},
+			Selector:  k8sutil.LabelsForSegmentStore(pravegaCluster),
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
+
+func makeSegmentStoreLoadBalancerServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
