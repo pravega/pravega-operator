@@ -35,8 +35,6 @@ const (
 )
 
 func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
-	configMap := makeSegmentstoreConfigMap(pravegaCluster)
-
 	err = sdk.Create(makeSegmentStoreHeadlessService(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -50,7 +48,7 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		}
 	}
 
-	err = sdk.Create(configMap)
+	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
