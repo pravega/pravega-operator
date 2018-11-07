@@ -35,15 +35,7 @@ const (
 )
 
 func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
-	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
+	configMap := makeSegmentstoreConfigMap(pravegaCluster)
 
 	services := makeSegmentStoreServices(pravegaCluster)
 	for _, service := range services {
@@ -51,6 +43,16 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		if err != nil && !errors.IsAlreadyExists(err) {
 			return err
 		}
+	}
+
+	err = sdk.Create(configMap)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
 	}
 
 	return nil
@@ -82,7 +84,7 @@ func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta2.St
 			},
 		},
 		Spec: v1beta2.StatefulSetSpec{
-			ServiceName:         "segmentstore",
+			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
 			PodManagementPolicy: v1beta2.ParallelPodManagement,
 			Template: corev1.PodTemplateSpec{
@@ -117,7 +119,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            "segmentstore",
+				Name:            "pravega-segmentstore",
 				Image:           pravegaSpec.Image.String(),
 				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
 				Args: []string{
@@ -131,6 +133,11 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 				EnvFrom: environment,
 				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "podinfo",
+						MountPath: "/etc/podinfo",
+						ReadOnly:  false,
+					},
 					{
 						Name:      cacheVolumeName,
 						MountPath: cacheVolumeMountPoint,
@@ -161,6 +168,31 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 			},
 		},
+		Volumes: []corev1.Volume{
+			{
+				Name: "podinfo",
+				VolumeSource: corev1.VolumeSource{
+					DownwardAPI: &corev1.DownwardAPIVolumeSource{
+						Items: []corev1.DownwardAPIVolumeFile{
+							{
+								Path: "podname",
+								FieldRef: &corev1.ObjectFieldSelector{
+									APIVersion: "v1",
+									FieldPath:  "metadata.name",
+								},
+							},
+							{
+								Path: "namespace",
+								FieldRef: &corev1.ObjectFieldSelector{
+									APIVersion: "v1",
+									FieldPath:  "metadata.namespace",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	configureTier2Filesystem(&podSpec, &pravegaSpec)
@@ -178,14 +210,13 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 	}
 
 	configData := map[string]string{
+		"PRAVEGA_OPERATOR":      "true",
 		"AUTHORIZATION_ENABLED": "false",
 		"CLUSTER_NAME":          pravegaCluster.Name,
 		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
-		"PUBLISHED_ADDRESS":     "",
-		"PUBLISHED_PORT":        "",
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {

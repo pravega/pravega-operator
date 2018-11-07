@@ -115,6 +115,7 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 	}
 
 	configData := map[string]string{
+		"PRAVEGA_OPERATOR":       "true",
 		"CLUSTER_NAME":           pravegaCluster.Name,
 		"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":              strings.Join(javaOpts, " "),
@@ -163,6 +164,7 @@ func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeLoadBalancer,
 			Ports: []corev1.ServicePort{
 				{
 					Name: "rest",
