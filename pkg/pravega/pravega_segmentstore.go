@@ -332,7 +332,7 @@ func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
+			Name:      k8sutil.HeadlessServiceNameForSegmentStore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
 			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
 			OwnerReferences: []metav1.OwnerReference{
