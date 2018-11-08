@@ -40,11 +40,13 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		return err
 	}
 
-	services := makeSegmentStoreLoadBalancerServices(pravegaCluster)
-	for _, service := range services {
-		err = sdk.Create(service)
-		if err != nil && !errors.IsAlreadyExists(err) {
-			return err
+	if pravegaCluster.Spec.ExternalAccess {
+		services := makeSegmentStoreLoadBalancerServices(pravegaCluster)
+		for _, service := range services {
+			err = sdk.Create(service)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
 		}
 	}
 
@@ -213,13 +215,16 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 	}
 
 	configData := map[string]string{
-		"PRAVEGA_OPERATOR":      "true",
 		"AUTHORIZATION_ENABLED": "false",
 		"CLUSTER_NAME":          pravegaCluster.Name,
 		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
+	}
+
+	if pravegaCluster.Spec.ExternalAccess {
+		configData["PRAVEGA_OPERATOR"] = "true"
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {
