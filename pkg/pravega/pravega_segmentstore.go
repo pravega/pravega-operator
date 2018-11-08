@@ -224,7 +224,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 	}
 
 	if pravegaCluster.Spec.ExternalAccess {
-		configData["PRAVEGA_OPERATOR"] = "true"
+		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {
