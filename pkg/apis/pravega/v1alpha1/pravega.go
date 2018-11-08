@@ -15,14 +15,16 @@ import (
 )
 
 type PravegaSpec struct {
-	ControllerReplicas       int32                        `json:"controllerReplicas"`
-	SegmentStoreReplicas     int32                        `json:"segmentStoreReplicas"`
-	DebugLogging             bool                         `json:"debugLogging"`
-	Image                    ImageSpec                    `json:"image"`
-	Metrics                  MetricsSpec                  `json:"metrics"`
-	Options                  map[string]string            `json:"options"`
-	CacheVolumeClaimTemplate v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
-	Tier2                    Tier2Spec                    `json:"tier2"`
+	ControllerReplicas             int32                        `json:"controllerReplicas"`
+	SegmentStoreReplicas           int32                        `json:"segmentStoreReplicas"`
+	DebugLogging                   bool                         `json:"debugLogging"`
+	Image                          ImageSpec                    `json:"image"`
+	Metrics                        MetricsSpec                  `json:"metrics"`
+	Options                        map[string]string            `json:"options"`
+	CacheVolumeClaimTemplate       v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
+	Tier2                          Tier2Spec                    `json:"tier2"`
+	ControllerServiceAccountName   string                       `json:"controllerServiceAccountName,omitempty"`
+	SegmentStoreServiceAccountName string                       `json:"segmentStoreServiceAccountName,omitempty"`
 }
 
 type MetricsSpec struct {

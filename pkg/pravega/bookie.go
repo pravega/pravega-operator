@@ -118,7 +118,7 @@ func makeBookieStatefulTemplate(pravegaCluster *v1alpha1.PravegaCluster) corev1.
 }
 
 func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSpec) *corev1.PodSpec {
-	return &corev1.PodSpec{
+	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "bookie",
@@ -158,6 +158,12 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 			},
 		},
 	}
+
+	if bookkeeperSpec.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = bookkeeperSpec.ServiceAccountName
+	}
+
+	return podSpec
 }
 
 func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.PersistentVolumeClaim {

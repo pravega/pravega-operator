@@ -125,6 +125,10 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 		},
 	}
 
+	if pravegaSpec.SegmentStoreServiceAccountName != "" {
+		podSpec.ServiceAccountName = pravegaSpec.SegmentStoreServiceAccountName
+	}
+
 	configureTier2Filesystem(&podSpec, &pravegaSpec)
 
 	return podSpec

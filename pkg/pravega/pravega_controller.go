@@ -69,7 +69,7 @@ func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *v1beta1.Deplo
 }
 
 func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
-	return &corev1.PodSpec{
+	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-controller",
@@ -100,6 +100,12 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 			},
 		},
 	}
+
+	if pravegaSpec.ControllerServiceAccountName != "" {
+		podSpec.ServiceAccountName = pravegaSpec.ControllerServiceAccountName
+	}
+
+	return podSpec
 }
 
 func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
