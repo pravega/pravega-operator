@@ -15,10 +15,11 @@ import (
 )
 
 type BookkeeperSpec struct {
-	Image        ImageSpec             `json:"image"`
-	Replicas     int32                 `json:"replicas"`
-	Storage      BookkeeperStorageSpec `json:"storage"`
-	AutoRecovery bool                  `json:"autoRecovery"`
+	Image              ImageSpec             `json:"image"`
+	Replicas           int32                 `json:"replicas"`
+	Storage            BookkeeperStorageSpec `json:"storage"`
+	AutoRecovery       bool                  `json:"autoRecovery"`
+	ServiceAccountName string                `json:"serviceAccountName,omitempty"`
 }
 
 type BookkeeperStorageSpec struct {

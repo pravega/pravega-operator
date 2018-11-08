@@ -13,10 +13,12 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Deploy a sample Pravega Cluster](#deploy-a-sample-pravega-cluster)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
+ * [Configuration](#configuration)
+    * [Use non-default service accounts](#use-non-default-service-accounts)
+    * [Tier 2: Google Filestore Storage](#use-google-filestore-storage-as-tier-2)
+    * [Tune Pravega Configurations](#tune-pravega-configuration)
  * [Development](#development)
     * [Build the Operator Image](#build-the-operator-image)
-    * [Tier 2: Google Filestore Storage](#using-google-filestore-storage-as-tier-2)
-    * [Tuning Pravega Configurations](#tuning-pravega-configuration)
     * [Installation on GKE](#installation-on-google-kubernetes-engine)
     * [Direct Access to Cluster](#direct-access-to-the-cluster)
     * [Run the Operator Locally](#run-the-operator-locally)
@@ -256,41 +258,34 @@ To delete all clusters, delete all cluster CR objects before uninstalling the op
 $ kubectl delete -f deploy
 ```
 
-## Development
+## Configuration
 
-### Build the operator image
+### Use non-default service accounts
 
-Requirements:
-  - Go 1.10+
-  - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
+You can optionally configure non-default service accounts for the Bookkeeper, Pravega Controller, and Pravega Segment Store pods.
 
-Use the `operator-sdk` command to build the Pravega operator image.
+For BookKeeper, set the `serviceAccountName` field under the `bookkeeper` block.
 
 ```
-$ operator-sdk build pravega/pravega-operator
+...
+spec:
+  bookkeeper:
+    serviceAccountName: bk-service-account
+...
 ```
 
-The Pravega operator image will be available in your Docker environment.
+For Pravega, set the `controllerServiceAccountName` and `segmentStoreServiceAccountName` fields under the `pravega` block.
 
 ```
-$ docker images pravega/pravega-operator
-REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
-pravega/pravega-operator   latest              625dab6fe470        54 seconds ago      37.2MB
+...
+spec:
+  pravega:
+    controllerServiceAccountName: ctrl-service-account
+    segmentStoreServiceAccountName: ss-service-account
+...
 ```
 
-Optionally push it to a Docker registry.
-
-```
-docker tag pravega/pravega-operator [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
-docker push [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
-```
-
-where:
-
-- `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
-- `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
-
-### Using Google Filestore Storage as Tier 2
+### Use Google Filestore Storage as Tier 2
 
 1. [Create a Google Filestore](https://console.cloud.google.com/filestore/instances).
 
@@ -349,7 +344,7 @@ $ kubectl create -f pvc.yaml
 Use the same `pravega.yaml` above to deploy the Pravega cluster.
 
 
-### Tuning Pravega configuration
+### Tune Pravega configuration
 
 Pravega has many configuration options for setting up metrics, tuning, etc. The available options can be found
 [here](https://github.com/pravega/pravega/blob/master/config/config.properties) and are
@@ -365,6 +360,40 @@ spec:
       metrics.statsdPort: "8125"
 ...
 ```
+
+## Development
+
+### Build the operator image
+
+Requirements:
+  - Go 1.10+
+  - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
+
+Use the `operator-sdk` command to build the Pravega operator image.
+
+```
+$ operator-sdk build pravega/pravega-operator
+```
+
+The Pravega operator image will be available in your Docker environment.
+
+```
+$ docker images pravega/pravega-operator
+REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
+pravega/pravega-operator   latest              625dab6fe470        54 seconds ago      37.2MB
+```
+
+Optionally push it to a Docker registry.
+
+```
+docker tag pravega/pravega-operator [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
+docker push [REGISTRY_HOST]:[REGISTRY_PORT]/pravega/pravega-operator
+```
+
+where:
+
+- `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
+- `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
 
 ### Installation on Google Kubernetes Engine
 
