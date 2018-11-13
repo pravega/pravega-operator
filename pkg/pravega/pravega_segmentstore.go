@@ -123,6 +123,32 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 			},
 		},
+		Affinity: &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						Weight: 100,
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "component",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"pravega-segmentstore"},
+									},
+									{
+										Key:      "pravega_cluster",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{pravegaCluster.Name},
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if pravegaSpec.SegmentStoreServiceAccountName != "" {

@@ -99,6 +99,32 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 				},
 			},
 		},
+		Affinity: &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						Weight: 100,
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "component",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"pravega-controller"},
+									},
+									{
+										Key:      "pravega_cluster",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{name},
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if pravegaSpec.ControllerServiceAccountName != "" {

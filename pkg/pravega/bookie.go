@@ -157,6 +157,32 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				},
 			},
 		},
+		Affinity: &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+					{
+						Weight: 100,
+						PodAffinityTerm: corev1.PodAffinityTerm{
+							LabelSelector: &metav1.LabelSelector{
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "component",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"bookie"},
+									},
+									{
+										Key:      "pravega_cluster",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{clusterName},
+									},
+								},
+							},
+							TopologyKey: "kubernetes.io/hostname",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	if bookkeeperSpec.ServiceAccountName != "" {
