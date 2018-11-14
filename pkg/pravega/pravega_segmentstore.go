@@ -21,8 +21,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	policy "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -35,6 +37,11 @@ const (
 
 func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	err = sdk.Create(makePodDisruptionBudget(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
@@ -210,6 +217,19 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 				Name: cacheVolumeName,
 			},
 			Spec: pravegaSpec.CacheVolumeClaimTemplate,
+		},
+	}
+}
+
+func makePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policy.PodDisruptionBudget {
+	maxUnavailable := intstr.FromInt(1)
+	return &policy.PodDisruptionBudget{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: pravegaCluster.Namespace,
+			Name:      "pdb1",
+		},
+		Spec: policy.PodDisruptionBudgetSpec{
+			MaxUnavailable: &maxUnavailable,
 		},
 	}
 }
