@@ -151,8 +151,8 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
 
 	serviceType := corev1.ServiceTypeClusterIP
-	if pravegaCluster.Spec.ExternalAccess {
-		serviceType = corev1.ServiceTypeLoadBalancer
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		serviceType = pravegaCluster.Spec.ExternalAccess.Type
 	}
 
 	return &corev1.Service{

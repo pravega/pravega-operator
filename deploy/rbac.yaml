@@ -33,6 +33,17 @@ rules:
 
 ---
 
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pravega-operator
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "watch", "list"]
+
+---
+
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -42,5 +53,19 @@ subjects:
   name: default
 roleRef:
   kind: Role
+  name: pravega-operator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: default-account-pravega-operator-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: default
+roleRef:
+  kind: ClusterRole
   name: pravega-operator
   apiGroup: rbac.authorization.k8s.io

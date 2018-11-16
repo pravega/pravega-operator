@@ -40,8 +40,8 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		return err
 	}
 
-	if pravegaCluster.Spec.ExternalAccess {
-		services := makeSegmentStoreLoadBalancerServices(pravegaCluster)
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		services := makeSegmentStoreExternalServices(pravegaCluster)
 		for _, service := range services {
 			err = sdk.Create(service)
 			if err != nil && !errors.IsAlreadyExists(err) {
@@ -223,7 +223,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	if pravegaCluster.Spec.ExternalAccess {
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
@@ -258,7 +258,7 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 			ObjectMeta: metav1.ObjectMeta{
 				Name: cacheVolumeName,
 			},
-			Spec: pravegaSpec.CacheVolumeClaimTemplate,
+			Spec: *pravegaSpec.CacheVolumeClaimTemplate,
 		},
 	}
 }
@@ -319,7 +319,7 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{
 			Name: tier2VolumeName,
 			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
+				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
 			},
 		})
 	}
@@ -353,7 +353,7 @@ func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 	}
 }
 
-func makeSegmentStoreLoadBalancerServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
@@ -372,7 +372,7 @@ func makeSegmentStoreLoadBalancerServices(pravegaCluster *api.PravegaCluster) []
 				},
 			},
 			Spec: corev1.ServiceSpec{
-				Type:                  corev1.ServiceTypeLoadBalancer,
+				Type:                  pravegaCluster.Spec.ExternalAccess.Type,
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{

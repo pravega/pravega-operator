@@ -192,13 +192,13 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 			ObjectMeta: metav1.ObjectMeta{
 				Name: JournalDiskName,
 			},
-			Spec: spec.Storage.JournalVolumeClaimTemplate,
+			Spec: *spec.Storage.JournalVolumeClaimTemplate,
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: LedgerDiskName,
 			},
-			Spec: spec.Storage.LedgerVolumeClaimTemplate,
+			Spec: *spec.Storage.LedgerVolumeClaimTemplate,
 		},
 	}
 }
