@@ -137,6 +137,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 					},
 				},
 				EnvFrom: environment,
+				Env:     k8sutil.DownwardAPIEnv(),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      "podinfo",
@@ -169,31 +170,6 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 							},
 						},
 						TopologyKey: "kubernetes.io/hostname",
-					},
-				},
-			},
-		},
-		Volumes: []corev1.Volume{
-			{
-				Name: "podinfo",
-				VolumeSource: corev1.VolumeSource{
-					DownwardAPI: &corev1.DownwardAPIVolumeSource{
-						Items: []corev1.DownwardAPIVolumeFile{
-							{
-								Path: "podname",
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.name",
-								},
-							},
-							{
-								Path: "namespace",
-								FieldRef: &corev1.ObjectFieldSelector{
-									APIVersion: "v1",
-									FieldPath:  "metadata.namespace",
-								},
-							},
-						},
 					},
 				},
 			},
