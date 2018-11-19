@@ -19,7 +19,7 @@ import (
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,11 +72,11 @@ func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
 	}
 }
 
-func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta2.StatefulSet {
-	return &v1beta2.StatefulSet{
+func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
+	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
-			APIVersion: "apps/v1beta2",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name),
@@ -85,13 +85,13 @@ func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta2.St
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 			Annotations: map[string]string{
-				"service-per-pod-label": v1beta2.StatefulSetPodNameLabel,
+				"service-per-pod-label": appsv1.StatefulSetPodNameLabel,
 			},
 		},
-		Spec: v1beta2.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
-			PodManagementPolicy: v1beta2.ParallelPodManagement,
+			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: k8sutil.LabelsForSegmentStore(pravegaCluster),
@@ -223,7 +223,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	if pravegaCluster.Spec.ExternalAccess {
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
@@ -383,7 +383,7 @@ func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 					},
 				},
 				Selector: map[string]string{
-					v1beta2.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
+					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
 				},
 			},
 		}
