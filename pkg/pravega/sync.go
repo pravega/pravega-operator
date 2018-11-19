@@ -21,9 +21,13 @@ import (
 )
 
 func ReconcilePravegaCluster(pravegaCluster *api.PravegaCluster) (err error) {
-
 	pravegaCluster = pravegaCluster.DeepCopy()
 	pravegaCluster.WithDefaults()
+
+	err = sdk.Update(pravegaCluster)
+	if err != nil {
+		return fmt.Errorf("failed to update project: %v", err)
+	}
 
 	err = deployBookie(pravegaCluster)
 	if err != nil {

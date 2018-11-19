@@ -106,7 +106,7 @@ func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			Selector: &metav1.LabelSelector{
 				MatchLabels: k8sutil.LabelsForBookie(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
+			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(pravegaCluster.Spec.Bookkeeper),
 		},
 	}
 }
@@ -116,7 +116,7 @@ func makeBookieStatefulTemplate(pravegaCluster *v1alpha1.PravegaCluster) corev1.
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: k8sutil.LabelsForBookie(pravegaCluster),
 		},
-		Spec: *makeBookiePodSpec(pravegaCluster.Name, &pravegaCluster.Spec.Bookkeeper),
+		Spec: *makeBookiePodSpec(pravegaCluster.Name, pravegaCluster.Spec.Bookkeeper),
 	}
 }
 

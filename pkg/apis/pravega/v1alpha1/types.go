@@ -62,10 +62,10 @@ type PravegaClusterSpec struct {
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
 
 	// Bookkeeper configuration
-	Bookkeeper BookkeeperSpec `json:"bookkeeper"`
+	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`
 
 	// Pravega configuration
-	Pravega PravegaSpec `json:"pravega"`
+	Pravega *PravegaSpec `json:"pravega"`
 }
 
 func (s *PravegaClusterSpec) withDefaults(p *PravegaCluster) {
@@ -74,13 +74,18 @@ func (s *PravegaClusterSpec) withDefaults(p *PravegaCluster) {
 	}
 
 	if s.ExternalAccess == nil {
-		externalAccess := ExternalAccess{}
-		externalAccess.withDefaults()
-		s.ExternalAccess = &externalAccess
+		s.ExternalAccess = &ExternalAccess{}
 	}
+	s.ExternalAccess.withDefaults()
 
+	if s.Bookkeeper == nil {
+		s.Bookkeeper = &BookkeeperSpec{}
+	}
 	s.Bookkeeper.withDefaults()
 
+	if s.Pravega == nil {
+		s.Pravega = &PravegaSpec{}
+	}
 	s.Pravega.withDefaults()
 }
 

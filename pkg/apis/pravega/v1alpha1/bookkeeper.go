@@ -55,6 +55,9 @@ type BookkeeperSpec struct {
 	// AutoRecovery indicates whether or not BookKeeper auto recovery is enabled.
 	// Defaults to false.
 	AutoRecovery bool `json:"autoRecovery"`
+
+	// ServiceAccountName configures the service account used on BookKeeper instances
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 func (s *BookkeeperSpec) withDefaults() {

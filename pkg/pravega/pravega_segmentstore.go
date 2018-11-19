@@ -101,7 +101,7 @@ func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: k8sutil.LabelsForSegmentStore(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
+			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
 		},
 	}
 }
@@ -119,7 +119,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 
 	pravegaSpec := pravegaCluster.Spec.Pravega
 
-	environment = configureTier2Secrets(environment, &pravegaSpec)
+	environment = configureTier2Secrets(environment, pravegaSpec)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -175,7 +175,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 		podSpec.ServiceAccountName = pravegaSpec.SegmentStoreServiceAccountName
 	}
 
-	configureTier2Filesystem(&podSpec, &pravegaSpec)
+	configureTier2Filesystem(&podSpec, pravegaSpec)
 
 	return podSpec
 }
@@ -206,7 +206,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		configData["log.level"] = "DEBUG"
 	}
 
-	for k, v := range getTier2StorageOptions(&pravegaCluster.Spec.Pravega) {
+	for k, v := range getTier2StorageOptions(pravegaCluster.Spec.Pravega) {
 		configData[k] = v
 	}
 

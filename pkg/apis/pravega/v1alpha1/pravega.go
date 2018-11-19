@@ -70,13 +70,15 @@ type PravegaSpec struct {
 	// is provided, it will assume that a PersistentVolumeClaim called "pravega-tier2"
 	// is present and it will use it as Tier 2
 	Tier2 Tier2Spec `json:"tier2"`
+
+	// ControllerServiceAccountName configures the service account used on controller instances
+	ControllerServiceAccountName string `json:"controllerServiceAccountName,omitempty"`
+
+	// SegmentStoreServiceAccountName configures the service account used on segment store instances
+	SegmentStoreServiceAccountName string `json:"segmentStoreServiceAccountName,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() {
-	if s == nil {
-		s = &PravegaSpec{}
-	}
-
 	if s.ControllerReplicas < 1 {
 		s.ControllerReplicas = 1
 	}
@@ -141,15 +143,12 @@ type Tier2Spec struct {
 }
 
 func (s *Tier2Spec) withDefaults() {
-	if s == nil {
-		s = &Tier2Spec{}
-		fs := &FileSystemSpec{
-			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: DefaultPravegaTier2ClaimName,
-			},
-		}
-		s.FileSystem = fs
+	fs := &FileSystemSpec{
+		PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+			ClaimName: DefaultPravegaTier2ClaimName,
+		},
 	}
+	s.FileSystem = fs
 }
 
 type FileSystemSpec struct {
