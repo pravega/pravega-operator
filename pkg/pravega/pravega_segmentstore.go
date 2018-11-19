@@ -40,8 +40,8 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		return err
 	}
 
-	if pravegaCluster.Spec.ExternalAccess {
-		services := makeSegmentStoreLoadBalancerServices(pravegaCluster)
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		services := makeSegmentStoreExternalServices(pravegaCluster)
 		for _, service := range services {
 			err = sdk.Create(service)
 			if err != nil && !errors.IsAlreadyExists(err) {
@@ -353,7 +353,7 @@ func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 	}
 }
 
-func makeSegmentStoreLoadBalancerServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
@@ -372,7 +372,7 @@ func makeSegmentStoreLoadBalancerServices(pravegaCluster *api.PravegaCluster) []
 				},
 			},
 			Spec: corev1.ServiceSpec{
-				Type:                  corev1.ServiceTypeLoadBalancer,
+				Type:                  pravegaCluster.Spec.ExternalAccess.Type,
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{

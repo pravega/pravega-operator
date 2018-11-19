@@ -34,9 +34,14 @@ type PravegaCluster struct {
 
 type PravegaClusterSpec struct {
 	ZookeeperUri   string         `json:"zookeeperUri"`
-	ExternalAccess bool           `json:"externalAccess"`
+	ExternalAccess ExternalAccess `json:"externalAccess"`
 	Bookkeeper     BookkeeperSpec `json:"bookkeeper"`
 	Pravega        PravegaSpec    `json:"pravega"`
+}
+
+type ExternalAccess struct {
+	Enabled bool           `json:"enabled"`
+	Type    v1.ServiceType `json:"type,omitempty"`
 }
 
 type ImageSpec struct {
