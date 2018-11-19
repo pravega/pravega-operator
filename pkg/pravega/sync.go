@@ -21,6 +21,10 @@ import (
 )
 
 func ReconcilePravegaCluster(pravegaCluster *api.PravegaCluster) (err error) {
+
+	pravegaCluster = pravegaCluster.DeepCopy()
+	pravegaCluster.WithDefaults()
+
 	err = deployBookie(pravegaCluster)
 	if err != nil {
 		return err
