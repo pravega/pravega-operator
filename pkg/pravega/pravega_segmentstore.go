@@ -140,11 +140,6 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				Env:     k8sutil.DownwardAPIEnv(),
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "podinfo",
-						MountPath: "/etc/podinfo",
-						ReadOnly:  false,
-					},
-					{
 						Name:      cacheVolumeName,
 						MountPath: cacheVolumeMountPoint,
 					},
