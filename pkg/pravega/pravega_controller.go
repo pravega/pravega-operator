@@ -18,7 +18,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
-	"k8s.io/api/apps/v1beta2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,11 +43,11 @@ func deployController(pravegaCluster *api.PravegaCluster) (err error) {
 	return nil
 }
 
-func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *v1beta2.Deployment {
-	return &v1beta2.Deployment{
+func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
-			APIVersion: "apps/v1beta2",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sutil.DeploymentNameForController(pravegaCluster.Name),
@@ -56,7 +56,7 @@ func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *v1beta2.Deplo
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Spec: v1beta2.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &pravegaCluster.Spec.Pravega.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
