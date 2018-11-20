@@ -21,9 +21,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	policy "k8s.io/api/policy/v1beta1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -41,7 +42,7 @@ func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
 		return err
 	}
 
-	err = sdk.Create(makePodDisruptionBudget(pravegaCluster))
+	err = sdk.Create(makeSegmentstorePodDisruptionBudget(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
@@ -221,15 +222,36 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 	}
 }
 
-func makePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policy.PodDisruptionBudget {
-	maxUnavailable := intstr.FromInt(1)
-	return &policy.PodDisruptionBudget{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: pravegaCluster.Namespace,
-			Name:      "pdb1",
+func makeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	var maxUnavailable intstr.IntOrString
+
+	if pravegaCluster.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+		maxUnavailable = intstr.FromInt(0)
+	} else {
+		maxUnavailable = intstr.FromInt(1)
+	}
+
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
 		},
-		Spec: policy.PodDisruptionBudgetSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.PdbNameForSegmentstore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(pravegaCluster, schema.GroupVersionKind{
+					Group:   v1beta1.SchemeGroupVersion.Group,
+					Version: v1beta1.SchemeGroupVersion.Version,
+					Kind:    "PravegaCluster",
+				}),
+			},
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
 			MaxUnavailable: &maxUnavailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: k8sutil.LabelsForSegmentStore(pravegaCluster),
+			},
 		},
 	}
 }

@@ -19,8 +19,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -29,6 +32,11 @@ const (
 )
 
 func deployBookie(pravegaCluster *v1alpha1.PravegaCluster) (err error) {
+
+	err = sdk.Create(makeBookiePodDisruptionBudget(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
 
 	err = sdk.Create(makeBookieHeadlessService(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
@@ -235,5 +243,33 @@ func makeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 			},
 		},
 		Data: configData,
+	}
+}
+
+func makeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	minAvailable := intstr.FromInt(3)
+
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.PdbNameForBookie(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(pravegaCluster, schema.GroupVersionKind{
+					Group:   v1beta1.SchemeGroupVersion.Group,
+					Version: v1beta1.SchemeGroupVersion.Version,
+					Kind:    "PravegaCluster",
+				}),
+			},
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+			MinAvailable: &minAvailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: k8sutil.LabelsForBookie(pravegaCluster),
+			},
+		},
 	}
 }

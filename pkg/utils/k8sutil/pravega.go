@@ -20,12 +20,20 @@ func ConfigMapNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie-config", clusterName)
 }
 
+func PdbNameForBookie(clusterName string) string {
+	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
 func StatefulSetNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
 
 func ConfigMapNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-controller-config", clusterName)
+}
+
+func PdbNameForController(clusterName string) string {
+	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
 func ServiceNameForController(clusterName string) string {
@@ -41,6 +49,10 @@ func DeploymentNameForController(clusterName string) string {
 }
 
 func ConfigMapNameForSegmentstore(clusterName string) string {
+	return fmt.Sprintf("%s-segmentstore", clusterName)
+}
+
+func PdbNameForSegmentstore(clusterName string) string {
 	return fmt.Sprintf("%s-segmentstore", clusterName)
 }
 
