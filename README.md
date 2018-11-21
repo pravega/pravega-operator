@@ -49,22 +49,15 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-Register the `PravegaCluster` custom resource definition (CRD).
+Run the following command to install the `PravegaCluster` custom resource definition (CRD), create the `pravega-operator` service account, roles, bindings, and the deploy the operator.
 
 ```
-$ kubectl create -f deploy/crd.yaml
-```
-
-Create the operator role and role binding.
-
-```
-$ kubectl create -f deploy/rbac.yaml
-```
-
-Deploy the Pravega operator.
-
-```
-$ kubectl create -f deploy/operator.yaml
+$ kubectl create -f deploy
+customresourcedefinition.apiextensions.k8s.io "pravegaclusters.pravega.pravega.io" created
+deployment.apps "pravega-operator" created
+role.rbac.authorization.k8s.io "pravega-operator" created
+rolebinding.rbac.authorization.k8s.io "pravega-operator" created
+serviceaccount "pravega-operator" created
 ```
 
 Verify that the Pravega operator is running.
@@ -73,7 +66,6 @@ Verify that the Pravega operator is running.
 $ kubectl get deploy
 NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 pravega-operator     1         1         1            1           17s
-zookeeper-operator   1         1         1            1           12m
 ```
 
 ### Deploy a sample Pravega cluster

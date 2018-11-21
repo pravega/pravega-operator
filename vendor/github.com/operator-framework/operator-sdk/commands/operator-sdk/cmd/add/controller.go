@@ -30,7 +30,11 @@ func NewControllerCmd() *cobra.Command {
 		Short: "Adds a new controller pkg",
 		Long: `operator-sdk add controller --kind=<kind> --api-version=<group/version> creates a new
 controller pkg under pkg/controller/<kind> that, by default, reconciles on a custom resource for the specified apiversion and kind.
+<<<<<<< HEAD
 The controller will expect to use the custom resource type that should already be defined under pkg/apis/<group>/<version> 
+=======
+The controller will expect to use the custom resource type that should already be defined under pkg/apis/<group>/<version>
+>>>>>>> Update vendor directory
 via the "operator-sdk add api --kind=<kind> --api-version=<group/version>" command.
 This command must be run from the project root directory.
 If the controller pkg for that Kind already exists at pkg/controller/<kind> then the command will not overwrite and return an error.

@@ -15,57 +15,33 @@ import (
 
 	"fmt"
 
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
+	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func deployController(pravegaCluster *api.PravegaCluster) (err error) {
-	err = sdk.Create(makeControllerConfigMap(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	err = sdk.Create(makeControllerDeployment(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	err = sdk.Create(makeControllerService(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *appsv1.Deployment {
+func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.DeploymentNameForController(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
+			Name:      util.DeploymentNameForController(p.Name),
+			Namespace: p.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &pravegaCluster.Spec.Pravega.ControllerReplicas,
+			Replicas: &p.Spec.Pravega.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: k8sutil.LabelsForController(pravegaCluster),
+					Labels: util.LabelsForController(p),
 				},
-				Spec: *makeControllerPodSpec(pravegaCluster.Name, &pravegaCluster.Spec.Pravega),
+				Spec: *makeControllerPodSpec(p.Name, &p.Spec.Pravega),
 			},
 			Selector: &metav1.LabelSelector{
-				MatchLabels: k8sutil.LabelsForController(pravegaCluster),
+				MatchLabels: util.LabelsForController(p),
 			},
 		},
 	}
@@ -95,7 +71,7 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: k8sutil.ConfigMapNameForController(name),
+								Name: util.ConfigMapNameForController(name),
 							},
 						},
 					},
@@ -111,18 +87,18 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 	return podSpec
 }
 
-func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
+func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
-		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
+		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
-	for name, value := range pravegaCluster.Spec.Pravega.Options {
+	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
 	configData := map[string]string{
-		"CLUSTER_NAME":           pravegaCluster.Name,
-		"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
+		"CLUSTER_NAME":           p.Name,
+		"ZK_URL":                 p.Spec.ZookeeperUri,
 		"JAVA_OPTS":              strings.Join(javaOpts, " "),
 		"REST_SERVER_PORT":       "10080",
 		"CONTROLLER_SERVER_PORT": "9090",
@@ -130,49 +106,43 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 		"TOKEN_SIGNING_KEY":      "secret",
 		"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
 		"TLS_ENABLED":            "false",
-		"WAIT_FOR":               pravegaCluster.Spec.ZookeeperUri,
+		"WAIT_FOR":               p.Spec.ZookeeperUri,
 	}
 
-	for name, value := range pravegaCluster.Spec.Pravega.Options {
+	for name, value := range p.Spec.Pravega.Options {
 		configData[name] = value
 	}
 
-	return &corev1.ConfigMap{
+	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.ConfigMapNameForController(pravegaCluster.Name),
-			Labels:    k8sutil.LabelsForController(pravegaCluster),
-			Namespace: pravegaCluster.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
+			Name:      util.ConfigMapNameForController(p.Name),
+			Labels:    util.LabelsForController(p),
+			Namespace: p.Namespace,
 		},
 		Data: configData,
 	}
+
+	return configMap
 }
 
-func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
-
+func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
-	if pravegaCluster.Spec.ExternalAccess.Enabled {
-		serviceType = pravegaCluster.Spec.ExternalAccess.Type
+	if p.Spec.ExternalAccess.Enabled {
+		serviceType = p.Spec.ExternalAccess.Type
 	}
-
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.ServiceNameForController(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
-			Labels:    k8sutil.LabelsForController(pravegaCluster),
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
+			Name:      util.ServiceNameForController(p.Name),
+			Namespace: p.Namespace,
+			Labels:    util.LabelsForController(p),
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
@@ -186,7 +156,7 @@ func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
 					Port: 9090,
 				},
 			},
-			Selector: k8sutil.LabelsForController(pravegaCluster),
+			Selector: util.LabelsForController(p),
 		},
 	}
 }

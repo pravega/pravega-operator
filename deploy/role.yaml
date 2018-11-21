@@ -1,5 +1,5 @@
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
-apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: pravega-operator
 rules:
@@ -20,7 +20,7 @@ rules:
   - configmaps
   - secrets
   verbs:
-  - "*"
+  - '*'
 - apiGroups:
   - apps
   resources:

@@ -1,8 +1,8 @@
 FROM golang:1.10.1-alpine3.7 as go-builder
 
 ARG PROJECT_NAME=pravega-operator
-ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
-ARG BUILD_PATH=${REPO_PATH}/cmd/${PROJECT_NAME}
+ARG REPO_PATH=github.com/pravega/${PROJECT_NAME}
+ARG BUILD_PATH=${REPO_PATH}/cmd/manager
 
 # Build version and commit SHA should be passed in when performing docker build
 ARG VERSION=0.0.0-localdev

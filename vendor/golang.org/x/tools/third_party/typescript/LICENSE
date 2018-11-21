@@ -2,7 +2,11 @@ Apache License
 
 Version 2.0, January 2004
 
+<<<<<<< HEAD
 http://www.apache.org/licenses/ 
+=======
+http://www.apache.org/licenses/
+>>>>>>> Update vendor directory
 
 TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 

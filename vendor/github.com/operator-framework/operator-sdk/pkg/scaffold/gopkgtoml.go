@@ -82,7 +82,11 @@ required = [
 [prune]
   go-tests = true
   non-go = true
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> Update vendor directory
   [[prune.project]]
     name = "k8s.io/code-generator"
     non-go = false

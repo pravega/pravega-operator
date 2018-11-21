@@ -152,7 +152,11 @@ func NewSharedInformerFactory(client {{.clientSetInterface|raw}}, defaultResync 
 // as specified here.
 // Deprecated: Please use NewSharedInformerFactoryWithOptions instead
 func NewFilteredSharedInformerFactory(client {{.clientSetInterface|raw}}, defaultResync {{.timeDuration|raw}}, namespace string, tweakListOptions {{.interfacesTweakListOptionsFunc|raw}}) SharedInformerFactory {
+<<<<<<< HEAD
 	return NewSharedInformerFactoryWithOptions(client, defaultResync, WithNamespace(namespace), WithTweakListOptions(tweakListOptions)) 
+=======
+	return NewSharedInformerFactoryWithOptions(client, defaultResync, WithNamespace(namespace), WithTweakListOptions(tweakListOptions))
+>>>>>>> Update vendor directory
 }
 
 // NewSharedInformerFactoryWithOptions constructs a new instance of a SharedInformerFactory with additional options.
@@ -165,7 +169,11 @@ func NewSharedInformerFactoryWithOptions(client {{.clientSetInterface|raw}}, def
 		startedInformers: make(map[{{.reflectType|raw}}]bool),
 		customResync:     make(map[{{.reflectType|raw}}]{{.timeDuration|raw}}),
 	}
+<<<<<<< HEAD
 	
+=======
+
+>>>>>>> Update vendor directory
 	// Apply all options
 	for _, opt := range options {
 		factory = opt(factory)

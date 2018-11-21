@@ -167,7 +167,11 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 	return reconcile.Result{}, nil
 }
 
+<<<<<<< HEAD
 // newPodForCR returns a busybox pod with the same name/namespace as the cr 
+=======
+// newPodForCR returns a busybox pod with the same name/namespace as the cr
+>>>>>>> Update vendor directory
 func newPodForCR(cr *{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}) *corev1.Pod {
 	labels := map[string]string{
 		"app": cr.Name,
