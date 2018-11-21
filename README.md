@@ -11,6 +11,7 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Usage](#usage)    
     * [Installation of the Operator](#install-the-operator)
     * [Deploy a sample Pravega Cluster](#deploy-a-sample-pravega-cluster)
+        - [Troubleshooting](#troubleshooting)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
  * [Configuration](#configuration)
@@ -240,6 +241,35 @@ http://<cluster-name>-pravega-controller.<namespace>:10080/
 ```
 
 [Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
+
+#### Troubleshooting
+
+This section would guide the users when installing nfs-server-provisioner, if they encounter any error on failure of `helm install`.
+
+After running `helm init`, helm install stable/nfs-server-provisioner caused the following errors  in kubernetes 1.10.5:
+
+```
+# helm install stable/nfs-server-provisioner
+Error: no available release name found
+Solution/Workaround
+```
+
+When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by **Tiller** to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install`, and so on do not work, citing some missing permissions or some error.
+
+The following  work-around was used:
+
+1. Create a service account.
+2. Add the service account to the Tiller deployment.
+3. Bind that service account to the ClusterRole `cluster-admin`.
+
+The following commands resolved the errors and `helm install` worked correctly:
+```
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+
+```
+
 
 ### Uninstall the Pravega cluster
 
