@@ -460,13 +460,13 @@ Solution/Workaround
 
 When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by **Tiller** to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install`, and so on do not work, citing some missing permissions or some error.
 
-The following  work-around was used:
+The following  work-around can be used:
 
 1. Create a service account.
 2. Add the service account to the Tiller deployment.
 3. Bind that service account to the ClusterRole `cluster-admin`.
 
-The following commands resolved the errors and `helm install` worked correctly:
+The following commands resolve the errors and `helm install` works correctly:
 ```
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
