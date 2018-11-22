@@ -243,7 +243,6 @@ http://<cluster-name>-pravega-controller.<namespace>:10080/
 
 [Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
 
-
 ### Uninstall the Pravega cluster
 
 ```
@@ -374,12 +373,14 @@ Requirements:
 Use the `make` command to build the Pravega operator image.
 
 ```
-$ make build pravega/pravega-operator
+$ make build
 ```
-That will generate a Docker image with the image tag with `latest` and also the following format
- `<latest_release_tag>-<number_of_commits_after_the_release> + -dirty`, if there are uncommitted changes.
+That will generate a Docker image with the format
+`<latest_release_tag>-<number_of_commits_after_the_release>`` (it will append-dirty if there are uncommitted changes). The image will also be tagged as `latest`.
 
-Example image after running make build.
+
+
+Example image after running `make build`.
 
 The Pravega operator image will be available in your Docker environment.
 
