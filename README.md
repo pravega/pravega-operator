@@ -11,7 +11,6 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Usage](#usage)    
     * [Installation of the Operator](#install-the-operator)
     * [Deploy a sample Pravega Cluster](#deploy-a-sample-pravega-cluster)
-        - [Troubleshooting](#troubleshooting)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
  * [Configuration](#configuration)
@@ -24,6 +23,8 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Direct Access to Cluster](#direct-access-to-the-cluster)
     * [Run the Operator Locally](#run-the-operator-locally)
 * [Releases](#releases)
+- [Troubleshooting](#troubleshooting)
+    - [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 
 ## Overview
 
@@ -242,34 +243,6 @@ http://<cluster-name>-pravega-controller.<namespace>:10080/
 
 [Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
 
-#### Troubleshooting
-
-This section would guide the users when installing nfs-server-provisioner, if they encounter any error on failure of `helm install`.
-
-After running `helm init`, helm install stable/nfs-server-provisioner caused the following errors  in kubernetes 1.10.5:
-
-```
-# helm install stable/nfs-server-provisioner
-Error: no available release name found
-Solution/Workaround
-```
-
-When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by **Tiller** to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install`, and so on do not work, citing some missing permissions or some error.
-
-The following  work-around was used:
-
-1. Create a service account.
-2. Add the service account to the Tiller deployment.
-3. Bind that service account to the ClusterRole `cluster-admin`.
-
-The following commands resolved the errors and `helm install` worked correctly:
-```
-kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
-
-```
-
 
 ### Uninstall the Pravega cluster
 
@@ -397,20 +370,27 @@ spec:
 
 Requirements:
   - Go 1.10+
-  - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
 
-Use the `operator-sdk` command to build the Pravega operator image.
+Use the `make` command to build the Pravega operator image.
 
 ```
-$ operator-sdk build pravega/pravega-operator
+$ make build pravega/pravega-operator
 ```
+That will generate a Docker image with the image tag with `latest` and also the following format
+ `<latest_release_tag>-<number_of_commits_after_the_release> + -dirty`, if there are uncommitted changes.
+
+Example image after running make build.
 
 The Pravega operator image will be available in your Docker environment.
 
 ```
 $ docker images pravega/pravega-operator
-REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
-pravega/pravega-operator   latest              625dab6fe470        54 seconds ago      37.2MB
+REPOSITORY                  TAG               IMAGE ID           CREATED             
+SIZE                                                                                                                                  
+pravega/pravega-operator    0.1.1-3-dirty      2b2d5bcbedf5        10 minutes ago      
+41.7MB                                                                                                                                
+pravega/pravega-operator    latest             2b2d5bcbedf5        10 minutes ago
+
 ```
 
 Optionally push it to a Docker registry.
@@ -461,4 +441,34 @@ $ operator-sdk up local
 ```
 ## Releases  
 
-The latest pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+The latest Pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+
+## Troubleshooting
+
+### Helm Error: no available release name found
+
+This section would guide the users when installing nfs-server-provisioner, if they encounter any error on failure of `helm install`.
+
+After running `helm init`, helm install stable/nfs-server-provisioner caused the following errors  in kubernetes 1.10.5:
+
+```
+# helm install stable/nfs-server-provisioner
+Error: no available release name found
+Solution/Workaround
+```
+
+When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by **Tiller** to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install`, and so on do not work, citing some missing permissions or some error.
+
+The following  work-around was used:
+
+1. Create a service account.
+2. Add the service account to the Tiller deployment.
+3. Bind that service account to the ClusterRole `cluster-admin`.
+
+The following commands resolved the errors and `helm install` worked correctly:
+```
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+
+```
