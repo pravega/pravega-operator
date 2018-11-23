@@ -376,9 +376,7 @@ Use the `make` command to build the Pravega operator image.
 $ make build
 ```
 That will generate a Docker image with the format
-`<latest_release_tag>-<number_of_commits_after_the_release>`` (it will append-dirty if there are uncommitted changes). The image will also be tagged as `latest`.
-
-
+`<latest_release_tag>-<number_of_commits_after_the_release>` (it will append-dirty if there are uncommitted changes). The image will also be tagged as `latest`.
 
 Example image after running `make build`.
 
@@ -386,11 +384,12 @@ The Pravega operator image will be available in your Docker environment.
 
 ```
 $ docker images pravega/pravega-operator
-REPOSITORY                  TAG               IMAGE ID           CREATED             
-SIZE                                                                                                                                  
-pravega/pravega-operator    0.1.1-3-dirty      2b2d5bcbedf5        10 minutes ago      
-41.7MB                                                                                                                                
-pravega/pravega-operator    latest             2b2d5bcbedf5        10 minutes ago
+
+REPOSITORY                  TAG            IMAGE ID      CREATED          SIZE        
+
+pravega/pravega-operator    0.1.1-3-dirty  2b2d5bcbedf5  10 minutes ago   41.7MB    
+
+pravega/pravega-operator    latest         2b2d5bcbedf5  10 minutes ago
 
 ```
 
