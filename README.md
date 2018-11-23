@@ -23,8 +23,8 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Direct Access to Cluster](#direct-access-to-the-cluster)
     * [Run the Operator Locally](#run-the-operator-locally)
 * [Releases](#releases)
-- [Troubleshooting](#troubleshooting)
-    - [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
+* [Troubleshooting](#troubleshooting)
+    * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 
 ## Overview
 
@@ -448,28 +448,24 @@ The latest Pravega releases can be found on the [Github Release](https://github.
 
 ### Helm Error: no available release name found
 
-This section would guide the users when installing nfs-server-provisioner, if they encounter any error on failure of `helm install`.
-
-After running `helm init`, helm install stable/nfs-server-provisioner caused the following errors  in kubernetes 1.10.5:
+When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by Tiller to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install` and other commands do not work.
 
 ```
-# helm install stable/nfs-server-provisioner
+$ helm install stable/nfs-server-provisioner
 Error: no available release name found
-Solution/Workaround
 ```
+The following workaround can be applied to resolve the issue:
 
-When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by **Tiller** to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install`, and so on do not work, citing some missing permissions or some error.
-
-The following  work-around can be used:
-
-1. Create a service account.
-2. Add the service account to the Tiller deployment.
-3. Bind that service account to the ClusterRole `cluster-admin`.
-
-The following commands resolve the errors and `helm install` works correctly:
+1. Create a service account for the Tiller.
 ```
 kubectl create serviceaccount --namespace kube-system tiller
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
-
 ```
+2. Bind that service account to the `cluster-admin` ClusterRole.
+```
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+```
+3. Add the service account to the Tiller deployment.
+```kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+```
+
+The above commands should resolve the errors and `helm install` should work correctly.
