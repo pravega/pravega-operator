@@ -23,6 +23,8 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Direct Access to Cluster](#direct-access-to-the-cluster)
     * [Run the Operator Locally](#run-the-operator-locally)
 * [Releases](#releases)
+* [Troubleshooting](#troubleshooting)
+    * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 
 ## Overview
 
@@ -367,20 +369,28 @@ spec:
 
 Requirements:
   - Go 1.10+
-  - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
 
-Use the `operator-sdk` command to build the Pravega operator image.
+Use the `make` command to build the Pravega operator image.
 
 ```
-$ operator-sdk build pravega/pravega-operator
+$ make build
 ```
+That will generate a Docker image with the format
+`<latest_release_tag>-<number_of_commits_after_the_release>` (it will append-dirty if there are uncommitted changes). The image will also be tagged as `latest`.
+
+Example image after running `make build`.
 
 The Pravega operator image will be available in your Docker environment.
 
 ```
 $ docker images pravega/pravega-operator
-REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
-pravega/pravega-operator   latest              625dab6fe470        54 seconds ago      37.2MB
+
+REPOSITORY                  TAG            IMAGE ID      CREATED          SIZE        
+
+pravega/pravega-operator    0.1.1-3-dirty  2b2d5bcbedf5  10 minutes ago   41.7MB    
+
+pravega/pravega-operator    latest         2b2d5bcbedf5  10 minutes ago   41.7MB
+
 ```
 
 Optionally push it to a Docker registry.
@@ -431,4 +441,31 @@ $ operator-sdk up local
 ```
 ## Releases  
 
-The latest pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+The latest Pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+
+## Troubleshooting
+
+### Helm Error: no available release name found
+
+When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by Tiller to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install` and other commands do not work.
+
+```
+$ helm install stable/nfs-server-provisioner
+Error: no available release name found
+```
+The following workaround can be applied to resolve the issue:
+
+1. Create a service account for the Tiller.
+```
+kubectl create serviceaccount --namespace kube-system tiller
+```
+2. Bind that service account to the `cluster-admin` ClusterRole.
+```
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+```
+3. Add the service account to the Tiller deployment.
+
+```
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+```
+The above commands should resolve the errors and `helm install` should work correctly.
