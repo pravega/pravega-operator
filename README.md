@@ -389,7 +389,7 @@ REPOSITORY                  TAG            IMAGE ID      CREATED          SIZE
 
 pravega/pravega-operator    0.1.1-3-dirty  2b2d5bcbedf5  10 minutes ago   41.7MB    
 
-pravega/pravega-operator    latest         2b2d5bcbedf5  10 minutes ago
+pravega/pravega-operator    latest         2b2d5bcbedf5  10 minutes ago   41.7MB
 
 ```
 
