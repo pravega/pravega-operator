@@ -320,7 +320,7 @@ func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				},
 			},
 			Spec: corev1.ServiceSpec{
-				Type:                  pravegaCluster.Spec.ExternalAccess.Type,
+				Type: pravegaCluster.Spec.ExternalAccess.Type,
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{
