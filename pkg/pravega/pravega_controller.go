@@ -18,7 +18,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
-	"k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,11 +43,11 @@ func deployController(pravegaCluster *api.PravegaCluster) (err error) {
 	return nil
 }
 
-func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *v1beta1.Deployment {
-	return &v1beta1.Deployment{
+func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *appsv1.Deployment {
+	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
-			APIVersion: "apps/v1beta1",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sutil.DeploymentNameForController(pravegaCluster.Name),
@@ -56,13 +56,16 @@ func makeControllerDeployment(pravegaCluster *api.PravegaCluster) *v1beta1.Deplo
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
 		},
-		Spec: v1beta1.DeploymentSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &pravegaCluster.Spec.Pravega.ControllerReplicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: k8sutil.LabelsForController(pravegaCluster),
 				},
 				Spec: *makeControllerPodSpec(pravegaCluster.Name, &pravegaCluster.Spec.Pravega),
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: k8sutil.LabelsForController(pravegaCluster),
 			},
 		},
 	}
@@ -152,6 +155,12 @@ func makeControllerConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigM
 }
 
 func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+
+	serviceType := corev1.ServiceTypeClusterIP
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		serviceType = pravegaCluster.Spec.ExternalAccess.Type
+	}
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -166,6 +175,7 @@ func makeControllerService(pravegaCluster *api.PravegaCluster) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
+			Type: serviceType,
 			Ports: []corev1.ServicePort{
 				{
 					Name: "rest",

@@ -17,7 +17,7 @@ import (
 )
 
 func ConfigMapNameForBookie(clusterName string) string {
-	return fmt.Sprintf("%s-bookie-config", clusterName)
+	return fmt.Sprintf("%s-bookie", clusterName)
 }
 
 func StatefulSetNameForBookie(clusterName string) string {
@@ -25,11 +25,19 @@ func StatefulSetNameForBookie(clusterName string) string {
 }
 
 func ConfigMapNameForController(clusterName string) string {
-	return fmt.Sprintf("%s-controller-config", clusterName)
+	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
 func ServiceNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
+}
+
+func ServiceNameForSegmentStore(clusterName string, index int32) string {
+	return fmt.Sprintf("%s-pravega-segmentstore-%d", clusterName, index)
+}
+
+func HeadlessServiceNameForSegmentStore(clusterName string) string {
+	return fmt.Sprintf("%s-pravega-segmentstore-headless", clusterName)
 }
 
 func HeadlessServiceNameForBookie(clusterName string) string {
@@ -41,11 +49,11 @@ func DeploymentNameForController(clusterName string) string {
 }
 
 func ConfigMapNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-segmentstore", clusterName)
+	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
 }
 
 func StatefulSetNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-segmentstore", clusterName)
+	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {

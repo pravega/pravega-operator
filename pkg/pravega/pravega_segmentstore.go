@@ -19,10 +19,11 @@ import (
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/apps/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -34,6 +35,21 @@ const (
 )
 
 func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
+	err = sdk.Create(makeSegmentStoreHeadlessService(pravegaCluster))
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		services := makeSegmentStoreExternalServices(pravegaCluster)
+		for _, service := range services {
+			err = sdk.Create(service)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	}
+
 	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -56,11 +72,11 @@ func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
 	}
 }
 
-func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta1.StatefulSet {
-	return &v1beta1.StatefulSet{
+func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
+	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
-			APIVersion: "apps/v1beta1",
+			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name),
@@ -68,16 +84,22 @@ func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *v1beta1.St
 			OwnerReferences: []metav1.OwnerReference{
 				*k8sutil.AsOwnerRef(pravegaCluster),
 			},
+			Annotations: map[string]string{
+				"service-per-pod-label": appsv1.StatefulSetPodNameLabel,
+			},
 		},
-		Spec: v1beta1.StatefulSetSpec{
-			ServiceName:         "segmentstore",
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
-			PodManagementPolicy: v1beta1.ParallelPodManagement,
+			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: k8sutil.LabelsForSegmentStore(pravegaCluster),
 				},
 				Spec: makeSegmentstorePodSpec(pravegaCluster),
+			},
+			Selector: &metav1.LabelSelector{
+				MatchLabels: k8sutil.LabelsForSegmentStore(pravegaCluster),
 			},
 			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
 		},
@@ -102,7 +124,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            "segmentstore",
+				Name:            "pravega-segmentstore",
 				Image:           pravegaSpec.Image.String(),
 				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
 				Args: []string{
@@ -115,6 +137,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 					},
 				},
 				EnvFrom: environment,
+				Env:     k8sutil.DownwardAPIEnv(),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      cacheVolumeName,
@@ -150,6 +173,10 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
+	}
+
+	if pravegaCluster.Spec.ExternalAccess.Enabled {
+		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
 	if pravegaCluster.Spec.Pravega.DebugLogging {
@@ -248,4 +275,71 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 			},
 		})
 	}
+}
+
+func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.HeadlessServiceNameForSegmentStore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
+			OwnerReferences: []metav1.OwnerReference{
+				*k8sutil.AsOwnerRef(pravegaCluster),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Name:     "server",
+					Port:     12345,
+					Protocol: "TCP",
+				},
+			},
+			Selector:  k8sutil.LabelsForSegmentStore(pravegaCluster),
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
+
+func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+	var service *corev1.Service
+	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
+
+	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
+		service = &corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Service",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      k8sutil.ServiceNameForSegmentStore(pravegaCluster.Name, i),
+				Namespace: pravegaCluster.Namespace,
+				Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
+				OwnerReferences: []metav1.OwnerReference{
+					*k8sutil.AsOwnerRef(pravegaCluster),
+				},
+			},
+			Spec: corev1.ServiceSpec{
+				Type: pravegaCluster.Spec.ExternalAccess.Type,
+				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
+				Ports: []corev1.ServicePort{
+					{
+						Name:       "server",
+						Port:       12345,
+						Protocol:   "TCP",
+						TargetPort: intstr.FromInt(12345),
+					},
+				},
+				Selector: map[string]string{
+					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
+				},
+			},
+		}
+		services[i] = service
+	}
+	return services
 }
