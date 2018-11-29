@@ -101,7 +101,7 @@ func makeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *v1beta1.Sta
 		Spec: v1beta1.StatefulSetSpec{
 			ServiceName:          k8sutil.HeadlessServiceNameForBookie(pravegaCluster.Name),
 			Replicas:             &pravegaCluster.Spec.Bookkeeper.Replicas,
-			PodManagementPolicy:  v1beta1.ParallelPodManagement,
+			PodManagementPolicy:  v1beta1.OrderedReadyPodManagement,
 			Template:             makeBookieStatefulTemplate(pravegaCluster),
 			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
 		},
@@ -154,6 +154,30 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 						Name:      JournalDiskName,
 						MountPath: "/bk/ledgers",
 					},
+				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: k8sutil.HealthcheckCommand(3181),
+						},
+					},
+					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
+					PeriodSeconds:    10,
+					FailureThreshold: 9,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: k8sutil.HealthcheckCommand(3181),
+						},
+					},
+					// We start the liveness probe from the maximum time the pod can take
+					// before becoming ready.
+					// If the pod fails the health check during 1 minute, Kubernetes
+					// will restart it.
+					InitialDelaySeconds: 60,
+					PeriodSeconds:       15,
+					FailureThreshold:    4,
 				},
 			},
 		},
