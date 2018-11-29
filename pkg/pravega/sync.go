@@ -55,6 +55,11 @@ func syncClusterSize(pravegaCluster *api.PravegaCluster) (err error) {
 		return err
 	}
 
+	err = syncControllerSize(pravegaCluster)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -108,6 +113,33 @@ func syncSegmentStoreSize(pravegaCluster *api.PravegaCluster) (err error) {
 		err = sdk.Update(sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
+		}
+	}
+	return nil
+}
+
+func syncControllerSize(pravegaCluster *api.PravegaCluster) (err error) {
+	deploy := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k8sutil.DeploymentNameForController(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+		},
+	}
+
+	err = sdk.Get(deploy)
+	if err != nil {
+		return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
+	}
+
+	if *deploy.Spec.Replicas != pravegaCluster.Spec.Pravega.ControllerReplicas {
+		deploy.Spec.Replicas = &(pravegaCluster.Spec.Pravega.ControllerReplicas)
+		err = sdk.Update(deploy)
+		if err != nil {
+			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
 		}
 	}
 	return nil
