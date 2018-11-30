@@ -202,8 +202,9 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
 	}
 
+	// Wait for at least 3 Bookies to come up
 	var waitFor []string
-	for i := int32(0); i < pravegaCluster.Spec.Bookkeeper.Replicas; i++ {
+	for i := int32(0); i < k8sutil.Min(3, pravegaCluster.Spec.Bookkeeper.Replicas); i++ {
 		waitFor = append(waitFor,
 			fmt.Sprintf("%s-%d.%s.%s:3181",
 				k8sutil.StatefulSetNameForBookie(pravegaCluster.Name),
