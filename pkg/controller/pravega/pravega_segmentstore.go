@@ -269,7 +269,6 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 			},
 			Spec: corev1.ServiceSpec{
 				Type: pravegaCluster.Spec.ExternalAccess.Type,
-				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "server",
@@ -278,6 +277,7 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 						TargetPort: intstr.FromInt(12345),
 					},
 				},
+				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Selector: map[string]string{
 					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", util.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
 				},

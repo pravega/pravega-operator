@@ -13,7 +13,6 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -32,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller

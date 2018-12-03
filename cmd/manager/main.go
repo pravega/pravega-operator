@@ -12,7 +12,6 @@ package main
 
 import (
 	"flag"
-	"log"
 	"os"
 	"runtime"
 
@@ -26,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (

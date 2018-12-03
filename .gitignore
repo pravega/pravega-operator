@@ -165,3 +165,5 @@ bin/
 
 # Ignore YAML files in the project root directory
 /*.yaml
+
+deploy/test
