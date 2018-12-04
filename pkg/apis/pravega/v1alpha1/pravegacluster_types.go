@@ -19,6 +19,10 @@ func init() {
 	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
 }
 
+const (
+	APIVERSION  = "pravega.pravega.io/v1alpha1"
+	KIND = "PravegaCluster"
+)
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PravegaClusterList contains a list of PravegaCluster

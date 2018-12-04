@@ -54,7 +54,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
+			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster),
 		},
 	}
 }
@@ -154,13 +154,16 @@ func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 	}
 }
 
-func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
+func makeCacheVolumeClaimTemplate(pravegaCluster *api.PravegaCluster) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: cacheVolumeName,
+				OwnerReferences: []metav1.OwnerReference {
+					*util.AsOwnerRef(pravegaCluster),
+				},
 			},
-			Spec: pravegaSpec.CacheVolumeClaimTemplate,
+			Spec: pravegaCluster.Spec.Pravega.CacheVolumeClaimTemplate,
 		},
 	}
 }
