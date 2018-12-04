@@ -15,6 +15,7 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Uninstall the Operator](#uninstall-the-operator)
  * [Configuration](#configuration)
     * [Use non-default service accounts](#use-non-default-service-accounts)
+    * [Installing on a Custom Namespace with RBAC enabled](#installing-on-a-custom-namespace-with-rbac-enabled)
     * [Tier 2: Google Filestore Storage](#use-google-filestore-storage-as-tier-2)
     * [Tune Pravega Configurations](#tune-pravega-configuration)
  * [Development](#development)
@@ -53,11 +54,6 @@ Run the following command to install the `PravegaCluster` custom resource defini
 
 ```
 $ kubectl create -f deploy
-customresourcedefinition.apiextensions.k8s.io "pravegaclusters.pravega.pravega.io" created
-deployment.apps "pravega-operator" created
-role.rbac.authorization.k8s.io "pravega-operator" created
-rolebinding.rbac.authorization.k8s.io "pravega-operator" created
-serviceaccount "pravega-operator" created
 ```
 
 Verify that the Pravega operator is running.
@@ -277,6 +273,50 @@ spec:
     controllerServiceAccountName: ctrl-service-account
     segmentStoreServiceAccountName: ss-service-account
 ...
+```
+
+### Installing on a Custom Namespace with RBAC enabled
+
+Create the namespace.
+
+```
+$ kubectl create namespace pravega-io
+```
+
+Update the namespace configured in the `deploy/role_binding.yaml` file.
+
+```
+$ sed -i -e 's/namespace: default/namespace: pravega-io/g' deploy/role_binding.yaml
+```
+
+Apply the changes.
+
+```
+$ kubectl -n pravega-io apply -f deploy
+```
+
+Note that the Pravega operator only monitors the `PravegaCluster` resources which are created in the namespace where it was deployed, so if you want to create a cluster you have to specify the same namespace as the operator.
+
+```
+$ kubectl -n pravega-io create -f example/cr.yaml
+```
+
+```
+$ kubectl -n pravega-io get pravegaclusters
+NAME      AGE
+pravega   28m
+```
+
+```
+$ kubectl -n pravega-io get pods -l pravega_cluster=pravega
+NAME                                          READY     STATUS    RESTARTS   AGE
+pravega-bookie-0                              1/1       Running   0          29m
+pravega-bookie-1                              1/1       Running   0          29m
+pravega-bookie-2                              1/1       Running   0          29m
+pravega-pravega-controller-6c54fdcdf5-947nw   1/1       Running   0          29m
+pravega-pravega-segmentstore-0                1/1       Running   0          29m
+pravega-pravega-segmentstore-1                1/1       Running   0          29m
+pravega-pravega-segmentstore-2                1/1       Running   0          29m
 ```
 
 ### Use Google Filestore Storage as Tier 2
