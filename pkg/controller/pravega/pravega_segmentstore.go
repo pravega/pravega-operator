@@ -159,7 +159,7 @@ func makeCacheVolumeClaimTemplate(pravegaCluster *api.PravegaCluster) []corev1.P
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: cacheVolumeName,
-				OwnerReferences: []metav1.OwnerReference {
+				OwnerReferences: []metav1.OwnerReference{
 					*util.AsOwnerRef(pravegaCluster),
 				},
 			},

@@ -22,11 +22,11 @@ import (
 func AsOwnerRef(pravegaCluster *v1alpha1.PravegaCluster) *metav1.OwnerReference {
 	boolTrue := true
 	return &metav1.OwnerReference{
-		APIVersion: v1alpha1.APIVERSION,
-		Kind:       v1alpha1.KIND,
-		Name:       pravegaCluster.Name,
-		UID:        pravegaCluster.UID,
-		Controller: &boolTrue,
+		APIVersion:         v1alpha1.APIVERSION,
+		Kind:               v1alpha1.KIND,
+		Name:               pravegaCluster.Name,
+		UID:                pravegaCluster.UID,
+		Controller:         &boolTrue,
 		BlockOwnerDeletion: &boolTrue,
 	}
 }

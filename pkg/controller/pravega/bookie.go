@@ -134,7 +134,7 @@ func makeBookieVolumeClaimTemplates(pravegaCluster *v1alpha1.PravegaCluster) []c
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: JournalDiskName,
-				OwnerReferences: []metav1.OwnerReference {
+				OwnerReferences: []metav1.OwnerReference{
 					*util.AsOwnerRef(pravegaCluster),
 				},
 			},
@@ -142,8 +142,8 @@ func makeBookieVolumeClaimTemplates(pravegaCluster *v1alpha1.PravegaCluster) []c
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:            LedgerDiskName,
-				OwnerReferences: []metav1.OwnerReference {
+				Name: LedgerDiskName,
+				OwnerReferences: []metav1.OwnerReference{
 					*util.AsOwnerRef(pravegaCluster),
 				},
 			},
