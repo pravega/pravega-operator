@@ -8,6 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// +k8s:deepcopy-gen=package
+// Package v1alpha1 contains API Schema definitions for the pravega v1alpha1 API group
+// +k8s:deepcopy-gen=package,register
 // +groupName=pravega.pravega.io
 package v1alpha1
