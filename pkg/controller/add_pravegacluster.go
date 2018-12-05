@@ -8,7 +8,13 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Package v1alpha1 contains API Schema definitions for the pravega v1alpha1 API group
-// +k8s:deepcopy-gen=package,register
-// +groupName=pravega.pravega.io
-package v1alpha1
+package controller
+
+import (
+	"github.com/pravega/pravega-operator/pkg/controller/pravegacluster"
+)
+
+func init() {
+	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerFuncs = append(AddToManagerFuncs, pravegacluster.Add)
+}

@@ -15,13 +15,10 @@ import (
 
 	"fmt"
 
-	"github.com/operator-framework/operator-sdk/pkg/sdk"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/pravega/pravega-operator/pkg/utils/k8sutil"
-	"github.com/sirupsen/logrus"
+	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -34,59 +31,15 @@ const (
 	segmentStoreKind      = "pravega-segmentstore"
 )
 
-func deploySegmentStore(pravegaCluster *api.PravegaCluster) (err error) {
-	err = sdk.Create(makeSegmentStoreHeadlessService(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	if pravegaCluster.Spec.ExternalAccess.Enabled {
-		services := makeSegmentStoreExternalServices(pravegaCluster)
-		for _, service := range services {
-			err = sdk.Create(service)
-			if err != nil && !errors.IsAlreadyExists(err) {
-				return err
-			}
-		}
-	}
-
-	err = sdk.Create(makeSegmentstoreConfigMap(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	err = sdk.Create(makeSegmentStoreStatefulSet(pravegaCluster))
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
-func destroySegmentstoreCacheVolumes(metadata metav1.ObjectMeta) {
-	logrus.WithFields(logrus.Fields{"name": metadata.Name}).Info("Destroying SegmentStore Cache volumes")
-
-	err := k8sutil.DeleteCollection("v1", "PersistentVolumeClaim", metadata.Namespace, fmt.Sprintf("app=%v,kind=%v", metadata.Name, segmentStoreKind))
-	if err != nil {
-		logrus.Error(err)
-	}
-}
-
-func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
+func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name),
+			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
-			Annotations: map[string]string{
-				"service-per-pod-label": appsv1.StatefulSetPodNameLabel,
-			},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
@@ -94,12 +47,12 @@ func makeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			PodManagementPolicy: appsv1.ParallelPodManagement,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: k8sutil.LabelsForSegmentStore(pravegaCluster),
+					Labels: util.LabelsForSegmentStore(pravegaCluster),
 				},
 				Spec: makeSegmentstorePodSpec(pravegaCluster),
 			},
 			Selector: &metav1.LabelSelector{
-				MatchLabels: k8sutil.LabelsForSegmentStore(pravegaCluster),
+				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
 			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
 		},
@@ -111,7 +64,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: k8sutil.ConfigMapNameForSegmentstore(pravegaCluster.Name),
+					Name: util.ConfigMapNameForSegmentstore(pravegaCluster.Name),
 				},
 			},
 		},
@@ -137,7 +90,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 					},
 				},
 				EnvFrom: environment,
-				Env:     k8sutil.DownwardAPIEnv(),
+				Env:     util.DownwardAPIEnv(),
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      cacheVolumeName,
@@ -157,7 +110,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 	return podSpec
 }
 
-func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
+func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
 	}
@@ -171,7 +124,7 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"CLUSTER_NAME":          pravegaCluster.Name,
 		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
-		"CONTROLLER_URL":        k8sutil.PravegaControllerServiceURL(*pravegaCluster),
+		"CONTROLLER_URL":        util.PravegaControllerServiceURL(*pravegaCluster),
 		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
 
@@ -193,12 +146,9 @@ func makeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.ConfigMapNameForSegmentstore(pravegaCluster.Name),
+			Name:      util.ConfigMapNameForSegmentstore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
-			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
+			Labels:    util.LabelsForSegmentStore(pravegaCluster),
 		},
 		Data: configData,
 	}
@@ -277,19 +227,16 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 	}
 }
 
-func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k8sutil.HeadlessServiceNameForSegmentStore(pravegaCluster.Name),
+			Name:      util.HeadlessServiceNameForSegmentStore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
-			Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
-			OwnerReferences: []metav1.OwnerReference{
-				*k8sutil.AsOwnerRef(pravegaCluster),
-			},
+			Labels:    util.LabelsForSegmentStore(pravegaCluster),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -299,13 +246,13 @@ func makeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 					Protocol: "TCP",
 				},
 			},
-			Selector:  k8sutil.LabelsForSegmentStore(pravegaCluster),
+			Selector:  util.LabelsForSegmentStore(pravegaCluster),
 			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
 }
 
-func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
@@ -316,16 +263,12 @@ func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      k8sutil.ServiceNameForSegmentStore(pravegaCluster.Name, i),
+				Name:      util.ServiceNameForSegmentStore(pravegaCluster.Name, i),
 				Namespace: pravegaCluster.Namespace,
-				Labels:    k8sutil.LabelsForSegmentStore(pravegaCluster),
-				OwnerReferences: []metav1.OwnerReference{
-					*k8sutil.AsOwnerRef(pravegaCluster),
-				},
+				Labels:    util.LabelsForSegmentStore(pravegaCluster),
 			},
 			Spec: corev1.ServiceSpec{
 				Type: pravegaCluster.Spec.ExternalAccess.Type,
-				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "server",
@@ -334,8 +277,9 @@ func makeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 						TargetPort: intstr.FromInt(12345),
 					},
 				},
+				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Selector: map[string]string{
-					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", k8sutil.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
+					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", util.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
 				},
 			},
 		}

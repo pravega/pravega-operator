@@ -8,7 +8,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Package v1alpha1 contains API Schema definitions for the pravega v1alpha1 API group
-// +k8s:deepcopy-gen=package,register
-// +groupName=pravega.pravega.io
-package v1alpha1
+package e2e
+
+import (
+	"testing"
+
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
+)
+
+func testCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
+	t.Skip("Not implemented")
+	return nil
+}

@@ -8,7 +8,16 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// Package v1alpha1 contains API Schema definitions for the pravega v1alpha1 API group
-// +k8s:deepcopy-gen=package,register
-// +groupName=pravega.pravega.io
-package v1alpha1
+package e2e
+
+import (
+	"testing"
+
+	f "github.com/operator-framework/operator-sdk/pkg/test"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+)
+
+func TestMain(m *testing.M) {
+	f.MainEntry(m)
+}

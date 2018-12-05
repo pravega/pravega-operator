@@ -13,15 +13,19 @@ spec:
 apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
 metadata:
-  name: "example"
+  name: "pravega"
 spec:
   zookeeperUri: zk-client:2181
+
+  externalAccess:
+    enabled: true
+    type: LoadBalancer
 
   bookkeeper:
     image:
       repository: pravega/bookkeeper
       tag: latest
-      pullPolicy: Always
+      pullPolicy: IfNotPresent
 
     replicas: 3
 
@@ -56,7 +60,7 @@ spec:
     image:
       repository: pravega/pravega
       tag: latest
-      pullPolicy: Always
+      pullPolicy: IfNotPresent
 
     tier2:
       filesystem:

@@ -15,23 +15,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func init() {
+	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// PravegaClusterList contains a list of PravegaCluster
 type PravegaClusterList struct {
 	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
+	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []PravegaCluster `json:"items"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// PravegaCluster is the Schema for the pravegaclusters API
+// +k8s:openapi-gen=true
 type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata"`
-	Spec              PravegaClusterSpec   `json:"spec"`
-	Status            PravegaClusterStatus `json:"status,omitempty"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   PravegaClusterSpec   `json:"spec,omitempty"`
+	Status PravegaClusterStatus `json:"status,omitempty"`
 }
 
+// PravegaClusterSpec defines the desired state of PravegaCluster
 type PravegaClusterSpec struct {
 	ZookeeperUri   string         `json:"zookeeperUri"`
 	ExternalAccess ExternalAccess `json:"externalAccess"`
@@ -54,6 +63,8 @@ func (spec *ImageSpec) String() string {
 	return spec.Repository + ":" + spec.Tag
 }
 
+// PravegaClusterStatus defines the observed state of PravegaCluster
 type PravegaClusterStatus struct {
-	// Fill me
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 }
