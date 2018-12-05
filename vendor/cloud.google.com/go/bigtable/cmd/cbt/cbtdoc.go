@@ -145,11 +145,7 @@ Create a table
 Usage:
 	cbt createtable <table> [families=family[:gcpolicy],...] [splits=split,...]
 	  families: Column families and their associated GC policies. For gcpolicy,
-<<<<<<< HEAD
 	  					see "setgcpolicy".
-=======
-						see "setgcpolicy".
->>>>>>> Update vendor directory
 						Example: families=family1:maxage=1w,family2:maxversions=1
 	  splits:   Row key to be used to initially split the table
 
