@@ -54,11 +54,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
-<<<<<<< HEAD
 			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster),
-=======
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(&pravegaCluster.Spec.Pravega),
->>>>>>> master
 		},
 	}
 }

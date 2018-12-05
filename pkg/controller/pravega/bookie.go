@@ -66,11 +66,7 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
-<<<<<<< HEAD
 			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(pravegaCluster),
-=======
-			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
->>>>>>> master
 		},
 	}
 }
