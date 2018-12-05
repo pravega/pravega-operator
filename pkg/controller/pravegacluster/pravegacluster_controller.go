@@ -93,11 +93,11 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
 			log.Printf("PravegaCluster %s/%s not found. Ignoring since object must be deleted\n", request.Namespace, request.Name)
-			return reconcileResult, nil
+			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
 		log.Printf("failed to get PravegaCluster: %v", err)
-		return reconcileResult, err
+		return reconcile.Result{}, err
 	}
 
 	// Rest of your reconcile code goes here

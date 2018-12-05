@@ -15,14 +15,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func init() {
-	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
-}
-
+// Temporary solution, blocked by Operator SDK issue 727
 const (
 	APIVERSION = "pravega.pravega.io/v1alpha1"
 	KIND       = "PravegaCluster"
 )
+
+func init() {
+	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

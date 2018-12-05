@@ -15,13 +15,13 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  zookeeperUri: example-client:2181
+  zookeeperUri: zk-client:2181
 
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.2
-      pullPolicy: IfNotPresent
+      tag: latest
+      pullPolicy: Always
 
     replicas: 3
 
@@ -55,8 +55,8 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.2
-      pullPolicy: IfNotPresent
+      tag: latest
+      pullPolicy: Always
 
     tier2:
       filesystem:
