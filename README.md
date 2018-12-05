@@ -295,7 +295,7 @@ Apply the changes.
 $ kubectl -n pravega-io apply -f deploy
 ```
 
-Note that the Pravega operator only monitors the `PravegaCluster` resources which are created in the namespace where it was deployed, so if you want to create a cluster you have to specify the same namespace as the operator.
+Note that the Pravega operator only monitors the `PravegaCluster` resources which are created in the same namespace, `pravega-io` in this example. Therefore, before creating a `PravegaCluster` resource, make sure an operator exists in that namespace.
 
 ```
 $ kubectl -n pravega-io create -f example/cr.yaml
