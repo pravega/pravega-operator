@@ -187,6 +187,9 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	for i := range statefulSet.Spec.VolumeClaimTemplates {
+		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	}
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -212,6 +215,9 @@ func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster
 
 	statefulSet := pravega.MakeBookieStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	for i := range statefulSet.Spec.VolumeClaimTemplates {
+		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	}
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err

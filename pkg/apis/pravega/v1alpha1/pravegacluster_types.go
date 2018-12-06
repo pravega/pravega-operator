@@ -15,12 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Temporary solution, blocked by Operator SDK issue 727
-const (
-	APIVERSION = "pravega.pravega.io/v1alpha1"
-	KIND       = "PravegaCluster"
-)
-
 func init() {
 	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
 }

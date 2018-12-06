@@ -66,7 +66,7 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(pravegaCluster),
+			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
 		},
 	}
 }
@@ -129,25 +129,19 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 	return podSpec
 }
 
-func makeBookieVolumeClaimTemplates(pravegaCluster *v1alpha1.PravegaCluster) []corev1.PersistentVolumeClaim {
+func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: JournalDiskName,
-				OwnerReferences: []metav1.OwnerReference{
-					*util.AsOwnerRef(pravegaCluster),
-				},
 			},
-			Spec: pravegaCluster.Spec.Bookkeeper.Storage.JournalVolumeClaimTemplate,
+			Spec: spec.Storage.JournalVolumeClaimTemplate,
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: LedgerDiskName,
-				OwnerReferences: []metav1.OwnerReference{
-					*util.AsOwnerRef(pravegaCluster),
-				},
 			},
-			Spec: pravegaCluster.Spec.Bookkeeper.Storage.LedgerVolumeClaimTemplate,
+			Spec: spec.Storage.LedgerVolumeClaimTemplate,
 		},
 	}
 }
