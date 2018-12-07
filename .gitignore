@@ -162,3 +162,8 @@ tags
 # End of https://www.gitignore.io/api/go,vim,emacs,visualstudiocode,intellij
 
 bin/
+
+# Ignore YAML files in the project root directory
+/*.yaml
+
+deploy/test
