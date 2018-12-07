@@ -15,6 +15,7 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Uninstall the Operator](#uninstall-the-operator)
  * [Configuration](#configuration)
     * [Use non-default service accounts](#use-non-default-service-accounts)
+    * [Installing on a Custom Namespace with RBAC enabled](#installing-on-a-custom-namespace-with-rbac-enabled)
     * [Tier 2: Google Filestore Storage](#use-google-filestore-storage-as-tier-2)
     * [Tune Pravega Configurations](#tune-pravega-configuration)
  * [Development](#development)
@@ -23,6 +24,8 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Direct Access to Cluster](#direct-access-to-the-cluster)
     * [Run the Operator Locally](#run-the-operator-locally)
 * [Releases](#releases)
+* [Troubleshooting](#troubleshooting)
+    * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 
 ## Overview
 
@@ -47,22 +50,10 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-Register the `PravegaCluster` custom resource definition (CRD).
+Run the following command to install the `PravegaCluster` custom resource definition (CRD), create the `pravega-operator` service account, roles, bindings, and the deploy the operator.
 
 ```
-$ kubectl create -f deploy/crd.yaml
-```
-
-Create the operator role and role binding.
-
-```
-$ kubectl create -f deploy/rbac.yaml
-```
-
-Deploy the Pravega operator.
-
-```
-$ kubectl create -f deploy/operator.yaml
+$ kubectl create -f deploy
 ```
 
 Verify that the Pravega operator is running.
@@ -71,7 +62,6 @@ Verify that the Pravega operator is running.
 $ kubectl get deploy
 NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 pravega-operator     1         1         1            1           17s
-zookeeper-operator   1         1         1            1           12m
 ```
 
 ### Deploy a sample Pravega cluster
@@ -285,6 +275,50 @@ spec:
 ...
 ```
 
+### Installing on a Custom Namespace with RBAC enabled
+
+Create the namespace.
+
+```
+$ kubectl create namespace pravega-io
+```
+
+Update the namespace configured in the `deploy/role_binding.yaml` file.
+
+```
+$ sed -i -e 's/namespace: default/namespace: pravega-io/g' deploy/role_binding.yaml
+```
+
+Apply the changes.
+
+```
+$ kubectl -n pravega-io apply -f deploy
+```
+
+Note that the Pravega operator only monitors the `PravegaCluster` resources which are created in the same namespace, `pravega-io` in this example. Therefore, before creating a `PravegaCluster` resource, make sure an operator exists in that namespace.
+
+```
+$ kubectl -n pravega-io create -f example/cr.yaml
+```
+
+```
+$ kubectl -n pravega-io get pravegaclusters
+NAME      AGE
+pravega   28m
+```
+
+```
+$ kubectl -n pravega-io get pods -l pravega_cluster=pravega
+NAME                                          READY     STATUS    RESTARTS   AGE
+pravega-bookie-0                              1/1       Running   0          29m
+pravega-bookie-1                              1/1       Running   0          29m
+pravega-bookie-2                              1/1       Running   0          29m
+pravega-pravega-controller-6c54fdcdf5-947nw   1/1       Running   0          29m
+pravega-pravega-segmentstore-0                1/1       Running   0          29m
+pravega-pravega-segmentstore-1                1/1       Running   0          29m
+pravega-pravega-segmentstore-2                1/1       Running   0          29m
+```
+
 ### Use Google Filestore Storage as Tier 2
 
 1. [Create a Google Filestore](https://console.cloud.google.com/filestore/instances).
@@ -367,20 +401,28 @@ spec:
 
 Requirements:
   - Go 1.10+
-  - [Operator SDK](https://github.com/operator-framework/operator-sdk#quick-start)
 
-Use the `operator-sdk` command to build the Pravega operator image.
+Use the `make` command to build the Pravega operator image.
 
 ```
-$ operator-sdk build pravega/pravega-operator
+$ make build
 ```
+That will generate a Docker image with the format
+`<latest_release_tag>-<number_of_commits_after_the_release>` (it will append-dirty if there are uncommitted changes). The image will also be tagged as `latest`.
+
+Example image after running `make build`.
 
 The Pravega operator image will be available in your Docker environment.
 
 ```
 $ docker images pravega/pravega-operator
-REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
-pravega/pravega-operator   latest              625dab6fe470        54 seconds ago      37.2MB
+
+REPOSITORY                  TAG            IMAGE ID      CREATED          SIZE        
+
+pravega/pravega-operator    0.1.1-3-dirty  2b2d5bcbedf5  10 minutes ago   41.7MB    
+
+pravega/pravega-operator    latest         2b2d5bcbedf5  10 minutes ago   41.7MB
+
 ```
 
 Optionally push it to a Docker registry.
@@ -431,4 +473,31 @@ $ operator-sdk up local
 ```
 ## Releases  
 
-The latest pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+The latest Pravega releases can be found on the [Github Release](https://github.com/pravega/pravega-operator/releases) project page.
+
+## Troubleshooting
+
+### Helm Error: no available release name found
+
+When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by Tiller to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install` and other commands do not work.
+
+```
+$ helm install stable/nfs-server-provisioner
+Error: no available release name found
+```
+The following workaround can be applied to resolve the issue:
+
+1. Create a service account for the Tiller.
+```
+kubectl create serviceaccount --namespace kube-system tiller
+```
+2. Bind that service account to the `cluster-admin` ClusterRole.
+```
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+```
+3. Add the service account to the Tiller deployment.
+
+```
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+```
+The above commands should resolve the errors and `helm install` should work correctly.

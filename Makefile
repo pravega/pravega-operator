@@ -15,23 +15,31 @@ GIT_SHA=$(shell git rev-parse --short HEAD)
 GOOS=linux
 GOARCH=amd64
 
-.PHONY: all build check clean test
+.PHONY: all dep build check clean test
 
-all: check build
+all: check test build
 
-build: test build-go build-image
+dep:
+	dep ensure -v
+
+build: build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
 	-ldflags "-X github.com/$(REPO)/pkg/version.Version=$(VERSION) -X github.com/$(REPO)/pkg/version.GitSHA=$(GIT_SHA)" \
-	-o bin/$(PROJECT_NAME) cmd/$(PROJECT_NAME)/main.go
+	-o bin/$(PROJECT_NAME) cmd/manager/main.go
 
 build-image:
 	docker build --build-arg VERSION=$(VERSION) --build-arg GIT_SHA=$(GIT_SHA) -t $(REPO):$(VERSION) .
 	docker tag $(REPO):$(VERSION) $(REPO):latest
 
-test:
-	go test $$(go list ./... | grep -v /vendor/)
+test: test-unit test-e2e
+
+test-unit:
+	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
+
+test-e2e:
+	operator-sdk test local ./test/e2e --go-test-flags -v
 
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
