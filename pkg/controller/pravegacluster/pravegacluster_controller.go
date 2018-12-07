@@ -134,6 +134,13 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 }
 
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaCluster) (err error) {
+	pdb := pravega.MakeControllerPodDisruptionBudget(p)
+	controllerutil.SetControllerReference(p, pdb, r.scheme)
+	err = r.client.Create(context.TODO(), pdb)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
 	configMap := pravega.MakeControllerConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Create(context.TODO(), configMap)
@@ -178,6 +185,13 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 		}
 	}
 
+	pdb := pravega.MakeSegmentstorePodDisruptionBudget(p)
+	controllerutil.SetControllerReference(p, pdb, r.scheme)
+	err = r.client.Create(context.TODO(), pdb)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Create(context.TODO(), configMap)
@@ -202,6 +216,13 @@ func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster
 	headlessService := pravega.MakeBookieHeadlessService(p)
 	controllerutil.SetControllerReference(p, headlessService, r.scheme)
 	err = r.client.Create(context.TODO(), headlessService)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	pdb := pravega.MakeBookiePodDisruptionBudget(p)
+	controllerutil.SetControllerReference(p, pdb, r.scheme)
+	err = r.client.Create(context.TODO(), pdb)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}

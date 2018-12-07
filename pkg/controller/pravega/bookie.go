@@ -15,7 +15,9 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -120,6 +122,7 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				},
 			},
 		},
+		Affinity: util.PodAntiAffinity("bookie", clusterName),
 	}
 
 	if bookkeeperSpec.ServiceAccountName != "" {
@@ -169,5 +172,26 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 			Namespace: pravegaCluster.ObjectMeta.Namespace,
 		},
 		Data: configData,
+	}
+}
+
+func MakeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	minAvailable := intstr.FromInt(3)
+
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      util.PdbNameForBookie(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+			MinAvailable: &minAvailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: util.LabelsForBookie(pravegaCluster),
+			},
+		},
 	}
 }

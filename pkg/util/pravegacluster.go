@@ -16,12 +16,20 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
+func PdbNameForBookie(clusterName string) string {
+	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
 func ConfigMapNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
 
 func StatefulSetNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
+func PdbNameForController(clusterName string) string {
+	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
 func ConfigMapNameForController(clusterName string) string {
@@ -46,6 +54,10 @@ func HeadlessServiceNameForBookie(clusterName string) string {
 
 func DeploymentNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
+}
+
+func PdbNameForSegmentstore(clusterName string) string {
+	return fmt.Sprintf("%s-segmentstore", clusterName)
 }
 
 func ConfigMapNameForSegmentstore(clusterName string) string {
