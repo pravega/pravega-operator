@@ -37,41 +37,52 @@ const (
 	// DefaultBookkeeperJournalVolumeSize is the default volume size for the
 	// Bookkeeper journal volume
 	DefaultBookkeeperJournalVolumeSize = "10Gi"
+
+	// MinimumBookkeeperReplicas is the minimum number of Bookkeeper replicas
+	// accepted
+	MinimumBookkeeperReplicas = 3
 )
 
 // BookkeeperSpec defines the configuration of BookKeeper
 type BookkeeperSpec struct {
 	// Image defines the BookKeeper Docker image to use.
 	// By default, "pravega/bookkeeper:latest" will be used.
-	Image BookkeeperImageSpec `json:"image"`
+	Image *BookkeeperImageSpec `json:"image"`
 
 	// Replicas defines the number of BookKeeper replicas.
 	// Minimum is 3. Defaults to 3.
 	Replicas int32 `json:"replicas"`
 
 	// Storage configures the storage for BookKeeper
-	Storage BookkeeperStorageSpec `json:"storage"`
+	Storage *BookkeeperStorageSpec `json:"storage"`
 
 	// AutoRecovery indicates whether or not BookKeeper auto recovery is enabled.
-	// Defaults to false.
-	AutoRecovery bool `json:"autoRecovery"`
+	// Defaults to true.
+	AutoRecovery *bool `json:"autoRecovery"`
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 func (s *BookkeeperSpec) withDefaults() {
-	if s == nil {
-		s = &BookkeeperSpec{}
+	if s.Image == nil {
+		s.Image = &BookkeeperImageSpec{}
 	}
-
 	s.Image.withDefaults()
 
-	if s.Replicas < 3 {
-		s.Replicas = 3
+	if s.Replicas < MinimumBookkeeperReplicas {
+		s.Replicas = MinimumBookkeeperReplicas
 	}
 
+	if s.Storage == nil {
+		s.Storage = &BookkeeperStorageSpec{}
+	}
 	s.Storage.withDefaults()
+
+	if s.AutoRecovery == nil || (*s.AutoRecovery != true && *s.AutoRecovery != false) {
+		boolTrue := true
+		s.AutoRecovery = &boolTrue
+	}
 }
 
 // BookkeeperImageSpec defines the fields needed for a BookKeeper Docker image
@@ -85,10 +96,6 @@ func (s *BookkeeperImageSpec) String() string {
 }
 
 func (s *BookkeeperImageSpec) withDefaults() {
-	if s == nil {
-		s = &BookkeeperImageSpec{ImageSpec{}}
-	}
-
 	if s.Repository == "" {
 		s.Repository = DefaultBookkeeperImageRepository
 	}
@@ -116,10 +123,6 @@ type BookkeeperStorageSpec struct {
 }
 
 func (s *BookkeeperStorageSpec) withDefaults() {
-	if s == nil {
-		s = &BookkeeperStorageSpec{}
-	}
-
 	if s.LedgerVolumeClaimTemplate == nil {
 		s.LedgerVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},

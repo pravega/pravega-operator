@@ -18,16 +18,16 @@ import (
 )
 
 const (
-	// DefaultBookkeeperImageRepository is the default Docker repository for
-	// the BookKeeper image
+	// DefaultPravegaImageRepository is the default Docker repository for
+	// the Pravega image
 	DefaultPravegaImageRepository = "pravega/pravega"
 
-	// DefaultBookkeeperImageTag is the default tag used for for the BookKeeper
+	// DefaultPravegaImageTag is the default tag used for for the Pravega
 	// Docker image
 	DefaultPravegaImageTag = "latest"
 
-	// DefaultBookkeeperImagePullPolicy is the default image pull policy used
-	// for the BookKeeper Docker image
+	// DefaultPravegaImagePullPolicy is the default image pull policy used
+	// for the Pravega Docker image
 	DefaultPravegaImagePullPolicy = v1.PullAlways
 
 	// DefaultPravegaCacheVolumeSize is the default volume size for the
@@ -36,6 +36,14 @@ const (
 
 	// DefaultPravegaTier2ClaimName is the default volume claim name used as Tier 2
 	DefaultPravegaTier2ClaimName = "pravega-tier2"
+
+	// DefaultControllerReplicas is the default number of replicas for the Pravega
+	// Controller component
+	DefaultControllerReplicas = 1
+
+	// DefaultSegmentStoreReplicas is the default number of replicas for the Pravega
+	// Segment Store component
+	DefaultSegmentStoreReplicas = 1
 )
 
 // PravegaSpec defines the configuration of Pravega
@@ -54,7 +62,7 @@ type PravegaSpec struct {
 
 	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega:latest" will be used.
-	Image PravegaImageSpec `json:"image"`
+	Image *PravegaImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
@@ -69,12 +77,14 @@ type PravegaSpec struct {
 	// Tier2 is the configuration of Pravega's tier 2 storage. If no configuration
 	// is provided, it will assume that a PersistentVolumeClaim called "pravega-tier2"
 	// is present and it will use it as Tier 2
-	Tier2 Tier2Spec `json:"tier2"`
+	Tier2 *Tier2Spec `json:"tier2"`
 
-	// ControllerServiceAccountName configures the service account used on controller instances
+	// ControllerServiceAccountName configures the service account used on controller instances.
+	// If not specified, Kubernetes will automatically assign the default service account in the namespace
 	ControllerServiceAccountName string `json:"controllerServiceAccountName,omitempty"`
 
-	// SegmentStoreServiceAccountName configures the service account used on segment store instances
+	// SegmentStoreServiceAccountName configures the service account used on segment store instances.
+	// If not specified, Kubernetes will automatically assign the default service account in the namespace
 	SegmentStoreServiceAccountName string `json:"segmentStoreServiceAccountName,omitempty"`
 }
 
@@ -87,6 +97,9 @@ func (s *PravegaSpec) withDefaults() {
 		s.SegmentStoreReplicas = 1
 	}
 
+	if s.Image == nil {
+		s.Image = &PravegaImageSpec{}
+	}
 	s.Image.withDefaults()
 
 	if s.Options == nil {
@@ -104,6 +117,9 @@ func (s *PravegaSpec) withDefaults() {
 		}
 	}
 
+	if s.Tier2 == nil {
+		s.Tier2 = &Tier2Spec{}
+	}
 	s.Tier2.withDefaults()
 }
 
@@ -118,10 +134,6 @@ func (s *PravegaImageSpec) String() string {
 }
 
 func (s *PravegaImageSpec) withDefaults() {
-	if s == nil {
-		s = &PravegaImageSpec{}
-	}
-
 	if s.Repository == "" {
 		s.Repository = DefaultPravegaImageRepository
 	}
@@ -135,26 +147,39 @@ func (s *PravegaImageSpec) withDefaults() {
 	}
 }
 
-// Tier2Spec configures the Tier 2 storage type to use with Pravega
+// Tier2Spec configures the Tier 2 storage type to use with Pravega.
+// If not specified, Tier 2 will be configured in filesystem mode and will try
+// to use a PersistentVolumeClaim with the name "pravega-tier2"
 type Tier2Spec struct {
+	// FileSystem is used to configure a pre-created Persistent Volume Claim
+	// as Tier 2 backend.
+	// It is default Tier 2 mode.
 	FileSystem *FileSystemSpec `json:"filesystem,omitempty"`
-	Ecs        *ECSSpec        `json:"ecs,omitempty"`
-	Hdfs       *HDFSSpec       `json:"hdfs,omitempty"`
+
+	// Ecs is used to configure a Dell EMC ECS system as a Tier 2 backend
+	Ecs *ECSSpec `json:"ecs,omitempty"`
+
+	// Hdfs is used to configure an HDFS system as a Tier 2 backend
+	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
 }
 
 func (s *Tier2Spec) withDefaults() {
-	fs := &FileSystemSpec{
-		PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-			ClaimName: DefaultPravegaTier2ClaimName,
-		},
+	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil {
+		fs := &FileSystemSpec{
+			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
+				ClaimName: DefaultPravegaTier2ClaimName,
+			},
+		}
+		s.FileSystem = fs
 	}
-	s.FileSystem = fs
 }
 
+// FileSystemSpec contains the reference to a PVC.
 type FileSystemSpec struct {
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim"`
 }
 
+// ECSSpec contains the connection details to a Dell EMC ECS system
 type ECSSpec struct {
 	Uri         string `json:"uri"`
 	Bucket      string `json:"bucket"`
@@ -163,6 +188,7 @@ type ECSSpec struct {
 	Credentials string `json:"credentials"`
 }
 
+// HDFSSpec contains the connection details to an HDFS system
 type HDFSSpec struct {
 	Uri               string `json:"uri"`
 	Root              string `json:"root"`
