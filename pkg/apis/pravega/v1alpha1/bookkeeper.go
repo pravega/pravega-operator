@@ -79,7 +79,7 @@ func (s *BookkeeperSpec) withDefaults() {
 	}
 	s.Storage.withDefaults()
 
-	if s.AutoRecovery == nil || (*s.AutoRecovery != true && *s.AutoRecovery != false) {
+	if s.AutoRecovery == nil {
 		boolTrue := true
 		s.AutoRecovery = &boolTrue
 	}

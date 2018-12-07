@@ -15,7 +15,7 @@ spec:
       serviceAccountName: pravega-operator
       containers:
         - name: pravega-operator
-          image: adrianmo/pravega-operator:v0.1.0-19-dirty
+          image: pravega/pravega-operator:latest
           ports:
           - containerPort: 60000
             name: metrics
