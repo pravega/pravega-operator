@@ -12,6 +12,8 @@ package util
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
@@ -34,6 +36,10 @@ func ServiceNameForController(clusterName string) string {
 
 func ServiceNameForSegmentStore(clusterName string, index int32) string {
 	return fmt.Sprintf("%s-pravega-segmentstore-%d", clusterName, index)
+}
+
+func PvcNameForSts(pvcName string, stsName string) string {
+	return fmt.Sprintf("%s-%s", pvcName, stsName)
 }
 
 func HeadlessServiceNameForSegmentStore(clusterName string) string {
@@ -78,4 +84,24 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster, component 
 
 func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
 	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
+}
+
+func PvcIsOrphan(pvcNameForK8s string, pvcMap map[string]int) bool {
+	index := strings.LastIndexAny(pvcNameForK8s, "-")
+	if index == -1 {
+		return false
+	}
+
+	name := pvcNameForK8s[:index]
+	if replica, ok := pvcMap[name]; ok {
+		ordinal, err := strconv.Atoi(pvcNameForK8s[index+1:])
+		if err != nil {
+			return false
+		}
+
+		if ordinal >= replica {
+			return true
+		}
+	}
+	return false
 }

@@ -20,6 +20,8 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -242,6 +244,10 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 		return err
 	}
 
+	err = r.syncPersistentVolumeSize(p)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -260,7 +266,6 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
 	}
-
 	return nil
 }
 
@@ -295,6 +300,45 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) syncPersistentVolumeSize(p *pravegav1alpha1.PravegaCluster) error {
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	pvclistOps := &client.ListOptions{Namespace: p.Namespace}
+	err := r.client.List(context.TODO(), pvclistOps, pvcList)
+	if err != nil {
+		return fmt.Errorf("failed to get pvc list in namespace (%s): %v", p.Namespace, err)
+	}
+
+	stsNameForBookie := util.StatefulSetNameForBookie(p.Name)
+	stsNameForSegmentstore := util.StatefulSetNameForSegmentstore(p.Name)
+
+	ledgerPvcNameForSts := util.PvcNameForSts(pravega.LedgerDiskName, stsNameForBookie)
+	journalPvcNameForSts := util.PvcNameForSts(pravega.JournalDiskName, stsNameForBookie)
+	cachePvcNameForSts := util.PvcNameForSts(pravega.CacheVolumeName, stsNameForSegmentstore)
+
+	pvcMap := map[string]int{
+		ledgerPvcNameForSts:  int(p.Spec.Bookkeeper.Replicas),
+		journalPvcNameForSts: int(p.Spec.Bookkeeper.Replicas),
+		cachePvcNameForSts:   int(p.Spec.Pravega.SegmentStoreReplicas),
+	}
+
+	for _, pvcItem := range pvcList.Items {
+		if util.PvcIsOrphan(pvcItem.Name, pvcMap) {
+			pvcDelete := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pvcItem.Name,
+					Namespace: pvcItem.Namespace,
+				},
+			}
+
+			err = r.client.Delete(context.TODO(), pvcDelete)
+			if err != nil {
+				return fmt.Errorf("failed to delete pvc: (%s/%s): %v", p.Namespace, p.Name, err)
+			}
 		}
 	}
 	return nil
