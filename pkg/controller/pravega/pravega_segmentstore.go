@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	CacheVolumeName       = "cache"
+	cacheVolumeName       = "cache"
 	cacheVolumeMountPoint = "/tmp/pravega/cache"
 	tier2FileMountPoint   = "/mnt/tier2"
 	tier2VolumeName       = "tier2"
@@ -93,7 +93,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				Env:     util.DownwardAPIEnv(),
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      CacheVolumeName,
+						Name:      cacheVolumeName,
 						MountPath: cacheVolumeMountPoint,
 					},
 				},
@@ -158,7 +158,7 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: CacheVolumeName,
+				Name: cacheVolumeName,
 			},
 			Spec: pravegaSpec.CacheVolumeClaimTemplate,
 		},

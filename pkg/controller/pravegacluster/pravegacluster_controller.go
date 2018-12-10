@@ -244,10 +244,6 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 		return err
 	}
 
-	err = r.syncPersistentVolumeSize(p)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -264,6 +260,11 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
+		}
+
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
 	}
 	return nil
@@ -282,6 +283,11 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
+		}
+
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
 	}
 	return nil
@@ -305,29 +311,26 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncPersistentVolumeSize(p *pravegav1alpha1.PravegaCluster) error {
-	pvcList := &corev1.PersistentVolumeClaimList{}
-	pvclistOps := &client.ListOptions{Namespace: p.Namespace}
-	err := r.client.List(context.TODO(), pvclistOps, pvcList)
+func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) error {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: sts.Spec.Template.Labels,
+	})
 	if err != nil {
-		return fmt.Errorf("failed to get pvc list in namespace (%s): %v", p.Namespace, err)
+		return err
 	}
 
-	stsNameForBookie := util.StatefulSetNameForBookie(p.Name)
-	stsNameForSegmentstore := util.StatefulSetNameForSegmentstore(p.Name)
-
-	ledgerPvcNameForSts := util.PvcNameForSts(pravega.LedgerDiskName, stsNameForBookie)
-	journalPvcNameForSts := util.PvcNameForSts(pravega.JournalDiskName, stsNameForBookie)
-	cachePvcNameForSts := util.PvcNameForSts(pravega.CacheVolumeName, stsNameForSegmentstore)
-
-	pvcMap := map[string]int{
-		ledgerPvcNameForSts:  int(p.Spec.Bookkeeper.Replicas),
-		journalPvcNameForSts: int(p.Spec.Bookkeeper.Replicas),
-		cachePvcNameForSts:   int(p.Spec.Pravega.SegmentStoreReplicas),
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	pvclistOps := &client.ListOptions{
+		Namespace:     sts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), pvclistOps, pvcList)
+	if err != nil {
+		return err
 	}
 
 	for _, pvcItem := range pvcList.Items {
-		if util.PvcIsOrphan(pvcItem.Name, pvcMap) {
+		if util.PvcIsOrphan(pvcItem.Name, *sts.Spec.Replicas) {
 			pvcDelete := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pvcItem.Name,
@@ -337,7 +340,7 @@ func (r *ReconcilePravegaCluster) syncPersistentVolumeSize(p *pravegav1alpha1.Pr
 
 			err = r.client.Delete(context.TODO(), pvcDelete)
 			if err != nil {
-				return fmt.Errorf("failed to delete pvc: (%s/%s): %v", p.Namespace, p.Name, err)
+				return fmt.Errorf("failed to delete pvc: %v", err)
 			}
 		}
 	}
