@@ -45,8 +45,8 @@ login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
 
 push: build-image login
-	docker push $(REPO):latest
 	docker push $(REPO):$(VERSION)
+	docker push $(REPO):latest
 
 clean:
 	rm -f bin/$(PROJECT_NAME)
