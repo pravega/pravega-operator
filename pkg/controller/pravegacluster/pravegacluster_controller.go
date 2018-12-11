@@ -316,7 +316,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 		MatchLabels: sts.Spec.Template.Labels,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to convert label selector: %v", err)
 	}
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
