@@ -501,3 +501,48 @@ kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admi
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
 ```
 The above commands should resolve the errors and `helm install` should work correctly.
+
+### Unavailability of `nfs-common` package in Kube nodes
+
+While deploying Pravega on PKS clusters, Segment Store pods are unable to mount the volumes created by NFS server provisioner. It throws `wrong fs type` error as shown below:
+
+Snip of `kubectl describe po/pravega-segmentstore-0`
+
+```
+Events:
+  Type     Reason       Age                        From                                           Message
+  ----     ------       ----                       ----                                           -------
+  Warning  FailedMount  10m (x222 over 10h)        kubelet, 53931b0d-18f4-49fd-a105-49b1fea3f468  Unable to mount volumes for pod "nautilus-segmentstore-0_nautilus-pravega(79167f33-f73b-11e8-936a-005056aeca39)": timeout expired waiting for volumes to attach or mount for pod "nautilus-pravega"/"nautilus-segmentstore-0". list of unmounted volumes=[tier2]. list of unattached volumes=[cache tier2 pravega-segment-store-token-fvxql]
+  Warning  FailedMount  <invalid> (x343 over 10h)  kubelet, 53931b0d-18f4-49fd-a105-49b1fea3f468  (combined from similar events): MountVolume.SetUp failed for volume "pvc-6fa77d63-f73b-11e8-936a-005056aeca39" : mount failed: exit status 32
+Mounting command: systemd-run
+Mounting arguments: --description=Kubernetes transient mount for   /var/lib/kubelet/pods/79167f33-f73b-11e8-936a-005056aeca39/volumes/kubernetes.io~nfs/pvc-6fa77d63-f73b-11e8-936a-005056aeca39 --scope -- mount -t nfs -o vers=4.1 10.100.200.247:/export/pvc-6fa77d63-f73b-11e8-936a-005056aeca39 /var/lib/kubelet/pods/79167f33-f73b-11e8-936a-005056aeca39/volumes/kubernetes.io~nfs/pvc-6fa77d63-f73b-11e8-936a-005056aeca39
+Output: Running scope as unit run-rc77b988cdec041f6aa91c8ddd8455587.scope.
+mount: wrong fs type, bad option, bad superblock on 10.100.200.247:/export/pvc-6fa77d63-f73b-11e8-936a-005056aeca39,
+       missing codepage or helper program, or other error
+       (for several filesystems (e.g. nfs, cifs) you might
+       need a /sbin/mount.<type> helper program)
+
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so.
+```
+
+The following workaround can be applied to resolve the issue:
+
+`Unable to mount volumes` error is thrown for Segment Store pods on PKS cluster due to the unavailability of `nfs-common` package in Kube nodes. This issue is observed in Pivotal Container Service version `1.2.2-build.3`, this error is resolved after upgrading the Pivotal Container Service version to `1.2.3-build.9`.
+
+Following is the change log from PKS Pivotal Container Service `1.2.3-build.9`
+
+```
+2018-11-30
+RELEASE TYPE
+Maintenance Release
+END OF GENERAL SUPPORT
+2019-06-30
+RELEASE DESCRIPTION
+* NSX-T and vCenter IaaS proxy.
+* Large-sized NSX-T load balancer types.
+* Kubernetes v1.11.5.
+* On-demand-broker v0.24.
+* Xenial Stemcell v97.34.
+* Fix: Issue with mounting NFS Persistent Volumes is resolved.
+```
