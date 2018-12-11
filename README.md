@@ -26,7 +26,7 @@ The project is currently alpha. While no breaking API changes are currently plan
 * [Releases](#releases)
 * [Troubleshooting](#troubleshooting)
     * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
-
+    * [Segment Store Pods Error: wrong fs type error](#segment-store-pods-error-wrong-fs-type-error)
 ## Overview
 
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
@@ -502,7 +502,7 @@ kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"templat
 ```
 The above commands should resolve the errors and `helm install` should work correctly.
 
-### Unavailability of `nfs-common` package in Kube nodes
+### Segment Store Pods Error: wrong fs type error
 
 While deploying Pravega on PKS clusters, Segment Store pods are unable to mount the volumes created by NFS server provisioner. It throws `wrong fs type` error as shown below:
 
