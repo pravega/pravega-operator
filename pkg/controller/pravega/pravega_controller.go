@@ -76,6 +76,30 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 						},
 					},
 				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(9090),
+						},
+					},
+					// Controller pods start fast. We give it up to 1 minute to become ready.
+					PeriodSeconds:    5,
+					FailureThreshold: 12,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(9090),
+						},
+					},
+					// We start the liveness probe from the maximum time the pod can take
+					// before becoming ready.
+					// If the pod fails the health check during 1 minute, Kubernetes
+					// will restart it.
+					InitialDelaySeconds: 60,
+					PeriodSeconds:       15,
+					FailureThreshold:    4,
+				},
 			},
 		},
 	}
