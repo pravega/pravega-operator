@@ -20,7 +20,6 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 
 	appsv1 "k8s.io/api/apps/v1"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -99,6 +98,20 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to get PravegaCluster: %v", err)
 		return reconcile.Result{}, err
 	}
+
+	processing, err := r.reconcileFinalizers(pravegaCluster)
+	if err != nil {
+		log.Printf("failed to execute finalizers: %v", err)
+		return reconcileResult, err
+	}
+
+	if processing {
+		log.Printf("Shutting down Pravega Cluster gracefully")
+		return reconcileResult, nil
+	}
+
+	// Set default configuration for unspecified values
+	pravegaCluster.WithDefaults()
 
 	// Rest of your reconcile code goes here
 	err = r.deployBookie(pravegaCluster)
@@ -187,6 +200,9 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	for i := range statefulSet.Spec.VolumeClaimTemplates {
+		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	}
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -212,6 +228,9 @@ func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster
 
 	statefulSet := pravega.MakeBookieStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	for i := range statefulSet.Spec.VolumeClaimTemplates {
+		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	}
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -254,7 +273,6 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
 	}
-
 	return nil
 }
 
@@ -292,4 +310,45 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		}
 	}
 	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.PravegaCluster) (processing bool, err error) {
+	if p.DeletionTimestamp.IsZero() {
+		if !containsString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER) {
+			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, ZKMETAFINALIZER)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return false, fmt.Errorf("failed to add finalizer: %v", err)
+			}
+		}
+		if !containsString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER) {
+			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, ZKUSERFINALIZER)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return false, fmt.Errorf("failed to add finalizer: %v", err)
+			}
+		}
+		return false, nil
+	}
+
+	if containsString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER) {
+		if err = r.cleanUpZkUser(p); err != nil {
+			return true, fmt.Errorf("failed to delete zookeeper users (%s): %v", ZKUSERFINALIZER, err)
+		}
+
+		p.ObjectMeta.Finalizers = removeString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER)
+		if err = r.client.Update(context.TODO(), p); err != nil {
+			return true, fmt.Errorf("failed to remove finalizer: %v", err)
+		}
+	}
+
+	if containsString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER) {
+		if err = r.cleanUpMetaInZk(p); err != nil {
+			return true, fmt.Errorf("failed to clean up metadata in zookeeper (%s): %v", ZKMETAFINALIZER, err)
+		}
+
+		p.ObjectMeta.Finalizers = removeString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER)
+		if err = r.client.Update(context.TODO(), p); err != nil {
+			return true, fmt.Errorf("failed to remove finalizer: %v", err)
+		}
+	}
+	return true, nil
 }

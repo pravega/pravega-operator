@@ -11,22 +11,8 @@
 package util
 
 import (
-	"fmt"
-
-	"os"
-
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 )
-
-// GetWatchNamespaceAllowBlank returns the namespace the operator should be watching for changes
-func GetWatchNamespaceAllowBlank() (string, error) {
-	ns, found := os.LookupEnv(k8sutil.WatchNamespaceEnvVar)
-	if !found {
-		return "", fmt.Errorf("%s must be set", k8sutil.WatchNamespaceEnvVar)
-	}
-	return ns, nil
-}
 
 func DownwardAPIEnv() []corev1.EnvVar {
 	return []corev1.EnvVar{

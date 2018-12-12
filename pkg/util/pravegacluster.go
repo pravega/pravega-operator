@@ -76,6 +76,14 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster, component 
 	}
 }
 
+func LabelsForZookeeperNode(selector map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range selector {
+		result[k] = v
+	}
+	return result
+}
+
 func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
 	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
 }
