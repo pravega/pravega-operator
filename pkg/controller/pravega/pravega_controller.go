@@ -40,7 +40,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: util.LabelsForController(p),
 				},
-				Spec: *makeControllerPodSpec(p.Name, &p.Spec.Pravega),
+				Spec: *makeControllerPodSpec(p.Name, p.Spec.Pravega),
 			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(p),

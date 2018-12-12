@@ -68,7 +68,7 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(&pravegaCluster.Spec.Bookkeeper),
+			VolumeClaimTemplates: makeBookieVolumeClaimTemplates(pravegaCluster.Spec.Bookkeeper),
 		},
 	}
 }
@@ -78,7 +78,7 @@ func makeBookieStatefulTemplate(pravegaCluster *v1alpha1.PravegaCluster) corev1.
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: util.LabelsForBookie(pravegaCluster),
 		},
-		Spec: *makeBookiePodSpec(pravegaCluster.Name, &pravegaCluster.Spec.Bookkeeper),
+		Spec: *makeBookiePodSpec(pravegaCluster.Name, pravegaCluster.Spec.Bookkeeper),
 	}
 }
 
@@ -138,13 +138,13 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 			ObjectMeta: metav1.ObjectMeta{
 				Name: JournalDiskName,
 			},
-			Spec: spec.Storage.JournalVolumeClaimTemplate,
+			Spec: *spec.Storage.JournalVolumeClaimTemplate,
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: LedgerDiskName,
 			},
-			Spec: spec.Storage.LedgerVolumeClaimTemplate,
+			Spec: *spec.Storage.LedgerVolumeClaimTemplate,
 		},
 	}
 }
@@ -158,7 +158,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	if pravegaCluster.Spec.Bookkeeper.AutoRecovery {
+	if *pravegaCluster.Spec.Bookkeeper.AutoRecovery {
 		configData["BK_AUTORECOVERY"] = "true"
 	}
 
