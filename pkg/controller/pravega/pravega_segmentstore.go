@@ -115,6 +115,9 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
+		"-Dbookkeeper.bkEnsembleSize=2",
+		"-Dbookkeeper.bkAckQuorumSize=2",
+		"-Dbookkeeper.bkWriteQuorumSize=2",
 	}
 
 	for name, value := range pravegaCluster.Spec.Pravega.Options {
