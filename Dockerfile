@@ -1,8 +1,17 @@
+#
+# Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
 FROM golang:1.10.1-alpine3.7 as go-builder
 
 ARG PROJECT_NAME=pravega-operator
-ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
-ARG BUILD_PATH=${REPO_PATH}/cmd/${PROJECT_NAME}
+ARG REPO_PATH=github.com/pravega/${PROJECT_NAME}
+ARG BUILD_PATH=${REPO_PATH}/cmd/manager
 
 # Build version and commit SHA should be passed in when performing docker build
 ARG VERSION=0.0.0-localdev
