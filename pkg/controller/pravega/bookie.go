@@ -176,7 +176,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 }
 
 func MakeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
-	minAvailable := intstr.FromInt(3)
+	maxUnavailable := intstr.FromInt(1)
 
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
@@ -188,7 +188,7 @@ func MakeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *pol
 			Namespace: pravegaCluster.Namespace,
 		},
 		Spec: policyv1beta1.PodDisruptionBudgetSpec{
-			MinAvailable: &minAvailable,
+			MaxUnavailable: &maxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
