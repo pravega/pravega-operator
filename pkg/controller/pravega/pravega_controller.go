@@ -165,14 +165,7 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 }
 
 func MakeControllerPodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
-	var maxUnavailable intstr.IntOrString
-
-	if pravegaCluster.Spec.Pravega.ControllerReplicas == int32(1) {
-		maxUnavailable = intstr.FromInt(0)
-	} else {
-		maxUnavailable = intstr.FromInt(1)
-	}
-
+	minAvailable := intstr.FromInt(1)
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PodDisruptionBudget",
@@ -183,7 +176,7 @@ func MakeControllerPodDisruptionBudget(pravegaCluster *api.PravegaCluster) *poli
 			Namespace: pravegaCluster.Namespace,
 		},
 		Spec: policyv1beta1.PodDisruptionBudgetSpec{
-			MaxUnavailable: &maxUnavailable,
+			MinAvailable: &minAvailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(pravegaCluster),
 			},

@@ -177,7 +177,6 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 
 func MakeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	maxUnavailable := intstr.FromInt(1)
-
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PodDisruptionBudget",
