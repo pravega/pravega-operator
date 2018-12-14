@@ -35,11 +35,16 @@ before_script:
 - kubectl cluster-info
 
 script:
+# fail fast - in case there is an error building, quit immediately.
+# instruct bash to quit if there is a non zero response code (error)
+- set -e
 - make dep
 - make check
 - make test
 - make build
 - make clean
+# back to default in case internal travis scripts return non zero response codes.
+- set +e
 
 deploy:
   provider: script
