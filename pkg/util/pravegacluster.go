@@ -69,22 +69,27 @@ func StatefulSetNameForSegmentstore(clusterName string) string {
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "bookie")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "bookie"
+	return labels
 }
 
 func LabelsForController(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "pravega-controller")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "pravega-controller"
+	return labels
 }
 
 func LabelsForSegmentStore(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "pravega-segmentstore")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "pravega-segmentstore"
+	return labels
 }
 
-func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster, component string) map[string]string {
+func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
 	return map[string]string{
 		"app":             "pravega-cluster",
 		"pravega_cluster": pravegaCluster.Name,
-		"component":       component,
 	}
 }
 
