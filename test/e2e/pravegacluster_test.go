@@ -11,21 +11,13 @@
 package e2e
 
 import (
-	"testing"
-	"time"
-
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-	apis "github.com/pravega/pravega-operator/pkg/apis"
+	"github.com/pravega/pravega-operator/pkg/apis"
 	operator "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-var (
-	retryInterval        = time.Second * 5
-	timeout              = time.Second * 60
-	cleanupRetryInterval = time.Second * 1
-	cleanupTimeout       = time.Second * 5
+	"testing"
 )
 
 func TestPravegaCluster(t *testing.T) {
@@ -49,10 +41,11 @@ func PravegaCluster(t *testing.T) {
 	t.Parallel()
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
-	err := ctx.InitializeClusterResources(&framework.CleanupOptions{TestContext: ctx, Timeout: cleanupTimeout, RetryInterval: cleanupRetryInterval})
+	err := ctx.InitializeClusterResources(&framework.CleanupOptions{TestContext: ctx, Timeout: pravega_e2eutil.Timeout, RetryInterval: pravega_e2eutil.RetryInterval})
 	if err != nil {
 		t.Fatalf("failed to initialize cluster resources: %v", err)
 	}
+
 	t.Log("Initialized cluster resources")
 	namespace, err := ctx.GetNamespace()
 	if err != nil {
@@ -61,12 +54,12 @@ func PravegaCluster(t *testing.T) {
 	// get global framework variables
 	f := framework.Global
 	// wait for pravega-operator to be ready
-	err = e2eutil.WaitForDeployment(t, f.KubeClient, namespace, "pravega-operator", 1, retryInterval, timeout)
+	err = e2eutil.WaitForDeployment(t, f.KubeClient, namespace, "pravega-operator", 1, pravega_e2eutil.RetryInterval, pravega_e2eutil.Timeout)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = testCreateCluster(t, f, ctx); err != nil {
+	if err = testCreateDefaultCluster(t, f, ctx, namespace); err != nil {
 		t.Fatal(err)
 	}
 }

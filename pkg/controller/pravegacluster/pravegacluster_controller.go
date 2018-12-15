@@ -102,6 +102,9 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
+	// Set default configuration for unspecified values
+	pravegaCluster.WithDefaults()
+
 	// Rest of your reconcile code goes here
 	err = r.deployBookie(pravegaCluster)
 	if err != nil {

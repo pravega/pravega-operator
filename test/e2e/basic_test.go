@@ -11,12 +11,93 @@
 package e2e
 
 import (
+	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
 	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 )
 
-func testCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	t.Skip("Not implemented")
+func testCreateDefaultCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
+	if err != nil {
+		return err
+	}
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func testScaleUp(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	pravega.Spec.Pravega.ControllerReplicas = pravega.Spec.Pravega.ControllerReplicas + 1
+	pravega.Spec.Pravega.SegmentStoreReplicas = pravega.Spec.Pravega.SegmentStoreReplicas + 1
+	pravega.Spec.Bookkeeper.Replicas = pravega.Spec.Bookkeeper.Replicas + 1
+
+	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func testPvcWhenScalingDown(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewStandardCluster(namespace))
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	pravega.Spec.Pravega.SegmentStoreReplicas = 1
+	pravega.Spec.Bookkeeper.Replicas = 1
+
+	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.WaitForPvc(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
+
+	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
+	if err != nil {
+		return err
+	}
 	return nil
 }
