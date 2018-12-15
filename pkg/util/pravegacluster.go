@@ -108,3 +108,7 @@ func PvcIsOrphan(stsPvcName string, replicas int32) bool {
 
 	return int32(ordinal) >= replicas
 }
+
+func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
+	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
+}
