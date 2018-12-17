@@ -23,7 +23,7 @@ install:
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.2.0/operator-sdk-v0.2.0-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
 - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.12.0-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
 - curl -Lo util-linux-2.25.tar.gz https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.25/util-linux-2.25.tar.gz && tar xfz util-linux-2.25.tar.gz
-- sudo apt install -y autopoint autoconf libtool automake
+# - sudo apt install -y autopoint autoconf libtool automake
 - cd util-linux-2.25; ./configure --without-python --disable-all-programs --enable-nsenter --without-ncurses; make nsenter; cp nsenter /usr/local/bin
 
 before_script:
@@ -41,12 +41,10 @@ before_script:
 - kubectl create serviceaccount --namespace kube-system tiller
 - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 - helm init --service-account tiller --wait
-
 # Install NFS provisioner
 - helm install stable/nfs-server-provisioner
 - kubectl create -f test/e2e/resources/tier2.yaml
 - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
-
 # Install ZooKeeper
 - kubectl create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crd.yaml
 - kubectl create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/rbac.yaml
