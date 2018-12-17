@@ -57,6 +57,7 @@ script:
 - make dep
 - make check
 - make test
+- kubectl -n default describe pod test-pravega-segmentstore-0
 - make build
 - make clean
 
