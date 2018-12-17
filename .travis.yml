@@ -22,8 +22,11 @@ install:
 - curl -Lo dep https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.2.0/operator-sdk-v0.2.0-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
 - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.12.0-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+# Helm requires "nsenter"
 - curl -Lo util-linux-2.25.tar.gz https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.25/util-linux-2.25.tar.gz && tar xfz util-linux-2.25.tar.gz
 - cd util-linux-2.25; ./configure --without-python --disable-all-programs --enable-nsenter --without-ncurses; make nsenter; sudo cp nsenter /usr/local/bin/; cd -
+# Required to mount NFS-based Pravega Tier 2 storage
+- sudo apt-get install -y nfs-common
 
 before_script:
 # Make root mounted as rshared to fix kube-dns issues
