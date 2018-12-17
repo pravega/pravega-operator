@@ -67,12 +67,10 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 }
 
 // WaitForPravegaCluster will wait until the given PravegaCluster CR is ready
-func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
 	}
-
-	size := p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Pravega.ControllerReplicas + p.Spec.Bookkeeper.Replicas
 
 	err := wait.Poll(RetryInterval, 5*time.Minute, func() (done bool, err error) {
 		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)

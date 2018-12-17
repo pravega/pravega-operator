@@ -24,7 +24,9 @@ func testCreateDefaultCluster(t *testing.T, f *framework.Framework, ctx *framewo
 		return err
 	}
 
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
+	podSize := 5
+	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega, podSize)
 	if err != nil {
 		return err
 	}
