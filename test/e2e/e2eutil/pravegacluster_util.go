@@ -11,6 +11,7 @@
 package e2eutil
 
 import (
+	"bytes"
 	goctx "context"
 	"fmt"
 	"testing"
@@ -94,7 +95,19 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 	})
 
 	if err != nil {
-		return err
+		// Try to obtain the pod logs
+		req := f.KubeClient.Core().Pods(p.Namespace).GetLogs("test-pravega-segmentstore-0", &v1.PodLogOptions{})
+		readCloser, err2 := req.Stream()
+		if err2 != nil {
+			return fmt.Errorf("%s (failed to get error logs from pod: %s)", err, err2)
+		}
+		defer readCloser.Close()
+		buf := new(bytes.Buffer)
+		_, err2 = buf.ReadFrom(readCloser)
+		if err2 != nil {
+			return fmt.Errorf("%s (failed to read pod logs: %v)", err, err2)
+		}
+		return fmt.Errorf("%s: test failed:\n%s", err, buf.String())
 	}
 
 	t.Logf("pravega cluster available: %s", p.Name)
