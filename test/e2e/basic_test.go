@@ -39,5 +39,8 @@ func testCreateDefaultCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO: Run test pod to write and read data from the cluster
+	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

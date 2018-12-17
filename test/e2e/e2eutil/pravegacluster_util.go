@@ -11,7 +11,6 @@
 package e2eutil
 
 import (
-	"bytes"
 	goctx "context"
 	"fmt"
 	"testing"
@@ -95,21 +94,41 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 	})
 
 	if err != nil {
-		// Try to obtain the pod logs
-		req := f.KubeClient.Core().Pods(p.Namespace).GetLogs("test-pravega-segmentstore-0", &v1.PodLogOptions{})
-		readCloser, err2 := req.Stream()
-		if err2 != nil {
-			return fmt.Errorf("%s (failed to get error logs from pod: %s)", err, err2)
-		}
-		defer readCloser.Close()
-		buf := new(bytes.Buffer)
-		_, err2 = buf.ReadFrom(readCloser)
-		if err2 != nil {
-			return fmt.Errorf("%s (failed to read pod logs: %v)", err, err2)
-		}
-		return fmt.Errorf("%s: test failed:\n%s", err, buf.String())
+		return err
 	}
 
 	t.Logf("pravega cluster available: %s", p.Name)
+	return nil
+}
+
+// Start the test Job and return the result of the test
+func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	testCfg := NewTestConfigMap(p.Namespace, util.ServiceNameForController(p.Name))
+	err := f.Client.Create(goctx.TODO(), testCfg, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return fmt.Errorf("failed to create configmap: %s", err)
+	}
+
+	testJob := NewTestJob(p.Namespace)
+	err = f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return fmt.Errorf("failed to create job: %s", err)
+	}
+	err = wait.Poll(RetryInterval, 10*time.Minute, func() (done bool, err error) {
+		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return false, err
+		}
+		if job.Status.CompletionTime.IsZero() {
+			return false, nil
+		}
+		if job.Status.Failed > 0 {
+			return false, fmt.Errorf("failed to write and read data from cluster")
+		}
+		return true, nil
+	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
