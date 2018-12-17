@@ -33,12 +33,10 @@ func TestPravegaCluster(t *testing.T) {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
 	}
 	// run subtests
-	t.Run("pravega-group", func(t *testing.T) {
-		t.Run("Cluster", PravegaCluster)
-	})
+	t.Run("x", testPravegaCluster)
 }
 
-func PravegaCluster(t *testing.T) {
+func testPravegaCluster(t *testing.T) {
 	t.Parallel()
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
@@ -59,7 +57,11 @@ func PravegaCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = testCreateDefaultCluster(t, f, ctx, namespace); err != nil {
-		t.Fatal(err)
+	testFuncs := map[string]func(t *testing.T){
+		"testCreateDefaultCluster": testCreateDefaultCluster,
+	}
+
+	for name, f := range testFuncs {
+		t.Run(name, f)
 	}
 }

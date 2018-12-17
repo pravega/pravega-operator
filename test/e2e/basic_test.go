@@ -18,20 +18,26 @@ import (
 	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
 )
 
-func testCreateDefaultCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+func testCreateDefaultCluster(t *testing.T) {
+	ctx := framework.NewTestCtx(t)
+	defer ctx.Cleanup()
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := framework.Global
+
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
 	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega, podSize)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
 	// TODO: Run test pod to write and read data from the cluster
-
-	return nil
 }
