@@ -1,6 +1,6 @@
 apiVersion: "zookeeper.pravega.io/v1beta1"
 kind: "ZookeeperCluster"
 metadata:
-  name: "test"
+  name: "zk"
 spec:
-  size: 3
+  size: 1

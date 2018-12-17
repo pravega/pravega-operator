@@ -42,14 +42,16 @@ before_script:
 - helm init --service-account tiller --wait
 # Install NFS provisioner
 - helm install stable/nfs-server-provisioner
-- kubectl create -f test/e2e/resources/tier2.yaml
+- kubectl -n default create -f test/e2e/resources/tier2.yaml
 - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
 # Install ZooKeeper
-- kubectl create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crd.yaml
-- kubectl create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/rbac.yaml
-- kubectl create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/operator.yaml
-- kubectl create -f test/e2e/resources/zookeeper.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crd.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/rbac.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/operator.yaml
+- kubectl -n default create -f test/e2e/resources/zookeeper.yaml
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# Show Kubernetes resources
+- kubectl -n default get pod,pvc,svc
 
 script:
 - make dep
