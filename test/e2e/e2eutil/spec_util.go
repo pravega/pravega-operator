@@ -11,6 +11,8 @@
 package e2eutil
 
 import (
+	"fmt"
+
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +35,9 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 }
 
 // Returns a Job that can test pravega cluster by running a pravega example
-func NewTestJob(namespace string) *batchv1.Job {
+func NewTestJob(namespace string, command string) *batchv1.Job {
+	deadline := int64(60)
+	retries := int32(1)
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Job",
@@ -44,34 +48,18 @@ func NewTestJob(namespace string) *batchv1.Job {
 			Namespace: namespace,
 		},
 		Spec: batchv1.JobSpec{
+			ActiveDeadlineSeconds: &deadline,
+			BackoffLimit:          &retries,
+
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Name:            "test-container",
-							Image:           "openjdk:8",
+							Image:           "adrianmo/pravega-samples",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command:         []string{"/bin/sh", "-c"},
-							Args:            []string{"/scripts/testScript.sh"},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "test",
-									MountPath: "/scripts",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "test",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: "test-configmap",
-									},
-									DefaultMode: func(i int32) *int32 { return &i }(0777),
-								},
-							},
+							Args:            []string{command},
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
@@ -79,6 +67,14 @@ func NewTestJob(namespace string) *batchv1.Job {
 			},
 		},
 	}
+}
+
+func NewTestWriteReadJob(namespace string, controllerUri string) *batchv1.Job {
+	command := fmt.Sprintf("cd /samples/pravega-client-examples "+
+		"&& bin/helloWorldWriter -u tcp://%s:9090 "+
+		"&& bin/helloWorldReader -u tcp://%s:9090",
+		controllerUri, controllerUri)
+	return NewTestJob(namespace, command)
 }
 
 // Returns a configmap that stores the script for Job to use

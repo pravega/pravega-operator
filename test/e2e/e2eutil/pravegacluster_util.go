@@ -103,18 +103,12 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 
 // Start the test Job and return the result of the test
 func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	testCfg := NewTestConfigMap(p.Namespace, util.ServiceNameForController(p.Name))
-	err := f.Client.Create(goctx.TODO(), testCfg, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
-	if err != nil {
-		return fmt.Errorf("failed to create configmap: %s", err)
-	}
-
-	testJob := NewTestJob(p.Namespace)
-	err = f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	testJob := NewTestWriteReadJob(p.Namespace, util.ServiceNameForController(p.Name))
+	_, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Create(testJob)
 	if err != nil {
 		return fmt.Errorf("failed to create job: %s", err)
 	}
-	err = wait.Poll(RetryInterval, 10*time.Minute, func() (done bool, err error) {
+	err = wait.Poll(RetryInterval, 90*time.Second, func() (done bool, err error) {
 		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
 		if err != nil {
 			return false, err
