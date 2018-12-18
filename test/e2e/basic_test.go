@@ -15,7 +15,7 @@ import (
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 
-	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
+	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
 func testCreateDefaultCluster(t *testing.T) {

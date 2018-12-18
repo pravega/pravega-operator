@@ -66,6 +66,15 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
+func isPodReady(pod *v1.Pod) bool {
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == v1.PodReady {
+			return true
+		}
+	}
+	return false
+}
+
 // WaitForPravegaCluster will wait until the given PravegaCluster CR is ready
 func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	listOptions := metav1.ListOptions{
@@ -81,12 +90,13 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 		var names []string
 		for i := range podList.Items {
 			pod := &podList.Items[i]
-			if pod.Status.Phase != v1.PodRunning {
+
+			if !isPodReady(pod) {
 				continue
 			}
 			names = append(names, pod.Name)
 		}
-		t.Logf("waiting for pods to start (%d/%d), pods (%v)", len(names), size, names)
+		t.Logf("waiting for pods to become ready (%d/%d), pods (%v)", len(names), size, names)
 		if len(names) != int(size) {
 			return false, nil
 		}
@@ -101,13 +111,15 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 	return nil
 }
 
-// Start the test Job and return the result of the test
+// WriteAndReadData writes sample data and reads it back from the given Pravega cluster
 func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Log("writing and reading data from pravega cluster")
 	testJob := NewTestWriteReadJob(p.Namespace, util.ServiceNameForController(p.Name))
-	_, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Create(testJob)
+	err := f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return fmt.Errorf("failed to create job: %s", err)
 	}
+
 	err = wait.Poll(RetryInterval, 90*time.Second, func() (done bool, err error) {
 		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
 		if err != nil {
@@ -121,8 +133,11 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 		}
 		return true, nil
 	})
+
 	if err != nil {
 		return err
 	}
+
+	t.Logf("pravega cluster validated: %s", p.Name)
 	return nil
 }

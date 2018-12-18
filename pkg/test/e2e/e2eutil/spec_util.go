@@ -34,9 +34,8 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 	}
 }
 
-// Returns a Job that can test pravega cluster by running a pravega example
-func NewTestJob(namespace string, command string) *batchv1.Job {
-	deadline := int64(60)
+func newTestJob(namespace string, command string) *batchv1.Job {
+	deadline := int64(90)
 	retries := int32(1)
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
@@ -69,37 +68,11 @@ func NewTestJob(namespace string, command string) *batchv1.Job {
 	}
 }
 
+// NewTestWriteReadJob returns a Job that can test pravega cluster by running a sample
 func NewTestWriteReadJob(namespace string, controllerUri string) *batchv1.Job {
 	command := fmt.Sprintf("cd /samples/pravega-client-examples "+
 		"&& bin/helloWorldWriter -u tcp://%s:9090 "+
 		"&& bin/helloWorldReader -u tcp://%s:9090",
 		controllerUri, controllerUri)
-	return NewTestJob(namespace, command)
-}
-
-// Returns a configmap that stores the script for Job to use
-func NewTestConfigMap(namespace string, controllerIp string) *corev1.ConfigMap {
-	script := `
-#!/bin/bash
-git clone https://github.com/pravega/pravega-samples.git
-cd pravega-samples/
-./gradlew clean installDist
-cd pravega-client-examples/build/install/pravega-client-examples/
-./bin/helloWorldWriter -u tcp://` + controllerIp + `:9090
-./bin/helloWorldReader -u tcp://` + controllerIp + `:9090
-`
-	configData := map[string]string{
-		"testScript.sh": script,
-	}
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "core/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-configmap",
-			Namespace: namespace,
-		},
-		Data: configData,
-	}
+	return newTestJob(namespace, command)
 }

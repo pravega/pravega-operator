@@ -17,7 +17,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	apis "github.com/pravega/pravega-operator/pkg/apis"
 	operator "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
+	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
