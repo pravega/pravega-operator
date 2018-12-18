@@ -68,7 +68,7 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 
 func isPodReady(pod *v1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
-		if condition.Type == v1.PodReady {
+		if condition.Type == v1.PodReady && condition.Status == v1.ConditionTrue {
 			return true
 		}
 	}

@@ -98,7 +98,7 @@ func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string 
 }
 
 func HealthcheckCommand(port int32) []string {
-	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn | grep %d || ss -ltn | grep %d", port, port)}
+	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
 }
 
 // Min returns the smaller of x or y.
