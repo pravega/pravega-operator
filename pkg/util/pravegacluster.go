@@ -16,12 +16,20 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
+func PdbNameForBookie(clusterName string) string {
+	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
 func ConfigMapNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
 
 func StatefulSetNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
+func PdbNameForController(clusterName string) string {
+	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
 func ConfigMapNameForController(clusterName string) string {
@@ -48,6 +56,10 @@ func DeploymentNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
+func PdbNameForSegmentstore(clusterName string) string {
+	return fmt.Sprintf("%s-segmentstore", clusterName)
+}
+
 func ConfigMapNameForSegmentstore(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
 }
@@ -57,22 +69,27 @@ func StatefulSetNameForSegmentstore(clusterName string) string {
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "bookie")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "bookie"
+	return labels
 }
 
 func LabelsForController(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "pravega-controller")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "pravega-controller"
+	return labels
 }
 
 func LabelsForSegmentStore(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return LabelsForPravegaCluster(pravegaCluster, "pravega-segmentstore")
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "pravega-segmentstore"
+	return labels
 }
 
-func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster, component string) map[string]string {
+func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
 	return map[string]string{
 		"app":             "pravega-cluster",
 		"pravega_cluster": pravegaCluster.Name,
-		"component":       component,
 	}
 }
 
