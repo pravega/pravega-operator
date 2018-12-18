@@ -35,7 +35,7 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 }
 
 func newTestJob(namespace string, command string) *batchv1.Job {
-	deadline := int64(90)
+	deadline := int64(180)
 	retries := int32(1)
 	return &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{

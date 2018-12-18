@@ -120,7 +120,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 		return fmt.Errorf("failed to create job: %s", err)
 	}
 
-	err = wait.Poll(RetryInterval, 90*time.Second, func() (done bool, err error) {
+	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
 		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
 		if err != nil {
 			return false, err
