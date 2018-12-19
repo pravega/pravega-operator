@@ -57,9 +57,11 @@ before_script:
 - kubectl -n default get pod,pvc,svc
 
 script:
-- make dep
-- make check
+#- make dep
+#- make check
 - make test
+- kubectl describe pods
+- kubectl logs test-bookie-0
 - make build
 - make clean
 
