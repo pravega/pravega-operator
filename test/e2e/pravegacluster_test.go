@@ -52,7 +52,7 @@ func testPravegaCluster(t *testing.T) {
 	// get global framework variables
 	f := framework.Global
 	// wait for pravega-operator to be ready
-	err = e2eutil.WaitForDeployment(t, f.KubeClient, namespace, "pravega-operator", 1, pravega_e2eutil.RetryInterval, pravega_e2eutil.Timeout)
+	err = e2eutil.WaitForOperatorDeployment(t, f.KubeClient, namespace, "pravega-operator", 1, pravega_e2eutil.RetryInterval, pravega_e2eutil.Timeout)
 	if err != nil {
 		t.Fatal(err)
 	}

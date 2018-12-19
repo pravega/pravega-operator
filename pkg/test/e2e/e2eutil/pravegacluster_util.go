@@ -42,9 +42,6 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
-	// Give the operator a few seconds to fill the PravegaCluster spec with default values if necessary
-	time.Sleep(5 * time.Second)
-
 	pravega := &api.PravegaCluster{}
 	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
