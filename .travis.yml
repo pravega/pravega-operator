@@ -37,6 +37,8 @@ before_script:
 - minikube update-context
 # Wait for Kubernetes to be up and ready
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# https://github.com/kubernetes/minikube/issues/2302#issuecomment-384653456
+- kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 # Show cluster information
 - kubectl cluster-info
 # Install Helm Tiller
@@ -60,10 +62,13 @@ script:
 #- make dep
 #- make check
 - make test
+- kubectl -n default get pod,pvc,svc -o wide
 - kubectl describe pods
 - kubectl logs test-bookie-0
-- make build
-- make clean
+- kubectl logs test-pravega-segmentstore-0
+- kubectl -n kube-system get pod -o wide
+#- make build
+#- make clean
 
 deploy:
   provider: script
