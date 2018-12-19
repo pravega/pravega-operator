@@ -37,10 +37,12 @@ before_script:
 - minikube update-context
 # Wait for Kubernetes to be up and ready
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
-# https://github.com/kubernetes/minikube/issues/2302#issuecomment-384653456
+# Workaround to fix kubedns issues
+# Ref: https://github.com/kubernetes/minikube/issues/2302#issuecomment-384653456
 - kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 # Show cluster information
 - kubectl cluster-info
+- kubectl -n kube-system get pod -o wide
 # Install Helm Tiller
 - kubectl create serviceaccount --namespace kube-system tiller
 - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
@@ -55,20 +57,15 @@ before_script:
 - kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/operator.yaml
 - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
-# Show Kubernetes resources
-- kubectl -n default get pod,pvc,svc
+# Show Pravega dependencies
+- kubectl -n default get pod,pvc,svc -o wide
 
 script:
-#- make dep
-#- make check
+- make dep
+- make check
 - make test
-- kubectl -n default get pod,pvc,svc -o wide
-- kubectl describe pods
-- kubectl logs test-bookie-0
-- kubectl logs test-pravega-segmentstore-0
-- kubectl -n kube-system get pod -o wide
-#- make build
-#- make clean
+- make build
+- make clean
 
 deploy:
   provider: script
