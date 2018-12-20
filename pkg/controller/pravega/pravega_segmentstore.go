@@ -19,6 +19,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -127,6 +128,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 			},
 		},
+		Affinity: util.PodAntiAffinity("pravega-segmentstore", pravegaCluster.Name),
 	}
 
 	if pravegaSpec.SegmentStoreServiceAccountName != "" {
@@ -325,4 +327,31 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 		services[i] = service
 	}
 	return services
+}
+
+func MakeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	var maxUnavailable intstr.IntOrString
+
+	if pravegaCluster.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+		maxUnavailable = intstr.FromInt(0)
+	} else {
+		maxUnavailable = intstr.FromInt(1)
+	}
+
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      util.PdbNameForSegmentstore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+			MaxUnavailable: &maxUnavailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
+			},
+		},
+	}
 }
