@@ -96,3 +96,15 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string
 func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
 	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
 }
+
+func HealthcheckCommand(port int32) []string {
+	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
+}
+
+// Min returns the smaller of x or y.
+func Min(x, y int32) int32 {
+	if x > y {
+		return y
+	}
+	return x
+}

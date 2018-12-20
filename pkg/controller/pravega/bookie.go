@@ -120,6 +120,30 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 						MountPath: "/bk/ledgers",
 					},
 				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(3181),
+						},
+					},
+					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
+					PeriodSeconds:    10,
+					FailureThreshold: 9,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(3181),
+						},
+					},
+					// We start the liveness probe from the maximum time the pod can take
+					// before becoming ready.
+					// If the pod fails the health check during 1 minute, Kubernetes
+					// will restart it.
+					InitialDelaySeconds: 60,
+					PeriodSeconds:       15,
+					FailureThreshold:    4,
+				},
 			},
 		},
 		Affinity: util.PodAntiAffinity("bookie", clusterName),

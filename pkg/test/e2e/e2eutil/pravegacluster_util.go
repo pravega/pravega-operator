@@ -36,14 +36,11 @@ var (
 
 // CreateCluster creates a PravegaCluster CR with the desired spec
 func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster: %v", p.Name)
+	t.Logf("creating pravega cluster: %s", p.Name)
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
-
-	// Give the operator a few seconds to fill the PravegaCluster spec with default values if necessary
-	time.Sleep(5 * time.Second)
 
 	pravega := &api.PravegaCluster{}
 	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
@@ -56,12 +53,12 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 
 // DeleteCluster deletes the PravegaCluster CR specified by cluster spec
 func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("deleting pravega cluster: %v", p.Name)
+	t.Logf("deleting pravega cluster: %s", p.Name)
 	err := f.Client.Delete(goctx.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
-	// TODO: Wait for cluster resources to be deleted
+
 	t.Logf("deleted pravega cluster: %s", p.Name)
 	return nil
 }
@@ -75,8 +72,9 @@ func isPodReady(pod *v1.Pod) bool {
 	return false
 }
 
-// WaitForPravegaCluster will wait until the given PravegaCluster CR is ready
-func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+// WaitForClusterToStart will wait until all cluster pods are ready
+func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
 	}
@@ -107,13 +105,46 @@ func WaitForPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.
 		return err
 	}
 
-	t.Logf("pravega cluster available: %s", p.Name)
+	t.Logf("pravega cluster ready: %s", p.Name)
+	return nil
+}
+
+// WaitForClusterToTerminate will wait until all cluster pods are terminated
+func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
+	}
+
+	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
+		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster terminated: %s", p.Name)
 	return nil
 }
 
 // WriteAndReadData writes sample data and reads it back from the given Pravega cluster
 func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Log("writing and reading data from pravega cluster")
+	t.Logf("writing and reading data from pravega cluster: %s", p.Name)
 	testJob := NewTestWriteReadJob(p.Namespace, util.ServiceNameForController(p.Name))
 	err := f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
