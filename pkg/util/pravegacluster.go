@@ -11,8 +11,9 @@
 package util
 
 import (
+	"container/list"
 	"fmt"
-
+	"github.com/samuel/go-zookeeper/zk"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
@@ -76,14 +77,33 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster, component 
 	}
 }
 
-func LabelsForZookeeperNode(selector map[string]string) map[string]string {
-	result := make(map[string]string)
-	for k, v := range selector {
-		result[k] = v
-	}
-	return result
-}
 
 func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
 	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
+}
+
+func ListSubTreeBFS(conn *zk.Conn, root string) (*list.List, error) {
+	queue := list.New()
+	tree := list.New()
+	queue.PushBack(root)
+	tree.PushBack(root)
+
+	for {
+		if queue.Len() == 0 {
+			break
+		}
+		node := queue.Front()
+		children, _, err := conn.Children(node.Value.(string))
+		if err != nil {
+			return tree, err
+		}
+
+		for _, child := range children {
+			childPath := fmt.Sprintf("%s/%s",node.Value.(string), child)
+			queue.PushBack(childPath)
+			tree.PushBack(childPath)
+		}
+		queue.Remove(node)
+	}
+	return tree, nil
 }

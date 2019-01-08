@@ -18,6 +18,7 @@ import (
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
+	"github.com/samuel/go-zookeeper/zk"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -32,6 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	// Set in https://github.com/pravega/pravega/blob/master/docker/bookkeeper/entrypoint.sh#L21
+	PravegaPath = "pravega"
+	ZookeeperIsCleanedUp = "pravega/zk-cleaned"
 )
 
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -99,15 +106,11 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	processing, err := r.reconcileFinalizers(pravegaCluster)
+	// Clean up zookeeper metadata left by previous Pravega cluster
+	err = r.cleanUpZookeeperMeta(pravegaCluster)
 	if err != nil {
-		log.Printf("failed to execute finalizers: %v", err)
+		log.Printf("failed to clean up zookeeper: %v", err)
 		return reconcileResult, err
-	}
-
-	if processing {
-		log.Printf("Shutting down Pravega Cluster gracefully")
-		return reconcileResult, nil
 	}
 
 	// Set default configuration for unspecified values
@@ -312,43 +315,51 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.PravegaCluster) (processing bool, err error) {
-	if p.DeletionTimestamp.IsZero() {
-		if !containsString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER) {
-			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, ZKMETAFINALIZER)
-			if err = r.client.Update(context.TODO(), p); err != nil {
-				return false, fmt.Errorf("failed to add finalizer: %v", err)
+func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
+	// Check if meta has been cleaned already
+	clean, found := p.Annotations[ZookeeperIsCleanedUp]
+	if found && clean == "true"{
+		return nil
+	}
+
+	host := []string{p.Spec.ZookeeperUri}
+	conn, _, err := zk.Connect(host, time.Second*5)
+	if err != nil {
+		return fmt.Errorf("failed to connect to zookeeper: %v", err)
+	}
+	defer conn.Close()
+
+	root := fmt.Sprintf("/%s/%s", PravegaPath, p.Name)
+	exist, _, err := conn.Exists(root)
+	if err != nil {
+		return fmt.Errorf("failed to check if zookeeper path exists: %v", err)
+	}
+
+	if exist {
+		// Construct BFS tree to delete all znodes recursively
+		tree, err := util.ListSubTreeBFS(conn, root)
+		if err != nil {
+			return fmt.Errorf("failed to construct BFS tree: %v", err)
+		}
+
+		for tree.Len() != 0 {
+			err := conn.Delete(tree.Back().Value.(string), -1)
+			if err != nil {
+				return fmt.Errorf("failed to delete znode: %v", err)
 			}
-		}
-		if !containsString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER) {
-			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, ZKUSERFINALIZER)
-			if err = r.client.Update(context.TODO(), p); err != nil {
-				return false, fmt.Errorf("failed to add finalizer: %v", err)
-			}
-		}
-		return false, nil
-	}
-
-	if containsString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER) {
-		if err = r.cleanUpZkUser(p); err != nil {
-			return true, fmt.Errorf("failed to delete zookeeper users (%s): %v", ZKUSERFINALIZER, err)
-		}
-
-		p.ObjectMeta.Finalizers = removeString(p.ObjectMeta.Finalizers, ZKUSERFINALIZER)
-		if err = r.client.Update(context.TODO(), p); err != nil {
-			return true, fmt.Errorf("failed to remove finalizer: %v", err)
+			tree.Remove(tree.Back())
 		}
 	}
 
-	if containsString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER) {
-		if err = r.cleanUpMetaInZk(p); err != nil {
-			return true, fmt.Errorf("failed to clean up metadata in zookeeper (%s): %v", ZKMETAFINALIZER, err)
-		}
-
-		p.ObjectMeta.Finalizers = removeString(p.ObjectMeta.Finalizers, ZKMETAFINALIZER)
-		if err = r.client.Update(context.TODO(), p); err != nil {
-			return true, fmt.Errorf("failed to remove finalizer: %v", err)
-		}
+	// Mark zookeeper as cleaned in object annotations
+	if p.Annotations == nil {
+		p.Annotations = make(map[string]string)
 	}
-	return true, nil
+	p.Annotations[ZookeeperIsCleanedUp] = "true"
+	err = r.client.Update(context.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to update Pravega cluster: %v", err)
+	}
+
+	return nil
 }
