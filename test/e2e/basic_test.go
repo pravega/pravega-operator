@@ -14,9 +14,52 @@ import (
 	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
+
+	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx) error {
-	t.Skip("Not implemented")
-	return nil
+func testCreateDefaultCluster(t *testing.T) {
+	doCleanup := true
+	ctx := framework.NewTestCtx(t)
+	defer func() {
+		if doCleanup {
+			ctx.Cleanup()
+		}
+	}()
+
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := framework.Global
+
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
+	podSize := 5
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No need to do cleanup since the cluster CR has already been deleted
+	doCleanup = false
+
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
