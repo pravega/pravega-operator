@@ -17,6 +17,12 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 )
 
+const (
+	// Set in https://github.com/pravega/pravega/blob/master/docker/bookkeeper/entrypoint.sh#L21
+	PravegaPath = "pravega"
+	ZkFinalizer = "cleanUpZookeeper"
+)
+
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
@@ -134,4 +140,23 @@ func ListSubTreeBFS(conn *zk.Conn, root string) (*list.List, error) {
 		queue.Remove(node)
 	}
 	return tree, nil
+}
+
+func ContainsString(slice []string, str string) bool {
+	for _, item := range slice {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveString(slice []string, str string) (result []string) {
+	for _, item := range slice {
+		if item == str {
+			continue
+		}
+		result = append(result, item)
+	}
+	return result
 }

@@ -105,6 +105,11 @@ func testRestartDefaultCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	defaultCluster = pravega_e2eutil.NewDefaultCluster(namespace)
 
 	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
