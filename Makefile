@@ -42,6 +42,7 @@ test-unit:
 test-e2e:
 	sed "s@REPLACE_IMAGE@$(TEST_IMAGE)@g" -i deploy/operator.yaml
 	operator-sdk build $(TEST_IMAGE) --enable-tests
+	docker login -u "$(DOCKER_TEST_USER)" -p "$(DOCKER_TEST_PASS)"
 	docker push $(TEST_IMAGE)
 	kubectl create -f deploy/crd.yaml
 	kubectl create -f deploy/service_account.yaml
