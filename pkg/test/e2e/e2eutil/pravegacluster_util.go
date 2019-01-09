@@ -25,6 +25,7 @@ import (
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	util "github.com/pravega/pravega-operator/pkg/util"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var (
@@ -170,5 +171,35 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 	}
 
 	t.Logf("pravega cluster validated: %s", p.Name)
+	return nil
+}
+
+func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	t.Log("restarting tier2 storage")
+	tier2 := GetTier2(namespace)
+
+	err := f.Client.Delete(goctx.TODO(), tier2)
+	if err != nil {
+		return fmt.Errorf("failed to delete tier2: %v", err)
+	}
+
+	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
+		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{IncludeUninitialized: false})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	})
+
+	tier2 = GetTier2(namespace)
+	err = f.Client.Create(goctx.TODO(), tier2, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return fmt.Errorf("failed to create tier2: %s", err)
+	}
+
+	t.Logf("pravega cluster tier2 restarted")
 	return nil
 }

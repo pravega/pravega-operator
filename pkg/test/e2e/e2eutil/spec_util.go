@@ -12,6 +12,7 @@ package e2eutil
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -43,8 +44,8 @@ func newTestJob(namespace string, command string) *batchv1.Job {
 			APIVersion: "batch/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-job",
-			Namespace: namespace,
+			GenerateName: "test-job-",
+			Namespace:    namespace,
 		},
 		Spec: batchv1.JobSpec{
 			ActiveDeadlineSeconds: &deadline,
@@ -75,4 +76,27 @@ func NewTestWriteReadJob(namespace string, controllerUri string) *batchv1.Job {
 		"&& bin/helloWorldReader -u tcp://%s:9090",
 		controllerUri, controllerUri)
 	return newTestJob(namespace, command)
+}
+
+func GetTier2(namespace string) *corev1.PersistentVolumeClaim {
+	storageName := "nfs"
+	return &corev1.PersistentVolumeClaim{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PersistentVolumeClaim",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pravega-tier2",
+			Namespace: namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			StorageClassName: &storageName,
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.PersistentVolumeAccessMode(corev1.ReadWriteMany)},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("5Gi"),
+				},
+			},
+		},
+	}
 }

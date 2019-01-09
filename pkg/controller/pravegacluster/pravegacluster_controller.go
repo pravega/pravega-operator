@@ -106,15 +106,15 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
+	// Set default configuration for unspecified values
+	pravegaCluster.WithDefaults()
+
 	// Clean up zookeeper metadata left by previous Pravega cluster
 	err = r.cleanUpZookeeperMeta(pravegaCluster)
 	if err != nil {
 		log.Printf("failed to clean up zookeeper: %v", err)
 		return reconcileResult, err
 	}
-
-	// Set default configuration for unspecified values
-	pravegaCluster.WithDefaults()
 
 	// Rest of your reconcile code goes here
 	err = r.deployBookie(pravegaCluster)
