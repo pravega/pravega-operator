@@ -194,6 +194,10 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 		return false, nil
 	})
 
+	if err != nil {
+		return fmt.Errorf("failed to wait for tier2 termination: %s", err)
+	}
+
 	tier2 = GetTier2(namespace)
 	err = f.Client.Create(goctx.TODO(), tier2, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
