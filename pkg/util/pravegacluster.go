@@ -11,16 +11,8 @@
 package util
 
 import (
-	"container/list"
 	"fmt"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/samuel/go-zookeeper/zk"
-)
-
-const (
-	// Set in https://github.com/pravega/pravega/blob/master/docker/bookkeeper/entrypoint.sh#L21
-	PravegaPath = "pravega"
-	ZkFinalizer = "cleanUpZookeeper"
 )
 
 func PdbNameForBookie(clusterName string) string {
@@ -114,32 +106,6 @@ func Min(x, y int32) int32 {
 		return y
 	}
 	return x
-}
-
-func ListSubTreeBFS(conn *zk.Conn, root string) (*list.List, error) {
-	queue := list.New()
-	tree := list.New()
-	queue.PushBack(root)
-	tree.PushBack(root)
-
-	for {
-		if queue.Len() == 0 {
-			break
-		}
-		node := queue.Front()
-		children, _, err := conn.Children(node.Value.(string))
-		if err != nil {
-			return tree, err
-		}
-
-		for _, child := range children {
-			childPath := fmt.Sprintf("%s/%s", node.Value.(string), child)
-			queue.PushBack(childPath)
-			tree.PushBack(childPath)
-		}
-		queue.Remove(node)
-	}
-	return tree, nil
 }
 
 func ContainsString(slice []string, str string) bool {

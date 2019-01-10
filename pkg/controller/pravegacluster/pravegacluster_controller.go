@@ -13,17 +13,14 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
-	"github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 	"github.com/pravega/pravega-operator/pkg/util"
-	"github.com/samuel/go-zookeeper/zk"
+	log "github.com/sirupsen/logrus"
+
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,8 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -338,7 +333,7 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
 			if err = r.client.Update(context.TODO(), p); err != nil {
-				return fmt.Errorf("failed to add the finalizer: %v", err)
+				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
 			}
 		}
 		return nil
@@ -346,10 +341,10 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
 			if err = r.client.Update(context.TODO(), p); err != nil {
-				return fmt.Errorf("failed to update Pravega object: %v", err)
+				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
 			}
 			if err = r.cleanUpZookeeperMeta(p); err != nil {
-				return fmt.Errorf("failed to clean up metadata: %v", err)
+				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
 			}
 		}
 		return nil
@@ -357,60 +352,12 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 }
 
 func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
-	listOptions := &client.ListOptions{
-		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)),
+	if util.WaitForClusterToTerminate(r.client, p); err != nil {
+		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
 	}
 
-	err = wait.Poll(e2eutil.RetryInterval, 2*time.Minute, func() (done bool, err error) {
-		podList := &corev1.PodList{}
-		err = r.client.List(context.TODO(), listOptions, podList)
-		if err != nil {
-			return false, err
-		}
-
-		var names []string
-		for i := range podList.Items {
-			pod := &podList.Items[i]
-			names = append(names, pod.Name)
-		}
-
-		if len(names) != 0 {
-			return false, nil
-		}
-		return true, nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to wait for pods termination: %v", err)
-	}
-
-	host := []string{p.Spec.ZookeeperUri}
-	conn, _, err := zk.Connect(host, time.Second*5)
-	if err != nil {
-		return fmt.Errorf("failed to connect to zookeeper: %v", err)
-	}
-	defer conn.Close()
-
-	root := fmt.Sprintf("/%s/%s", util.PravegaPath, p.Name)
-	exist, _, err := conn.Exists(root)
-	if err != nil {
-		return fmt.Errorf("failed to check if zookeeper path exists: %v", err)
-	}
-
-	if exist {
-		// Construct BFS tree to delete all znodes recursively
-		tree, err := util.ListSubTreeBFS(conn, root)
-		if err != nil {
-			return fmt.Errorf("failed to construct BFS tree: %v", err)
-		}
-
-		for tree.Len() != 0 {
-			err := conn.Delete(tree.Back().Value.(string), -1)
-			if err != nil {
-				return fmt.Errorf("failed to delete znode: %v", err)
-			}
-			tree.Remove(tree.Back())
-		}
+	if err = util.DeleteAllZnodes(p); err != nil {
+		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
 	}
 
 	return nil

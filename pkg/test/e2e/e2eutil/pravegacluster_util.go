@@ -16,15 +16,15 @@ import (
 	"testing"
 	"time"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	util "github.com/pravega/pravega-operator/pkg/util"
+	"github.com/pravega/pravega-operator/pkg/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -53,7 +53,7 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 }
 
 // DeleteCluster deletes the PravegaCluster CR specified by cluster spec
-func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+func DeleteCluster(t *testing.T, f *framework.Framework, p *api.PravegaCluster) error {
 	t.Logf("deleting pravega cluster: %s", p.Name)
 	err := f.Client.Delete(goctx.TODO(), p)
 	if err != nil {
@@ -64,9 +64,9 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-func isPodReady(pod *v1.Pod) bool {
+func isPodReady(pod *corev1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
-		if condition.Type == v1.PodReady && condition.Status == v1.ConditionTrue {
+		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
 			return true
 		}
 	}
@@ -74,7 +74,7 @@ func isPodReady(pod *v1.Pod) bool {
 }
 
 // WaitForClusterToStart will wait until all cluster pods are ready
-func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+func WaitForClusterToStart(t *testing.T, f *framework.Framework, p *api.PravegaCluster, size int) error {
 	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
@@ -111,7 +111,7 @@ func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.
 }
 
 // WaitForClusterToTerminate will wait until all cluster pods are terminated
-func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
