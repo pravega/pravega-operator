@@ -41,7 +41,7 @@ test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
 test-e2e:
-	sed "s@DEPLOY_IMAGE@$(TEST_IMAGE)@g" -i deploy/operator.yaml
+	sed "s@$(DEPLOY_IMAGE)@$(TEST_IMAGE)@g" -i deploy/operator.yaml
 	operator-sdk build $(TEST_IMAGE) --enable-tests
 	docker login -u "$(DOCKER_TEST_USER)" -p "$(DOCKER_TEST_PASS)"
 	docker push $(TEST_IMAGE)
