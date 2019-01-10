@@ -14,6 +14,7 @@ VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-p
 GIT_SHA=$(shell git rev-parse --short HEAD)
 GOOS=linux
 GOARCH=amd64
+TEST_IMAGE=tristan1900/test:v0.0.1
 
 .PHONY: all dep build check clean test
 
@@ -39,7 +40,10 @@ test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
 test-e2e:
-	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default
+	operator-sdk build $(TEST_IMAGE) --enable-tests
+	docker login -u "$(DOCKER_TEST_USER)" -p "$(DOCKER_TEST_PASS)"
+	docker push $(TEST_IMAGE)
+	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --image $(TEST_IMAGE)
 
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
