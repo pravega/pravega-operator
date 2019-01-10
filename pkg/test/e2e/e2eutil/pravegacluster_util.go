@@ -114,7 +114,28 @@ func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.
 func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
 
-	err := util.WaitForClusterToTerminate(f.Client, p)
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
+	}
+
+	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
+		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
 	if err != nil {
 		return err
 	}
