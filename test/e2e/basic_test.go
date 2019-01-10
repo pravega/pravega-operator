@@ -65,7 +65,7 @@ func testCreateDefaultCluster(t *testing.T) {
 }
 
 // Test restart Pravega cluster with the same name(issue 91)
-func testRestartDefaultCluster(t *testing.T) {
+func testRecreateDefaultCluster(t *testing.T) {
 	doCleanup := true
 	ctx := framework.NewTestCtx(t)
 	defer func() {
