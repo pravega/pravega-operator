@@ -40,7 +40,7 @@ func testCreateDefaultCluster(t *testing.T) {
 
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
-	err = pravega_e2eutil.WaitForClusterToStart(t, f, pravega, podSize)
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func testCreateDefaultCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.DeleteCluster(t, f, pravega)
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func testCreateDefaultCluster(t *testing.T) {
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, pravega)
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,17 +95,17 @@ func testRestartDefaultCluster(t *testing.T) {
 
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
-	err = pravega_e2eutil.WaitForClusterToStart(t, f, pravega, podSize)
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.DeleteCluster(t, f, pravega)
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, pravega)
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func testRestartDefaultCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForClusterToStart(t, f, pravega, podSize)
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func testRestartDefaultCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.DeleteCluster(t, f, pravega)
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +135,7 @@ func testRestartDefaultCluster(t *testing.T) {
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, pravega)
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -53,7 +53,7 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 }
 
 // DeleteCluster deletes the PravegaCluster CR specified by cluster spec
-func DeleteCluster(t *testing.T, f *framework.Framework, p *api.PravegaCluster) error {
+func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("deleting pravega cluster: %s", p.Name)
 	err := f.Client.Delete(goctx.TODO(), p)
 	if err != nil {
@@ -74,7 +74,7 @@ func isPodReady(pod *corev1.Pod) bool {
 }
 
 // WaitForClusterToStart will wait until all cluster pods are ready
-func WaitForClusterToStart(t *testing.T, f *framework.Framework, p *api.PravegaCluster, size int) error {
+func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
@@ -111,30 +111,10 @@ func WaitForClusterToStart(t *testing.T, f *framework.Framework, p *api.PravegaC
 }
 
 // WaitForClusterToTerminate will wait until all cluster pods are terminated
-func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, p *api.PravegaCluster) error {
+func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
-	}
 
-	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
-		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
-		if err != nil {
-			return false, err
-		}
-
-		var names []string
-		for i := range podList.Items {
-			pod := &podList.Items[i]
-			names = append(names, pod.Name)
-		}
-		t.Logf("waiting for pods to terminate, running pods (%v)", names)
-		if len(names) != 0 {
-			return false, nil
-		}
-		return true, nil
-	})
-
+	err := util.WaitForClusterToTerminate(f.Client, p)
 	if err != nil {
 		return err
 	}
@@ -176,7 +156,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	t.Log("restarting tier2 storage")
-	tier2 := GetTier2(namespace)
+	tier2 := NewTier2(namespace)
 
 	err := f.Client.Delete(goctx.TODO(), tier2)
 	if err != nil {
@@ -198,7 +178,7 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 		return fmt.Errorf("failed to wait for tier2 termination: %s", err)
 	}
 
-	tier2 = GetTier2(namespace)
+	tier2 = NewTier2(namespace)
 	err = f.Client.Create(goctx.TODO(), tier2, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return fmt.Errorf("failed to create tier2: %s", err)

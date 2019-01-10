@@ -78,7 +78,7 @@ func NewTestWriteReadJob(namespace string, controllerUri string) *batchv1.Job {
 	return newTestJob(namespace, command)
 }
 
-func GetTier2(namespace string) *corev1.PersistentVolumeClaim {
+func NewTier2(namespace string) *corev1.PersistentVolumeClaim {
 	storageName := "nfs"
 	return &corev1.PersistentVolumeClaim{
 		TypeMeta: metav1.TypeMeta{

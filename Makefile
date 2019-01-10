@@ -14,8 +14,6 @@ VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-p
 GIT_SHA=$(shell git rev-parse --short HEAD)
 GOOS=linux
 GOARCH=amd64
-DEPLOY_IMAGE=pravega/pravega-operator:latest
-TEST_IMAGE=tristan1900/test:v0.0.1
 
 .PHONY: all dep build check clean test
 
@@ -41,15 +39,7 @@ test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
 test-e2e:
-	sed "s@$(DEPLOY_IMAGE)@$(TEST_IMAGE)@g" -i deploy/operator.yaml
-	operator-sdk build $(TEST_IMAGE) --enable-tests
-	docker login -u "$(DOCKER_TEST_USER)" -p "$(DOCKER_TEST_PASS)"
-	docker push $(TEST_IMAGE)
-	kubectl create -f deploy/crd.yaml
-	kubectl create -f deploy/service_account.yaml
-	kubectl create -f deploy/role.yaml
-	kubectl create -f deploy/role_binding.yaml
-	operator-sdk test cluster $(TEST_IMAGE) --namespace default --service-account pravega-operator
+	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --up-local
 
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
