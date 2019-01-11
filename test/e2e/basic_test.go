@@ -11,93 +11,132 @@
 package e2e
 
 import (
-	pravega_e2eutil "github.com/pravega/pravega-operator/test/e2e/e2eutil"
 	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
+
+	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testCreateDefaultCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+func testCreateDefaultCluster(t *testing.T) {
+	doCleanup := true
+	ctx := framework.NewTestCtx(t)
+	defer func() {
+		if doCleanup {
+			ctx.Cleanup()
+		}
+	}()
+
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := framework.Global
+
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
 	if err != nil {
-		return err
-	}
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
-	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
+	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
+	podSize := 5
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
-	return nil
+
+	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No need to do cleanup since the cluster CR has already been deleted
+	doCleanup = false
+
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
-func testScaleUp(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+func testScaleCluster(t *testing.T) {
+	doCleanup := true
+	ctx := framework.NewTestCtx(t)
+	defer func() {
+		if doCleanup {
+			ctx.Cleanup()
+		}
+	}()
+
+	namespace, err := ctx.GetNamespace()
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := framework.Global
+
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
+	podSize := 5
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	pravega.Spec.Pravega.ControllerReplicas = pravega.Spec.Pravega.ControllerReplicas + 1
-	pravega.Spec.Pravega.SegmentStoreReplicas = pravega.Spec.Pravega.SegmentStoreReplicas + 1
-	pravega.Spec.Bookkeeper.Replicas = pravega.Spec.Bookkeeper.Replicas + 1
+	// Scale up Pravega cluster, increase bookies and segment store size by 1
+	pravega.Spec.Bookkeeper.Replicas += 1
+	pravega.Spec.Pravega.SegmentStoreReplicas += 1
+	podSize += 2
 
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func testPvcWhenScalingDown(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewStandardCluster(namespace))
-	if err != nil {
-		return err
-	}
-
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
-	if err != nil {
-		return err
-	}
-
-	pravega.Spec.Pravega.SegmentStoreReplicas = 1
-	pravega.Spec.Bookkeeper.Replicas = 1
+	// Scale down Pravega cluster back to default
+	pravega.Spec.Bookkeeper.Replicas -= 1
+	pravega.Spec.Pravega.SegmentStoreReplicas -= 1
+	podSize -= 2
 
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForPravegaCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.WaitForPvc(t, f, ctx, pravega)
+	err = pravega_e2eutil.CheckPvcSanity(t, f, ctx, pravega)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	err = pravega_e2eutil.RunTestPod(t, f, ctx, pravega)
+	// Delete cluster
+	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
-	return nil
+
+	// No need to do cleanup since the cluster CR has already been deleted
+	doCleanup = false
+
+	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

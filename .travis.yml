@@ -21,6 +21,12 @@ install:
 - curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.28.2/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
 - curl -Lo dep https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.2.0/operator-sdk-v0.2.0-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
+- curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.12.0-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+# Helm requires "nsenter"
+- curl -Lo util-linux-2.25.tar.gz https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.25/util-linux-2.25.tar.gz && tar xfz util-linux-2.25.tar.gz
+- cd util-linux-2.25; ./configure --without-python --disable-all-programs --enable-nsenter --without-ncurses; make nsenter; sudo cp nsenter /usr/local/bin/; cd -
+# Required to mount NFS-based Pravega Tier 2 storage
+- sudo apt-get install -y nfs-common
 
 before_script:
 # Make root mounted as rshared to fix kube-dns issues
@@ -31,8 +37,28 @@ before_script:
 - minikube update-context
 # Wait for Kubernetes to be up and ready
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# Workaround to fix kubedns issues
+# Ref: https://github.com/kubernetes/minikube/issues/2302#issuecomment-384653456
+- kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 # Show cluster information
 - kubectl cluster-info
+- kubectl -n kube-system get pod -o wide
+# Install Helm Tiller
+- kubectl create serviceaccount --namespace kube-system tiller
+- kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+- helm init --service-account tiller --wait
+# Install NFS provisioner
+- helm install stable/nfs-server-provisioner
+- kubectl -n default create -f test/e2e/resources/tier2.yaml
+- JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
+# Install ZooKeeper
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crd.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/rbac.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/operator.yaml
+- kubectl -n default create -f test/e2e/resources/zookeeper.yaml
+- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# Show Pravega dependencies
+- kubectl -n default get pod,pvc,svc -o wide
 
 script:
 - make dep

@@ -19,7 +19,9 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
@@ -76,8 +78,33 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 						},
 					},
 				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(9090),
+						},
+					},
+					// Controller pods start fast. We give it up to 1 minute to become ready.
+					PeriodSeconds:    5,
+					FailureThreshold: 12,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(9090),
+						},
+					},
+					// We start the liveness probe from the maximum time the pod can take
+					// before becoming ready.
+					// If the pod fails the health check during 1 minute, Kubernetes
+					// will restart it.
+					InitialDelaySeconds: 60,
+					PeriodSeconds:       15,
+					FailureThreshold:    4,
+				},
 			},
 		},
+		Affinity: util.PodAntiAffinity("pravega-controller", name),
 	}
 
 	if pravegaSpec.ControllerServiceAccountName != "" {
@@ -157,6 +184,26 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 				},
 			},
 			Selector: util.LabelsForController(p),
+		},
+	}
+}
+
+func MakeControllerPodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	minAvailable := intstr.FromInt(1)
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      util.PdbNameForController(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+			MinAvailable: &minAvailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: util.LabelsForController(pravegaCluster),
+			},
 		},
 	}
 }

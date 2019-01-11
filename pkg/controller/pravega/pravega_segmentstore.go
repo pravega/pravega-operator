@@ -19,6 +19,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -44,7 +45,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
-			PodManagementPolicy: appsv1.ParallelPodManagement,
+			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: util.LabelsForSegmentStore(pravegaCluster),
@@ -97,8 +98,37 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 						MountPath: cacheVolumeMountPoint,
 					},
 				},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(12345),
+						},
+					},
+					// Segment Stores can take a few minutes to become ready when the cluster
+					// is configured with external enabled as they need to wait for the allocation
+					// of the external IP address.
+					// This config gives it up to 5 minutes to become ready.
+					PeriodSeconds:    10,
+					FailureThreshold: 30,
+				},
+				LivenessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						Exec: &corev1.ExecAction{
+							Command: util.HealthcheckCommand(12345),
+						},
+					},
+					// In the readiness probe we allow the pod to take up to 5 minutes
+					// to become ready. Therefore, the liveness probe will give it
+					// a 5-minute grace period before starting monitoring the container.
+					// If the pod fails the health check during 1 minute, Kubernetes
+					// will restart it.
+					InitialDelaySeconds: 300,
+					PeriodSeconds:       15,
+					FailureThreshold:    4,
+				},
 			},
 		},
+		Affinity: util.PodAntiAffinity("pravega-segmentstore", pravegaCluster.Name),
 	}
 
 	if pravegaSpec.SegmentStoreServiceAccountName != "" {
@@ -125,8 +155,19 @@ func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
 		"CONTROLLER_URL":        util.PravegaControllerServiceURL(*pravegaCluster),
-		"WAIT_FOR":              pravegaCluster.Spec.ZookeeperUri,
 	}
+
+	// Wait for at least 3 Bookies to come up
+	var waitFor []string
+	for i := int32(0); i < util.Min(3, pravegaCluster.Spec.Bookkeeper.Replicas); i++ {
+		waitFor = append(waitFor,
+			fmt.Sprintf("%s-%d.%s.%s:3181",
+				util.StatefulSetNameForBookie(pravegaCluster.Name),
+				i,
+				util.HeadlessServiceNameForBookie(pravegaCluster.Name),
+				pravegaCluster.Namespace))
+	}
+	configData["WAIT_FOR"] = strings.Join(waitFor, ",")
 
 	if pravegaCluster.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
@@ -286,4 +327,31 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 		services[i] = service
 	}
 	return services
+}
+
+func MakeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+	var maxUnavailable intstr.IntOrString
+
+	if pravegaCluster.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+		maxUnavailable = intstr.FromInt(0)
+	} else {
+		maxUnavailable = intstr.FromInt(1)
+	}
+
+	return &policyv1beta1.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PodDisruptionBudget",
+			APIVersion: "policy/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      util.PdbNameForSegmentstore(pravegaCluster.Name),
+			Namespace: pravegaCluster.Namespace,
+		},
+		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+			MaxUnavailable: &maxUnavailable,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
+			},
+		},
+	}
 }

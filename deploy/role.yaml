@@ -30,6 +30,12 @@ rules:
   - statefulsets
   verbs:
   - "*"
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - "*"
 
 ---
 
@@ -38,6 +44,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: pravega-operator
 rules:
-- apiGroups: [""]
-  resources: ["nodes"]
-  verbs: ["get", "watch", "list"]
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list

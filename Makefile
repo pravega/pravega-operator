@@ -39,7 +39,7 @@ test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
 test-e2e:
-	operator-sdk test local ./test/e2e --go-test-flags -v
+	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --up-local
 
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
