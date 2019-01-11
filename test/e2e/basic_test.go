@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
@@ -87,6 +86,12 @@ func testScaleCluster(t *testing.T) {
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
 	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// This is to get the latest Pravega cluster object
+	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)
 	}
