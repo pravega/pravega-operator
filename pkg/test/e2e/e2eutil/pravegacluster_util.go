@@ -25,7 +25,6 @@ import (
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	util "github.com/pravega/pravega-operator/pkg/util"
-
 )
 
 var (
@@ -182,6 +181,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 		return err
 	}
 
+	t.Logf("pravega cluster validated: %s", p.Name)
 	return nil
 }
 
