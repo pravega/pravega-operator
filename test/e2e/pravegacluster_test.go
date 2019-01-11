@@ -59,6 +59,7 @@ func testPravegaCluster(t *testing.T) {
 
 	testFuncs := map[string]func(t *testing.T){
 		"testCreateDefaultCluster": testCreateDefaultCluster,
+		"testScaleCluster":         testScaleCluster,
 	}
 
 	for name, f := range testFuncs {
