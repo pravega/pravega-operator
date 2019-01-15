@@ -13,6 +13,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -70,7 +71,7 @@ func (s *BookkeeperSpec) withDefaults() {
 	}
 	s.Image.withDefaults()
 
-	if s.Replicas < MinimumBookkeeperReplicas {
+	if !config.TestMode && s.Replicas < MinimumBookkeeperReplicas {
 		s.Replicas = MinimumBookkeeperReplicas
 	}
 
