@@ -13,6 +13,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -89,11 +90,11 @@ type PravegaSpec struct {
 }
 
 func (s *PravegaSpec) withDefaults() {
-	if s.ControllerReplicas < 1 {
+	if !config.TestMode && s.ControllerReplicas < 1 {
 		s.ControllerReplicas = 1
 	}
 
-	if s.SegmentStoreReplicas < 1 {
+	if !config.TestMode && s.SegmentStoreReplicas < 1 {
 		s.SegmentStoreReplicas = 1
 	}
 

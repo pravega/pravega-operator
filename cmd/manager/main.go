@@ -17,6 +17,7 @@ import (
 
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/controller"
+	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -35,7 +36,7 @@ var (
 
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
-	flag.Parse()
+	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
 }
 
 func printVersion() {
@@ -47,11 +48,16 @@ func printVersion() {
 }
 
 func main() {
-	printVersion()
 	flag.Parse()
+
+	printVersion()
 
 	if versionFlag {
 		os.Exit(0)
+	}
+
+	if controllerconfig.TestMode {
+		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
 	namespace, err := k8sutil.GetWatchNamespace()
