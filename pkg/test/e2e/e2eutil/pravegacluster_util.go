@@ -63,6 +63,30 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
+// UpdateCluster updates the PravegaCluster CR
+func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("updating pravega cluster: %s", p.Name)
+	err := f.Client.Update(goctx.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to update CR: %v", err)
+	}
+
+	t.Logf("updated pravega cluster: %s", p.Name)
+	return nil
+}
+
+// GetCluster returns the lastest PravegaCluster CR
+func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("getting latest pravega cluster: %s", p.Name)
+	pravega := &api.PravegaCluster{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+
+	return pravega, nil
+}
+
 func isPodReady(pod *v1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
 		if condition.Type == v1.PodReady && condition.Status == v1.ConditionTrue {
@@ -170,5 +194,47 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 	}
 
 	t.Logf("pravega cluster validated: %s", p.Name)
+	return nil
+}
+
+func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("checking pvc sanity: %s", p.Name)
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(util.LabelsForBookie(p)).String(),
+	}
+	pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase != v1.ClaimBound {
+			continue
+		}
+		if util.PvcIsOrphan(pvc.Name, p.Spec.Bookkeeper.Replicas) {
+			return fmt.Errorf("bookie pvc is illegal")
+		}
+
+	}
+
+	listOptions = metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(util.LabelsForSegmentStore(p)).String(),
+	}
+	pvcList, err = f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase != v1.ClaimBound {
+			continue
+		}
+		if util.PvcIsOrphan(pvc.Name, p.Spec.Pravega.SegmentStoreReplicas) {
+			return fmt.Errorf("segment store pvc is illegal")
+		}
+
+	}
+
+	t.Logf("pvc validated: %s", p.Name)
 	return nil
 }

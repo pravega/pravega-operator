@@ -37,7 +37,6 @@ func TestPravegaCluster(t *testing.T) {
 }
 
 func testPravegaCluster(t *testing.T) {
-	t.Parallel()
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 	err := ctx.InitializeClusterResources(&framework.CleanupOptions{TestContext: ctx, Timeout: pravega_e2eutil.CleanupTimeout, RetryInterval: pravega_e2eutil.CleanupRetryInterval})
@@ -59,6 +58,7 @@ func testPravegaCluster(t *testing.T) {
 
 	testFuncs := map[string]func(t *testing.T){
 		"testCreateDefaultCluster": testCreateDefaultCluster,
+		"testScaleCluster":         testScaleCluster,
 	}
 
 	for name, f := range testFuncs {
