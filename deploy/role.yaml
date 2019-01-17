@@ -36,6 +36,12 @@ rules:
   - poddisruptionbudgets
   verbs:
   - "*"
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - '*'
 
 ---
 

@@ -11,8 +11,16 @@
 package util
 
 import (
+	"context"
+	"time"
+
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func DownwardAPIEnv() []corev1.EnvVar {
@@ -65,4 +73,32 @@ func PodAntiAffinity(component string, clusterName string) *corev1.Affinity {
 			},
 		},
 	}
+}
+
+// Wait for pods in cluster to be terminated
+func WaitForClusterToTerminate(kubeClient client.Client, p *v1alpha1.PravegaCluster) (err error) {
+	listOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(LabelsForPravegaCluster(p)),
+	}
+
+	err = wait.Poll(5*time.Second, 2*time.Minute, func() (done bool, err error) {
+		podList := &corev1.PodList{}
+		err = kubeClient.List(context.TODO(), listOptions, podList)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	return err
 }

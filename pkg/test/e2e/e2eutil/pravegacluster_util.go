@@ -16,15 +16,16 @@ import (
 	"testing"
 	"time"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	util "github.com/pravega/pravega-operator/pkg/util"
+	"github.com/pravega/pravega-operator/pkg/util"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var (
@@ -87,9 +88,9 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 	return pravega, nil
 }
 
-func isPodReady(pod *v1.Pod) bool {
+func isPodReady(pod *corev1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
-		if condition.Type == v1.PodReady && condition.Status == v1.ConditionTrue {
+		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
 			return true
 		}
 	}
@@ -136,6 +137,7 @@ func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.
 // WaitForClusterToTerminate will wait until all cluster pods are terminated
 func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
+
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
 	}
@@ -197,6 +199,40 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 	return nil
 }
 
+func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	t.Log("restarting tier2 storage")
+	tier2 := NewTier2(namespace)
+
+	err := f.Client.Delete(goctx.TODO(), tier2)
+	if err != nil {
+		return fmt.Errorf("failed to delete tier2: %v", err)
+	}
+
+	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
+		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{IncludeUninitialized: false})
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return true, nil
+			}
+			return false, err
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to wait for tier2 termination: %s", err)
+	}
+
+	tier2 = NewTier2(namespace)
+	err = f.Client.Create(goctx.TODO(), tier2, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return fmt.Errorf("failed to create tier2: %s", err)
+	}
+
+	t.Logf("pravega cluster tier2 restarted")
+	return nil
+}
+
 func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("checking pvc sanity: %s", p.Name)
 	listOptions := metav1.ListOptions{
@@ -208,7 +244,7 @@ func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	}
 
 	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != v1.ClaimBound {
+		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
 		if util.PvcIsOrphan(pvc.Name, p.Spec.Bookkeeper.Replicas) {
@@ -226,7 +262,7 @@ func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	}
 
 	for _, pvc := range pvcList.Items {
-		if pvc.Status.Phase != v1.ClaimBound {
+		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
 		if util.PvcIsOrphan(pvc.Name, p.Spec.Pravega.SegmentStoreReplicas) {
