@@ -12,6 +12,9 @@ package util
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
@@ -90,6 +93,20 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string
 		"app":             "pravega-cluster",
 		"pravega_cluster": pravegaCluster.Name,
 	}
+}
+
+func PvcIsOrphan(stsPvcName string, replicas int32) bool {
+	index := strings.LastIndexAny(stsPvcName, "-")
+	if index == -1 {
+		return false
+	}
+
+	ordinal, err := strconv.Atoi(stsPvcName[index+1:])
+	if err != nil {
+		return false
+	}
+
+	return int32(ordinal) >= replicas
 }
 
 func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
