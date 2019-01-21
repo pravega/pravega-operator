@@ -345,6 +345,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b3f691dbcabd091f701954bb37bd7e7f1dedaad22c64a9c4ff7ca52fc87e0650"
+  name = "github.com/samuel/go-zookeeper"
+  packages = ["zk"]
+  pruneopts = "NT"
+  revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
+
+[[projects]]
   digest = "1:cd2f2cba5b7ffafd0412fb647ff4bcff170292de57270f05fbbf391e3eb9566b"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -818,6 +826,7 @@
     "github.com/operator-framework/operator-sdk/pkg/test",
     "github.com/operator-framework/operator-sdk/pkg/test/e2eutil",
     "github.com/operator-framework/operator-sdk/version",
+    "github.com/samuel/go-zookeeper/zk",
     "github.com/sirupsen/logrus",
     "k8s.io/api/apps/v1",
     "k8s.io/api/batch/v1",

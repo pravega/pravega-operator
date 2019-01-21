@@ -12,6 +12,7 @@ PROJECT_NAME=pravega-operator
 REPO=pravega/$(PROJECT_NAME)
 VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
 GIT_SHA=$(shell git rev-parse --short HEAD)
+TEST_IMAGE=$(REPO)-testimages:$(VERSION)
 GOOS=linux
 GOARCH=amd64
 
@@ -38,7 +39,14 @@ test: test-unit test-e2e
 test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
-test-e2e:
+test-e2e: test-e2e-remote
+
+test-e2e-remote: login
+	operator-sdk build $(TEST_IMAGE) --enable-tests
+	docker push $(TEST_IMAGE)
+	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --image $(TEST_IMAGE)
+
+test-e2e-local:
 	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --up-local
 
 login:

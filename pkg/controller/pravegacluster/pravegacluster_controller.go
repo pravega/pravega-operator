@@ -105,6 +105,13 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	// Set default configuration for unspecified values
 	pravegaCluster.WithDefaults()
 
+	// Clean up zookeeper metadata
+	err = r.reconcileFinalizers(pravegaCluster)
+	if err != nil {
+		log.Printf("failed to clean up zookeeper: %v", err)
+		return reconcileResult, err
+	}
+
 	// Rest of your reconcile code goes here
 	err = r.deployBookie(pravegaCluster)
 	if err != nil {
@@ -331,6 +338,40 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
 		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.PravegaCluster) (err error) {
+	if p.DeletionTimestamp.IsZero() {
+		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
+			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
+			}
+		}
+		return nil
+	} else {
+		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
+			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
+			}
+			if err = r.cleanUpZookeeperMeta(p); err != nil {
+				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
+			}
+		}
+		return nil
+	}
+}
+
+func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
+	if err = util.WaitForClusterToTerminate(r.client, p); err != nil {
+		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
+	}
+
+	if err = util.DeleteAllZnodes(p); err != nil {
+		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
 	}
 	return nil
 }

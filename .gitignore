@@ -166,4 +166,7 @@ bin/
 # Ignore YAML files in the project root directory
 /*.yaml
 
+# Operator SDK
 deploy/test
+deploy/test-pod.yaml
+build/test-framework/
