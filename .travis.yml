@@ -52,7 +52,7 @@ before_script:
 - kubectl -n default create -f test/e2e/resources/tier2.yaml
 - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
 # Install ZooKeeper
-- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crd.yaml
+- kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/crds/zookeeper_v1beta1_zookeepercluster_crd.yaml
 - kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/rbac.yaml
 - kubectl -n default create -f https://raw.githubusercontent.com/pravega/zookeeper-operator/master/deploy/all_ns/operator.yaml
 - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
