@@ -13,6 +13,7 @@ package v1alpha1
 import (
 	"fmt"
 
+	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -62,6 +63,11 @@ type BookkeeperSpec struct {
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Options is the Bookkeeper configuration that is to override the bk_server.conf
+	// in bookkeeper. Some examples can be found here
+	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
+	Options map[string]string `json:"options"`
 }
 
 func (s *BookkeeperSpec) withDefaults() {
@@ -70,7 +76,7 @@ func (s *BookkeeperSpec) withDefaults() {
 	}
 	s.Image.withDefaults()
 
-	if s.Replicas < MinimumBookkeeperReplicas {
+	if !config.TestMode && s.Replicas < MinimumBookkeeperReplicas {
 		s.Replicas = MinimumBookkeeperReplicas
 	}
 
@@ -82,6 +88,10 @@ func (s *BookkeeperSpec) withDefaults() {
 	if s.AutoRecovery == nil {
 		boolTrue := true
 		s.AutoRecovery = &boolTrue
+	}
+
+	if s.Options == nil {
+		s.Options = map[string]string{}
 	}
 }
 

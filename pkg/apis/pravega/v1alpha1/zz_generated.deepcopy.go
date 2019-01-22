@@ -60,6 +60,13 @@ func (in *BookkeeperSpec) DeepCopyInto(out *BookkeeperSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Options != nil {
+		in, out := &in.Options, &out.Options
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

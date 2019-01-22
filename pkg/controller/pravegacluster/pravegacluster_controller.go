@@ -18,9 +18,11 @@ import (
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
-	log "github.com/sirupsen/logrus"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,6 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -288,6 +292,11 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
+
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+		}
 	}
 	return nil
 }
@@ -305,6 +314,11 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
+		}
+
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
 	}
 	return nil
@@ -359,6 +373,41 @@ func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.Praveg
 	if err = util.DeleteAllZnodes(p); err != nil {
 		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
 	}
+	return nil
+}
 
+func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) error {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: sts.Spec.Template.Labels,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to convert label selector: %v", err)
+	}
+
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	pvclistOps := &client.ListOptions{
+		Namespace:     sts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), pvclistOps, pvcList)
+	if err != nil {
+		return err
+	}
+
+	for _, pvcItem := range pvcList.Items {
+		if util.PvcIsOrphan(pvcItem.Name, *sts.Spec.Replicas) {
+			pvcDelete := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pvcItem.Name,
+					Namespace: pvcItem.Namespace,
+				},
+			}
+
+			err = r.client.Delete(context.TODO(), pvcDelete)
+			if err != nil {
+				return fmt.Errorf("failed to delete pvc: %v", err)
+			}
+		}
+	}
 	return nil
 }
