@@ -35,8 +35,8 @@ spec:
     # To enable bookkeeper metrics feature
     # See http://bookkeeper.apache.org/docs/4.7.0/admin/metrics/ for more metrics provider
     options:
-      enableStatistics: true
-      statsProviderClass: org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider
+      enableStatistics: "true"
+      statsProviderClass: "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider"
 
   pravega:
     controllerReplicas: 1
