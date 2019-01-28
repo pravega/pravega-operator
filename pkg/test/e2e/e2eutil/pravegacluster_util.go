@@ -88,15 +88,6 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 	return pravega, nil
 }
 
-func isPodReady(pod *corev1.Pod) bool {
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
 // WaitForClusterToStart will wait until all cluster pods are ready
 func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
@@ -114,7 +105,7 @@ func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.
 		for i := range podList.Items {
 			pod := &podList.Items[i]
 
-			if !isPodReady(pod) {
+			if !util.IsPodReady(pod) {
 				continue
 			}
 			names = append(names, pod.Name)

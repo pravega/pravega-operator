@@ -62,6 +62,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &pravegav1alpha1.PravegaCluster{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -134,6 +142,12 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	err = r.syncClusterSize(pravegaCluster)
 	if err != nil {
 		log.Printf("failed to sync cluster size: %v", err)
+		return reconcileResult, err
+	}
+
+	err = r.reconcileStatus(pravegaCluster)
+	if err != nil {
+		log.Printf("failed to reconcile cluster status: %v", err)
 		return reconcileResult, err
 	}
 
@@ -408,6 +422,25 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 				return fmt.Errorf("failed to delete pvc: %v", err)
 			}
 		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileStatus(p *pravegav1alpha1.PravegaCluster) error {
+	ready, err := util.IsClusterStatusReady(r.client, p)
+	if err != nil {
+		return fmt.Errorf("failed to list pods when checking cluster readiness (%s): %v", p.Name, err)
+	}
+
+	if ready {
+		p.Status.State = util.ReadyClusterState
+	} else {
+		p.Status.State = util.UnknownClusterState
+	}
+
+	err = r.client.Update(context.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to update cluster status(%s): %v", p.Name, err)
 	}
 	return nil
 }

@@ -18,6 +18,11 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
+const (
+	ReadyClusterState   = "READY"
+	UnknownClusterState = "UNKNOWN"
+)
+
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }

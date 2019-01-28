@@ -125,4 +125,5 @@ type ImageSpec struct {
 // PravegaClusterStatus defines the observed state of PravegaCluster
 type PravegaClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	State string `json:"state"`
 }
