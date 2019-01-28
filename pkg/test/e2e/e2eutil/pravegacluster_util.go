@@ -76,7 +76,7 @@ func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-// GetCluster returns the lastest PravegaCluster CR
+// GetCluster returns the latest PravegaCluster CR
 func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("getting latest pravega cluster: %s", p.Name)
 	pravega := &api.PravegaCluster{}
