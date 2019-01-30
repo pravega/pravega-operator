@@ -35,7 +35,7 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 
 - [x] Create and destroy a Pravega cluster
 - [x] Resize cluster
-- [ ] Rolling upgrades
+- [x] Rolling upgrades
 
 > Note that unchecked features are in the roadmap but not available yet.
 
