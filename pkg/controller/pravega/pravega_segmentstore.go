@@ -60,27 +60,25 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 	}
 }
 
-func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec {
+func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: util.ConfigMapNameForSegmentstore(pravegaCluster.Name),
+					Name: util.ConfigMapNameForSegmentstore(p.Name),
 				},
 			},
 		},
 	}
 
-	pravegaSpec := pravegaCluster.Spec.Pravega
-
-	environment = configureTier2Secrets(environment, pravegaSpec)
+	environment = configureTier2Secrets(environment, p.Spec.Pravega)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
-				Image:           pravegaSpec.Image.String(),
-				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
+				Image:           fmt.Sprintf("%s:%s", p.Spec.Pravega.ImageRepository, p.Spec.Version),
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args: []string{
 					"segmentstore",
 				},
@@ -128,14 +126,14 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-segmentstore", pravegaCluster.Name),
+		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
 	}
 
-	if pravegaSpec.SegmentStoreServiceAccountName != "" {
-		podSpec.ServiceAccountName = pravegaSpec.SegmentStoreServiceAccountName
+	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
-	configureTier2Filesystem(&podSpec, pravegaSpec)
+	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
 }

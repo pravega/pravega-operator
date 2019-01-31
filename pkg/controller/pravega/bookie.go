@@ -11,6 +11,8 @@
 package pravega
 
 import (
+	"fmt"
+
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -73,22 +75,24 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 	}
 }
 
-func makeBookieStatefulTemplate(pravegaCluster *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
+func makeBookieStatefulTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: util.LabelsForBookie(pravegaCluster),
+			Labels: util.LabelsForBookie(p),
 		},
-		Spec: *makeBookiePodSpec(pravegaCluster.Name, pravegaCluster.Spec.Bookkeeper),
+		Spec: *makeBookiePodSpec(p),
 	}
 }
 
-func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSpec) *corev1.PodSpec {
+func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
-				Name:            "bookie",
-				Image:           bookkeeperSpec.Image.String(),
-				ImagePullPolicy: bookkeeperSpec.Image.PullPolicy,
+				Name: "bookie",
+				Image: fmt.Sprintf("%s:%s",
+					p.Spec.Bookkeeper.ImageRepository,
+					p.Spec.Version),
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command: []string{
 					"/bin/bash", "/opt/bookkeeper/entrypoint.sh",
 				},
@@ -105,7 +109,7 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: util.ConfigMapNameForBookie(clusterName),
+								Name: util.ConfigMapNameForBookie(p.Name),
 							},
 						},
 					},
@@ -146,11 +150,11 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("bookie", clusterName),
+		Affinity: util.PodAntiAffinity("bookie", p.Name),
 	}
 
-	if bookkeeperSpec.ServiceAccountName != "" {
-		podSpec.ServiceAccountName = bookkeeperSpec.ServiceAccountName
+	if p.Spec.Bookkeeper.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Bookkeeper.ServiceAccountName
 	}
 
 	return podSpec

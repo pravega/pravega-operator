@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -22,14 +20,6 @@ const (
 	// DefaultBookkeeperImageRepository is the default Docker repository for
 	// the BookKeeper image
 	DefaultBookkeeperImageRepository = "pravega/bookkeeper"
-
-	// DefaultBookkeeperImageTag is the default tag used for for the BookKeeper
-	// Docker image
-	DefaultBookkeeperImageTag = "latest"
-
-	// DefaultBookkeeperImagePullPolicy is the default image pull policy used
-	// for the BookKeeper Docker image
-	DefaultBookkeeperImagePullPolicy = v1.PullAlways
 
 	// DefaultBookkeeperLedgerVolumeSize is the default volume size for the
 	// Bookkeeper ledger volume
@@ -46,9 +36,9 @@ const (
 
 // BookkeeperSpec defines the configuration of BookKeeper
 type BookkeeperSpec struct {
-	// Image defines the BookKeeper Docker image to use.
-	// By default, "pravega/bookkeeper:latest" will be used.
-	Image *BookkeeperImageSpec `json:"image"`
+	// ImageRepository defines the Docker image repository.
+	// By default, "pravega/bookkeeper" will be used.
+	ImageRepository string `json:"imageRepository"`
 
 	// Replicas defines the number of BookKeeper replicas.
 	// Minimum is 3. Defaults to 3.
@@ -66,10 +56,9 @@ type BookkeeperSpec struct {
 }
 
 func (s *BookkeeperSpec) withDefaults() {
-	if s.Image == nil {
-		s.Image = &BookkeeperImageSpec{}
+	if len(s.ImageRepository) == 0 {
+		s.ImageRepository = DefaultBookkeeperImageRepository
 	}
-	s.Image.withDefaults()
 
 	if !config.TestMode && s.Replicas < MinimumBookkeeperReplicas {
 		s.Replicas = MinimumBookkeeperReplicas
@@ -83,30 +72,6 @@ func (s *BookkeeperSpec) withDefaults() {
 	if s.AutoRecovery == nil {
 		boolTrue := true
 		s.AutoRecovery = &boolTrue
-	}
-}
-
-// BookkeeperImageSpec defines the fields needed for a BookKeeper Docker image
-type BookkeeperImageSpec struct {
-	ImageSpec
-}
-
-// String formats a container image struct as a Docker compatible repository string
-func (s *BookkeeperImageSpec) String() string {
-	return fmt.Sprintf("%s:%s", s.Repository, s.Tag)
-}
-
-func (s *BookkeeperImageSpec) withDefaults() {
-	if s.Repository == "" {
-		s.Repository = DefaultBookkeeperImageRepository
-	}
-
-	if s.Tag == "" {
-		s.Tag = DefaultBookkeeperImageTag
-	}
-
-	if s.PullPolicy == "" {
-		s.PullPolicy = DefaultBookkeeperImagePullPolicy
 	}
 }
 

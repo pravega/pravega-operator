@@ -21,6 +21,10 @@ const (
 
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
+
+	// DefaultPravegaVersion is the default tag used for for the Pravega
+	// Docker image
+	DefaultPravegaVersion = "0.3.2"
 )
 
 func init() {
@@ -66,6 +70,16 @@ type PravegaClusterSpec struct {
 	// to clients and the service type to use to achieve it
 	// By default, external access is not enabled
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
+
+	// Version is the expected version of the Pravega cluster.
+	// The pravega-operator will eventually make the Pravega cluster version
+	// equal to the expected version.
+	//
+	// The version must follow the [semver]( http://semver.org) format, for example "3.2.13".
+	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
+	//
+	// If version is not set, default is "0.3.2".
+	Version string `json:"version"`
 
 	// Bookkeeper configuration
 	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`

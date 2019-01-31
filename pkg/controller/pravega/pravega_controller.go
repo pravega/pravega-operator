@@ -40,7 +40,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: util.LabelsForController(p),
 				},
-				Spec: *makeControllerPodSpec(p.Name, p.Spec.Pravega),
+				Spec: *makeControllerPodSpec(p),
 			},
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(p),
@@ -49,13 +49,13 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 	}
 }
 
-func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
+func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-controller",
-				Image:           pravegaSpec.Image.String(),
-				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
+				Image:           fmt.Sprintf("%s:%s", p.Spec.Pravega.ImageRepository, p.Spec.Version),
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Args: []string{
 					"controller",
 				},
@@ -73,7 +73,7 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: util.ConfigMapNameForController(name),
+								Name: util.ConfigMapNameForController(p.Name),
 							},
 						},
 					},
@@ -104,11 +104,11 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-controller", name),
+		Affinity: util.PodAntiAffinity("pravega-controller", p.Name),
 	}
 
-	if pravegaSpec.ControllerServiceAccountName != "" {
-		podSpec.ServiceAccountName = pravegaSpec.ControllerServiceAccountName
+	if p.Spec.Pravega.ControllerServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
 	return podSpec

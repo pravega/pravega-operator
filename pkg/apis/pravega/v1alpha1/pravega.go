@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -22,14 +20,6 @@ const (
 	// DefaultPravegaImageRepository is the default Docker repository for
 	// the Pravega image
 	DefaultPravegaImageRepository = "pravega/pravega"
-
-	// DefaultPravegaImageTag is the default tag used for for the Pravega
-	// Docker image
-	DefaultPravegaImageTag = "latest"
-
-	// DefaultPravegaImagePullPolicy is the default image pull policy used
-	// for the Pravega Docker image
-	DefaultPravegaImagePullPolicy = v1.PullAlways
 
 	// DefaultPravegaCacheVolumeSize is the default volume size for the
 	// Pravega SegmentStore cache volume
@@ -61,9 +51,9 @@ type PravegaSpec struct {
 	// Defaults to false.
 	DebugLogging bool `json:"debugLogging"`
 
-	// Image defines the Pravega Docker image to use.
-	// By default, "pravega/pravega:latest" will be used.
-	Image *PravegaImageSpec `json:"image"`
+	// ImageRepository defines the Docker image repository.
+	// By default, "pravega/pravega" will be used.
+	ImageRepository string `json:"imageRepository"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
@@ -98,10 +88,9 @@ func (s *PravegaSpec) withDefaults() {
 		s.SegmentStoreReplicas = 1
 	}
 
-	if s.Image == nil {
-		s.Image = &PravegaImageSpec{}
+	if len(s.ImageRepository) == 0 {
+		s.ImageRepository = DefaultPravegaImageRepository
 	}
-	s.Image.withDefaults()
 
 	if s.Options == nil {
 		s.Options = map[string]string{}
@@ -122,30 +111,6 @@ func (s *PravegaSpec) withDefaults() {
 		s.Tier2 = &Tier2Spec{}
 	}
 	s.Tier2.withDefaults()
-}
-
-// PravegaImageSpec defines the fields needed for a Pravega Docker image
-type PravegaImageSpec struct {
-	ImageSpec
-}
-
-// String formats a container image struct as a Docker compatible repository string
-func (s *PravegaImageSpec) String() string {
-	return fmt.Sprintf("%s:%s", s.Repository, s.Tag)
-}
-
-func (s *PravegaImageSpec) withDefaults() {
-	if s.Repository == "" {
-		s.Repository = DefaultPravegaImageRepository
-	}
-
-	if s.Tag == "" {
-		s.Tag = DefaultPravegaImageTag
-	}
-
-	if s.PullPolicy == "" {
-		s.PullPolicy = DefaultPravegaImagePullPolicy
-	}
 }
 
 // Tier2Spec configures the Tier 2 storage type to use with Pravega.

@@ -15,15 +15,12 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
+  version: 0.3.2
   zookeeperUri: zk-client:2181
 
   bookkeeper:
-    image:
-      repository: pravega/bookkeeper
-      tag: latest
-      pullPolicy: Always
-
     replicas: 3
+    imageRepository: pravega/bookkeeper
 
     storage:
       ledgerVolumeClaimTemplate:
@@ -45,6 +42,7 @@ spec:
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
+    imageRepository: pravega/pravega
 
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
@@ -52,11 +50,6 @@ spec:
       resources:
         requests:
           storage: 20Gi
-
-    image:
-      repository: pravega/pravega
-      tag: latest
-      pullPolicy: Always
 
     tier2:
       filesystem:
