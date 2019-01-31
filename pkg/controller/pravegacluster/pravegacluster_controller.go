@@ -137,6 +137,12 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		return reconcileResult, err
 	}
 
+	err = r.syncClusterVersion(pravegaCluster)
+	if err != nil {
+		log.Printf("failed to sync cluster version: %v", err)
+		return reconcileResult, err
+	}
+
 	err = r.client.Update(context.TODO(), pravegaCluster)
 	if err != nil {
 		log.Printf("failed to update pravegaCluster status: %v", err)
