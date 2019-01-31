@@ -123,7 +123,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 	err = r.client.Update(context.TODO(), pravegaCluster)
 	if err != nil {
-		log.Printf("failed to update Pravega cluster resource (%s): %v",pravegaCluster.Name, err)
+		log.Printf("failed to update Pravega cluster resource (%s): %v", pravegaCluster.Name, err)
 	}
 	return reconcileResult, err
 }
@@ -331,6 +331,7 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		}
 
 		p.Status.SetScalingCondition()
+		p.Status.ClearReadyCondition()
 		err = r.client.Update(context.TODO(), p)
 		if err != nil {
 			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
@@ -360,6 +361,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		}
 
 		p.Status.SetScalingCondition()
+		p.Status.ClearReadyCondition()
 		err = r.client.Update(context.TODO(), p)
 		if err != nil {
 			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
@@ -384,6 +386,7 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		}
 
 		p.Status.SetScalingCondition()
+		p.Status.ClearReadyCondition()
 		err = r.client.Update(context.TODO(), p)
 		if err != nil {
 			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)

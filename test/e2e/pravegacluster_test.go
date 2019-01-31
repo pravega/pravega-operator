@@ -60,6 +60,7 @@ func testPravegaCluster(t *testing.T) {
 		"testCreateDefaultCluster":   testCreateDefaultCluster,
 		"testRecreateDefaultCluster": testRecreateDefaultCluster,
 		"testScaleCluster":           testScaleCluster,
+		"testClusterReadiness":       testClusterReadiness,
 	}
 
 	for name, f := range testFuncs {

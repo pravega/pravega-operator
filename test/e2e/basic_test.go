@@ -195,6 +195,12 @@ func testScaleCluster(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// This is to get the latest Pravega cluster object
+	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Scale down Pravega cluster back to default
 	pravega.Spec.Bookkeeper.Replicas -= 1
 	pravega.Spec.Pravega.SegmentStoreReplicas -= 1
