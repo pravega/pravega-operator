@@ -113,50 +113,68 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	// Set default configuration for unspecified values
 	pravegaCluster.WithDefaults()
 
-	// Clean up zookeeper metadata
-	err = r.reconcileFinalizers(pravegaCluster)
+	err = r.run(pravegaCluster)
 	if err != nil {
-		log.Printf("failed to clean up zookeeper: %v", err)
-		return reconcileResult, err
-	}
-
-	// Rest of your reconcile code goes here
-	err = r.deployBookie(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to deploy bookie: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.deployController(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to deploy controller: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.deploySegmentStore(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to deploy segment store: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.syncClusterSize(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to sync cluster size: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.reconcileStatus(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to reconcile cluster status: %v", err)
-		return reconcileResult, err
+		log.Printf("failed to reconcile: %v", err)
+		pravegaCluster.Status.SetErrorCondition(util.GetErrorMsg(err))
+	} else {
+		pravegaCluster.Status.ClearErrorCondition()
 	}
 
 	err = r.client.Update(context.TODO(), pravegaCluster)
 	if err != nil {
-		log.Printf("failed to update pravegaCluster status: %v", err)
-		return reconcileResult, err
+		log.Printf("failed to update Pravega cluster resource (%s): %v",pravegaCluster.Name, err)
 	}
-	return reconcileResult, nil
+	return reconcileResult, err
+}
+
+func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
+	// Clean up zookeeper metadata
+	err = r.reconcileFinalizers(p)
+	if err != nil {
+		log.Printf("failed to clean up zookeeper: %v", err)
+		return err
+	}
+
+	err = r.deployCluster(p)
+	if err != nil {
+		log.Printf("failed to deploy cluster: %v", err)
+		return err
+	}
+
+	err = r.syncClusterSize(p)
+	if err != nil {
+		log.Printf("failed to sync cluster size: %v", err)
+		return err
+	}
+
+	err = r.reconcileClusterReadiness(p)
+	if err != nil {
+		log.Printf("failed to reconcile cluster readiness: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
+	err = r.deployBookie(p)
+	if err != nil {
+		log.Printf("failed to deploy bookie: %v", err)
+		return err
+	}
+
+	err = r.deployController(p)
+	if err != nil {
+		log.Printf("failed to deploy controller: %v", err)
+		return err
+	}
+
+	err = r.deploySegmentStore(p)
+	if err != nil {
+		log.Printf("failed to deploy segment store: %v", err)
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -311,6 +329,12 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
+
+		p.Status.SetScalingCondition()
+		err = r.client.Update(context.TODO(), p)
+		if err != nil {
+			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
+		}
 	}
 	return nil
 }
@@ -334,6 +358,12 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
+
+		p.Status.SetScalingCondition()
+		err = r.client.Update(context.TODO(), p)
+		if err != nil {
+			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
+		}
 	}
 	return nil
 }
@@ -351,6 +381,12 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
+		}
+
+		p.Status.SetScalingCondition()
+		err = r.client.Update(context.TODO(), p)
+		if err != nil {
+			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
 		}
 	}
 	return nil
@@ -426,16 +462,20 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) reconcileStatus(p *pravegav1alpha1.PravegaCluster) error {
-	ready, err := util.IsClusterStatusReady(r.client, p)
+func (r *ReconcilePravegaCluster) reconcileClusterReadiness(p *pravegav1alpha1.PravegaCluster) error {
+	size := util.GetClusterExpectedSize(p)
+	readyPodNum, err := util.GetClusterReadyPodNumber(r.client, p)
 	if err != nil {
 		return fmt.Errorf("failed to list pods when checking cluster readiness (%s): %v", p.Name, err)
 	}
 
-	if ready {
-		p.Status.State = util.ReadyClusterState
+	// If all pods are up, the cluster is ready to serve
+	if size == readyPodNum {
+		p.Status.SetReadyCondition()
+		// Clear make sure the condition is deleted, even if that condition is not in the list
+		p.Status.ClearScalingCondition()
 	} else {
-		p.Status.State = util.UnknownClusterState
+		p.Status.ClearReadyCondition()
 	}
 
 	err = r.client.Update(context.TODO(), p)

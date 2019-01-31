@@ -121,9 +121,3 @@ type ImageSpec struct {
 	Tag        string        `json:"tag"`
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }
-
-// PravegaClusterStatus defines the observed state of PravegaCluster
-type PravegaClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	State string `json:"state"`
-}

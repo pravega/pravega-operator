@@ -18,11 +18,6 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
-const (
-	ReadyClusterState   = "READY"
-	UnknownClusterState = "UNKNOWN"
-)
-
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
@@ -147,4 +142,12 @@ func RemoveString(slice []string, str string) (result []string) {
 		result = append(result, item)
 	}
 	return result
+}
+
+func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int32) {
+	return p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas
+}
+
+func GetErrorMsg(err error) string {
+	return fmt.Sprintf("%v", err)
 }

@@ -103,30 +103,26 @@ func WaitForClusterToTerminate(kubeClient client.Client, p *v1alpha1.PravegaClus
 	return err
 }
 
-func IsClusterStatusReady(kubeClient client.Client, p *v1alpha1.PravegaCluster) (ready bool, err error) {
-	size := p.Spec.Bookkeeper.Replicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Pravega.ControllerReplicas
-
+func GetClusterReadyPodNumber(kubeClient client.Client, p *v1alpha1.PravegaCluster) (readyPodNum int32, err error) {
 	listOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(LabelsForPravegaCluster(p)),
 	}
 	podList := &corev1.PodList{}
 	err = kubeClient.List(context.TODO(), listOptions, podList)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
+	readyPodNum = 0
 	for i, _ := range podList.Items {
 		pod := &podList.Items[i]
 
 		if IsPodReady(pod) {
-			size--
+			readyPodNum++
 		}
 	}
 
-	if size != 0 {
-		return false, nil
-	}
-	return true, nil
+	return readyPodNum, nil
 }
 
 func IsPodReady(pod *corev1.Pod) bool {

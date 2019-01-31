@@ -11,10 +11,10 @@
 package e2e
 
 import (
-	"github.com/pravega/pravega-operator/pkg/util"
 	"testing"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
+	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
@@ -236,7 +236,7 @@ func testScaleCluster(t *testing.T) {
 	}
 }
 
-func testClusterStatus(t *testing.T) {
+func testClusterReadiness(t *testing.T) {
 	doCleanup := true
 	ctx := framework.NewTestCtx(t)
 	defer func() {
@@ -256,7 +256,7 @@ func testClusterStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if pravega.Status.State == util.ReadyClusterState {
+	if pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady) {
 		t.FailNow()
 	}
 
@@ -272,7 +272,7 @@ func testClusterStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if pravega.Status.State != util.ReadyClusterState {
+	if !pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady) {
 		t.FailNow()
 	}
 
