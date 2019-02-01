@@ -13,6 +13,8 @@ package e2e
 import (
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
@@ -262,10 +264,6 @@ func testClusterReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady) {
-		t.FailNow()
-	}
-
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
 	err = pravega_e2eutil.WaitForClusterToStart(t, f, ctx, pravega, podSize)
@@ -278,7 +276,7 @@ func testClusterReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady) {
+	if !pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady, corev1.ConditionTrue) {
 		t.FailNow()
 	}
 
