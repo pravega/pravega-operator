@@ -73,6 +73,8 @@ func (ps *PravegaClusterStatus) withDefaults() {
 }
 
 func (ps *PravegaClusterStatus) ContainsCondition(condType PravegaClusterConditionType, value corev1.ConditionStatus) bool {
+	_, conditon := ps.getClusterCondition(condType)
+	println(conditon.Status)
 	if _, conditon := ps.getClusterCondition(condType); conditon != nil && conditon.Status == value {
 		return true
 	}
@@ -90,7 +92,7 @@ func (ps *PravegaClusterStatus) SetScalingConditionTrue() {
 }
 
 func (ps *PravegaClusterStatus) SetErrorConditionTrue(reason, message string) {
-	c := newClusterCondition(PravegaClusterConditionScaling, corev1.ConditionTrue, reason, message)
+	c := newClusterCondition(PravegaClusterConditionError, corev1.ConditionTrue, reason, message)
 	ps.setClusterCondition(*c)
 }
 
@@ -105,7 +107,7 @@ func (ps *PravegaClusterStatus) SetScalingConditionFalse() {
 }
 
 func (ps *PravegaClusterStatus) SetErrorConditionFalse() {
-	c := newClusterCondition(PravegaClusterConditionScaling, corev1.ConditionFalse, "", "")
+	c := newClusterCondition(PravegaClusterConditionError, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 

@@ -39,15 +39,17 @@ var _ = Describe("PravegaCluster Status", func() {
 	})
 
 	Context("manually set ready condition to be true", func() {
-		condition := &v1alpha1.PravegaClusterCondition{
-			Type:               v1alpha1.PravegaClusterConditionReady,
-			Status:             corev1.ConditionTrue,
-			Reason:             "",
-			Message:            "",
-			LastUpdateTime:     "",
-			LastTransitionTime: "",
-		}
-		p.Status.Conditions = append(p.Status.Conditions, *condition)
+		BeforeEach(func() {
+			condition := v1alpha1.PravegaClusterCondition{
+				Type:               v1alpha1.PravegaClusterConditionReady,
+				Status:             corev1.ConditionTrue,
+				Reason:             "",
+				Message:            "",
+				LastUpdateTime:     "",
+				LastTransitionTime: "",
+			}
+			p.Status.Conditions = append(p.Status.Conditions, condition)
+		})
 
 		It("should contains ready condition and it is true status", func() {
 			Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionReady, corev1.ConditionTrue)).To(BeTrue())
@@ -56,42 +58,59 @@ var _ = Describe("PravegaCluster Status", func() {
 
 	Context("set conditions", func() {
 		Context("set ready condition to be true", func() {
-			p.Status.SetReadyConditionTrue()
+			BeforeEach(func() {
+				p.Status.SetReadyConditionTrue()
+			})
 			It("should have ready condition with true status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionReady, corev1.ConditionTrue)).To(BeTrue())
 			})
 		})
 
 		Context("set ready condition to be false", func() {
-			p.Status.SetReadyConditionFalse("", "")
+			BeforeEach(func() {
+				p.Status.SetReadyConditionFalse("", "")
+			})
+
 			It("should have ready condition with false status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionReady, corev1.ConditionFalse)).To(BeTrue())
 			})
 		})
 
 		Context("set scaling condition to be true", func() {
-			p.Status.SetScalingConditionTrue()
+			BeforeEach(func() {
+				p.Status.SetScalingConditionTrue()
+			})
+
 			It("should have scaling condition with true status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionScaling, corev1.ConditionTrue)).To(BeTrue())
 			})
 		})
 
 		Context("set scaling condition to be false", func() {
-			p.Status.SetScalingConditionFalse()
+			BeforeEach(func() {
+				p.Status.SetScalingConditionFalse()
+			})
+
 			It("should have ready condition with false status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionScaling, corev1.ConditionFalse)).To(BeTrue())
 			})
 		})
 
 		Context("set error condition to be true", func() {
-			p.Status.SetErrorConditionTrue("", "")
+			BeforeEach(func() {
+				p.Status.SetErrorConditionTrue("", "")
+			})
+
 			It("should have error condition with true status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionError, corev1.ConditionTrue)).To(BeTrue())
 			})
 		})
 
 		Context("set error condition to be false", func() {
-			p.Status.SetReadyConditionTrue()
+			BeforeEach(func() {
+				p.Status.SetErrorConditionFalse()
+			})
+
 			It("should have ready condition with false status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionError, corev1.ConditionFalse)).To(BeTrue())
 			})
@@ -99,21 +118,21 @@ var _ = Describe("PravegaCluster Status", func() {
 	})
 
 	Context("with defaults", func() {
-		p.WithDefaults()
 
-		Context("in conditions", func() {
-			It("should set ready condition to be false", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionReady, corev1.ConditionFalse)).To(BeTrue())
-			})
+		BeforeEach(func() {
+			p.WithDefaults()
+		})
 
-			It("should set scaling condition to be false", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionScaling, corev1.ConditionFalse)).To(BeTrue())
-			})
+		It("should set ready condition to be false", func() {
+			Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionReady, corev1.ConditionFalse)).To(BeTrue())
+		})
 
-			It("should set error condition to be false", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionError, corev1.ConditionFalse)).To(BeTrue())
-			})
+		It("should set scaling condition to be false", func() {
+			Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionScaling, corev1.ConditionFalse)).To(BeTrue())
+		})
 
+		It("should set error condition to be false", func() {
+			Ω(p.Status.ContainsCondition(v1alpha1.PravegaClusterConditionError, corev1.ConditionFalse)).To(BeTrue())
 		})
 	})
 })
