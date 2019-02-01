@@ -18,6 +18,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -103,31 +104,46 @@ func WaitForClusterToTerminate(kubeClient client.Client, p *v1alpha1.PravegaClus
 	return err
 }
 
-func GetClusterReadyPodNumber(kubeClient client.Client, p *v1alpha1.PravegaCluster) (readyPodNum int32, err error) {
+func GetClusterPodOverview(kubeClient client.Client, p *v1alpha1.PravegaCluster) (ready, unhealthy int32, err error) {
 	listOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(LabelsForPravegaCluster(p)),
 	}
 	podList := &corev1.PodList{}
 	err = kubeClient.List(context.TODO(), listOptions, podList)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
-	readyPodNum = 0
+	ready = 0
+	unhealthy = 0
 	for i, _ := range podList.Items {
 		pod := &podList.Items[i]
 
 		if IsPodReady(pod) {
-			readyPodNum++
+			ready++
+		} else if IsPodUnhealthy(pod) {
+			unhealthy++
 		}
 	}
-
-	return readyPodNum, nil
+	return ready, unhealthy, nil
 }
 
 func IsPodReady(pod *corev1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
 		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func IsPodUnhealthy(pod *corev1.Pod) bool {
+	if pod.Status.Phase == corev1.PodUnknown || pod.Status.Phase == corev1.PodFailed {
+		return true
+	}
+
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReasonUnschedulable && condition.Status == corev1.ConditionTrue {
 			return true
 		}
 	}

@@ -51,6 +51,7 @@ type PravegaCluster struct {
 // WithDefaults set default values when not defined in the spec.
 func (p *PravegaCluster) WithDefaults() {
 	p.Spec.withDefaults(p)
+	p.Status.withDefaults()
 }
 
 // PravegaClusterSpec defines the desired state of PravegaCluster
