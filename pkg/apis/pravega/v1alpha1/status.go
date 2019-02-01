@@ -11,30 +11,23 @@
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-type PravegaClusterConditionType string
+type ClusterConditionType string
 
 const (
-	// cluster conditions
-	PravegaClusterConditionReady   PravegaClusterConditionType = "Ready"
-	PravegaClusterConditionScaling                             = "Scaling"
-	PravegaClusterConditionError                               = "Error"
-
-	// ready condition reasons
-	PodsNotReady  = "PodsNotReady"
-	PodsUnhealthy = "PodsUnhealthy"
-
-	// error condition reasons
-	OperatorError = "OperatorError"
+	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
+	ClusterConditionScaling                        = "Scaling"
+	ClusterConditionError                          = "Error"
 )
 
-// PravegaClusterStatus defines the observed state of PravegaCluster
-type PravegaClusterStatus struct {
+// ClusterStatus defines the observed state of PravegaCluster
+type ClusterStatus struct {
 	// Conditions list all the applied conditions
-	Conditions []PravegaClusterCondition `json:"conditions,omitempty"`
+	Conditions []ClusterCondition `json:"conditions,omitempty"`
 
 	// CurrentVersion is the current cluster version
 	CurrentVersion string `json:"currentVersion"`
@@ -42,13 +35,29 @@ type PravegaClusterStatus struct {
 	// TargetVersion is the version the cluster upgrading to.
 	// If the cluster is not upgrading, TargetVersion is empty.
 	TargetVersion string `json:"targetVersion"`
+
+	// Replicas is the number of number of desired replicas in the cluster
+	Replicas int32 `json:"replicas"`
+
+	// ReadyReplicas is the number of number of ready replicas in the cluster
+	ReadyReplicas int32 `json:"readyReplicas"`
+
+	// Members is the Pravega members in the cluster
+	Members MembersStatus `json:"members"`
 }
 
-// PravegaClusterCondition shows the current condition of a Pravega cluster.
+// MembersStatus is the status of the members of the cluster with both
+// ready and unready node membership lists
+type MembersStatus struct {
+	Ready   []string `json:"ready"`
+	Unready []string `json:"unready"`
+}
+
+// ClusterCondition shows the current condition of a Pravega cluster.
 // Comply with k8s API conventions
-type PravegaClusterCondition struct {
+type ClusterCondition struct {
 	// Type of Pravega cluster condition.
-	Type PravegaClusterConditionType `json:"type"`
+	Type ClusterConditionType `json:"type"`
 
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
@@ -66,13 +75,13 @@ type PravegaClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
-func (ps *PravegaClusterStatus) withDefaults() {
-	ps.SetReadyConditionFalse(PodsNotReady, "")
+func (ps *ClusterStatus) withDefaults() {
+	ps.SetPodsReadyConditionFalse()
 	ps.SetScalingConditionFalse()
 	ps.SetErrorConditionFalse()
 }
 
-func (ps *PravegaClusterStatus) ContainsCondition(condType PravegaClusterConditionType, value corev1.ConditionStatus) bool {
+func (ps *ClusterStatus) ContainsCondition(condType ClusterConditionType, value corev1.ConditionStatus) bool {
 	_, conditon := ps.getClusterCondition(condType)
 	println(conditon.Status)
 	if _, conditon := ps.getClusterCondition(condType); conditon != nil && conditon.Status == value {
@@ -81,39 +90,39 @@ func (ps *PravegaClusterStatus) ContainsCondition(condType PravegaClusterConditi
 	return false
 }
 
-func (ps *PravegaClusterStatus) SetReadyConditionTrue() {
-	c := newClusterCondition(PravegaClusterConditionReady, corev1.ConditionTrue, "", "")
+func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
+	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionTrue, "", "")
 	ps.setClusterCondition(*c)
 }
 
-func (ps *PravegaClusterStatus) SetScalingConditionTrue() {
-	c := newClusterCondition(PravegaClusterConditionScaling, corev1.ConditionTrue, "", "")
+func (ps *ClusterStatus) SetScalingConditionTrue() {
+	c := newClusterCondition(ClusterConditionScaling, corev1.ConditionTrue, "", "")
 	ps.setClusterCondition(*c)
 }
 
-func (ps *PravegaClusterStatus) SetErrorConditionTrue(reason, message string) {
-	c := newClusterCondition(PravegaClusterConditionError, corev1.ConditionTrue, reason, message)
+func (ps *ClusterStatus) SetErrorConditionTrue(message string) {
+	c := newClusterCondition(ClusterConditionError, corev1.ConditionTrue, "", message)
 	ps.setClusterCondition(*c)
 }
 
-func (ps *PravegaClusterStatus) SetReadyConditionFalse(reason, message string) {
-	c := newClusterCondition(PravegaClusterConditionReady, corev1.ConditionFalse, reason, message)
+func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
+	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
-func (ps *PravegaClusterStatus) SetScalingConditionFalse() {
-	c := newClusterCondition(PravegaClusterConditionScaling, corev1.ConditionFalse, "", "")
+func (ps *ClusterStatus) SetScalingConditionFalse() {
+	c := newClusterCondition(ClusterConditionScaling, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
-func (ps *PravegaClusterStatus) SetErrorConditionFalse() {
-	c := newClusterCondition(PravegaClusterConditionError, corev1.ConditionFalse, "", "")
+func (ps *ClusterStatus) SetErrorConditionFalse() {
+	c := newClusterCondition(ClusterConditionError, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
-func newClusterCondition(condType PravegaClusterConditionType, status corev1.ConditionStatus, reason, message string) *PravegaClusterCondition {
+func newClusterCondition(condType ClusterConditionType, status corev1.ConditionStatus, reason, message string) *ClusterCondition {
 	now := time.Now().Format(time.RFC3339)
-	return &PravegaClusterCondition{
+	return &ClusterCondition{
 		Type:               condType,
 		Status:             status,
 		Reason:             reason,
@@ -123,7 +132,7 @@ func newClusterCondition(condType PravegaClusterConditionType, status corev1.Con
 	}
 }
 
-func (ps *PravegaClusterStatus) getClusterCondition(t PravegaClusterConditionType) (int, *PravegaClusterCondition) {
+func (ps *ClusterStatus) getClusterCondition(t ClusterConditionType) (int, *ClusterCondition) {
 	for i, c := range ps.Conditions {
 		if t == c.Type {
 			return i, &c
@@ -132,15 +141,14 @@ func (ps *PravegaClusterStatus) getClusterCondition(t PravegaClusterConditionTyp
 	return -1, nil
 }
 
-func (ps *PravegaClusterStatus) setClusterCondition(c PravegaClusterCondition) {
+func (ps *ClusterStatus) setClusterCondition(c ClusterCondition) {
 	position, condition := ps.getClusterCondition(c.Type)
-	if condition != nil && condition.Status == c.Status && condition.Reason == c.Reason && condition.Message == c.Message {
-		condition.LastUpdateTime = time.Now().Format(time.RFC3339)
-		return
-	}
 
 	if condition != nil {
-		c.LastTransitionTime = time.Now().Format(time.RFC3339)
+		if condition.Status != c.Status {
+			c.LastTransitionTime = c.LastUpdateTime
+		}
+		condition = c.DeepCopy()
 		ps.Conditions[position] = c
 	} else {
 		ps.Conditions = append(ps.Conditions, c)

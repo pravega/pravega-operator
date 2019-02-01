@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,14 +59,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource PravegaCluster
 	err = c.Watch(&source.Kind{Type: &pravegav1alpha1.PravegaCluster{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &pravegav1alpha1.PravegaCluster{},
-	})
 	if err != nil {
 		return err
 	}
@@ -116,14 +109,14 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	err = r.run(pravegaCluster)
 	if err != nil {
 		log.Printf("failed to reconcile: %v", err)
-		pravegaCluster.Status.SetErrorConditionTrue(pravegav1alpha1.OperatorError, util.GetErrorMsg(err))
+		pravegaCluster.Status.SetErrorConditionTrue(fmt.Sprintf("%v", err))
 	} else {
 		pravegaCluster.Status.SetErrorConditionFalse()
 	}
 
-	err = r.client.Update(context.TODO(), pravegaCluster)
+	err = r.client.Status().Update(context.TODO(), pravegaCluster)
 	if err != nil {
-		log.Printf("failed to update Pravega cluster resource (%s): %v", pravegaCluster.Name, err)
+		log.Printf("failed to update pravega cluster resource (%s): %v", pravegaCluster.Name, err)
 	}
 	return reconcileResult, err
 }
@@ -150,7 +143,7 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 
 	err = r.reconcileClusterStatus(p)
 	if err != nil {
-		log.Printf("failed to reconcile cluster readiness: %v", err)
+		log.Printf("failed to reconcile cluster status: %v", err)
 		return err
 	}
 	return nil
@@ -331,10 +324,6 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		}
 
 		p.Status.SetScalingConditionTrue()
-		err = r.client.Update(context.TODO(), p)
-		if err != nil {
-			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
-		}
 	}
 	return nil
 }
@@ -360,10 +349,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		}
 
 		p.Status.SetScalingConditionTrue()
-		err = r.client.Update(context.TODO(), p)
-		if err != nil {
-			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
-		}
 	}
 	return nil
 }
@@ -384,10 +369,6 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		}
 
 		p.Status.SetScalingConditionTrue()
-		err = r.client.Update(context.TODO(), p)
-		if err != nil {
-			return fmt.Errorf("failed to update cluster condition (%s): %v", p.Name, err)
-		}
 	}
 	return nil
 }
@@ -400,7 +381,6 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
 			}
 		}
-		return nil
 	} else {
 		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
@@ -411,8 +391,8 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
 			}
 		}
-		return nil
 	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -463,27 +443,40 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 }
 
 func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.PravegaCluster) error {
-	size := util.GetClusterExpectedSize(p)
-	ready, unhealthy, err := util.GetClusterPodOverview(r.client, p)
+	expectedSize := util.GetClusterExpectedSize(p)
+	listOps := &client.ListOptions{
+		Namespace:     p.Namespace,
+		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)),
+	}
+	podList := &corev1.PodList{}
+	err := r.client.List(context.TODO(), listOps, podList)
 	if err != nil {
-		return fmt.Errorf("failed to list pods when checking cluster readiness (%s): %v", p.Name, err)
+		return err
 	}
 
-	// If all pods are up, the cluster is ready to serve
-	if size == ready {
-		p.Status.SetReadyConditionTrue()
-		// When cluster is ready, then scaling must be done if there is any.
-		p.Status.SetScalingConditionFalse()
+	var (
+		readyMembers   []string
+		unreadyMembers []string
+	)
+
+	for _, p := range podList.Items {
+		if util.IsPodReady(&p) {
+			readyMembers = append(readyMembers, p.Name)
+		} else {
+			unreadyMembers = append(unreadyMembers, p.Name)
+		}
 	}
 
-	// If there are unhealthy pods, the cluster is not ready.
-	if unhealthy > 0 {
-		p.Status.SetReadyConditionFalse(pravegav1alpha1.PodsUnhealthy, "")
+	if len(readyMembers) == expectedSize {
+		p.Status.SetPodsReadyConditionTrue()
+	} else {
+		p.Status.SetPodsReadyConditionFalse()
 	}
 
-	err = r.client.Update(context.TODO(), p)
-	if err != nil {
-		return fmt.Errorf("failed to update cluster status(%s): %v", p.Name, err)
-	}
+	p.Status.ReadyReplicas = int32(len(readyMembers))
+	p.Status.Replicas = int32(expectedSize)
+	p.Status.Members.Ready = readyMembers
+	p.Status.Members.Unready = unreadyMembers
+
 	return nil
 }

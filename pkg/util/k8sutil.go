@@ -104,7 +104,7 @@ func WaitForClusterToTerminate(kubeClient client.Client, p *v1alpha1.PravegaClus
 	return err
 }
 
-func GetClusterPodOverview(kubeClient client.Client, p *v1alpha1.PravegaCluster) (ready, unhealthy int32, err error) {
+func GetClusterPodReadiness(kubeClient client.Client, p *v1alpha1.PravegaCluster) (ready, unhealthy int32, err error) {
 	listOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(LabelsForPravegaCluster(p)),
 	}
@@ -118,10 +118,9 @@ func GetClusterPodOverview(kubeClient client.Client, p *v1alpha1.PravegaCluster)
 	unhealthy = 0
 	for i, _ := range podList.Items {
 		pod := &podList.Items[i]
-
 		if IsPodReady(pod) {
 			ready++
-		} else if IsPodUnhealthy(pod) {
+		} else {
 			unhealthy++
 		}
 	}
@@ -131,19 +130,6 @@ func GetClusterPodOverview(kubeClient client.Client, p *v1alpha1.PravegaCluster)
 func IsPodReady(pod *corev1.Pod) bool {
 	for _, condition := range pod.Status.Conditions {
 		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
-func IsPodUnhealthy(pod *corev1.Pod) bool {
-	if pod.Status.Phase == corev1.PodUnknown || pod.Status.Phase == corev1.PodFailed {
-		return true
-	}
-
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == corev1.PodReasonUnschedulable && condition.Status == corev1.ConditionTrue {
 			return true
 		}
 	}

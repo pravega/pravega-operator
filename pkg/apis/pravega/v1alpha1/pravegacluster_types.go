@@ -44,8 +44,8 @@ type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PravegaClusterSpec   `json:"spec,omitempty"`
-	Status PravegaClusterStatus `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // WithDefaults set default values when not defined in the spec.
@@ -54,8 +54,8 @@ func (p *PravegaCluster) WithDefaults() {
 	p.Status.withDefaults()
 }
 
-// PravegaClusterSpec defines the desired state of PravegaCluster
-type PravegaClusterSpec struct {
+// ClusterSpec defines the desired state of PravegaCluster
+type ClusterSpec struct {
 	// ZookeeperUri specifies the hostname/IP address and port in the format
 	// "hostname:port".
 	// By default, the value "zk-client:2181" is used, that corresponds to the
@@ -75,7 +75,7 @@ type PravegaClusterSpec struct {
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
-func (s *PravegaClusterSpec) withDefaults(p *PravegaCluster) {
+func (s *ClusterSpec) withDefaults(p *PravegaCluster) {
 	if s.ZookeeperUri == "" {
 		s.ZookeeperUri = DefaultZookeeperUri
 	}
