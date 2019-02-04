@@ -164,7 +164,11 @@ func WaitToCheckClusterReadiness(t *testing.T, f *framework.Framework, ctx *fram
 	t.Logf("waiting for pravega cluster status update: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
-		ready := p.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
+		pravega, err := GetCluster(t, f, ctx, p)
+		if err != nil {
+			return false, err
+		}
+		ready := pravega.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
 		if !ready {
 			return false, nil
 		}

@@ -268,11 +268,6 @@ func testClusterReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	err = pravega_e2eutil.WaitToCheckClusterReadiness(t, f, ctx, pravega)
 	if err != nil {
 		t.Fatal(err)

@@ -109,8 +109,10 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	err = r.run(pravegaCluster)
 	if err != nil {
 		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
+		return reconcile.Result{}, err
 	}
-	return reconcileResult, err
+
+	return reconcileResult, nil
 }
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -314,8 +316,6 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
-
-		p.Status.SetScalingConditionTrue()
 	}
 	return nil
 }
@@ -339,8 +339,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
 		}
-
-		p.Status.SetScalingConditionTrue()
 	}
 	return nil
 }
@@ -359,8 +357,6 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
 		}
-
-		p.Status.SetScalingConditionTrue()
 	}
 	return nil
 }
@@ -470,5 +466,9 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.Prav
 	p.Status.Members.Ready = readyMembers
 	p.Status.Members.Unready = unreadyMembers
 
-	return r.client.Status().Update(context.TODO(), p)
+	err = r.client.Status().Update(context.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to update cluster status: %v", err)
+	}
+	return nil
 }
