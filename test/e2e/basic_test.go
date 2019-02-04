@@ -276,7 +276,7 @@ func testClusterReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !pravega.Status.ContainsCondition(pravegav1alpha1.PravegaClusterConditionReady, corev1.ConditionTrue) {
+	if !pravega.Status.ContainsCondition(pravegav1alpha1.ClusterConditionPodsReady, corev1.ConditionTrue) {
 		t.FailNow()
 	}
 
