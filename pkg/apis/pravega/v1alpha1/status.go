@@ -102,13 +102,12 @@ func (ps *ClusterStatus) SetErrorConditionFalse() {
 }
 
 func newClusterCondition(condType ClusterConditionType, status corev1.ConditionStatus, reason, message string) *ClusterCondition {
-	now := time.Now().Format(time.RFC3339)
 	return &ClusterCondition{
 		Type:               condType,
 		Status:             status,
 		Reason:             reason,
 		Message:            message,
-		LastUpdateTime:     now,
+		LastUpdateTime:     "",
 		LastTransitionTime: "",
 	}
 }
@@ -122,16 +121,23 @@ func (ps *ClusterStatus) getClusterCondition(t ClusterConditionType) (int, *Clus
 	return -1, nil
 }
 
-func (ps *ClusterStatus) setClusterCondition(c ClusterCondition) {
-	position, condition := ps.getClusterCondition(c.Type)
+func (ps *ClusterStatus) setClusterCondition(newCondition ClusterCondition) {
+	now := time.Now().Format(time.RFC3339)
+	position, existingCondition := ps.getClusterCondition(newCondition.Type)
 
-	if condition != nil {
-		if condition.Status != c.Status {
-			c.LastTransitionTime = c.LastUpdateTime
-		}
-		condition = c.DeepCopy()
-		ps.Conditions[position] = c
-	} else {
-		ps.Conditions = append(ps.Conditions, c)
+	if existingCondition == nil {
+		ps.Conditions = append(ps.Conditions, newCondition)
+		return
 	}
+
+	if existingCondition.Status != newCondition.Status {
+		newCondition.LastTransitionTime = now
+		newCondition.LastUpdateTime = now
+	}
+
+	if existingCondition.Reason != newCondition.Reason || existingCondition.Message != newCondition.Message {
+		newCondition.LastUpdateTime = now
+	}
+
+	ps.Conditions[position] = newCondition
 }
