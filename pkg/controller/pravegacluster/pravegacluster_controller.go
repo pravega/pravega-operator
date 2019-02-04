@@ -38,6 +38,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ReconcileTime is the delay between reconciliations
+const ReconcileTime = 30 * time.Second
+
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -82,9 +85,6 @@ type ReconcilePravegaCluster struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reconcilePeriod := 30 * time.Second
-	reconcileResult := reconcile.Result{RequeueAfter: reconcilePeriod}
-
 	log.Printf("Reconciling PravegaCluster %s/%s\n", request.Namespace, request.Name)
 
 	// Fetch the PravegaCluster instance
@@ -104,7 +104,14 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	// Set default configuration for unspecified values
-	pravegaCluster.WithDefaults()
+	changed := pravegaCluster.WithDefaults()
+	if changed {
+		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
+		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
 
 	err = r.run(pravegaCluster)
 	if err != nil {
@@ -112,7 +119,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	return reconcileResult, nil
+	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
 }
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {

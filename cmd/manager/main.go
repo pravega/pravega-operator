@@ -11,6 +11,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"runtime"
@@ -21,6 +22,8 @@ import (
 	"github.com/pravega/pravega-operator/pkg/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -62,7 +65,7 @@ func main() {
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		log.Fatalf("failed to get watch namespace: %v", err)
+		log.Fatal(err, "failed to get watch namespace")
 	}
 
 	// Get a config to talk to the apiserver
@@ -70,6 +73,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Become the leader before proceeding
+	leader.Become(context.TODO(), "pravega-operator-lock")
+
+	r := ready.NewFileReady()
+	err = r.Set()
+	if err != nil {
+		log.Fatal(err, "")
+	}
+	defer r.Unset()
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
@@ -92,5 +105,7 @@ func main() {
 	log.Print("Starting the Cmd")
 
 	// Start the Cmd
-	log.Fatal(mgr.Start(signals.SetupSignalHandler()))
+	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+		log.Fatal(err, "manager exited non-zero")
+	}
 }

@@ -76,26 +76,6 @@ var _ = Describe("PravegaCluster Status", func() {
 			})
 		})
 
-		Context("set scaling condition to be true", func() {
-			BeforeEach(func() {
-				p.Status.SetScalingConditionTrue()
-			})
-
-			It("should have scaling condition with true status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionScaling, corev1.ConditionTrue)).To(BeTrue())
-			})
-		})
-
-		Context("set scaling condition to be false", func() {
-			BeforeEach(func() {
-				p.Status.SetScalingConditionFalse()
-			})
-
-			It("should have ready condition with false status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionScaling, corev1.ConditionFalse)).To(BeTrue())
-			})
-		})
-
 		Context("set error condition to be true", func() {
 			BeforeEach(func() {
 				p.Status.SetErrorConditionTrue("")
@@ -125,10 +105,6 @@ var _ = Describe("PravegaCluster Status", func() {
 
 		It("should set pods ready condition to be false", func() {
 			Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionFalse)).To(BeTrue())
-		})
-
-		It("should set scaling condition to be false", func() {
-			Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionScaling, corev1.ConditionFalse)).To(BeTrue())
 		})
 
 		It("should set error condition to be false", func() {

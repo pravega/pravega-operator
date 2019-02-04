@@ -49,9 +49,10 @@ type PravegaCluster struct {
 }
 
 // WithDefaults set default values when not defined in the spec.
-func (p *PravegaCluster) WithDefaults() {
-	p.Spec.withDefaults(p)
-	p.Status.withDefaults()
+func (p *PravegaCluster) WithDefaults() (changed bool) {
+	changed = p.Spec.withDefaults()
+
+	return changed
 }
 
 // ClusterSpec defines the desired state of PravegaCluster
@@ -75,25 +76,37 @@ type ClusterSpec struct {
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
-func (s *ClusterSpec) withDefaults(p *PravegaCluster) {
+func (s *ClusterSpec) withDefaults() (changed bool) {
 	if s.ZookeeperUri == "" {
+		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
 	}
 
 	if s.ExternalAccess == nil {
+		changed = true
 		s.ExternalAccess = &ExternalAccess{}
 	}
-	s.ExternalAccess.withDefaults()
+	if s.ExternalAccess.withDefaults() {
+		changed = true
+	}
 
 	if s.Bookkeeper == nil {
+		changed = true
 		s.Bookkeeper = &BookkeeperSpec{}
 	}
-	s.Bookkeeper.withDefaults()
+	if s.Bookkeeper.withDefaults() {
+		changed = true
+	}
 
 	if s.Pravega == nil {
+		changed = true
 		s.Pravega = &PravegaSpec{}
 	}
-	s.Pravega.withDefaults()
+	if s.Pravega.withDefaults() {
+		changed = true
+	}
+
+	return changed
 }
 
 // ExternalAccess defines the configuration of the external access
@@ -108,12 +121,16 @@ type ExternalAccess struct {
 	Type v1.ServiceType `json:"type,omitempty"`
 }
 
-func (e *ExternalAccess) withDefaults() {
-	if e.Enabled == false {
+func (e *ExternalAccess) withDefaults() (changed bool) {
+	if e.Enabled == false && e.Type != "" {
+		changed = true
 		e.Type = ""
 	} else if e.Enabled == true && e.Type == "" {
+		changed = true
 		e.Type = DefaultServiceType
 	}
+
+	return changed
 }
 
 // ImageSpec defines the fields needed for a Docker repository image

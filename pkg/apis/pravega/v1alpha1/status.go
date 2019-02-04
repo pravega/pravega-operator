@@ -20,7 +20,6 @@ type ClusterConditionType string
 
 const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
-	ClusterConditionScaling                        = "Scaling"
 	ClusterConditionError                          = "Error"
 )
 
@@ -75,12 +74,6 @@ type ClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
-func (ps *ClusterStatus) withDefaults() {
-	ps.SetPodsReadyConditionFalse()
-	ps.SetScalingConditionFalse()
-	ps.SetErrorConditionFalse()
-}
-
 func (ps *ClusterStatus) ContainsCondition(condType ClusterConditionType, value corev1.ConditionStatus) bool {
 	if _, conditon := ps.getClusterCondition(condType); conditon != nil && conditon.Status == value {
 		return true
@@ -93,11 +86,6 @@ func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
 	ps.setClusterCondition(*c)
 }
 
-func (ps *ClusterStatus) SetScalingConditionTrue() {
-	c := newClusterCondition(ClusterConditionScaling, corev1.ConditionTrue, "", "")
-	ps.setClusterCondition(*c)
-}
-
 func (ps *ClusterStatus) SetErrorConditionTrue(message string) {
 	c := newClusterCondition(ClusterConditionError, corev1.ConditionTrue, "", message)
 	ps.setClusterCondition(*c)
@@ -105,11 +93,6 @@ func (ps *ClusterStatus) SetErrorConditionTrue(message string) {
 
 func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
 	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionFalse, "", "")
-	ps.setClusterCondition(*c)
-}
-
-func (ps *ClusterStatus) SetScalingConditionFalse() {
-	c := newClusterCondition(ClusterConditionScaling, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
