@@ -159,6 +159,26 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	return nil
 }
 
+// WaitForClusterToTerminate will wait until all cluster pods are terminated
+func WaitToCheckClusterReadiness(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("waiting for pravega cluster status update: %s", p.Name)
+
+	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
+		ready := p.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
+		if !ready {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster status updated ready: %s", p.Name)
+	return nil
+}
+
 // WriteAndReadData writes sample data and reads it back from the given Pravega cluster
 func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("writing and reading data from pravega cluster: %s", p.Name)

@@ -13,10 +13,7 @@ package e2e
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
@@ -276,8 +273,9 @@ func testClusterReadiness(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !pravega.Status.ContainsCondition(pravegav1alpha1.ClusterConditionPodsReady, corev1.ConditionTrue) {
-		t.FailNow()
+	err = pravega_e2eutil.WaitToCheckClusterReadiness(t, f, ctx, pravega)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
