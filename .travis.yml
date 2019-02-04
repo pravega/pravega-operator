@@ -63,7 +63,7 @@ before_script:
 script:
 - make dep
 - make check
-- make test
+- travis_wait make test
 - make build
 - make clean
 
