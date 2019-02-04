@@ -82,8 +82,6 @@ func (ps *ClusterStatus) withDefaults() {
 }
 
 func (ps *ClusterStatus) ContainsCondition(condType ClusterConditionType, value corev1.ConditionStatus) bool {
-	_, conditon := ps.getClusterCondition(condType)
-	println(conditon.Status)
 	if _, conditon := ps.getClusterCondition(condType); conditon != nil && conditon.Status == value {
 		return true
 	}

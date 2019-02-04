@@ -108,15 +108,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 	err = r.run(pravegaCluster)
 	if err != nil {
-		log.Printf("failed to reconcile: %v", err)
-		pravegaCluster.Status.SetErrorConditionTrue(fmt.Sprintf("%v", err))
-	} else {
-		pravegaCluster.Status.SetErrorConditionFalse()
-	}
-
-	err = r.client.Status().Update(context.TODO(), pravegaCluster)
-	if err != nil {
-		log.Printf("failed to update pravega cluster resource (%s): %v", pravegaCluster.Name, err)
+		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
 	}
 	return reconcileResult, err
 }
@@ -478,5 +470,5 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.Prav
 	p.Status.Members.Ready = readyMembers
 	p.Status.Members.Unready = unreadyMembers
 
-	return nil
+	return r.client.Status().Update(context.TODO(), p)
 }
