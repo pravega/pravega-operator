@@ -28,16 +28,19 @@ type ClusterStatus struct {
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 
 	// CurrentVersion is the current cluster version
-	CurrentVersion string `json:"currentVersion"`
+	CurrentVersion string `json:"currentVersion,omitempty"`
 
 	// TargetVersion is the version the cluster upgrading to.
 	// If the cluster is not upgrading, TargetVersion is empty.
-	TargetVersion string `json:"targetVersion"`
+	TargetVersion string `json:"targetVersion,omitempty"`
 
-	// Replicas is the number of number of desired replicas in the cluster
+	// Replicas is the number of desired replicas in the cluster
 	Replicas int32 `json:"replicas"`
 
-	// ReadyReplicas is the number of number of ready replicas in the cluster
+	// CurrentReplicas is the number of current replicas in the cluster
+	CurrentReplicas int32 `json:"currentReplicas"`
+
+	// ReadyReplicas is the number of ready replicas in the cluster
 	ReadyReplicas int32 `json:"readyReplicas"`
 
 	// Members is the Pravega members in the cluster

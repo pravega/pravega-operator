@@ -10,9 +10,9 @@ spec:
     plural: pravegaclusters
     singular: pravegacluster
   additionalPrinterColumns:
-  - name: Members
+  - name: Desired Members
     type: integer
-    description: The number pravega members running
+    description: The number of desired pravega members
     JSONPath: .status.replicas
   - name: Ready Members
     type: integer

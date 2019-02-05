@@ -468,8 +468,9 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.Prav
 		p.Status.SetPodsReadyConditionFalse()
 	}
 
-	p.Status.ReadyReplicas = int32(len(readyMembers))
 	p.Status.Replicas = int32(expectedSize)
+	p.Status.CurrentReplicas = int32(len(podList.Items))
+	p.Status.ReadyReplicas = int32(len(readyMembers))
 	p.Status.Members.Ready = readyMembers
 	p.Status.Members.Unready = unreadyMembers
 

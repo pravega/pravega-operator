@@ -78,13 +78,11 @@ func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 
 // GetCluster returns the latest PravegaCluster CR
 func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("getting latest pravega cluster: %s", p.Name)
 	pravega := &api.PravegaCluster{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-
 	return pravega, nil
 }
 
