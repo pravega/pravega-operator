@@ -34,7 +34,7 @@ before_script:
 # Make root mounted as rshared to fix kube-dns issues
 - sudo mount --make-rshared /
 # Start MiniKube
-- sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=$KUBERNETES_VERSION --extra-config=apiserver.Authorization.Mode=RBAC
+- sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=$KUBERNETES_VERSION
 # Fix the kubectl context, as it's often stale
 - minikube update-context
 # Wait for Kubernetes to be up and ready
