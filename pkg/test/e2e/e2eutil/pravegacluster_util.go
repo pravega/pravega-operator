@@ -98,8 +98,8 @@ func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *fram
 
 		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
-		ready := cluster.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
-		if ready && cluster.Status.ReadyReplicas == int32(size) {
+		_, condition := cluster.Status.GetClusterCondition(api.ClusterConditionPodsReady)
+		if condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
 			return true, nil
 		}
 		return false, nil
