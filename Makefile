@@ -44,10 +44,10 @@ test-e2e: test-e2e-remote
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
 	docker push $(TEST_IMAGE)
-	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --image $(TEST_IMAGE)
+	operator-sdk test local ./test/e2e --namespace default --image $(TEST_IMAGE) --go-test-flags "-v -timeout 0"
 
 test-e2e-local:
-	operator-sdk test local ./test/e2e --go-test-flags -v --namespace default --up-local
+	operator-sdk test local ./test/e2e --namespace default --up-local --go-test-flags "-v -timeout 0"
 
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
