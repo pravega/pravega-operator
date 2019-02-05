@@ -1,7 +1,9 @@
+sudo: required
+# We need the systemd for the kubeadm and it's default from 16.04+
+dist: xenial
+
 language: go
 go_import_path: github.com/pravega/pravega-operator
-sudo: required
-
 go:
 - '1.11'
 
