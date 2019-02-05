@@ -28,7 +28,7 @@ install:
 - curl -Lo util-linux-2.25.tar.gz https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.25/util-linux-2.25.tar.gz && tar xfz util-linux-2.25.tar.gz
 - cd util-linux-2.25; ./configure --without-python --disable-all-programs --enable-nsenter --without-ncurses; make nsenter; sudo cp nsenter /usr/local/bin/; cd -
 # Required to mount NFS-based Pravega Tier 2 storage
-- sudo apt-get install -y nfs-common
+- sudo apt-get install -y nfs-common socat
 
 before_script:
 # Make root mounted as rshared to fix kube-dns issues
