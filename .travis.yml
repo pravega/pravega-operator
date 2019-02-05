@@ -11,14 +11,14 @@ env:
     - CHANGE_MINIKUBE_NONE_USER=true
     - secure: "X4zdixrmuh/D4WwJ6btu0fJROq7fTPO5n4/jeyoxTQvrpwikycwf3ZpXS94u43rHx1ovc8vweVIc4Kur7MFAJDmFpPz5adjD7cCjqaRHo+Sw4a/gdNKizFEmZEBFlelynJ+cYekfF3rIFRws+u/8yWUQnSPl4495Qq1NKjrDTqoB6ZrQDxYdIPPpLAit+Aj9a2zQ4xPHyOv02SmfgL22wQhOx8SF78VNmqVah6klC8j3tAemHJQSBmUQ2fPVBpqAy3YsI7mpF9aSdBOzr7Dk1/cajOx4M5WrAxDPZ7+fSKD97SjICKqtM6MuX63O6Tg86zzdoEdvTWvwBwjWpbI3iCytJOCD8vT1QBPd9bLwZI7K5dElrW990HGrBBS4GmKTFykEE6PCNvxDHu1pG4N0vmLhZ3Hh4evZxA8xSnHRyYTLOaDkSe/vurlmsRJiW0GOEa6Fyz+xrD5y4l5MDkPVvaEPzWFZQf8v+l3OvvDvmHmqup4ADXE/XBYbVraTn8wPcQnvk5ueCvJWBOd/E4keGFsGbqDxQpvQRG/8aHWv32lj2HHK6/qbihXvTfJfRbrWli2BV0LMBL/OBIiuL1JeXycYZG3AtbnwgJVXPzs8kpwrmxkRYvbb3Kc9HXu9x+ajeWDYb978Rq6/0DfXhKFIiLrgUOxR2SK6eHDTcfUY+us="
   matrix:
-    - KUBERNETES_VERSION=v1.11.0
+    - KUBERNETES_VERSION=v1.12.0
 
 services:
 - docker
 
 install:
 - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBERNETES_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-- curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.29.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+- curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.30.0/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
 - curl -Lo dep https://github.com/golang/dep/releases/download/v0.5.0/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.2.0/operator-sdk-v0.2.0-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
 - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.12.0-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
@@ -32,7 +32,7 @@ before_script:
 # Make root mounted as rshared to fix kube-dns issues
 - sudo mount --make-rshared /
 # Start MiniKube
-- sudo minikube start --vm-driver=none --kubernetes-version=$KUBERNETES_VERSION --extra-config=apiserver.Authorization.Mode=RBAC
+- sudo minikube start --vm-driver=none --bootstrapper=kubeadm --kubernetes-version=$KUBERNETES_VERSION --extra-config=apiserver.Authorization.Mode=RBAC
 # Fix the kubectl context, as it's often stale
 - minikube update-context
 # Wait for Kubernetes to be up and ready
