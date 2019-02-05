@@ -52,27 +52,39 @@ var _ = Describe("PravegaCluster Status", func() {
 		})
 
 		It("should contains pods ready condition and it is true status", func() {
-			Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionTrue)).To(BeTrue())
+			_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionPodsReady)
+			Ω(condition.Status).To(Equal(corev1.ConditionTrue))
 		})
 	})
 
 	Context("set conditions", func() {
 		Context("set pods ready condition to be true", func() {
 			BeforeEach(func() {
+				p.Status.SetPodsReadyConditionFalse()
 				p.Status.SetPodsReadyConditionTrue()
 			})
 			It("should have pods ready condition with true status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionTrue)).To(BeTrue())
+				_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionPodsReady)
+				Ω(condition.Status).To(Equal(corev1.ConditionTrue))
 			})
 		})
 
 		Context("set pod ready condition to be false", func() {
 			BeforeEach(func() {
+				p.Status.SetPodsReadyConditionTrue()
 				p.Status.SetPodsReadyConditionFalse()
 			})
 
 			It("should have ready condition with false status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionFalse)).To(BeTrue())
+				_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionPodsReady)
+				Ω(condition.Status).To(Equal(corev1.ConditionFalse))
+			})
+
+			It("should have updated timestamps", func() {
+				_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionPodsReady)
+				// TODO: check the timestamps
+				Ω(condition.LastUpdateTime).NotTo(Equal(""))
+				Ω(condition.LastTransitionTime).NotTo(Equal(""))
 			})
 		})
 	})

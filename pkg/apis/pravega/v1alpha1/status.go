@@ -76,13 +76,6 @@ type ClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
-func (ps *ClusterStatus) ContainsCondition(condType ClusterConditionType, value corev1.ConditionStatus) bool {
-	if _, conditon := ps.getClusterCondition(condType); conditon != nil && conditon.Status == value {
-		return true
-	}
-	return false
-}
-
 func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
 	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionTrue, "", "")
 	ps.setClusterCondition(*c)
@@ -104,7 +97,7 @@ func newClusterCondition(condType ClusterConditionType, status corev1.ConditionS
 	}
 }
 
-func (ps *ClusterStatus) getClusterCondition(t ClusterConditionType) (int, *ClusterCondition) {
+func (ps *ClusterStatus) GetClusterCondition(t ClusterConditionType) (int, *ClusterCondition) {
 	for i, c := range ps.Conditions {
 		if t == c.Type {
 			return i, &c
@@ -115,7 +108,7 @@ func (ps *ClusterStatus) getClusterCondition(t ClusterConditionType) (int, *Clus
 
 func (ps *ClusterStatus) setClusterCondition(newCondition ClusterCondition) {
 	now := time.Now().Format(time.RFC3339)
-	position, existingCondition := ps.getClusterCondition(newCondition.Type)
+	position, existingCondition := ps.GetClusterCondition(newCondition.Type)
 
 	if existingCondition == nil {
 		ps.Conditions = append(ps.Conditions, newCondition)
@@ -123,13 +116,16 @@ func (ps *ClusterStatus) setClusterCondition(newCondition ClusterCondition) {
 	}
 
 	if existingCondition.Status != newCondition.Status {
-		newCondition.LastTransitionTime = now
-		newCondition.LastUpdateTime = now
+		existingCondition.Status = newCondition.Status
+		existingCondition.LastTransitionTime = now
+		existingCondition.LastUpdateTime = now
 	}
 
 	if existingCondition.Reason != newCondition.Reason || existingCondition.Message != newCondition.Message {
-		newCondition.LastUpdateTime = now
+		existingCondition.Reason = newCondition.Reason
+		existingCondition.Message = newCondition.Message
+		existingCondition.LastUpdateTime = now
 	}
 
-	ps.Conditions[position] = newCondition
+	ps.Conditions[position] = *existingCondition
 }
