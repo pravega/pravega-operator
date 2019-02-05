@@ -88,33 +88,23 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 	return pravega, nil
 }
 
-// WaitForClusterToStart will wait until all cluster pods are ready
-func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
-	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
-	}
+// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+	t.Logf("waiting for cluster pods to become ready: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, 5*time.Minute, func() (done bool, err error) {
-		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
+		cluster, err := GetCluster(t, f, ctx, p)
 		if err != nil {
 			return false, err
 		}
 
-		var names []string
-		for i := range podList.Items {
-			pod := &podList.Items[i]
+		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
-			if !util.IsPodReady(pod) {
-				continue
-			}
-			names = append(names, pod.Name)
+		ready := cluster.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
+		if ready && cluster.Status.ReadyReplicas == int32(size) {
+			return true, nil
 		}
-		t.Logf("waiting for pods to become ready (%d/%d), pods (%v)", len(names), size, names)
-		if len(names) != int(size) {
-			return false, nil
-		}
-		return true, nil
+		return false, nil
 	})
 
 	if err != nil {
@@ -156,30 +146,6 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	}
 
 	t.Logf("pravega cluster terminated: %s", p.Name)
-	return nil
-}
-
-// WaitForClusterToTerminate will wait until all cluster pods are terminated
-func WaitToCheckClusterReadiness(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("waiting for pravega cluster status update: %s", p.Name)
-
-	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
-		pravega, err := GetCluster(t, f, ctx, p)
-		if err != nil {
-			return false, err
-		}
-		ready := pravega.Status.ContainsCondition(api.ClusterConditionPodsReady, corev1.ConditionTrue)
-		if !ready {
-			return false, nil
-		}
-		return true, nil
-	})
-
-	if err != nil {
-		return err
-	}
-
-	t.Logf("pravega cluster status updated ready: %s", p.Name)
 	return nil
 }
 
