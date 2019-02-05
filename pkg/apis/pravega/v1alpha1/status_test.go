@@ -21,7 +21,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
 
-func TestV1beta1(t *testing.T) {
+func TestV1alpha1(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "PravegaCluster Status")
 }
@@ -74,41 +74,6 @@ var _ = Describe("PravegaCluster Status", func() {
 			It("should have ready condition with false status", func() {
 				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionFalse)).To(BeTrue())
 			})
-		})
-
-		Context("set error condition to be true", func() {
-			BeforeEach(func() {
-				p.Status.SetErrorConditionTrue("")
-			})
-
-			It("should have error condition with true status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionError, corev1.ConditionTrue)).To(BeTrue())
-			})
-		})
-
-		Context("set error condition to be false", func() {
-			BeforeEach(func() {
-				p.Status.SetErrorConditionFalse()
-			})
-
-			It("should have ready condition with false status", func() {
-				Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionError, corev1.ConditionFalse)).To(BeTrue())
-			})
-		})
-	})
-
-	Context("with defaults", func() {
-
-		BeforeEach(func() {
-			p.WithDefaults()
-		})
-
-		It("should set pods ready condition to be false", func() {
-			Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionPodsReady, corev1.ConditionFalse)).To(BeTrue())
-		})
-
-		It("should set error condition to be false", func() {
-			Ω(p.Status.ContainsCondition(v1alpha1.ClusterConditionError, corev1.ConditionFalse)).To(BeTrue())
 		})
 	})
 })
