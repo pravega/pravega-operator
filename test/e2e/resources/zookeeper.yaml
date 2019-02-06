@@ -3,4 +3,4 @@ kind: "ZookeeperCluster"
 metadata:
   name: "zk"
 spec:
-  size: 1
+  replicas: 1

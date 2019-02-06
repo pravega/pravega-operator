@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,6 +37,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+// ReconcileTime is the delay between reconciliations
+const ReconcileTime = 30 * time.Second
 
 // Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -81,9 +85,6 @@ type ReconcilePravegaCluster struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reconcilePeriod := 30 * time.Second
-	reconcileResult := reconcile.Result{RequeueAfter: reconcilePeriod}
-
 	log.Printf("Reconciling PravegaCluster %s/%s\n", request.Namespace, request.Name)
 
 	// Fetch the PravegaCluster instance
@@ -103,46 +104,71 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	// Set default configuration for unspecified values
-	pravegaCluster.WithDefaults()
+	changed := pravegaCluster.WithDefaults()
+	if changed {
+		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
+		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
+			return reconcile.Result{}, err
+		}
+		return reconcile.Result{Requeue: true}, nil
+	}
 
+	err = r.run(pravegaCluster)
+	if err != nil {
+		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
+}
+
+func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
 	// Clean up zookeeper metadata
-	err = r.reconcileFinalizers(pravegaCluster)
+	err = r.reconcileFinalizers(p)
 	if err != nil {
 		log.Printf("failed to clean up zookeeper: %v", err)
-		return reconcileResult, err
+		return err
 	}
 
-	// Rest of your reconcile code goes here
-	err = r.deployBookie(pravegaCluster)
+	err = r.deployCluster(p)
 	if err != nil {
-		log.Printf("failed to deploy bookie: %v", err)
-		return reconcileResult, err
+		log.Printf("failed to deploy cluster: %v", err)
+		return err
 	}
 
-	err = r.deployController(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to deploy controller: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.deploySegmentStore(pravegaCluster)
-	if err != nil {
-		log.Printf("failed to deploy segment store: %v", err)
-		return reconcileResult, err
-	}
-
-	err = r.syncClusterSize(pravegaCluster)
+	err = r.syncClusterSize(p)
 	if err != nil {
 		log.Printf("failed to sync cluster size: %v", err)
-		return reconcileResult, err
+		return err
 	}
 
-	err = r.client.Update(context.TODO(), pravegaCluster)
+	err = r.reconcileClusterStatus(p)
 	if err != nil {
-		log.Printf("failed to update pravegaCluster status: %v", err)
-		return reconcileResult, err
+		log.Printf("failed to reconcile cluster status: %v", err)
+		return err
 	}
-	return reconcileResult, nil
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
+	err = r.deployBookie(p)
+	if err != nil {
+		log.Printf("failed to deploy bookie: %v", err)
+		return err
+	}
+
+	err = r.deployController(p)
+	if err != nil {
+		log.Printf("failed to deploy controller: %v", err)
+		return err
+	}
+
+	err = r.deploySegmentStore(p)
+	if err != nil {
+		log.Printf("failed to deploy segment store: %v", err)
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -350,7 +376,6 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
 			}
 		}
-		return nil
 	} else {
 		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
@@ -361,8 +386,8 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.Pravega
 				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
 			}
 		}
-		return nil
 	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -408,6 +433,50 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 				return fmt.Errorf("failed to delete pvc: %v", err)
 			}
 		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.PravegaCluster) error {
+	expectedSize := util.GetClusterExpectedSize(p)
+	listOps := &client.ListOptions{
+		Namespace:     p.Namespace,
+		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)),
+	}
+	podList := &corev1.PodList{}
+	err := r.client.List(context.TODO(), listOps, podList)
+	if err != nil {
+		return err
+	}
+
+	var (
+		readyMembers   []string
+		unreadyMembers []string
+	)
+
+	for _, p := range podList.Items {
+		if util.IsPodReady(&p) {
+			readyMembers = append(readyMembers, p.Name)
+		} else {
+			unreadyMembers = append(unreadyMembers, p.Name)
+		}
+	}
+
+	if len(readyMembers) == expectedSize {
+		p.Status.SetPodsReadyConditionTrue()
+	} else {
+		p.Status.SetPodsReadyConditionFalse()
+	}
+
+	p.Status.Replicas = int32(expectedSize)
+	p.Status.CurrentReplicas = int32(len(podList.Items))
+	p.Status.ReadyReplicas = int32(len(readyMembers))
+	p.Status.Members.Ready = readyMembers
+	p.Status.Members.Unready = unreadyMembers
+
+	err = r.client.Status().Update(context.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to update cluster status: %v", err)
 	}
 	return nil
 }

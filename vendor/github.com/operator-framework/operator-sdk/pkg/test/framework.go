@@ -31,6 +31,7 @@ import (
 	"k8s.io/client-go/discovery/cached"
 	"k8s.io/client-go/kubernetes"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	dynclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,6 +46,8 @@ var (
 	singleNamespace *bool
 	// decoder used by createFromYaml
 	dynamicDecoder runtime.Decoder
+	// restMapper for the dynamic client
+	restMapper *restmapper.DeferredDiscoveryRESTMapper
 )
 
 type Framework struct {
@@ -71,10 +74,14 @@ func setup(kubeconfigPath, namespacedManPath *string, localOperator bool) error 
 			if err != nil {
 				return fmt.Errorf("failed to get service host: %v", err)
 			}
-			os.Setenv("KUBERNETES_SERVICE_HOST", addrs[0])
+			if err := os.Setenv("KUBERNETES_SERVICE_HOST", addrs[0]); err != nil {
+				return fmt.Errorf("failed to set kubernetes host env var: (%v)", err)
+			}
 		}
 		if len(os.Getenv("KUBERNETES_SERVICE_PORT")) == 0 {
-			os.Setenv("KUBERNETES_SERVICE_PORT", "443")
+			if err := os.Setenv("KUBERNETES_SERVICE_PORT", "443"); err != nil {
+				return fmt.Errorf("failed to set kubernetes port env var: (%v)", err)
+			}
 		}
 		kubeconfig, err = rest.InClusterConfig()
 		*singleNamespace = true
@@ -97,9 +104,16 @@ func setup(kubeconfigPath, namespacedManPath *string, localOperator bool) error 
 		return fmt.Errorf("failed to build the kubeclient: %v", err)
 	}
 	scheme := runtime.NewScheme()
-	cgoscheme.AddToScheme(scheme)
-	extscheme.AddToScheme(scheme)
-	dynClient, err := dynclient.New(kubeconfig, dynclient.Options{Scheme: scheme})
+	if err := cgoscheme.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add cgo scheme to runtime scheme: (%v)", err)
+	}
+	if err := extscheme.AddToScheme(scheme); err != nil {
+		return fmt.Errorf("failed to add api extensions scheme to runtime scheme: (%v)", err)
+	}
+	cachedDiscoveryClient := cached.NewMemCacheClient(kubeclient.Discovery())
+	restMapper = restmapper.NewDeferredDiscoveryRESTMapper(cachedDiscoveryClient)
+	restMapper.Reset()
+	dynClient, err := dynclient.New(kubeconfig, dynclient.Options{Scheme: scheme, Mapper: restMapper})
 	if err != nil {
 		return fmt.Errorf("failed to build the dynamic client: %v", err)
 	}
@@ -139,10 +153,11 @@ func AddToFrameworkScheme(addToScheme addToSchemeFunc, obj runtime.Object) error
 	if err != nil {
 		return err
 	}
-	cachedDiscoveryClient := cached.NewMemCacheClient(Global.KubeClient.Discovery())
-	restMapper := restmapper.NewDeferredDiscoveryRESTMapper(cachedDiscoveryClient)
 	restMapper.Reset()
 	dynClient, err := dynclient.New(Global.KubeConfig, dynclient.Options{Scheme: Global.Scheme, Mapper: restMapper})
+	if err != nil {
+		return fmt.Errorf("failed to initialize new dynamic client: (%v)", err)
+	}
 	err = wait.PollImmediate(time.Second, time.Second*10, func() (done bool, err error) {
 		if *singleNamespace {
 			err = dynClient.List(goctx.TODO(), &dynclient.ListOptions{Namespace: Global.Namespace}, obj)
