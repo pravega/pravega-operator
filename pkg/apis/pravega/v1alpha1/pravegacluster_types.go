@@ -48,17 +48,19 @@ type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PravegaClusterSpec   `json:"spec,omitempty"`
-	Status PravegaClusterStatus `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec,omitempty"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // WithDefaults set default values when not defined in the spec.
-func (p *PravegaCluster) WithDefaults() {
-	p.Spec.withDefaults(p)
+func (p *PravegaCluster) WithDefaults() (changed bool) {
+	changed = p.Spec.withDefaults()
+
+	return changed
 }
 
-// PravegaClusterSpec defines the desired state of PravegaCluster
-type PravegaClusterSpec struct {
+// ClusterSpec defines the desired state of PravegaCluster
+type ClusterSpec struct {
 	// ZookeeperUri specifies the hostname/IP address and port in the format
 	// "hostname:port".
 	// By default, the value "zk-client:2181" is used, that corresponds to the
@@ -88,25 +90,37 @@ type PravegaClusterSpec struct {
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
-func (s *PravegaClusterSpec) withDefaults(p *PravegaCluster) {
+func (s *ClusterSpec) withDefaults() (changed bool) {
 	if s.ZookeeperUri == "" {
+		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
 	}
 
 	if s.ExternalAccess == nil {
+		changed = true
 		s.ExternalAccess = &ExternalAccess{}
 	}
-	s.ExternalAccess.withDefaults()
+	if s.ExternalAccess.withDefaults() {
+		changed = true
+	}
 
 	if s.Bookkeeper == nil {
+		changed = true
 		s.Bookkeeper = &BookkeeperSpec{}
 	}
-	s.Bookkeeper.withDefaults()
+	if s.Bookkeeper.withDefaults() {
+		changed = true
+	}
 
 	if s.Pravega == nil {
+		changed = true
 		s.Pravega = &PravegaSpec{}
 	}
-	s.Pravega.withDefaults()
+	if s.Pravega.withDefaults() {
+		changed = true
+	}
+
+	return changed
 }
 
 // ExternalAccess defines the configuration of the external access
@@ -121,12 +135,16 @@ type ExternalAccess struct {
 	Type v1.ServiceType `json:"type,omitempty"`
 }
 
-func (e *ExternalAccess) withDefaults() {
-	if e.Enabled == false {
+func (e *ExternalAccess) withDefaults() (changed bool) {
+	if e.Enabled == false && e.Type != "" {
+		changed = true
 		e.Type = ""
 	} else if e.Enabled == true && e.Type == "" {
+		changed = true
 		e.Type = DefaultServiceType
 	}
+
+	return changed
 }
 
 // ImageSpec defines the fields needed for a Docker repository image
@@ -134,9 +152,4 @@ type ImageSpec struct {
 	Repository string        `json:"repository"`
 	Tag        string        `json:"tag"`
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
-}
-
-// PravegaClusterStatus defines the observed state of PravegaCluster
-type PravegaClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 }

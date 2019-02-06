@@ -17,10 +17,10 @@ import (
 
 func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaCluster) (err error) {
 
-	if p.Status.Version != p.Spec.Version {
+	if p.Spec.Version != p.Status.CurrentVersion {
 		// Set upgrading target version to p.Spec.Version in resource status
 		// Set upgrading condition to True
-		log.Printf("User wants to upgrade from %s to %s", oldCluster.Spec.Version, p.Spec.Version)
+		log.Printf("User wants to upgrade from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
 	}
 
 	return nil

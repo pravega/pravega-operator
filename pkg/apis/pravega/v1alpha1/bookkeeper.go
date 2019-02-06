@@ -55,24 +55,32 @@ type BookkeeperSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
-func (s *BookkeeperSpec) withDefaults() {
+func (s *BookkeeperSpec) withDefaults() (changed bool) {
 	if len(s.ImageRepository) == 0 {
+		changed = true
 		s.ImageRepository = DefaultBookkeeperImageRepository
 	}
 
 	if !config.TestMode && s.Replicas < MinimumBookkeeperReplicas {
+		changed = true
 		s.Replicas = MinimumBookkeeperReplicas
 	}
 
 	if s.Storage == nil {
+		changed = true
 		s.Storage = &BookkeeperStorageSpec{}
 	}
-	s.Storage.withDefaults()
+	if s.Storage.withDefaults() {
+		changed = true
+	}
 
 	if s.AutoRecovery == nil {
+		changed = true
 		boolTrue := true
 		s.AutoRecovery = &boolTrue
 	}
+
+	return changed
 }
 
 // BookkeeperStorageSpec is the configuration of the volumes used in BookKeeper
@@ -88,8 +96,9 @@ type BookkeeperStorageSpec struct {
 	JournalVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"journalVolumeClaimTemplate"`
 }
 
-func (s *BookkeeperStorageSpec) withDefaults() {
+func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
 	if s.LedgerVolumeClaimTemplate == nil {
+		changed = true
 		s.LedgerVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 			Resources: v1.ResourceRequirements{
@@ -101,6 +110,7 @@ func (s *BookkeeperStorageSpec) withDefaults() {
 	}
 
 	if s.JournalVolumeClaimTemplate == nil {
+		changed = true
 		s.JournalVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 			Resources: v1.ResourceRequirements{
@@ -110,4 +120,6 @@ func (s *BookkeeperStorageSpec) withDefaults() {
 			},
 		}
 	}
+
+	return changed
 }

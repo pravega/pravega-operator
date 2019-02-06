@@ -76,54 +76,33 @@ func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-// GetCluster returns the lastest PravegaCluster CR
+// GetCluster returns the latest PravegaCluster CR
 func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("getting latest pravega cluster: %s", p.Name)
 	pravega := &api.PravegaCluster{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-
 	return pravega, nil
 }
 
-func isPodReady(pod *corev1.Pod) bool {
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
-			return true
-		}
-	}
-	return false
-}
-
-// WaitForClusterToStart will wait until all cluster pods are ready
-func WaitForClusterToStart(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
-	t.Logf("waiting for pravega cluster to become ready: %s", p.Name)
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
-	}
+// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+	t.Logf("waiting for cluster pods to become ready: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, 5*time.Minute, func() (done bool, err error) {
-		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
+		cluster, err := GetCluster(t, f, ctx, p)
 		if err != nil {
 			return false, err
 		}
 
-		var names []string
-		for i := range podList.Items {
-			pod := &podList.Items[i]
+		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
-			if !isPodReady(pod) {
-				continue
-			}
-			names = append(names, pod.Name)
+		_, condition := cluster.Status.GetClusterCondition(api.ClusterConditionPodsReady)
+		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
+			return true, nil
 		}
-		t.Logf("waiting for pods to become ready (%d/%d), pods (%v)", len(names), size, names)
-		if len(names) != int(size) {
-			return false, nil
-		}
-		return true, nil
+		return false, nil
 	})
 
 	if err != nil {

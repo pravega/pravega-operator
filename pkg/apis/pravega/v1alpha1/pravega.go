@@ -79,24 +79,29 @@ type PravegaSpec struct {
 	SegmentStoreServiceAccountName string `json:"segmentStoreServiceAccountName,omitempty"`
 }
 
-func (s *PravegaSpec) withDefaults() {
+func (s *PravegaSpec) withDefaults() (changed bool) {
 	if !config.TestMode && s.ControllerReplicas < 1 {
+		changed = true
 		s.ControllerReplicas = 1
 	}
 
 	if !config.TestMode && s.SegmentStoreReplicas < 1 {
+		changed = true
 		s.SegmentStoreReplicas = 1
 	}
 
 	if len(s.ImageRepository) == 0 {
+		changed = true
 		s.ImageRepository = DefaultPravegaImageRepository
 	}
 
 	if s.Options == nil {
+		changed = true
 		s.Options = map[string]string{}
 	}
 
 	if s.CacheVolumeClaimTemplate == nil {
+		changed = true
 		s.CacheVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 			Resources: v1.ResourceRequirements{
@@ -108,9 +113,14 @@ func (s *PravegaSpec) withDefaults() {
 	}
 
 	if s.Tier2 == nil {
+		changed = true
 		s.Tier2 = &Tier2Spec{}
 	}
-	s.Tier2.withDefaults()
+	if s.Tier2.withDefaults() {
+		changed = true
+	}
+
+	return changed
 }
 
 // Tier2Spec configures the Tier 2 storage type to use with Pravega.
@@ -129,8 +139,9 @@ type Tier2Spec struct {
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
 }
 
-func (s *Tier2Spec) withDefaults() {
+func (s *Tier2Spec) withDefaults() (changed bool) {
 	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil {
+		changed = true
 		fs := &FileSystemSpec{
 			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
 				ClaimName: DefaultPravegaTier2ClaimName,
@@ -138,6 +149,8 @@ func (s *Tier2Spec) withDefaults() {
 		}
 		s.FileSystem = fs
 	}
+
+	return changed
 }
 
 // FileSystemSpec contains the reference to a PVC.
