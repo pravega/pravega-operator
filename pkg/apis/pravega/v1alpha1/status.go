@@ -20,6 +20,7 @@ type ClusterConditionType string
 
 const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
+	ClusterConditionUpgrading                      = "Upgrading"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
@@ -83,6 +84,16 @@ func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
 
 func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
 	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetUpgradingConditionTrue() {
+	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetUpgradingConditionFalse() {
+	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 

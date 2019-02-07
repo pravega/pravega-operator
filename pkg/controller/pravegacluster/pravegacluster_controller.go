@@ -124,23 +124,23 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
 	// Clean up zookeeper metadata
-	err = r.reconcileFinalizers(p)
-	if err != nil {
-		log.Printf("failed to clean up zookeeper: %v", err)
-		return err
-	}
-
-	err = r.deployCluster(p)
-	if err != nil {
-		log.Printf("failed to deploy cluster: %v", err)
-		return err
-	}
-
-	err = r.syncClusterSize(p)
-	if err != nil {
-		log.Printf("failed to sync cluster size: %v", err)
-		return err
-	}
+	// err = r.reconcileFinalizers(p)
+	// if err != nil {
+	// 	log.Printf("failed to clean up zookeeper: %v", err)
+	// 	return err
+	// }
+	//
+	// err = r.deployCluster(p)
+	// if err != nil {
+	// 	log.Printf("failed to deploy cluster: %v", err)
+	// 	return err
+	// }
+	//
+	// err = r.syncClusterSize(p)
+	// if err != nil {
+	// 	log.Printf("failed to sync cluster size: %v", err)
+	// 	return err
+	// }
 
 	err = r.syncClusterVersion(p)
 	if err != nil {
