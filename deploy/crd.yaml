@@ -9,5 +9,19 @@ spec:
     listKind: PravegaClusterList
     plural: pravegaclusters
     singular: pravegacluster
+  additionalPrinterColumns:
+  - name: Desired Members
+    type: integer
+    description: The number of desired pravega members
+    JSONPath: .status.replicas
+  - name: Ready Members
+    type: integer
+    description: The number pravega members ready
+    JSONPath: .status.readyReplicas
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   scope: Namespaced
   version: v1alpha1
+  subresources:
+    status: {}

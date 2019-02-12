@@ -143,3 +143,7 @@ func RemoveString(slice []string, str string) (result []string) {
 	}
 	return result
 }
+
+func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
+	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+}

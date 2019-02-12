@@ -90,12 +90,6 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				Name:            "bookie",
 				Image:           bookkeeperSpec.Image.String(),
 				ImagePullPolicy: bookkeeperSpec.Image.PullPolicy,
-				//Command: []string{
-				//	"/bin/bash", "/opt/bookkeeper/entrypoint.sh",
-				//},
-				//Args: []string{
-				//	"/opt/bookkeeper/bin/bookkeeper", "bookie",
-				//},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "bookie",
