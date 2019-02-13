@@ -46,6 +46,9 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: util.LabelsForSegmentStore(pravegaCluster),
