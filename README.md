@@ -26,7 +26,7 @@ The project is currently alpha. While no breaking API changes are currently plan
 * [Releases](#releases)
 * [Troubleshooting](#troubleshooting)
     * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
-    * [NFS volume mount failure: wrong fs type error](#nfs-volume-mount-failure-wrong-fs-type-error)
+    * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 ## Overview
 
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
@@ -502,7 +502,7 @@ kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"templat
 ```
 The above commands should resolve the errors and `helm install` should work correctly.
 
-### NFS volume mount failure: wrong fs type error
+### NFS volume mount failure: wrong fs type
 
 If you experience `wrong fs type` issues when pods are trying to mount NFS volumes like in the `kubectl describe po/pravega-segmentstore-0` snippet below, make sure that all Kubernetes node have the `nfs-common` system package installed. You can just try to run the `mount.nfs` command to make sure NFS support is installed in your system.
 
