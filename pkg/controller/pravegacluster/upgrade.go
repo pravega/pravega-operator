@@ -105,16 +105,16 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 
 	for _, component := range []componentSyncVersionFun{
 		componentSyncVersionFun{
-			name: "controller",
-			fun:  r.syncControllerVersion,
+			name: "bookkeeper",
+			fun:  r.syncBookkeeperVersion,
 		},
 		componentSyncVersionFun{
 			name: "segmentstore",
 			fun:  r.syncSegmentStoreVersion,
 		},
 		componentSyncVersionFun{
-			name: "bookkeeper",
-			fun:  r.syncBookkeeperVersion,
+			name: "controller",
+			fun:  r.syncControllerVersion,
 		},
 	} {
 		synced, err = component.fun(p)
@@ -149,7 +149,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
-		log.Printf("updating deployment pod template image to %s", targetImage)
+		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
 		deploy.Spec.Template.Spec.Containers[0].Image = targetImage
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
@@ -160,13 +160,13 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	}
 
 	// Pod template already updated
-	// Check whether the upgrade is in progress or has completed
+	log.Printf("deployment (%s) status: %d updated, %d ready, %d target", deploy.Name,
+		deploy.Status.UpdatedReplicas, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 
+	// Check whether the upgrade is in progress or has completed
 	if deploy.Status.UpdatedReplicas != deploy.Status.Replicas ||
 		deploy.Status.UpdatedReplicas != deploy.Status.ReadyReplicas {
 		// Update still in progress
-		log.Printf("deployment '%s' upgrade in progress. %d (%d) pods updated (ready)", deploy.Name,
-			deploy.Status.UpdatedReplicas, deploy.Status.ReadyReplicas)
 		return false, nil
 	}
 
@@ -188,7 +188,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
-		log.Printf("updating statefulset '%s' template image to '%s'", sts.Name, targetImage)
+		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 		sts.Spec.Template.Spec.Containers[0].Image = targetImage
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
@@ -200,7 +200,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 
 	// Pod template already updated
 
-	log.Printf("statefulset '%s' status: %d updated, %d ready, %d target", sts.Name,
+	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
 
 	// Check whether the upgrade is in progress or has completed
@@ -215,7 +215,40 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 }
 
 func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	// TODO: implement
-	// Enable auto_recovery if it's disabled
+	sts := &appsv1.StatefulSet{}
+	name := util.StatefulSetNameForBookie(p.Name)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+	if err != nil {
+		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
+	}
+
+	targetImage := fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.ImageRepository, p.Status.TargetVersion)
+
+	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
+		// Need to update pod template
+		// This will trigger the rolling upgrade process
+		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
+		sts.Spec.Template.Spec.Containers[0].Image = targetImage
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
+		// Updated pod template. Upgrade process has been triggered
+		return false, nil
+	}
+
+	// Pod template already updated
+
+	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
+		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
+
+	// Check whether the upgrade is in progress or has completed
+	if sts.Status.UpdatedReplicas != sts.Status.Replicas ||
+		sts.Status.UpdatedReplicas != sts.Status.ReadyReplicas {
+		// Upgrade still in progress
+		return false, nil
+	}
+
+	// StatefulSet upgrade completed
 	return true, nil
 }

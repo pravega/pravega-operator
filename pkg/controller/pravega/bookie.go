@@ -25,6 +25,7 @@ import (
 const (
 	LedgerDiskName  = "ledger"
 	JournalDiskName = "journal"
+	IndexDiskName   = "index"
 )
 
 func MakeBookieHeadlessService(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Service {
@@ -85,7 +86,9 @@ func makeBookieStatefulTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSp
 }
 
 func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
+	terminationGracePeriodSeconds := int64(0)
 	podSpec := &corev1.PodSpec{
+		TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 		Containers: []corev1.Container{
 			{
 				Name: "bookie",
@@ -93,12 +96,6 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 					p.Spec.Bookkeeper.ImageRepository,
 					p.Spec.Version),
 				ImagePullPolicy: corev1.PullIfNotPresent,
-				Command: []string{
-					"/bin/bash", "/opt/bookkeeper/entrypoint.sh",
-				},
-				Args: []string{
-					"/opt/bookkeeper/bin/bookkeeper", "bookie",
-				},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "bookie",
@@ -123,16 +120,20 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 						Name:      JournalDiskName,
 						MountPath: "/bk/ledgers",
 					},
+					{
+						Name:      IndexDiskName,
+						MountPath: "/bk/index",
+					},
 				},
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(3181),
+							Command: []string{"/bin/sh", "-c", "/opt/bookkeeper/bin/bookkeeper shell bookiesanity"},
 						},
 					},
-					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
-					PeriodSeconds:    10,
-					FailureThreshold: 9,
+					InitialDelaySeconds: 20,
+					PeriodSeconds:       10,
+					FailureThreshold:    6,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -174,25 +175,29 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 			},
 			Spec: *spec.Storage.LedgerVolumeClaimTemplate,
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: IndexDiskName,
+			},
+			Spec: *spec.Storage.IndexVolumeClaimTemplate,
+		},
 	}
 }
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS": "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
-		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
-		// Using IP address as the Bookie ID until Pravega's BookKeeper is update to, at least,
-		// version 4.7, which assumes that hostnames can resolve to different IP addresses
-		// over time.
-		// Operator issue: https://github.com/pravega/pravega-operator/issues/116
-		// Pravega PR to update BK: https://github.com/pravega/pravega/pull/3192
-		"BK_useHostNameAsBookieID": "false",
+		"BK_BOOKIE_EXTRA_OPTS":     "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
+		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
+		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
 	if *pravegaCluster.Spec.Bookkeeper.AutoRecovery {
 		configData["BK_AUTORECOVERY"] = "true"
+		// Wait one minute before starting autorecovery. This will give
+		// pods some time to come up after being updated or migrated
+		configData["BK_lostBookieRecoveryDelay"] = "60"
 	}
 
 	return &corev1.ConfigMap{
