@@ -57,6 +57,11 @@ type BookkeeperSpec struct {
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Options is the Bookkeeper configuration that is to override the bk_server.conf
+	// in bookkeeper. Some examples can be found here
+	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
+	Options map[string]string `json:"options"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -84,6 +89,9 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		s.AutoRecovery = &boolTrue
 	}
 
+	if s.Options == nil {
+		s.Options = map[string]string{}
+	}
 	return changed
 }
 

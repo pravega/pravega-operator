@@ -131,9 +131,10 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 							Command: []string{"/bin/sh", "-c", "/opt/bookkeeper/bin/bookkeeper shell bookiesanity"},
 						},
 					},
+					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
 					InitialDelaySeconds: 20,
 					PeriodSeconds:       10,
-					FailureThreshold:    6,
+					FailureThreshold:    9,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -186,7 +187,7 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS":     "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
+		"BK_BOOKIE_EXTRA_OPTS":     "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
 		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
 		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
@@ -198,6 +199,11 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		// Wait one minute before starting autorecovery. This will give
 		// pods some time to come up after being updated or migrated
 		configData["BK_lostBookieRecoveryDelay"] = "60"
+	}
+
+	for k, v := range pravegaCluster.Spec.Bookkeeper.Options {
+		prefixKey := fmt.Sprintf("BK_%s", k)
+		configData[prefixKey] = v
 	}
 
 	return &corev1.ConfigMap{
