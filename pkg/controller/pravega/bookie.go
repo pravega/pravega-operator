@@ -11,6 +11,8 @@
 package pravega
 
 import (
+	"fmt"
+
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -89,12 +91,6 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				Name:            "bookie",
 				Image:           bookkeeperSpec.Image.String(),
 				ImagePullPolicy: bookkeeperSpec.Image.PullPolicy,
-				Command: []string{
-					"/bin/bash", "/opt/bookkeeper/entrypoint.sh",
-				},
-				Args: []string{
-					"/opt/bookkeeper/bin/bookkeeper", "bookie",
-				},
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "bookie",
@@ -123,12 +119,13 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(3181),
+							Command: []string{"/bin/sh", "-c", "/opt/bookkeeper/bin/bookkeeper shell bookiesanity"},
 						},
 					},
 					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
-					PeriodSeconds:    10,
-					FailureThreshold: 9,
+					InitialDelaySeconds: 20,
+					PeriodSeconds:       10,
+					FailureThreshold:    9,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -175,20 +172,20 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS": "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB",
-		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
-		// Using IP address as the Bookie ID until Pravega's BookKeeper is update to, at least,
-		// version 4.7, which assumes that hostnames can resolve to different IP addresses
-		// over time.
-		// Operator issue: https://github.com/pravega/pravega-operator/issues/116
-		// Pravega PR to update BK: https://github.com/pravega/pravega/pull/3192
-		"BK_useHostNameAsBookieID": "false",
+		"BK_BOOKIE_EXTRA_OPTS":     "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
+		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
+		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
 	if *pravegaCluster.Spec.Bookkeeper.AutoRecovery {
 		configData["BK_AUTORECOVERY"] = "true"
+	}
+
+	for k, v := range pravegaCluster.Spec.Bookkeeper.Options {
+		prefixKey := fmt.Sprintf("BK_%s", k)
+		configData[prefixKey] = v
 	}
 
 	return &corev1.ConfigMap{

@@ -32,6 +32,16 @@ spec:
     # see https://bookkeeper.apache.org/docs/latest/admin/autorecovery/
     autoRecovery: true
 
+    # To enable bookkeeper metrics feature, take codahale for example here.
+    # See http://bookkeeper.apache.org/docs/4.7.0/admin/metrics/ for more metrics provider
+    # See http://bookkeeper.apache.org/docs/4.7.0/reference/config/#statistics for metrics provider configuration details
+    options:
+      enableStatistics: "true"
+      statsProviderClass: "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider"
+      codahaleStatsGraphiteEndpoint: "graphite.example.com:2003"
+      # Default is 60
+      codahaleStatsOutputFrequencySeconds: 30
+
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
