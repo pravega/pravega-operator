@@ -1,4 +1,4 @@
-# Pravega Operator
+# Pravega Operator [![MIT Licence](https://badges.frapsoft.com/os/mit/mit.svg?v=103)](https://opensource.org/licenses/mit-license.php) [![](https://godoc.org/github.com/nathany/looper?status.svg)](http://godoc.org/github.com/nathany/looper) [![Build Status](https://travis-ci.org/travis-ci/travis-web.svg?branch=master)](https://travis-ci.org/travis-ci/travis-web) [![Go Report](https://goreportcard.com/badge/github.com/openebs/maya)](https://goreportcard.com/report/github.com/openebs/maya)
 
 ### Project status: alpha
 
@@ -122,7 +122,7 @@ spec:
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -157,7 +157,7 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     tier2:
