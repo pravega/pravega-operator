@@ -24,6 +24,7 @@ import (
 const (
 	LedgerDiskName  = "ledger"
 	JournalDiskName = "journal"
+	IndexDiskName   = "index"
 )
 
 func MakeBookieHeadlessService(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Service {
@@ -120,6 +121,10 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 						Name:      JournalDiskName,
 						MountPath: "/bk/ledgers",
 					},
+					{
+						Name:      IndexDiskName,
+						MountPath: "/bk/index",
+					},
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
@@ -180,6 +185,12 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 				Name: LedgerDiskName,
 			},
 			Spec: *spec.Storage.LedgerVolumeClaimTemplate,
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: IndexDiskName,
+			},
+			Spec: *spec.Storage.IndexVolumeClaimTemplate,
 		},
 	}
 }
