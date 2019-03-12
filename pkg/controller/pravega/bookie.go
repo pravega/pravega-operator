@@ -67,7 +67,10 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			ServiceName:         util.HeadlessServiceNameForBookie(pravegaCluster.Name),
 			Replicas:            &pravegaCluster.Spec.Bookkeeper.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Template:            makeBookieStatefulTemplate(pravegaCluster),
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.OnDeleteStatefulSetStrategyType,
+			},
+			Template: makeBookieStatefulTemplate(pravegaCluster),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
@@ -79,7 +82,8 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 func makeBookieStatefulTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: util.LabelsForBookie(p),
+			Labels:      util.LabelsForBookie(p),
+			Annotations: map[string]string{"pravega.version": p.Spec.Version},
 		},
 		Spec: *makeBookiePodSpec(p),
 	}

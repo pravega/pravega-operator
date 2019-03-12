@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"k8s.io/api/core/v1"
 )
 
 func PdbNameForBookie(clusterName string) string {
@@ -146,4 +147,8 @@ func RemoveString(slice []string, str string) (result []string) {
 
 func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
 	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+}
+
+func GetPodVersion(pod *v1.Pod) string {
+	return pod.GetAnnotations()["pravega.version"]
 }

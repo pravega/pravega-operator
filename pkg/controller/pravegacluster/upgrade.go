@@ -19,7 +19,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type componentSyncVersionFun struct {
@@ -229,6 +231,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 		sts.Spec.Template.Spec.Containers[0].Image = targetImage
+		sts.Spec.Template.SetAnnotations(map[string]string{"pravega.version": p.Status.TargetVersion})
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
@@ -243,12 +246,64 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
 
 	// Check whether the upgrade is in progress or has completed
-	if sts.Status.UpdatedReplicas != sts.Status.Replicas ||
-		sts.Status.UpdatedReplicas != sts.Status.ReadyReplicas {
-		// Upgrade still in progress
-		return false, nil
+	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
+		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
+		// StatefulSet upgrade completed
+		// TODO: wait until there is no under replicated ledger
+		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
+		return true, nil
 	}
 
-	// StatefulSet upgrade completed
-	return true, nil
+	// Upgrade still in progress
+	// If all replicas are ready, upgrade an old pod
+	if sts.Status.ReadyReplicas == sts.Status.Replicas {
+		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
+		if err != nil {
+			return false, err
+		}
+
+		if pod == nil {
+			return false, fmt.Errorf("could not obtain outdated pod")
+		}
+
+		log.Infof("upgrading pod: %s", pod.Name)
+
+		err = r.client.Delete(context.TODO(), pod)
+		if err != nil {
+			return false, err
+		}
+	} else {
+
+		// TODO: check if there's any error with
+	}
+
+	// wait until the next reconcile iteration
+	return false, nil
+}
+
+func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, version string) (*corev1.Pod, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: sts.Spec.Template.Labels,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert label selector: %v", err)
+	}
+
+	podList := &corev1.PodList{}
+	podlistOps := &client.ListOptions{
+		Namespace:     sts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), podlistOps, podList)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, podItem := range podList.Items {
+		if util.GetPodVersion(&podItem) == version {
+			continue
+		}
+		return &podItem, nil
+	}
+	return nil, nil
 }
