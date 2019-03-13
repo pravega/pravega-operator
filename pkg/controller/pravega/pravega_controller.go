@@ -81,11 +81,11 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("1"),
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
 						corev1.ResourceMemory: resource.MustParse("1Gi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("2"),
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
 						corev1.ResourceMemory: resource.MustParse("2Gi"),
 					},
 				},
@@ -127,7 +127,7 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
-		"-Dpravegaservice.clusterName=" + p.Name,
+		"-Xms1g -Xmx2g -Dpravegaservice.clusterName=" + p.Name,
 	}
 
 	for name, value := range p.Spec.Pravega.Options {
