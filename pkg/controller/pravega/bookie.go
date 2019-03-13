@@ -124,11 +124,11 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("4.0"),
+						corev1.ResourceCPU:    resource.MustParse("4000m"),
 						corev1.ResourceMemory: resource.MustParse("4Gi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("6.0"),
+						corev1.ResourceCPU:    resource.MustParse("6000m"),
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				},

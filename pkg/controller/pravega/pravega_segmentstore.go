@@ -101,11 +101,11 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("4"),
+						corev1.ResourceCPU:    resource.MustParse("4000m"),
 						corev1.ResourceMemory: resource.MustParse("4Gi"),
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("6"),
+						corev1.ResourceCPU:    resource.MustParse("6000m"),
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				},
@@ -153,7 +153,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 
 func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
-		"-Dpravegaservice.clusterName=" + pravegaCluster.Name,
+		"-Xms1g -Xmx4g -XX:MaxDirectMemorySize=1g -Dpravegaservice.clusterName=" + pravegaCluster.Name,
 	}
 
 	for name, value := range pravegaCluster.Spec.Pravega.Options {
