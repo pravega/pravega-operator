@@ -1,5 +1,7 @@
 # Pravega Operator
 
+ [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![GoDoc](https://godoc.org/github.com/pravega/pravega-operator?status.svg)](https://godoc.org/github.com/pravega/pravega-operator) [![Build Status](https://travis-ci.org/pravega/pravega-operator.svg?branch=master)](https://travis-ci.org/pravega/pravega-operator) [![Go Report](https://goreportcard.com/badge/github.com/pravega/pravega-operator)](https://goreportcard.com/report/github.com/pravega/pravega-operator)
+
 ### Project status: alpha
 
 The project is currently alpha. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
@@ -31,7 +33,7 @@ The project is currently alpha. While no breaking API changes are currently plan
 
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
 
-The Pravega operator manages Pravega clusters deployed to Kubernetes and automates tasks related to operating a Pravega cluster.
+The Pravega Operator manages Pravega clusters deployed to Kubernetes and automates tasks related to operating a Pravega cluster.
 
 - [x] Create and destroy a Pravega cluster
 - [x] Resize cluster
@@ -46,17 +48,17 @@ The Pravega operator manages Pravega clusters deployed to Kubernetes and automat
 
 ## Usage
 
-### Install the operator
+### Install the Operator
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-Run the following command to install the `PravegaCluster` custom resource definition (CRD), create the `pravega-operator` service account, roles, bindings, and the deploy the operator.
+Run the following command to install the `PravegaCluster` custom resource definition (CRD), create the `pravega-operator` service account, roles, bindings, and the deploy the Operator.
 
 ```
 $ kubectl create -f deploy
 ```
 
-Verify that the Pravega operator is running.
+Verify that the Pravega Operator is running.
 
 ```
 $ kubectl get deploy
@@ -109,7 +111,7 @@ spec:
 ```
 $ kubectl create -f pvc.yaml
 ```
-Use the following YAML template to install a small development Pravega Cluster (3 bookies, 1 controller, 3 segment stores). Create a `pravega.yaml` file with the following content.
+Use the following YAML template to install a small development Pravega Cluster (3 Bookies, 1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
 
 ```yaml
 apiVersion: "pravega.pravega.io/v1alpha1"
@@ -122,7 +124,7 @@ spec:
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -157,7 +159,7 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     tier2:
@@ -238,7 +240,7 @@ $ kubectl delete -f pravega.yaml
 $ kubectl delete -f pvc.yaml
 ```
 
-### Uninstall the operator
+### Uninstall the Operator
 
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
@@ -410,7 +412,7 @@ Use the same `pravega.yaml` above to deploy the Pravega cluster.
 
 Pravega has many configuration options for setting up metrics, tuning, etc. The available options can be found
 [here](https://github.com/pravega/pravega/blob/master/config/config.properties) and are
-expressed through the pravega/options part of the resource specification. All values must be expressed as Strings.
+expressed through the `pravega/options` part of the resource specification. All values must be expressed as Strings.
 
 ```yaml
 ...
@@ -440,7 +442,7 @@ That will generate a Docker image with the format
 
 Example image after running `make build`.
 
-The Pravega operator image will be available in your Docker environment.
+The Pravega Operator image will be available in your Docker environment.
 
 ```
 $ docker images pravega/pravega-operator
@@ -477,7 +479,7 @@ According to Google Container Engine docs:
 >
 > This is a known issue in the Beta release of Role-Based Access Control in Kubernetes and Container Engine version 1.6.
 
-On GKE, the following command must be run before installing the operator, replacing the user with your own details.
+On GKE, the following command must be run before installing the Operator, replacing the user with your own details.
 
 ```
 $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org
@@ -490,11 +492,11 @@ For debugging and development you might want to access the Pravega cluster direc
 ```
 $ kubectl port-forward -n default pravega-pravega-controller-68657d67cd-w5x8b 9090:9090 10080:10080
 ```
-## Run the operator locally
+## Run the Operator locally
 
-You can run the operator locally to help with development, testing, and debugging tasks.
+You can run the Operator locally to help with development, testing, and debugging tasks.
 
-The following command will run the operator locally with the default Kubernetes config file present at `$HOME/.kube/config`. Use the `--kubeconfig` flag to provide a different path.
+The following command will run the Operator locally with the default Kubernetes config file present at `$HOME/.kube/config`. Use the `--kubeconfig` flag to provide a different path.
 
 ```
 $ operator-sdk up local
