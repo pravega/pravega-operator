@@ -183,8 +183,9 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS":     "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
-		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
+		"BK_BOOKIE_EXTRA_OPTS": "\"-Xms1g -Xmx2g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
+		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
+		// Set useHostNameAsBookieID to false until BookKeeper Docker image is updated to 4.7
 		"BK_useHostNameAsBookieID": "false",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
