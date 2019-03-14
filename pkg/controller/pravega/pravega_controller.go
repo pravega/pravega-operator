@@ -86,7 +86,7 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 					},
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("2000m"),
-						corev1.ResourceMemory: resource.MustParse("2Gi"),
+						corev1.ResourceMemory: resource.MustParse("3Gi"),
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
