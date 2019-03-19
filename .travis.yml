@@ -3,11 +3,17 @@ sudo: required
 language: go
 go_import_path: github.com/pravega/pravega-operator
 go:
-- '1.11'
+  - '1.11'
 
 env:
   global:
     - secure: "X4zdixrmuh/D4WwJ6btu0fJROq7fTPO5n4/jeyoxTQvrpwikycwf3ZpXS94u43rHx1ovc8vweVIc4Kur7MFAJDmFpPz5adjD7cCjqaRHo+Sw4a/gdNKizFEmZEBFlelynJ+cYekfF3rIFRws+u/8yWUQnSPl4495Qq1NKjrDTqoB6ZrQDxYdIPPpLAit+Aj9a2zQ4xPHyOv02SmfgL22wQhOx8SF78VNmqVah6klC8j3tAemHJQSBmUQ2fPVBpqAy3YsI7mpF9aSdBOzr7Dk1/cajOx4M5WrAxDPZ7+fSKD97SjICKqtM6MuX63O6Tg86zzdoEdvTWvwBwjWpbI3iCytJOCD8vT1QBPd9bLwZI7K5dElrW990HGrBBS4GmKTFykEE6PCNvxDHu1pG4N0vmLhZ3Hh4evZxA8xSnHRyYTLOaDkSe/vurlmsRJiW0GOEa6Fyz+xrD5y4l5MDkPVvaEPzWFZQf8v+l3OvvDvmHmqup4ADXE/XBYbVraTn8wPcQnvk5ueCvJWBOd/E4keGFsGbqDxQpvQRG/8aHWv32lj2HHK6/qbihXvTfJfRbrWli2BV0LMBL/OBIiuL1JeXycYZG3AtbnwgJVXPzs8kpwrmxkRYvbb3Kc9HXu9x+ajeWDYb978Rq6/0DfXhKFIiLrgUOxR2SK6eHDTcfUY+us="
+
+stages:
+  - check
+  - unit
+  - e2e
+  - deploy
 
 jobs:
   include:
@@ -23,6 +29,7 @@ jobs:
 
     - stage: e2e
       name: End-to-end tests
+      if: type = pull_request OR branch = master
       services:
         - docker
       env:
