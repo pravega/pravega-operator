@@ -13,6 +13,7 @@ env:
     - DEP_VERSION=v0.5.0
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
     - GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
+    - GOOGLE_SERVICE_ACCOUNT=pravega-travis-service-account@pravega-dev.iam.gserviceaccount.com
     - PROJECT_NAME=pravega-dev
     - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
     - CLUSTER_ZONE=us-central1-c
@@ -43,6 +44,7 @@ before_script:
 - kubectl config view
 - kubectl config current-context
 - kubectl get nodes -o wide
+- kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
 # Install Helm Tiller
 - kubectl create serviceaccount --namespace kube-system tiller
 - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
