@@ -87,6 +87,14 @@ type PravegaSpec struct {
 	// SegmentStoreServiceAccountName configures the service account used on segment store instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
 	SegmentStoreServiceAccountName string `json:"segmentStoreServiceAccountName,omitempty"`
+
+	// ControllerResources specifies the request and limit of resources that controller can have.
+	// ControllerResources includes CPU and memory resources
+	ControllerResources *v1.ResourceRequirements `json:"controllerResources,omitempty"`
+
+	// SegmentStoreResources specifies the request and limit of resources that segmentStore can have.
+	// SegmentStoreResources includes CPU and memory resources
+	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -129,8 +137,37 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Tier2 = &Tier2Spec{}
 	}
+
 	if s.Tier2.withDefaults() {
 		changed = true
+	}
+
+	if s.controllerResources == nil {
+		changed = true
+		s.controllerResources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("1000m"),
+				v1.ResourceMemory: resource.MustParse("1Gi"),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("2000m"),
+				v1.ResourceMemory: resource.MustParse("2Gi"),
+			},
+		}
+	}
+
+	if s.segmentStoreResources == nil {
+		changed = true
+		s.segmentStoreResources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("4000m"),
+				v1.ResourceMemory: resource.MustParse("4Gi"),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("6000m"),
+				v1.ResourceMemory: resource.MustParse("6Gi"),
+			},
+		}
 	}
 
 	return changed

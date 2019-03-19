@@ -67,6 +67,10 @@ type BookkeeperSpec struct {
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// BookieResources specifies the request and limit of resources that bookie can have.
+	// BookieResources includes CPU and memory resources
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -95,6 +99,20 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		changed = true
 		boolTrue := true
 		s.AutoRecovery = &boolTrue
+	}
+
+	if s.Resources == nil {
+		changed = true
+		s.Resources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("4000m"),
+				v1.ResourceMemory: resource.MustParse("4Gi"),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse("6000m"),
+				v1.ResourceMemory: resource.MustParse("6Gi"),
+			},
+		}
 	}
 
 	return changed
