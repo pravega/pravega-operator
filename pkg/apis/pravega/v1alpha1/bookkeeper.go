@@ -71,6 +71,11 @@ type BookkeeperSpec struct {
 	// BookieResources specifies the request and limit of resources that bookie can have.
 	// BookieResources includes CPU and memory resources
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Options is the Bookkeeper configuration that is to override the bk_server.conf
+	// in bookkeeper. Some examples can be found here
+	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
+	Options map[string]string `json:"options"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -113,6 +118,10 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 				v1.ResourceMemory: resource.MustParse("6Gi"),
 			},
 		}
+	}
+
+	if s.Options == nil {
+		s.Options = map[string]string{}
 	}
 
 	return changed
