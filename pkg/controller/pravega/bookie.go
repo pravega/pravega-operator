@@ -186,11 +186,10 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 	configData := map[string]string{
 		"BK_BOOKIE_EXTRA_OPTS": "\"-Xms1g -Xmx4g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
 		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
-		// Using IP address as the Bookie ID until Pravega's BookKeeper is update to, at least,
-		// version 4.7, which assumes that hostnames can resolve to different IP addresses
-		// over time.
-		// Operator issue: https://github.com/pravega/pravega-operator/issues/116
-		// Pravega PR to update BK: https://github.com/pravega/pravega/pull/3192
+		// Set useHostNameAsBookieID to false until BookKeeper Docker
+		// image is updated to 4.7
+		// This value can be explicitly overridden when using the operator
+		// with images based on BookKeeper 4.7 or newer
 		"BK_useHostNameAsBookieID": "false",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,

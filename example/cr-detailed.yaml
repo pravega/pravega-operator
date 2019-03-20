@@ -3,12 +3,12 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  zookeeperUri: example-client:2181
+  zookeeperUri: zk-client:2181
 
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -29,6 +29,13 @@ spec:
             storage: 10Gi
 
       journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+      indexVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "standard"
         resources:
@@ -73,7 +80,7 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: 0.3.2
+      tag: 0.4.0
       pullPolicy: IfNotPresent
 
     cacheVolumeClaimTemplate:
