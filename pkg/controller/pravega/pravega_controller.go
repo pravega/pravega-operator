@@ -117,7 +117,10 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
-		"-Xms1g -Xmx3g -XX:MaxDirectMemorySize=1g -Dpravegaservice.clusterName=" + p.Name,
+		"-Xms1g",
+		"-XX:+UnlockExperimentalVMOptions",
+		"-XX:+UseCGroupMemoryLimitForHeap",
+		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
 	for name, value := range p.Spec.Pravega.Options {
@@ -135,10 +138,6 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
 		"TLS_ENABLED":            "false",
 		"WAIT_FOR":               p.Spec.ZookeeperUri,
-	}
-
-	for name, value := range p.Spec.Pravega.Options {
-		configData[name] = value
 	}
 
 	configMap := &corev1.ConfigMap{

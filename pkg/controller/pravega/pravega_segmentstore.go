@@ -141,44 +141,48 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 	return podSpec
 }
 
-func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
+func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
-		"-Xms1g -Xmx5g -XX:MaxDirectMemorySize=1g -Dpravegaservice.clusterName=" + pravegaCluster.Name,
+		"-Xms1g",
+		"-XX:+UnlockExperimentalVMOptions",
+		"-XX:+UseCGroupMemoryLimitForHeap",
+		"-XX:MaxRAMFraction=1",
+		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
-	for name, value := range pravegaCluster.Spec.Pravega.Options {
+	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
 	configData := map[string]string{
 		"AUTHORIZATION_ENABLED": "false",
-		"CLUSTER_NAME":          pravegaCluster.Name,
-		"ZK_URL":                pravegaCluster.Spec.ZookeeperUri,
+		"CLUSTER_NAME":          p.Name,
+		"ZK_URL":                p.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
-		"CONTROLLER_URL":        util.PravegaControllerServiceURL(*pravegaCluster),
+		"CONTROLLER_URL":        util.PravegaControllerServiceURL(*p),
 	}
 
 	// Wait for at least 3 Bookies to come up
 	var waitFor []string
-	for i := int32(0); i < util.Min(3, pravegaCluster.Spec.Bookkeeper.Replicas); i++ {
+	for i := int32(0); i < util.Min(3, p.Spec.Bookkeeper.Replicas); i++ {
 		waitFor = append(waitFor,
 			fmt.Sprintf("%s-%d.%s.%s:3181",
-				util.StatefulSetNameForBookie(pravegaCluster.Name),
+				util.StatefulSetNameForBookie(p.Name),
 				i,
-				util.HeadlessServiceNameForBookie(pravegaCluster.Name),
-				pravegaCluster.Namespace))
+				util.HeadlessServiceNameForBookie(p.Name),
+				p.Namespace))
 	}
 	configData["WAIT_FOR"] = strings.Join(waitFor, ",")
 
-	if pravegaCluster.Spec.ExternalAccess.Enabled {
+	if p.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
-	if pravegaCluster.Spec.Pravega.DebugLogging {
+	if p.Spec.Pravega.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}
 
-	for k, v := range getTier2StorageOptions(pravegaCluster.Spec.Pravega) {
+	for k, v := range getTier2StorageOptions(p.Spec.Pravega) {
 		configData[k] = v
 	}
 
@@ -188,9 +192,9 @@ func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.Confi
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.ConfigMapNameForSegmentstore(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
-			Labels:    util.LabelsForSegmentStore(pravegaCluster),
+			Name:      util.ConfigMapNameForSegmentstore(p.Name),
+			Namespace: p.Namespace,
+			Labels:    util.LabelsForSegmentStore(p),
 		},
 		Data: configData,
 	}
