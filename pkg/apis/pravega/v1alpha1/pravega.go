@@ -142,9 +142,9 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	if s.controllerResources == nil {
+	if s.ControllerResources == nil {
 		changed = true
-		s.controllerResources = &v1.ResourceRequirements{
+		s.ControllerResources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
 				v1.ResourceCPU:    resource.MustParse("1000m"),
 				v1.ResourceMemory: resource.MustParse("1Gi"),
@@ -156,9 +156,9 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
-	if s.segmentStoreResources == nil {
+	if s.SegmentStoreResources == nil {
 		changed = true
-		s.segmentStoreResources = &v1.ResourceRequirements{
+		s.SegmentStoreResources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
 				v1.ResourceCPU:    resource.MustParse("4000m"),
 				v1.ResourceMemory: resource.MustParse("4Gi"),
