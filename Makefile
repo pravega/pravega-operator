@@ -52,7 +52,7 @@ test-e2e-local:
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
 
-push: build-image login
+push: build login
 	docker push $(REPO):$(VERSION)
 	docker push $(REPO):latest
 
