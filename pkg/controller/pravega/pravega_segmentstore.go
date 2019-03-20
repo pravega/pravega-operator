@@ -143,7 +143,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 
 func MakeSegmentstoreConfigMap(pravegaCluster *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
-		"-Xms1g -Xmx4g -XX:MaxDirectMemorySize=1g -Dpravegaservice.clusterName=" + pravegaCluster.Name,
+		"-Xms1g -Xmx5g -XX:MaxDirectMemorySize=1g -Dpravegaservice.clusterName=" + pravegaCluster.Name,
 	}
 
 	for name, value := range pravegaCluster.Spec.Pravega.Options {

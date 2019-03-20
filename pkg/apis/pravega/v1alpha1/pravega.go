@@ -151,7 +151,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 			},
 			Limits: v1.ResourceList{
 				v1.ResourceCPU:    resource.MustParse("2000m"),
-				v1.ResourceMemory: resource.MustParse("2Gi"),
+				v1.ResourceMemory: resource.MustParse("3Gi"),
 			},
 		}
 	}
@@ -160,12 +160,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.SegmentStoreResources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("4000m"),
-				v1.ResourceMemory: resource.MustParse("4Gi"),
+				v1.ResourceCPU:    resource.MustParse("1000m"),
+				v1.ResourceMemory: resource.MustParse("3Gi"),
 			},
 			Limits: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("6000m"),
-				v1.ResourceMemory: resource.MustParse("6Gi"),
+				v1.ResourceCPU:    resource.MustParse("2000m"),
+				v1.ResourceMemory: resource.MustParse("5Gi"),
 			},
 		}
 	}

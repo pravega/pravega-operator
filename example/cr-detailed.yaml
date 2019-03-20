@@ -14,11 +14,11 @@ spec:
     replicas: 3
     resources:
       requests:
-        memory: "4Gi"
-        cpu: "4000m"
+        memory: "3Gi"
+        cpu: "1000m"
       limits:
-        memory: "6Gi"
-        cpu: "6000m"
+        memory: "5Gi"
+        cpu: "2000m"
 
     storage:
       ledgerVolumeClaimTemplate:
@@ -63,17 +63,17 @@ spec:
         memory: "1Gi"
         cpu: "1000m"
       limits:
-        memory: "2Gi"
+        memory: "3Gi"
         cpu: "2000m"
 
     segmentStoreReplicas: 3
     segmentStoreResources:
       requests:
-        memory: "4Gi"
-        cpu: "4000m"
+        memory: "3Gi"
+        cpu: "1000m"
       limits:
-        memory: "6Gi"
-        cpu: "6000m"
+        memory: "5Gi"
+        cpu: "2000m"
 
     # Turn on Pravega Debug Logging
     debugLogging: false
