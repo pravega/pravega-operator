@@ -39,6 +39,10 @@ const (
 	// Bookkeeper journal volume
 	DefaultBookkeeperJournalVolumeSize = "10Gi"
 
+	// DefaultBookkeeperIndexVolumeSize is the default volume size for the
+	// Bookkeeper index volume
+	DefaultBookkeeperIndexVolumeSize = "10Gi"
+
 	// MinimumBookkeeperReplicas is the minimum number of Bookkeeper replicas
 	// accepted
 	MinimumBookkeeperReplicas = 3
@@ -144,6 +148,11 @@ type BookkeeperStorageSpec struct {
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
 	JournalVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"journalVolumeClaimTemplate"`
+
+	// IndexVolumeClaimTemplate is the spec to describe PVC for the BookKeeper index
+	// This field is optional. If no PVC spec and there is no default storage class,
+	// stateful containers will use emptyDir as volume
+	IndexVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"indexVolumeClaimTemplate"`
 }
 
 func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
@@ -166,6 +175,18 @@ func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
 			Resources: v1.ResourceRequirements{
 				Requests: v1.ResourceList{
 					v1.ResourceStorage: resource.MustParse(DefaultBookkeeperJournalVolumeSize),
+				},
+			},
+		}
+	}
+
+	if s.IndexVolumeClaimTemplate == nil {
+		changed = true
+		s.IndexVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
+			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
+			Resources: v1.ResourceRequirements{
+				Requests: v1.ResourceList{
+					v1.ResourceStorage: resource.MustParse(DefaultBookkeeperIndexVolumeSize),
 				},
 			},
 		}

@@ -16,48 +16,11 @@ metadata:
   name: "example"
 spec:
   zookeeperUri: zk-client:2181
-
   bookkeeper:
-    image:
-      repository: pravega/bookkeeper
-      tag: latest
-      pullPolicy: Always
-
     replicas: 3
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-    autoRecovery: true
-
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-
-    image:
-      repository: pravega/pravega
-      tag: latest
-      pullPolicy: Always
-
     tier2:
       filesystem:
         persistentVolumeClaim:
