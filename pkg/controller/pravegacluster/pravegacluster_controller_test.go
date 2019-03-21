@@ -12,8 +12,9 @@ package pravegacluster
 
 import (
 	"context"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -83,7 +84,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 			})
 
 			It("shouldn't error", func() {
-				Ω(err).To(BeNil())
+				Ω(err).Should(BeNil())
 			})
 
 			Context("Default bookkeeper", func() {
@@ -94,11 +95,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundBk)
-					Ω(err).To(BeNil())
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultBookkeeperRequestCPU))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultBookkeeperRequestMemory))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultBookkeeperLimitCPU))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultBookkeeperLimitMemory))
+					Ω(err).Should(BeNil())
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("500m"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("1Gi"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("1"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("2Gi"))
 				})
 			})
 
@@ -110,11 +111,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundController)
-					Ω(err).To(BeNil())
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultControllerRequestCPU))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultControllerRequestMemory))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultControllerLimitCPU))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultControllerLimitMemory))
+					Ω(err).Should(BeNil())
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("250m"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("512Mi"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("500m"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("1Gi"))
 				})
 			})
 
@@ -126,11 +127,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundSS)
-					Ω(err).To(BeNil())
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultSegmentStoreRequestCPU))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultSegmentStoreRequestMemory))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).To(BeEquivalentTo(v1alpha1.DefaultSegmentStoreLimitCPU))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(BeEquivalentTo(v1alpha1.DefaultSegmentStoreLimitMemory))
+					Ω(err).Should(BeNil())
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("500m"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("1Gi"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("1"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("2Gi"))
 				})
 			})
 		})
@@ -169,7 +170,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 			})
 
 			It("shouldn't error", func() {
-				Ω(err).To(BeNil())
+				Ω(err).Should(BeNil())
 			})
 
 			Context("Custom bookkeeper", func() {
@@ -180,8 +181,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundBK)
-					Ω(err).To(BeNil())
-					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources).To(Equal(*customReq))
+					Ω(err).Should(BeNil())
+					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
+					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
+					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
+					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
 			})
 
@@ -193,8 +197,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundController)
-					Ω(err).To(BeNil())
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources).To(Equal(*customReq))
+					Ω(err).Should(BeNil())
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
 			})
 
@@ -206,8 +213,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundSS)
-					Ω(err).To(BeNil())
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources).To(Equal(*customReq))
+					Ω(err).Should(BeNil())
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
 			})
 		})
