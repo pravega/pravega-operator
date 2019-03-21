@@ -46,6 +46,18 @@ const (
 	// MinimumBookkeeperReplicas is the minimum number of Bookkeeper replicas
 	// accepted
 	MinimumBookkeeperReplicas = 3
+
+	// DefaultBookkeeperRequestCPU is the default CPU request for BookKeeper
+	DefaultBookkeeperRequestCPU = "500m"
+
+	// DefaultBookkeeperLimitCPU is the default CPU limit for BookKeeper
+	DefaultBookkeeperLimitCPU = "1"
+
+	// DefaultBookkeeperRequestMemory is the default memory request for BookKeeper
+	DefaultBookkeeperRequestMemory = "1Gi"
+
+	// DefaultBookkeeperLimitMemory is the limit memory limit for BookKeeper
+	DefaultBookkeeperLimitMemory = "2Gi"
 )
 
 // BookkeeperSpec defines the configuration of BookKeeper
@@ -110,12 +122,12 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Resources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("500m"),
-				v1.ResourceMemory: resource.MustParse("1Gi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultBookkeeperRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultBookkeeperRequestMemory),
 			},
 			Limits: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("1000m"),
-				v1.ResourceMemory: resource.MustParse("2Gi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultBookkeeperLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultBookkeeperLimitMemory),
 			},
 		}
 	}

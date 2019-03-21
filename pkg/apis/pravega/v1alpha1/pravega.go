@@ -45,6 +45,30 @@ const (
 	// DefaultSegmentStoreReplicas is the default number of replicas for the Pravega
 	// Segment Store component
 	DefaultSegmentStoreReplicas = 1
+
+	// DefaultControllerRequestCPU is the default CPU request for Pravega
+	DefaultControllerRequestCPU = "250m"
+
+	// DefaultControllerLimitCPU is the default CPU limit for Pravega
+	DefaultControllerLimitCPU = "500m"
+
+	// DefaultControllerRequestMemory is the default memory request for Pravega
+	DefaultControllerRequestMemory = "512Mi"
+
+	// DefaultControllerLimitMemory is the default memory limit for Pravega
+	DefaultControllerLimitMemory = "1Gi"
+
+	// DefaultSegmentStoreRequestCPU is the default CPU request for Pravega
+	DefaultSegmentStoreRequestCPU = "500m"
+
+	// DefaultSegmentStoreLimitCPU is the default CPU limit for Pravega
+	DefaultSegmentStoreLimitCPU = "1"
+
+	// DefaultSegmentStoreRequestMemory is the default memory request for Pravega
+	DefaultSegmentStoreRequestMemory = "1Gi"
+
+	// DefaultSegmentStoreLimitMemory is the default memory limit for Pravega
+	DefaultSegmentStoreLimitMemory = "2Gi"
 )
 
 // PravegaSpec defines the configuration of Pravega
@@ -146,12 +170,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.ControllerResources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("250m"),
-				v1.ResourceMemory: resource.MustParse("512Mi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultControllerRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultControllerRequestMemory),
 			},
 			Limits: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("500m"),
-				v1.ResourceMemory: resource.MustParse("1Gi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultControllerLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultControllerLimitMemory),
 			},
 		}
 	}
@@ -160,12 +184,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.SegmentStoreResources = &v1.ResourceRequirements{
 			Requests: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("500m"),
-				v1.ResourceMemory: resource.MustParse("1Gi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreRequestMemory),
 			},
 			Limits: v1.ResourceList{
-				v1.ResourceCPU:    resource.MustParse("1000m"),
-				v1.ResourceMemory: resource.MustParse("2Gi"),
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreLimitMemory),
 			},
 		}
 	}
