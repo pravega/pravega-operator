@@ -145,7 +145,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 
 	t.Logf("pravega cluster terminated: %s", p.Name)
 	time.Sleep(time.Duration(time.Second * 10))
-	
+
 	return nil
 }
 
