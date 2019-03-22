@@ -121,6 +121,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
 	}
 
+	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
 		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
 		if err != nil {
@@ -143,9 +144,30 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 		return err
 	}
 
-	t.Logf("pravega cluster terminated: %s", p.Name)
-	time.Sleep(time.Duration(time.Second * 10))
+	// Wait for PVCs to terminate
+	err = wait.Poll(RetryInterval, 1*time.Minute, func() (done bool, err error) {
+		pvcList, err := f.KubeClient.Core().PersistentVolumeClaims(p.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
 
+		var names []string
+		for i := range pvcList.Items {
+			pvc := &pvcList.Items[i]
+			names = append(names, pvc.Name)
+		}
+		t.Logf("waiting for pvc to terminate (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster terminated: %s", p.Name)
 	return nil
 }
 
