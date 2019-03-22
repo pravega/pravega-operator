@@ -12,6 +12,13 @@ spec:
       pullPolicy: IfNotPresent
 
     replicas: 3
+    resources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
 
     storage:
       ledgerVolumeClaimTemplate:
@@ -51,7 +58,22 @@ spec:
 
   pravega:
     controllerReplicas: 1
+    controllerResources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "3Gi"
+        cpu: "2000m"
+
     segmentStoreReplicas: 3
+    segmentStoreResources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
 
     # Turn on Pravega Debug Logging
     debugLogging: false

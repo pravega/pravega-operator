@@ -45,6 +45,30 @@ const (
 	// DefaultSegmentStoreReplicas is the default number of replicas for the Pravega
 	// Segment Store component
 	DefaultSegmentStoreReplicas = 1
+
+	// DefaultControllerRequestCPU is the default CPU request for Pravega
+	DefaultControllerRequestCPU = "250m"
+
+	// DefaultControllerLimitCPU is the default CPU limit for Pravega
+	DefaultControllerLimitCPU = "500m"
+
+	// DefaultControllerRequestMemory is the default memory request for Pravega
+	DefaultControllerRequestMemory = "512Mi"
+
+	// DefaultControllerLimitMemory is the default memory limit for Pravega
+	DefaultControllerLimitMemory = "1Gi"
+
+	// DefaultSegmentStoreRequestCPU is the default CPU request for Pravega
+	DefaultSegmentStoreRequestCPU = "500m"
+
+	// DefaultSegmentStoreLimitCPU is the default CPU limit for Pravega
+	DefaultSegmentStoreLimitCPU = "1"
+
+	// DefaultSegmentStoreRequestMemory is the default memory request for Pravega
+	DefaultSegmentStoreRequestMemory = "1Gi"
+
+	// DefaultSegmentStoreLimitMemory is the default memory limit for Pravega
+	DefaultSegmentStoreLimitMemory = "2Gi"
 )
 
 // PravegaSpec defines the configuration of Pravega
@@ -87,6 +111,14 @@ type PravegaSpec struct {
 	// SegmentStoreServiceAccountName configures the service account used on segment store instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
 	SegmentStoreServiceAccountName string `json:"segmentStoreServiceAccountName,omitempty"`
+
+	// ControllerResources specifies the request and limit of resources that controller can have.
+	// ControllerResources includes CPU and memory resources
+	ControllerResources *v1.ResourceRequirements `json:"controllerResources,omitempty"`
+
+	// SegmentStoreResources specifies the request and limit of resources that segmentStore can have.
+	// SegmentStoreResources includes CPU and memory resources
+	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -129,8 +161,37 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Tier2 = &Tier2Spec{}
 	}
+
 	if s.Tier2.withDefaults() {
 		changed = true
+	}
+
+	if s.ControllerResources == nil {
+		changed = true
+		s.ControllerResources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultControllerRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultControllerRequestMemory),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultControllerLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultControllerLimitMemory),
+			},
+		}
+	}
+
+	if s.SegmentStoreResources == nil {
+		changed = true
+		s.SegmentStoreResources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreRequestMemory),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreLimitMemory),
+			},
+		}
 	}
 
 	return changed
