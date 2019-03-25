@@ -120,6 +120,10 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-Xms1g",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
+		"-XX:+ExitOnOutOfMemoryError",
+		"-XX:+CrashOnOutOfMemoryError",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:MaxRAMFraction=1",
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
