@@ -185,6 +185,9 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
+		// Leading and trailing double quotes are required for Bookies to
+		// pick up these Java options.
+		"\"",
 		"-Xms1g",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
@@ -200,6 +203,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:G1NewSizePercent=50",
 		"-XX:+DisableExplicitGC",
 		"-XX:-ResizePLAB",
+		"\"",
 	}
 
 	configData := map[string]string{
