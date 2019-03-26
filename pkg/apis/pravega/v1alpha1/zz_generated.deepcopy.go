@@ -38,6 +38,11 @@ func (in *BookkeeperSpec) DeepCopyInto(out *BookkeeperSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Options != nil {
 		in, out := &in.Options, &out.Options
 		*out = make(map[string]string, len(*in))
@@ -68,6 +73,11 @@ func (in *BookkeeperStorageSpec) DeepCopyInto(out *BookkeeperStorageSpec) {
 	}
 	if in.JournalVolumeClaimTemplate != nil {
 		in, out := &in.JournalVolumeClaimTemplate, &out.JournalVolumeClaimTemplate
+		*out = new(v1.PersistentVolumeClaimSpec)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.IndexVolumeClaimTemplate != nil {
+		in, out := &in.IndexVolumeClaimTemplate, &out.IndexVolumeClaimTemplate
 		*out = new(v1.PersistentVolumeClaimSpec)
 		(*in).DeepCopyInto(*out)
 	}
@@ -343,6 +353,16 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 	if in.Tier2 != nil {
 		in, out := &in.Tier2, &out.Tier2
 		*out = new(Tier2Spec)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ControllerResources != nil {
+		in, out := &in.ControllerResources, &out.ControllerResources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.SegmentStoreResources != nil {
+		in, out := &in.SegmentStoreResources, &out.SegmentStoreResources
+		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
 	return

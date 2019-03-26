@@ -3,12 +3,20 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  version: 0.3.2
-  zookeeperUri: example-client:2181
+  version: 0.4.0
+  zookeeperUri: zk-client:2181
 
   bookkeeper:
-    replicas: 3
     imageRepository: pravega/bookkeeper
+    replicas: 3
+
+    resources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
 
     storage:
       ledgerVolumeClaimTemplate:
@@ -19,6 +27,13 @@ spec:
             storage: 10Gi
 
       journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+      indexVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "standard"
         resources:
@@ -40,9 +55,25 @@ spec:
       codahaleStatsOutputFrequencySeconds: 30
 
   pravega:
-    controllerReplicas: 1
-    segmentStoreReplicas: 3
     imageRepository: pravega/pravega
+
+    controllerReplicas: 1
+    controllerResources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "3Gi"
+        cpu: "2000m"
+
+    segmentStoreReplicas: 3
+    segmentStoreResources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
 
     # Turn on Pravega Debug Logging
     debugLogging: false
@@ -77,13 +108,3 @@ spec:
 #        uri: hdfs://10.240.10.52:8020/
 #        root: /example
 #        replicationFactor: 3
-
-    options:
-      pravegaservice.containerCount: 4
-      pravegaservice.cacheMaxSize: 17179869184
-      pravegaservice.zkSessionTimeoutMs: 10000
-      attributeIndex.readBlockSize: 1048576
-      readIndex.storageReadAlignment: 1048576
-      durableLog.checkpointMinCommitCount: 300
-      bookkeeper.bkAckQuorumSize: 4
-      metrics.dynamicCacheSize: 100000

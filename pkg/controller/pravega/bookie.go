@@ -12,6 +12,7 @@ package pravega
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -129,6 +130,7 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 						MountPath: "/bk/index",
 					},
 				},
+				Resources: *bookkeeperSpec.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -190,10 +192,32 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 }
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
+	javaOpts := []string{
+		"-Xms1g",
+		"-XX:+UnlockExperimentalVMOptions",
+		"-XX:+UseCGroupMemoryLimitForHeap",
+		"-XX:MaxRAMFraction=1",
+		"-XX:MaxDirectMemorySize=1g",
+		"-XX:+UseG1GC",
+		"-XX:MaxGCPauseMillis=10",
+		"-XX:+ParallelRefProcEnabled",
+		"-XX:+AggressiveOpts",
+		"-XX:+DoEscapeAnalysis",
+		"-XX:ParallelGCThreads=32",
+		"-XX:ConcGCThreads=32",
+		"-XX:G1NewSizePercent=50",
+		"-XX:+DisableExplicitGC",
+		"-XX:-ResizePLAB",
+	}
+
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS":     "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\"",
-		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
-		"BK_useHostNameAsBookieID": "true",
+		"BK_BOOKIE_EXTRA_OPTS": strings.Join(javaOpts, " "),
+		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
+		// Set useHostNameAsBookieID to false until BookKeeper Docker
+		// image is updated to 4.7
+		// This value can be explicitly overridden when using the operator
+		// with images based on BookKeeper 4.7 or newer
+		"BK_useHostNameAsBookieID": "false",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}

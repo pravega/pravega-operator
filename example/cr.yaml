@@ -15,42 +15,16 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  version: 0.3.2
+  version: 0.4.0
   zookeeperUri: zk-client:2181
-
   bookkeeper:
     replicas: 3
     imageRepository: pravega/bookkeeper
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
     autoRecovery: true
-
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
     imageRepository: pravega/pravega
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-
     tier2:
       filesystem:
         persistentVolumeClaim:

@@ -36,6 +36,18 @@ const (
 	// MinimumBookkeeperReplicas is the minimum number of Bookkeeper replicas
 	// accepted
 	MinimumBookkeeperReplicas = 3
+
+	// DefaultBookkeeperRequestCPU is the default CPU request for BookKeeper
+	DefaultBookkeeperRequestCPU = "500m"
+
+	// DefaultBookkeeperLimitCPU is the default CPU limit for BookKeeper
+	DefaultBookkeeperLimitCPU = "1"
+
+	// DefaultBookkeeperRequestMemory is the default memory request for BookKeeper
+	DefaultBookkeeperRequestMemory = "1Gi"
+
+	// DefaultBookkeeperLimitMemory is the limit memory limit for BookKeeper
+	DefaultBookkeeperLimitMemory = "2Gi"
 )
 
 // BookkeeperSpec defines the configuration of BookKeeper
@@ -57,6 +69,10 @@ type BookkeeperSpec struct {
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// BookieResources specifies the request and limit of resources that bookie can have.
+	// BookieResources includes CPU and memory resources
+	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Options is the Bookkeeper configuration that is to override the bk_server.conf
 	// in bookkeeper. Some examples can be found here
@@ -89,9 +105,24 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		s.AutoRecovery = &boolTrue
 	}
 
+	if s.Resources == nil {
+		changed = true
+		s.Resources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultBookkeeperRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultBookkeeperRequestMemory),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultBookkeeperLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultBookkeeperLimitMemory),
+			},
+		}
+	}
+
 	if s.Options == nil {
 		s.Options = map[string]string{}
 	}
+
 	return changed
 }
 
