@@ -130,7 +130,7 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 						MountPath: "/bk/index",
 					},
 				},
-				Resources: *bookkeeperSpec.Resources,
+				Resources: *p.Spec.Bookkeeper.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{

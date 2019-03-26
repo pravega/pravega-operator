@@ -78,7 +78,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 						},
 					},
 				},
-				Resources: *pravegaSpec.ControllerResources,
+				Resources: *p.Spec.Pravega.ControllerResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{

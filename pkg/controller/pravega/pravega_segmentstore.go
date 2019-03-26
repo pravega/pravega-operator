@@ -99,7 +99,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						MountPath: cacheVolumeMountPoint,
 					},
 				},
-				Resources: *pravegaSpec.SegmentStoreResources,
+				Resources: *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
