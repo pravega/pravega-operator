@@ -188,7 +188,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-Xms1g",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=1",
+		"-XX:MaxRAMFraction=2",
 		"-XX:MaxDirectMemorySize=1g",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
@@ -210,6 +210,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 
 	gcLoggingOpts := []string{
 		"-XX:+PrintGCDetails",
+		"-XX:+PrintGCDateStamps",
 		"-XX:+PrintGCApplicationStoppedTime",
 		"-XX:+UseGCLogFileRotation",
 		"-XX:NumberOfGCLogFiles=5",
