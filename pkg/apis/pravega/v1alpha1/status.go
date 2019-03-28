@@ -19,8 +19,9 @@ import (
 type ClusterConditionType string
 
 const (
-	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
-	ClusterConditionUpgrading                      = "Upgrading"
+	ClusterConditionPodsReady   ClusterConditionType = "PodsReady"
+	ClusterConditionUpgrading                        = "Upgrading"
+	ClusterConditionRollingBack                      = "RollingBack"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
@@ -94,6 +95,16 @@ func (ps *ClusterStatus) SetUpgradingConditionTrue() {
 
 func (ps *ClusterStatus) SetUpgradingConditionFalse() {
 	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetRollingBackConditionTrue() {
+	c := newClusterCondition(ClusterConditionRollingBack, corev1.ConditionTrue, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetRollingBackConditionFalse() {
+	c := newClusterCondition(ClusterConditionRollingBack, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 

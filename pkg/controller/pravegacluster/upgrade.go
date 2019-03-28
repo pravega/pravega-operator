@@ -34,23 +34,24 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		r.client.Status().Update(context.TODO(), p)
 	}()
 
-	_, condition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
+	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
+	_, rollbackCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollingBack)
 
-	if condition == nil {
+	if upgradeCondition == nil {
 		// Initially set upgrading condition to false and
 		// the current version to the version in the spec
 		p.Status.SetUpgradingConditionFalse()
+		p.Status.SetRollingBackConditionFalse()
 		p.Status.CurrentVersion = p.Spec.Version
 		return nil
 	}
 
-	if condition.Status == corev1.ConditionTrue {
+	if upgradeCondition.Status == corev1.ConditionTrue {
 		// Upgrade process already in progress
 
 		if p.Status.TargetVersion == "" {
 			log.Println("upgrading to an unknown version: resetting upgrade condition to false")
-			p.Status.SetUpgradingConditionFalse()
-			return nil
+			return r.clearUpgradeStatus(p)
 		}
 
 		if p.Status.TargetVersion == p.Status.CurrentVersion {
@@ -59,13 +60,19 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		}
 
 		if err := r.syncComponentsVersion(p); err != nil {
-			log.Printf("error upgrading cluster: aborting upgrade process: %v", err)
+			log.Printf("error syncing cluster version: %v", err)
 			// TODO: set error condition with reason and message
 			// TODO: roll back upgrade
-			return r.clearUpgradeStatus(p)
+			r.clearUpgradeStatus(p)
+			if rollbackCondition == nil || rollbackCondition.Status == corev1.ConditionFalse {
+				log.Printf("triggering rollback to version '%s'", p.Status.CurrentVersion)
+				p.Status.SetRollingBackConditionTrue()
+				p.Status.CurrentVersion = "-1"
+			} else {
+				log.Printf("rollback to version '%s' failed. need manual intervention", p.Status.CurrentVersion)
+			}
 		}
 		return nil
-		//return r.dummyUpgrade(p)
 	}
 
 	// No upgrade in progress
@@ -75,8 +82,8 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		return nil
 	}
 
-	// The user wants to upgrade to a different version
-	log.Printf("user wants to upgrade from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
+	// Need to sync cluster versions
+	log.Printf("syncing cluster version from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
 
 	// Setting target version and condition.
 	// The upgrade process will start on the next reconciliation
@@ -88,6 +95,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 
 func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaCluster) (err error) {
 	p.Status.SetUpgradingConditionFalse()
+	p.Status.SetRollingBackConditionFalse()
 	p.Status.TargetVersion = ""
 	// need to deep copy the status struct, otherwise it will be overridden
 	// when updating the CR below
@@ -121,13 +129,13 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 	} {
 		synced, err = component.fun(p)
 		if err != nil {
-			return fmt.Errorf("failed to upgrade %s to %v", component.name, err)
+			return fmt.Errorf("failed to sync %s version. %s", component.name, err)
 		}
 
 		if synced {
-			log.Printf("%s upgrade has been completed", component.name)
+			log.Printf("%s version sync has been completed", component.name)
 		} else {
-			// component upgrade is still in progress
+			// component version sync is still in progress
 			// Do not continue with the next component until this one is done
 			return nil
 		}
@@ -256,7 +264,14 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 
 	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-	if sts.Status.ReadyReplicas == sts.Status.Replicas {
+
+	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	if err != nil {
+		// Abort if there is any errors with the updated pods
+		return false, err
+	}
+
+	if ready {
 		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
 		if err != nil {
 			return false, err
@@ -272,13 +287,31 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		if err != nil {
 			return false, err
 		}
-	} else {
-
-		// TODO: check if there's any error with
 	}
 
 	// wait until the next reconcile iteration
 	return false, nil
+}
+
+func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, version string) (bool, error) {
+	pods, err := r.getPodsWithVersion(sts, version)
+	if err != nil {
+		return false, err
+	}
+
+	for _, pod := range pods {
+		log.Infof("pod %s (restarts: %d)", pod.Name, pod.Status.ContainerStatuses[0].RestartCount)
+
+		if util.IsPodReady(pod) {
+			continue
+		}
+
+		//TODO: find out a more reliable way to determine if a pod is having issues
+		if pod.Status.ContainerStatuses[0].RestartCount > 1 {
+			return false, fmt.Errorf("pod %s is restarting", pod.Name)
+		}
+	}
+	return true, nil
 }
 
 func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, version string) (*corev1.Pod, error) {
@@ -306,4 +339,32 @@ func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, ver
 		return &podItem, nil
 	}
 	return nil, nil
+}
+
+func (r *ReconcilePravegaCluster) getPodsWithVersion(sts *appsv1.StatefulSet, version string) ([]*corev1.Pod, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: sts.Spec.Template.Labels,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert label selector: %v", err)
+	}
+
+	podList := &corev1.PodList{}
+	podlistOps := &client.ListOptions{
+		Namespace:     sts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), podlistOps, podList)
+	if err != nil {
+		return nil, err
+	}
+
+	var pods []*corev1.Pod
+	for _, podItem := range podList.Items {
+		if util.GetPodVersion(&podItem) != version {
+			continue
+		}
+		pods = append(pods, podItem.DeepCopy())
+	}
+	return pods, nil
 }
