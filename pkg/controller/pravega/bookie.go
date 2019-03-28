@@ -192,12 +192,18 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 }
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
-	javaOpts := []string{
+	memoryOpts := []string{
 		"-Xms1g",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=1",
+		"-XX:MaxRAMFraction=2",
 		"-XX:MaxDirectMemorySize=1g",
+		"-XX:+ExitOnOutOfMemoryError",
+		"-XX:+CrashOnOutOfMemoryError",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+	}
+
+	gcOpts := []string{
 		"-XX:+UseG1GC",
 		"-XX:MaxGCPauseMillis=10",
 		"-XX:+ParallelRefProcEnabled",
@@ -210,9 +216,20 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:-ResizePLAB",
 	}
 
+	gcLoggingOpts := []string{
+		"-XX:+PrintGCDetails",
+		"-XX:+PrintGCDateStamps",
+		"-XX:+PrintGCApplicationStoppedTime",
+		"-XX:+UseGCLogFileRotation",
+		"-XX:NumberOfGCLogFiles=5",
+		"-XX:GCLogFileSize=64m",
+	}
+
 	configData := map[string]string{
-		"BK_BOOKIE_EXTRA_OPTS": strings.Join(javaOpts, " "),
-		"ZK_URL":               pravegaCluster.Spec.ZookeeperUri,
+		"BOOKIE_MEM_OPTS":        strings.Join(memoryOpts, " "),
+		"BOOKIE_GC_OPTS":         strings.Join(gcOpts, " "),
+		"BOOKIE_GC_LOGGING_OPTS": strings.Join(gcLoggingOpts, " "),
+		"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
 		// Set useHostNameAsBookieID to false until BookKeeper Docker
 		// image is updated to 4.7
 		// This value can be explicitly overridden when using the operator

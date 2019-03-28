@@ -29,7 +29,7 @@ jobs:
 
     - stage: e2e
       name: End-to-end tests
-      if: type = pull_request OR branch = master
+      if: type = pull_request OR branch = master OR tag IS present
       services:
         - docker
       env:
@@ -85,7 +85,7 @@ jobs:
 
     - stage: deploy
       name: Push Docker image
-      if: branch = master AND tag IS present
+      if: type != pull_request AND tag IS present
       services:
         - docker
       script:
