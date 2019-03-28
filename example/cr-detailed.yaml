@@ -90,13 +90,6 @@ spec:
         requests:
           storage: 20Gi
 
-    # See https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties
-    # for available configuration properties
-    options:
-      metrics.enableStatistics: "true"
-      metrics.statsdHost: "telegraph.default"
-      metrics.statsdPort: "8125"
-
     tier2:
       filesystem:
         persistentVolumeClaim:
@@ -114,12 +107,17 @@ spec:
 #        root: /example
 #        replicationFactor: 3
 
+    # See https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties
+    # for available configuration properties
     options:
-      pravegaservice.containerCount: 4
-      pravegaservice.cacheMaxSize: 17179869184
-      pravegaservice.zkSessionTimeoutMs: 10000
-      attributeIndex.readBlockSize: 1048576
-      readIndex.storageReadAlignment: 1048576
-      durableLog.checkpointMinCommitCount: 300
-      bookkeeper.bkAckQuorumSize: 4
-      metrics.dynamicCacheSize: 100000
+      pravegaservice.containerCount: "4"
+      pravegaservice.cacheMaxSize: "17179869184"
+      pravegaservice.zkSessionTimeoutMs: "10000"
+      attributeIndex.readBlockSize: "1048576"
+      readIndex.storageReadAlignment: "1048576"
+      durableLog.checkpointMinCommitCount: "300"
+      bookkeeper.bkAckQuorumSize: "3"
+      metrics.dynamicCacheSize: "100000"
+      metrics.enableStatistics: "true"
+      metrics.statsdHost: "telegraph.default"
+      metrics.statsdPort: "8125"
