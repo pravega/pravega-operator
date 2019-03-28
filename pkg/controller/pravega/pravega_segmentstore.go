@@ -146,7 +146,10 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-Xms1g",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=1",
+		"-XX:MaxRAMFraction=2",
+		"-XX:+ExitOnOutOfMemoryError",
+		"-XX:+CrashOnOutOfMemoryError",
+		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 

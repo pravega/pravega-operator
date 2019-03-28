@@ -117,9 +117,13 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
-		"-Xms1g",
+		"-Xms512m",
 		"-XX:+UnlockExperimentalVMOptions",
 		"-XX:+UseCGroupMemoryLimitForHeap",
+		"-XX:MaxRAMFraction=2",
+		"-XX:+ExitOnOutOfMemoryError",
+		"-XX:+CrashOnOutOfMemoryError",
+		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
