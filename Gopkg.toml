@@ -63,3 +63,7 @@ required = [
   [[prune.project]]
     name = "k8s.io/code-generator"
     non-go = false
+
+[[constraint]]
+  name = "github.com/hashicorp/go-version"
+  version = "1.1.0"

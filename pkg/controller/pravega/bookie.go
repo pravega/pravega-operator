@@ -71,7 +71,7 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},
-			Template: makeBookieStatefulTemplate(pravegaCluster),
+			Template: MakeBookiePodTemplate(pravegaCluster),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForBookie(pravegaCluster),
 			},
@@ -80,7 +80,7 @@ func MakeBookieStatefulSet(pravegaCluster *v1alpha1.PravegaCluster) *appsv1.Stat
 	}
 }
 
-func makeBookieStatefulTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
+func MakeBookiePodTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      util.LabelsForBookie(p),
@@ -194,13 +194,19 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
 	memoryOpts := []string{
 		"-Xms1g",
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=2",
 		"-XX:MaxDirectMemorySize=1g",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
+	}
+
+	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.4", ">="); match {
+		// Pravega < 0.4 uses a Java version that does not support the options below
+		memoryOpts = append(memoryOpts,
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:+UseCGroupMemoryLimitForHeap",
+			"-XX:MaxRAMFraction=2",
+		)
 	}
 
 	gcOpts := []string{
@@ -234,9 +240,15 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		// image is updated to 4.7
 		// This value can be explicitly overridden when using the operator
 		// with images based on BookKeeper 4.7 or newer
-		"BK_useHostNameAsBookieID": "false",
+		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
+	}
+
+	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.5", "<"); match {
+		// Pravega < 0.5 uses BookKeeper 4.5, which does not play well
+		// with hostnames that change their resolving IP address over time
+		configData["BK_useHostNameAsBookieID"] = "false"
 	}
 
 	if *pravegaCluster.Spec.Bookkeeper.AutoRecovery {

@@ -12,12 +12,26 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
+	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"k8s.io/api/core/v1"
 )
+
+var (
+	versionRegexp *regexp.Regexp
+)
+
+const (
+	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+)`
+)
+
+func init() {
+	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
+}
 
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
@@ -151,4 +165,22 @@ func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
 
 func GetPodVersion(pod *v1.Pod) string {
 	return pod.GetAnnotations()["pravega.version"]
+}
+
+func CompareVersions(v1, v2, operator string) (bool, error) {
+	clusterVersion, _ := v.NewSemver(v1)
+	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
+	if err != nil {
+		return false, err
+	}
+	return constraints.Check(clusterVersion), nil
+}
+
+func normalizeVersion(version string) string {
+	matches := versionRegexp.FindStringSubmatch(version)
+	if matches == nil || len(matches) <= 1 {
+		// Assume that version is the latest release
+		return "0.5"
+	}
+	return matches[1]
 }

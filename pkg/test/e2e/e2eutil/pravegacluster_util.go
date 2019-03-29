@@ -113,6 +113,40 @@ func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *fram
 	return nil
 }
 
+// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
+	t.Logf("waiting for cluster to upgrade: %s", p.Name)
+
+	err := wait.Poll(RetryInterval, 5*time.Minute, func() (done bool, err error) {
+		cluster, err := GetCluster(t, f, ctx, p)
+		if err != nil {
+			return false, err
+		}
+
+		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
+		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
+
+		t.Logf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+
+		if errorCondition.Status == corev1.ConditionTrue {
+			return false, fmt.Errorf("failed upgrading cluster: [%s] %s", errorCondition.Reason, errorCondition.Message)
+		}
+
+		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
+			// Cluster upgraded
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster upgraded: %s", p.Name)
+	return nil
+}
+
 // WaitForClusterToTerminate will wait until all cluster pods are terminated
 func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)

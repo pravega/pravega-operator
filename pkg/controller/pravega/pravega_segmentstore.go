@@ -49,17 +49,22 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: util.LabelsForSegmentStore(pravegaCluster),
-				},
-				Spec: makeSegmentstorePodSpec(pravegaCluster),
-			},
+			Template: MakeSegmentStorePodTemplate(pravegaCluster),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
 			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
 		},
+	}
+}
+
+func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      util.LabelsForSegmentStore(p),
+			Annotations: map[string]string{"pravega.version": p.Spec.Version},
+		},
+		Spec: makeSegmentstorePodSpec(p),
 	}
 }
 
@@ -145,13 +150,19 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Xms1g",
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=2",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-Dpravegaservice.clusterName=" + p.Name,
+	}
+
+	if match, _ := util.CompareVersions(p.Spec.Version, "0.4", ">="); match {
+		// Pravega < 0.4 uses a Java version that does not support the options below
+		javaOpts = append(javaOpts,
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:+UseCGroupMemoryLimitForHeap",
+			"-XX:MaxRAMFraction=2",
+		)
 	}
 
 	for name, value := range p.Spec.Pravega.Options {

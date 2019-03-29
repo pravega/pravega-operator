@@ -439,6 +439,9 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 }
 
 func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.PravegaCluster) error {
+
+	p.Status.InitConditions()
+
 	expectedSize := util.GetClusterExpectedSize(p)
 	listOps := &client.ListOptions{
 		Namespace:     p.Namespace,
