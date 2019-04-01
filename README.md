@@ -13,22 +13,25 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Usage](#usage)    
     * [Installation of the Operator](#install-the-operator)
     * [Deploy a sample Pravega Cluster](#deploy-a-sample-pravega-cluster)
+    * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
+    * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
  * [Configuration](#configuration)
     * [Use non-default service accounts](#use-non-default-service-accounts)
     * [Installing on a Custom Namespace with RBAC enabled](#installing-on-a-custom-namespace-with-rbac-enabled)
     * [Tier 2: Google Filestore Storage](#use-google-filestore-storage-as-tier-2)
-    * [Tune Pravega Configurations](#tune-pravega-configuration)
+    * [Tune Pravega Configuration](#tune-pravega-configuration)
+    * [Enable external access](#enable-external-access)
  * [Development](#development)
     * [Build the Operator Image](#build-the-operator-image)
     * [Installation on GKE](#installation-on-google-kubernetes-engine)
-    * [Direct Access to Cluster](#direct-access-to-the-cluster)
-    * [Run the Operator Locally](#run-the-operator-locally)
+    * [Run the Operator locally](#run-the-operator-locally)
 * [Releases](#releases)
 * [Troubleshooting](#troubleshooting)
     * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
     * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
+
 ## Overview
 
 [Pravega](http://pravega.io) is an open source distributed storage service implementing Streams. It offers Stream as the main primitive for the foundation of reliable storage systems: *a high-performance, durable, elastic, and unlimited append-only byte stream with strict ordering and consistency*.
@@ -37,7 +40,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 - [x] Create and destroy a Pravega cluster
 - [x] Resize cluster
-- [x] Rolling upgrades
+- [x] Rolling upgrades (experimental)
 
 > Note that unchecked features are in the roadmap but not available yet.
 
@@ -117,7 +120,7 @@ Use the following YAML template to install a small development Pravega Cluster (
 apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
 metadata:
-  name: "pravega"
+  name: "example"
 spec:
   version: 0.4.0
   zookeeperUri: [ZOOKEEPER_HOST]:2181
@@ -125,36 +128,12 @@ spec:
   bookkeeper:
     replicas: 3
     imageRepository: pravega/bookkeeper
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
     autoRecovery: true
 
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
     imageRepository: pravega/pravega
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-
     tier2:
       filesystem:
         persistentVolumeClaim:
@@ -171,60 +150,155 @@ Deploy the Pravega cluster.
 $ kubectl create -f pravega.yaml
 ```
 
-Verify that the cluster instances and its components are running.
+Verify that the cluster instances and its components are being created.
 
 ```
 $ kubectl get PravegaCluster
-NAME      AGE
-pravega   27s
+NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+example   0.4.0     7                 0               25s
+```
+
+After a couple of minutes, all cluster members should become ready.
+
+```
+$ kubectl get PravegaCluster
+NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+example   0.4.0     7                 7               2m
 ```
 
 ```
-$ kubectl get all -l pravega_cluster=pravega
-NAME                                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deploy/pravega-pravega-controller   1         1         1            1           1m
+$ kubectl get all -l pravega_cluster=example
+NAME                                              READY   STATUS    RESTARTS   AGE
+pod/example-bookie-0                              1/1     Running   0          2m
+pod/example-bookie-1                              1/1     Running   0          2m
+pod/example-bookie-2                              1/1     Running   0          2m
+pod/example-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
+pod/example-pravega-segmentstore-0                1/1     Running   0          2m
+pod/example-pravega-segmentstore-1                1/1     Running   0          1m
+pod/example-pravega-segmentstore-2                1/1     Running   0          30s
 
-NAME                                       DESIRED   CURRENT   READY     AGE
-rs/pravega-pravega-controller-7489c9776d   1         1         1         1m
+NAME                                            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
+service/example-bookie-headless                 ClusterIP   None          <none>        3181/TCP             2m
+service/example-pravega-controller              ClusterIP   10.23.244.3   <none>        10080/TCP,9090/TCP   2m
+service/example-pravega-segmentstore-headless   ClusterIP   None          <none>        12345/TCP            2m
 
-NAME                                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-deploy/pravega-pravega-controller   1         1         1            1           1m
+NAME                                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/example-pravega-controller-64ff87fc49   1         1         1       2m
 
-NAME                                       DESIRED   CURRENT   READY     AGE
-rs/pravega-pravega-controller-7489c9776d   1         1         1         1m
-
-NAME                                DESIRED   CURRENT   AGE
-statefulsets/pravega-bookie         3         3         1m
-statefulsets/pravega-segmentstore   3         3         1m
-
-NAME                                             READY     STATUS    RESTARTS   AGE
-po/pravega-bookie-0                              1/1       Running   0          1m
-po/pravega-bookie-1                              1/1       Running   0          1m
-po/pravega-bookie-2                              1/1       Running   0          1m
-po/pravega-pravega-controller-7489c9776d-lcw9x   1/1       Running   0          1m
-po/pravega-segmentstore-0                        1/1       Running   0          1m
-po/pravega-segmentstore-1                        1/1       Running   0          1m
-po/pravega-segmentstore-2                        1/1       Running   0          1m
-
-NAME                             TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)              AGE
-svc/pravega-bookie-headless      ClusterIP   None           <none>        3181/TCP             1m
-svc/pravega-pravega-controller   ClusterIP   10.3.255.239   <none>        10080/TCP,9090/TCP   1m
+NAME                                            DESIRED   CURRENT   AGE
+statefulset.apps/example-bookie                 3         3         2m
+statefulset.apps/example-pravega-segmentstore   3         3         2m
 ```
 
-A `PravegaCluster` instance is only accessible WITHIN the cluster (i.e. no outside access is allowed) using the following endpoint in
-the PravegaClient.
+By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:
 
 ```
-tcp://<cluster-name>-pravega-controller.<namespace>:9090
+tcp://<pravega-name>-pravega-controller.<namespace>:9090
 ```
 
-The `REST` management interface is available at:
+And the `REST` management interface is available at:
 
 ```
-http://<cluster-name>-pravega-controller.<namespace>:10080/
+http://<pravega-name>-pravega-controller.<namespace>:10080/
 ```
 
-[Check this](#direct-access-to-the-cluster) to enable direct access to the cluster for development purposes.
+[Check this](#enable-external-access) to enable external access to a Pravega cluster.
+
+### Scale a Pravega cluster
+
+You can scale Pravega components independently by modifying their corresponding field in the Pravega resource spec. You can either `kubectl edit` the cluster or `kubectl patch` it. If you edit it, update the number of replicas for BookKeeper, Controller, and/or Segment Store and save the updated spec.
+
+Example of patching the Pravega resource to scale the Segment Store instances to 4.
+
+```
+kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
+```
+
+
+### Upgrade a Pravega cluster
+
+> **Warning:** This feature is still considered experimental, DU/DL (data unavailability and data loss) might occur when upgrading a Pravega cluster, especially to custom or unknown versions.
+
+To upgrade a Pravega cluster to a new version, you can `kubectl edit` your cluster and update the `version` field, or you can directly update the version with the patch command.
+
+```
+kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path": "/spec/version", "value": "0.4.0"}]'
+```
+
+This will trigger a rolling upgrade process that will attempt to upgrade all Pravega components. Starting with BookKeeper, then SegmentStore, and finally the Controller. There are a few ways you can monitor (and troubleshoot) the upgrade process.
+
+Listing the Pravega clusters. If a desired version is shown, it means that the operator is working on updating the version.
+
+```
+$ kubectl get PravegaCluster
+NAME      VERSION   DESIRED VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+example   0.4.0     0.5.0             8                 7               1h
+```
+
+When the upgrade process has finished, the version will be updated.
+
+```
+$ kubectl get PravegaCluster
+NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+example   0.5.0     8                 8               1h
+```
+
+
+You can also describe the Pravega cluster to discover why an upgrade failed.
+
+```
+$ kubectl describe PravegaCluster example
+...
+Status:
+  Conditions:
+    Status:                False
+    Type:                  Upgrading
+    Last Transition Time:  2019-04-01T19:42:37+02:00
+    Last Update Time:      2019-04-01T19:42:37+02:00
+    Status:                False
+    Type:                  PodsReady
+    Last Transition Time:  2019-04-01T19:43:08+02:00
+    Last Update Time:      2019-04-01T19:43:08+02:00
+    Message:               failed to sync bookkeeper version. pod example-bookie-0 is restarting
+    Reason:                UpgradeFailed
+    Status:                True
+    Type:                  Error
+  Current Replicas:        8
+  Current Version:         0.4.0
+  Members:
+    Ready:
+      example-bookie-1
+      example-bookie-2
+      example-pravega-controller-64ff87fc49-kqp9k
+      example-pravega-segmentstore-0
+      example-pravega-segmentstore-1
+      example-pravega-segmentstore-2
+      example-pravega-segmentstore-3
+    Unready:
+      example-bookie-0
+  Ready Replicas:  7
+  Replicas:        8
+```
+
+You can also find useful information at the operator logs.
+
+```
+...
+INFO[5884] syncing cluster version from 0.4.0 to 0.5.0-1
+INFO[5885] Reconciling PravegaCluster default/example
+INFO[5886] updating statefulset (example-bookie) template image to 'adrianmo/bookkeeper:0.5.0-1'
+INFO[5896] Reconciling PravegaCluster default/example
+INFO[5897] statefulset (example-bookie) status: 0 updated, 3 ready, 3 target
+INFO[5897] upgrading pod: example-bookie-0
+INFO[5899] Reconciling PravegaCluster default/example
+INFO[5900] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
+INFO[5929] Reconciling PravegaCluster default/example
+INFO[5930] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
+INFO[5930] error syncing cluster version, need manual intervention. failed to sync bookkeeper version. pod example-bookie-0 is restarting
+...
+```
+
+A rollback mechanism is on the roadmap and will be implemented. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153) for tracking.
 
 ### Uninstall the Pravega cluster
 
@@ -418,6 +492,32 @@ spec:
 ...
 ```
 
+### Enable external access
+
+By default, a Pravega cluster uses `ClusterIP` services which are only accessible from within Kubernetes. However, when creating the Pravega cluster resource, you can opt to enable external access.
+
+In Pravega, clients initiate the communication with the Pravega Controller, which is a stateless component frontended by a Kubernetes service that load-balances the requests to the backend pods. Then, clients discover the individual Segment Store instances to which they directly read and write data to. Clients need to be able to reach each and every Segment Store pod in the Pravega cluster.
+
+If your Pravega cluster needs to be consumed by clients from outside Kubernetes (or from another Kubernetes deployment), you can enable external access in two ways, depending on your environment constraints and requirements. Both ways will create one service for all Controllers, and one service for each Segment Store pod.
+
+1. Via [`LoadBalancer`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) service type.
+2. Via [`NodePort`](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport) service type.
+
+You can read more about them in the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) to understand which one fits your use case.
+
+Example of configuration for using `LoadBalancer` service types:
+
+```yaml
+...
+spec:
+  externalAccess:
+    enabled: true
+    type: LoadBalancer
+...
+```
+
+Clients will need to connect to the external Controller address and will automatically discover the external address of all Segment Store pods.
+
 ## Development
 
 ### Build the operator image
@@ -478,13 +578,6 @@ On GKE, the following command must be run before installing the Operator, replac
 $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org
 ```
 
-### Direct access to the cluster
-
-For debugging and development you might want to access the Pravega cluster directly. For example, if you created the cluster with name `pravega` in the `default` namespace you can forward ports of the Pravega controller pod with name `pravega-pravega-controller-68657d67cd-w5x8b` as follows:
-
-```
-$ kubectl port-forward -n default pravega-pravega-controller-68657d67cd-w5x8b 9090:9090 10080:10080
-```
 ## Run the Operator locally
 
 You can run the Operator locally to help with development, testing, and debugging tasks.
