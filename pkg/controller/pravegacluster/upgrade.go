@@ -36,6 +36,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 	}()
 
 	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
+	_, readyCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionPodsReady)
 
 	if upgradeCondition == nil {
 		// Initially set upgrading condition to false and
@@ -71,6 +72,12 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 
 	if p.Spec.Version == p.Status.CurrentVersion {
 		// No intention to upgrade
+		return nil
+	}
+
+	if readyCondition == nil || readyCondition.Status != corev1.ConditionTrue {
+		r.clearUpgradeStatus(p)
+		log.Print("cannot trigger upgrade if there are unready pods")
 		return nil
 	}
 
