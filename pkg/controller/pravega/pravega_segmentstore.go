@@ -41,6 +41,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
+			Labels:    util.LabelsForSegmentStore(pravegaCluster),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",

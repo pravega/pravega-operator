@@ -33,6 +33,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      util.DeploymentNameForController(p.Name),
 			Namespace: p.Namespace,
+			Labels:    util.LabelsForController(p),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &p.Spec.Pravega.ControllerReplicas,

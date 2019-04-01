@@ -232,14 +232,10 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 	}
 
 	configData := map[string]string{
-		"BOOKIE_MEM_OPTS":        strings.Join(memoryOpts, " "),
-		"BOOKIE_GC_OPTS":         strings.Join(gcOpts, " "),
-		"BOOKIE_GC_LOGGING_OPTS": strings.Join(gcLoggingOpts, " "),
-		"ZK_URL":                 pravegaCluster.Spec.ZookeeperUri,
-		// Set useHostNameAsBookieID to false until BookKeeper Docker
-		// image is updated to 4.7
-		// This value can be explicitly overridden when using the operator
-		// with images based on BookKeeper 4.7 or newer
+		"BOOKIE_MEM_OPTS":          strings.Join(memoryOpts, " "),
+		"BOOKIE_GC_OPTS":           strings.Join(gcOpts, " "),
+		"BOOKIE_GC_LOGGING_OPTS":   strings.Join(gcLoggingOpts, " "),
+		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
 		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
@@ -247,7 +243,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 
 	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.5", "<"); match {
 		// Pravega < 0.5 uses BookKeeper 4.5, which does not play well
-		// with hostnames that change their resolving IP address over time
+		// with hostnames that resolve to different IP addresses over time
 		configData["BK_useHostNameAsBookieID"] = "false"
 	}
 
