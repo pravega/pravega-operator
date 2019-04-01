@@ -24,7 +24,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.3.2"
+	DefaultPravegaVersion = "0.4.0"
 )
 
 func init() {
@@ -80,7 +80,7 @@ type ClusterSpec struct {
 	// The version must follow the [semver]( http://semver.org) format, for example "3.2.13".
 	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
 	//
-	// If version is not set, default is "0.3.2".
+	// If version is not set, default is "0.4.0".
 	Version string `json:"version"`
 
 	// Bookkeeper configuration
@@ -102,6 +102,11 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 	}
 	if s.ExternalAccess.withDefaults() {
 		changed = true
+	}
+
+	if s.Version == "" {
+		changed = true
+		s.Version = DefaultPravegaVersion
 	}
 
 	if s.Bookkeeper == nil {
