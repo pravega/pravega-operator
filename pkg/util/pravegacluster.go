@@ -168,7 +168,7 @@ func GetPodVersion(pod *v1.Pod) string {
 }
 
 func CompareVersions(v1, v2, operator string) (bool, error) {
-	clusterVersion, _ := v.NewSemver(v1)
+	clusterVersion, _ := v.NewSemver(normalizeVersion(v1))
 	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
 	if err != nil {
 		return false, err
