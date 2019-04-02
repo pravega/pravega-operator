@@ -160,7 +160,6 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
 
 		deploy.Spec.Template = pravega.MakeControllerPodTemplate(p)
-		// deploy.Spec.Template.Spec.Containers[0].Image = targetImage
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
 			return false, err
@@ -201,7 +200,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 
 		sts.Spec.Template = pravega.MakeSegmentStorePodTemplate(p)
-		//sts.Spec.Template.Spec.Containers[0].Image = targetImage
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
@@ -241,8 +239,6 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 		sts.Spec.Template = pravega.MakeBookiePodTemplate(p)
-		// sts.Spec.Template.Spec.Containers[0].Image = targetImage
-		// sts.Spec.Template.SetAnnotations(map[string]string{"pravega.version": p.Status.TargetVersion})
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
