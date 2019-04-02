@@ -214,91 +214,9 @@ Example of patching the Pravega resource to scale the Segment Store instances to
 kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
 ```
 
-
 ### Upgrade a Pravega cluster
 
-> **Warning:** This feature is still considered experimental, DU/DL (data unavailability and data loss) might occur when upgrading a Pravega cluster, especially to custom or unknown versions.
-
-To upgrade a Pravega cluster to a new version, you can `kubectl edit` your cluster and update the `version` field, or you can directly update the version with the patch command.
-
-```
-kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path": "/spec/version", "value": "0.4.0"}]'
-```
-
-This will trigger a rolling upgrade process that will attempt to upgrade all Pravega components. Starting with BookKeeper, then SegmentStore, and finally the Controller. There are a few ways you can monitor (and troubleshoot) the upgrade process.
-
-Listing the Pravega clusters. If a desired version is shown, it means that the operator is working on updating the version.
-
-```
-$ kubectl get PravegaCluster
-NAME      VERSION   DESIRED VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-example   0.4.0     0.5.0             8                 7               1h
-```
-
-When the upgrade process has finished, the version will be updated.
-
-```
-$ kubectl get PravegaCluster
-NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-example   0.5.0     8                 8               1h
-```
-
-
-You can also describe the Pravega cluster to discover why an upgrade failed.
-
-```
-$ kubectl describe PravegaCluster example
-...
-Status:
-  Conditions:
-    Status:                False
-    Type:                  Upgrading
-    Last Transition Time:  2019-04-01T19:42:37+02:00
-    Last Update Time:      2019-04-01T19:42:37+02:00
-    Status:                False
-    Type:                  PodsReady
-    Last Transition Time:  2019-04-01T19:43:08+02:00
-    Last Update Time:      2019-04-01T19:43:08+02:00
-    Message:               failed to sync bookkeeper version. pod example-bookie-0 is restarting
-    Reason:                UpgradeFailed
-    Status:                True
-    Type:                  Error
-  Current Replicas:        8
-  Current Version:         0.4.0
-  Members:
-    Ready:
-      example-bookie-1
-      example-bookie-2
-      example-pravega-controller-64ff87fc49-kqp9k
-      example-pravega-segmentstore-0
-      example-pravega-segmentstore-1
-      example-pravega-segmentstore-2
-      example-pravega-segmentstore-3
-    Unready:
-      example-bookie-0
-  Ready Replicas:  7
-  Replicas:        8
-```
-
-You can also find useful information at the operator logs.
-
-```
-...
-INFO[5884] syncing cluster version from 0.4.0 to 0.5.0-1
-INFO[5885] Reconciling PravegaCluster default/example
-INFO[5886] updating statefulset (example-bookie) template image to 'adrianmo/bookkeeper:0.5.0-1'
-INFO[5896] Reconciling PravegaCluster default/example
-INFO[5897] statefulset (example-bookie) status: 0 updated, 3 ready, 3 target
-INFO[5897] upgrading pod: example-bookie-0
-INFO[5899] Reconciling PravegaCluster default/example
-INFO[5900] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
-INFO[5929] Reconciling PravegaCluster default/example
-INFO[5930] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
-INFO[5930] error syncing cluster version, need manual intervention. failed to sync bookkeeper version. pod example-bookie-0 is restarting
-...
-```
-
-A rollback mechanism is on the roadmap and will be implemented. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153) for tracking.
+Check out the [upgrade guide](doc/pravega-upgrade-guide.md).
 
 ### Uninstall the Pravega cluster
 
