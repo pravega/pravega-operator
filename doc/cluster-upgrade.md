@@ -1,4 +1,4 @@
-# Pravega upgrade guide
+# Pravega cluster upgrade
 
 This document shows how to upgrade a Pravega cluster managed by the operator to a desired version while preserving the cluster's state and data whenever possible.
 
@@ -12,11 +12,12 @@ The activity diagram below shows the overall upgrade process started by an end-u
 ![pravega k8 upgrade 1](https://user-images.githubusercontent.com/3786750/51993601-7908b000-24af-11e9-8149-82fd1b036630.png)
 
 
-## Limitations
+## Future work and known limitations
 
-- The rollback mechanism is on the roadmap but not implemented yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153) for tracking. When a cluster fails to upgrade, manual recovery is necessary.
-- There is no validation of the configured desired version (Issue #)
--
+- The rollback mechanism is on the roadmap but not implemented yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153).
+- Manual recovery from an upgrade is possible but it has not been defined yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/157).
+- There is no validation of the configured desired version. Check out [this issue](https://github.com/pravega/pravega-operator/issues/156)
+
 
 ## Prerequisites
 
@@ -49,24 +50,60 @@ The order in which the components will be upgraded is the following:
 2. Pravega Controller
 3. Pravega Segment Store
 
-
 The upgrade workflow is as follows:
 
 - The operator will change the `Upgrade` condition to `True` to indicate that the cluster resource has an upgrade in progress.
 - For each cluster component, the operator will check if the current component version matches the target version.
   - If it does, it will move to the next component
-  - If it doesn't, the operator will trigger the upgrade of that component. This is a process that can span to multiple reconcile iterations. In each iteration, the operator will check the state of the pods. [Check below](#) to see how each component is upgraded.
+  - If it doesn't, the operator will trigger the upgrade of that component. This is a process that can span to multiple reconcile iterations. In each iteration, the operator will check the state of the pods. Check below to understand how each component is upgraded.
   - If any of the component pods has errors, the upgrade process will stop (`Upgrade` condition to `False`) and operator will set the `Error` condition to `True` and indicate the reason.
 - When all components are upgraded, the `Upgrade` condition will be set to `False` and `status.currentVersion` will be updated to the desired version.
 
 
 ### BookKeeper upgrade
 
+BookKeeper is the first component to be upgraded as recommended in [BookKeeper documentation](https://bookkeeper.apache.org/docs/4.7.3/admin/upgrade/).
+
+In Kubernetes, BookKeeper is deployed as a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) due to its requirements on:
+
+- Persistent storage: each bookie has three persistent volume for ledgers, journals, and indices. If a pod is migrated or recreated (e.g. when it's upgraded), the data in those volumes will remain untouched.
+- Stable network names: the `StatefulSet` provides pods with a predictable name and a [Headless service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) creates DNS records for pods to be reachable by clients. If a pod is recreated or migrated to a different node, clients will continue to be able to reach the pod despite changing its IP address.
+
+Statefulset [upgrade strategy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies) is configured in the `updateStrategy` field. It supports two type of strategies.
+
+- `RollingUpdate`. The statefulset will automatically apply a rolling upgrade to the pods.
+- `OnDelete`. The statefulset will not automatically upgrade pods. Pods will be updated when they are recreated after being deleted.
+
+In both cases, the upgrade is initiated when the Pod template is updated.
+
+For BookKeeper, the operator uses an `OnDelete` strategy. With `RollingUpdate` strategy, you can only check the upgrade status once all pods get upgraded. On the other hand, with `OnDelete` you can keep updating pod one by one and keep checking the application status to make sure the upgrade working fine. This allows the operator to have control over the upgrade process and perform verifications and actions before and after a BookKeeper pod is upgraded. For example, checking that there are no under-replicated ledgers before upgrading the next pod. Also, the operator might be need to apply migrations when upgrading to a certain version.
+
+BookKeeper upgrade process is as follows:
+
+1. Statefulset Pod template is updated to the new image and tag according to the Pravega version.
+2. Pick one outdated pod
+3. Apply pre-upgrade actions and verifications
+4. Delete the pod. The pod is recreated with an updated spec and version
+5. Wait for the pod to become ready. If it fails to start or times out, the upgrade is cancelled. Check [Recovering from a failed upgrade](#recovering-from-a-failed-upgrade)
+6. Apply post-upgrade actions and verifications
+7. If all pods are updated, BookKeeper upgrade is completed. Otherwise, go to 2.
+
 
 ### Pravega Segment Store upgrade
 
+Pravega Segment Store, as a consumer of BookKeeper, is the second component to be upgraded. As BookKeeper, Segment Store is also deployed as a Statefulset due to similar reasons.
+
+Segment Store instances need access to a persistent volume to store the cache. Losing the data on the cache would not be critical because the Segment Store would be able to recover based on the data in BookKeeper, but it would have a performance impact that we want to avoid when migrating, recreating, or upgrading Segment Store pods.
+
+Also, Segment Store pods need to be individually accessed by clients, so having a stable network identifier provided by the Statefulset and a headless service is very convenient.
+
+As opposed to BookKeeper, we don't currently need to perform verifications or actions during the upgrade process. The `RollingUpgrade` strategy will automatically upgrade a pod and wait until it becomes ready before upgrading the following one.
 
 ### Pravega Controller upgrade
+
+The Controller is the last one to be upgraded. As opposed to BookKeeper and Segment Store, the Controller is a stateless component, meaning that it doesn't need to storage data on a volume and it doesn't need to have a stable identify. Controller pods are frontended with a service that load balances requests to pods. Due to this nature, the Controller is deployed as a Kubernetes [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/).
+
+The Controller upgrade is also triggered by updating the Pod template, and a `RollingUpgrade` strategy is applied as we don't need to apply any verification or action other than waiting for the Pod to become ready after being upgraded.
 
 
 ### Monitor the upgrade process
@@ -140,3 +177,7 @@ INFO[5930] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
 INFO[5930] error syncing cluster version, need manual intervention. failed to sync bookkeeper version. pod example-bookie-0 is restarting
 ...
 ```
+
+### Recovering from a failed upgrade
+
+Not defined yet. Check [this issue](https://github.com/pravega/pravega-operator/issues/157) for tracking.
