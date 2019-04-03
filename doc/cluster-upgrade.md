@@ -11,8 +11,15 @@ The activity diagram below shows the overall upgrade process started by an end-u
 
 ![pravega k8 upgrade 1](https://user-images.githubusercontent.com/3786750/51993601-7908b000-24af-11e9-8149-82fd1b036630.png)
 
+## Scope
 
-## Future work and known limitations
+Pravega is made up multiple components which can be differentiated into two blocks: internal and external components. Internal components refer to the Pravega Controller, the Segment Store, and BookKeeper. Whereas external components refer to ZooKeeper and the Tier 2 backend.
+
+The Pravega operator scope is limited to internal components, and therefore, this upgrade procedure will only affect the aforementioned components.
+
+Check out [Pravega documentation](http://pravega.io/docs/latest/) for more information about Pravega internals.
+
+## Pending tasks
 
 - The rollback mechanism is on the roadmap but not implemented yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153).
 - Manual recovery from an upgrade is possible but it has not been defined yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/157).
