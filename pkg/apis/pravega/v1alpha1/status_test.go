@@ -11,8 +11,6 @@
 package v1alpha1_test
 
 import (
-	"testing"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -20,11 +18,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 )
-
-func TestV1alpha1(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "PravegaCluster Status")
-}
 
 var _ = Describe("PravegaCluster Status", func() {
 

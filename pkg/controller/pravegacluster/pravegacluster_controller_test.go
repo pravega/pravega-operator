@@ -246,16 +246,24 @@ var _ = Describe("PravegaCluster Controller", func() {
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.3.2-rc2",
 					Bookkeeper: &v1alpha1.BookkeeperSpec{
-						Replicas:        5,
-						Resources:       customReq,
-						ImageRepository: "foo/bookkeeper",
+						Replicas:  5,
+						Resources: customReq,
+						Image: &v1alpha1.BookkeeperImageSpec{
+							ImageSpec: v1alpha1.ImageSpec{
+								Repository: "foo/bookkeeper",
+							},
+						},
 					},
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:    2,
 						SegmentStoreReplicas:  4,
 						ControllerResources:   customReq,
 						SegmentStoreResources: customReq,
-						ImageRepository:       "bar/pravega",
+						Image: &v1alpha1.PravegaImageSpec{
+							ImageSpec: v1alpha1.ImageSpec{
+								Repository: "bar/pravega",
+							},
+						},
 					},
 				}
 				p.WithDefaults()

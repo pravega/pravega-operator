@@ -21,6 +21,10 @@ const (
 	// the Pravega image
 	DefaultPravegaImageRepository = "pravega/pravega"
 
+	// DefaultPravegaImagePullPolicy is the default image pull policy used
+	// for the Pravega Docker image
+	DefaultPravegaImagePullPolicy = v1.PullAlways
+
 	// DefaultPravegaCacheVolumeSize is the default volume size for the
 	// Pravega SegmentStore cache volume
 	DefaultPravegaCacheVolumeSize = "20Gi"
@@ -75,9 +79,9 @@ type PravegaSpec struct {
 	// Defaults to false.
 	DebugLogging bool `json:"debugLogging"`
 
-	// ImageRepository defines the Docker image repository.
+	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega" will be used.
-	ImageRepository string `json:"imageRepository"`
+	Image *PravegaImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
@@ -111,7 +115,7 @@ type PravegaSpec struct {
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 }
 
-func (s *PravegaSpec) withDefaults() (changed bool) {
+func (s *PravegaSpec) withDefaults(c *ClusterSpec) (changed bool) {
 	if !config.TestMode && s.ControllerReplicas < 1 {
 		changed = true
 		s.ControllerReplicas = 1
@@ -122,9 +126,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.SegmentStoreReplicas = 1
 	}
 
-	if len(s.ImageRepository) == 0 {
+	if s.Image == nil {
 		changed = true
-		s.ImageRepository = DefaultPravegaImageRepository
+		s.Image = &PravegaImageSpec{}
+	}
+	if s.Image.withDefaults(c) {
+		changed = true
 	}
 
 	if s.Options == nil {
@@ -179,6 +186,27 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreLimitMemory),
 			},
 		}
+	}
+
+	return changed
+}
+
+// PravegaImageSpec defines the fields needed for a Pravega Docker image
+type PravegaImageSpec struct {
+	ImageSpec
+}
+
+func (s *PravegaImageSpec) withDefaults(c *ClusterSpec) (changed bool) {
+	if s.Repository == "" {
+		changed = true
+		s.Repository = DefaultPravegaImageRepository
+	}
+
+	s.Tag = ""
+
+	if s.PullPolicy == "" {
+		changed = true
+		s.PullPolicy = DefaultPravegaImagePullPolicy
 	}
 
 	return changed

@@ -96,11 +96,9 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 		TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 		Containers: []corev1.Container{
 			{
-				Name: "bookie",
-				Image: fmt.Sprintf("%s:%s",
-					p.Spec.Bookkeeper.ImageRepository,
-					p.Spec.Version),
-				ImagePullPolicy: corev1.PullIfNotPresent,
+				Name:            "bookie",
+				Image:           util.BookkeeperImage(p),
+				ImagePullPolicy: p.Spec.Bookkeeper.Image.PullPolicy,
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "bookie",

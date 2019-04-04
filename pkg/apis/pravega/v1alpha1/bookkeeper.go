@@ -21,6 +21,10 @@ const (
 	// the BookKeeper image
 	DefaultBookkeeperImageRepository = "pravega/bookkeeper"
 
+	// DefaultPravegaImagePullPolicy is the default image pull policy used
+	// for the Pravega Docker image
+	DefaultBookkeeperImagePullPolicy = v1.PullAlways
+
 	// DefaultBookkeeperLedgerVolumeSize is the default volume size for the
 	// Bookkeeper ledger volume
 	DefaultBookkeeperLedgerVolumeSize = "10Gi"
@@ -52,9 +56,9 @@ const (
 
 // BookkeeperSpec defines the configuration of BookKeeper
 type BookkeeperSpec struct {
-	// ImageRepository defines the Docker image repository.
+	// Image defines the BookKeeper Docker image to use.
 	// By default, "pravega/bookkeeper" will be used.
-	ImageRepository string `json:"imageRepository"`
+	Image *BookkeeperImageSpec `json:"image"`
 
 	// Replicas defines the number of BookKeeper replicas.
 	// Minimum is 3. Defaults to 3.
@@ -80,10 +84,13 @@ type BookkeeperSpec struct {
 	Options map[string]string `json:"options"`
 }
 
-func (s *BookkeeperSpec) withDefaults() (changed bool) {
-	if len(s.ImageRepository) == 0 {
+func (s *BookkeeperSpec) withDefaults(c *ClusterSpec) (changed bool) {
+	if s.Image == nil {
 		changed = true
-		s.ImageRepository = DefaultBookkeeperImageRepository
+		s.Image = &BookkeeperImageSpec{}
+	}
+	if s.Image.withDefaults(c) {
+		changed = true
 	}
 
 	if !config.TestMode && s.Replicas < MinimumBookkeeperReplicas {
@@ -121,6 +128,27 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 
 	if s.Options == nil {
 		s.Options = map[string]string{}
+	}
+
+	return changed
+}
+
+// BookkeeperImageSpec defines the fields needed for a BookKeeper Docker image
+type BookkeeperImageSpec struct {
+	ImageSpec
+}
+
+func (s *BookkeeperImageSpec) withDefaults(c *ClusterSpec) (changed bool) {
+	if s.Repository == "" {
+		changed = true
+		s.Repository = DefaultBookkeeperImageRepository
+	}
+
+	s.Tag = ""
+
+	if s.PullPolicy == "" {
+		changed = true
+		s.PullPolicy = DefaultBookkeeperImagePullPolicy
 	}
 
 	return changed

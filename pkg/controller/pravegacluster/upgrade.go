@@ -152,7 +152,10 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 		return false, fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 	}
 
-	targetImage := fmt.Sprintf("%s:%s", p.Spec.Pravega.ImageRepository, p.Status.TargetVersion)
+	targetImage, err := util.PravegaTargetImage(p)
+	if err != nil {
+		return false, err
+	}
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
 		// Need to update pod template
@@ -192,7 +195,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
 	}
 
-	targetImage := fmt.Sprintf("%s:%s", p.Spec.Pravega.ImageRepository, p.Status.TargetVersion)
+	targetImage, err := util.PravegaTargetImage(p)
+	if err != nil {
+		return false, err
+	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
 		// Need to update pod template
@@ -232,7 +238,10 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
 	}
 
-	targetImage := fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.ImageRepository, p.Status.TargetVersion)
+	targetImage, err := util.BookkeeperTargetImage(p)
+	if err != nil {
+		return false, err
+	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
 		// Need to update pod template

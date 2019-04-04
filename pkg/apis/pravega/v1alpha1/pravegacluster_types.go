@@ -106,14 +106,18 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 
 	if s.Version == "" {
 		changed = true
-		s.Version = DefaultPravegaVersion
+		if s.Pravega != nil && s.Pravega.Image != nil && s.Pravega.Image.Tag != "" {
+			s.Version = s.Pravega.Image.Tag
+		} else {
+			s.Version = DefaultPravegaVersion
+		}
 	}
 
 	if s.Bookkeeper == nil {
 		changed = true
 		s.Bookkeeper = &BookkeeperSpec{}
 	}
-	if s.Bookkeeper.withDefaults() {
+	if s.Bookkeeper.withDefaults(s) {
 		changed = true
 	}
 
@@ -121,7 +125,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Pravega = &PravegaSpec{}
 	}
-	if s.Pravega.withDefaults() {
+	if s.Pravega.withDefaults(s) {
 		changed = true
 	}
 
@@ -154,7 +158,10 @@ func (e *ExternalAccess) withDefaults() (changed bool) {
 
 // ImageSpec defines the fields needed for a Docker repository image
 type ImageSpec struct {
-	Repository string        `json:"repository"`
-	Tag        string        `json:"tag"`
+	Repository string `json:"repository"`
+
+	// Deprecated: Use `spec.Version` instead
+	Tag string `json:"tag"`
+
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }

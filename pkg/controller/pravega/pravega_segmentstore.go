@@ -86,8 +86,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
-				Image:           fmt.Sprintf("%s:%s", p.Spec.Pravega.ImageRepository, p.Spec.Version),
-				ImagePullPolicy: corev1.PullIfNotPresent,
+				Image:           util.PravegaImage(p),
+				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
 				Args: []string{
 					"segmentstore",
 				},
