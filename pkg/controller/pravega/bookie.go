@@ -91,9 +91,7 @@ func MakeBookiePodTemplate(p *v1alpha1.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
-	terminationGracePeriodSeconds := int64(0)
 	podSpec := &corev1.PodSpec{
-		TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
 		Containers: []corev1.Container{
 			{
 				Name:            "bookie",

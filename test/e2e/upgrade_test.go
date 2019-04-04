@@ -15,6 +15,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
@@ -38,12 +39,20 @@ func testUpgradeCluster(t *testing.T) {
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	// TODO: use the official images
+	// TODO: use the official 0.5 image when it is released
 	initialVersion := "0.5.0-1"
 	upgradeVersion := "0.5.0-2"
 	cluster.Spec.Version = initialVersion
-	cluster.Spec.Pravega.ImageRepository = "adrianmo/pravega"
-	cluster.Spec.Bookkeeper.ImageRepository = "adrianmo/bookkeeper"
+	cluster.Spec.Pravega.Image = &api.PravegaImageSpec{
+		ImageSpec: api.ImageSpec{
+			Repository: "adrianmo/pravega",
+		},
+	}
+	cluster.Spec.Bookkeeper.Image = &api.BookkeeperImageSpec{
+		ImageSpec: api.ImageSpec{
+			Repository: "adrianmo/bookkeeper",
+		},
+	}
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)
 	if err != nil {

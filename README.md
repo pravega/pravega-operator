@@ -125,13 +125,15 @@ spec:
 
   bookkeeper:
     replicas: 3
-    imageRepository: pravega/bookkeeper
+    image:
+      repository: pravega/bookkeeper
     autoRecovery: true
 
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
-    imageRepository: pravega/pravega
+    image:
+      repository: pravega/pravega
     tier2:
       filesystem:
         persistentVolumeClaim:

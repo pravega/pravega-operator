@@ -7,7 +7,8 @@ spec:
   zookeeperUri: zk-client:2181
 
   bookkeeper:
-    imageRepository: pravega/bookkeeper
+    image:
+      repository: pravega/bookkeeper
     replicas: 3
 
     resources:
@@ -55,7 +56,8 @@ spec:
       codahaleStatsOutputFrequencySeconds: 30
 
   pravega:
-    imageRepository: pravega/pravega
+    image:
+      repository: pravega/pravega
 
     controllerReplicas: 1
     controllerResources:

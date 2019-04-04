@@ -129,5 +129,4 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.Bookkeeper.Image.Tag).Should(Equal(""))
 		})
 	})
-
 })
