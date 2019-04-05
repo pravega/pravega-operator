@@ -115,7 +115,7 @@ type PravegaSpec struct {
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 }
 
-func (s *PravegaSpec) withDefaults(c *ClusterSpec) (changed bool) {
+func (s *PravegaSpec) withDefaults() (changed bool) {
 	if !config.TestMode && s.ControllerReplicas < 1 {
 		changed = true
 		s.ControllerReplicas = 1
@@ -130,7 +130,7 @@ func (s *PravegaSpec) withDefaults(c *ClusterSpec) (changed bool) {
 		changed = true
 		s.Image = &PravegaImageSpec{}
 	}
-	if s.Image.withDefaults(c) {
+	if s.Image.withDefaults() {
 		changed = true
 	}
 
@@ -196,7 +196,7 @@ type PravegaImageSpec struct {
 	ImageSpec
 }
 
-func (s *PravegaImageSpec) withDefaults(c *ClusterSpec) (changed bool) {
+func (s *PravegaImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultPravegaImageRepository

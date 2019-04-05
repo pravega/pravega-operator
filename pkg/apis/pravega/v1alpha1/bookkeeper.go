@@ -84,12 +84,12 @@ type BookkeeperSpec struct {
 	Options map[string]string `json:"options"`
 }
 
-func (s *BookkeeperSpec) withDefaults(c *ClusterSpec) (changed bool) {
+func (s *BookkeeperSpec) withDefaults() (changed bool) {
 	if s.Image == nil {
 		changed = true
 		s.Image = &BookkeeperImageSpec{}
 	}
-	if s.Image.withDefaults(c) {
+	if s.Image.withDefaults() {
 		changed = true
 	}
 
@@ -138,7 +138,7 @@ type BookkeeperImageSpec struct {
 	ImageSpec
 }
 
-func (s *BookkeeperImageSpec) withDefaults(c *ClusterSpec) (changed bool) {
+func (s *BookkeeperImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultBookkeeperImageRepository

@@ -117,7 +117,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Bookkeeper = &BookkeeperSpec{}
 	}
-	if s.Bookkeeper.withDefaults(s) {
+	if s.Bookkeeper.withDefaults() {
 		changed = true
 	}
 
@@ -125,7 +125,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Pravega = &PravegaSpec{}
 	}
-	if s.Pravega.withDefaults(s) {
+	if s.Pravega.withDefaults() {
 		changed = true
 	}
 
@@ -161,7 +161,7 @@ type ImageSpec struct {
 	Repository string `json:"repository"`
 
 	// Deprecated: Use `spec.Version` instead
-	Tag string `json:"tag"`
+	Tag string `json:"tag,omitempty"`
 
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }
