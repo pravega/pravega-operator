@@ -33,6 +33,10 @@ var (
 	Timeout              = time.Second * 60
 	CleanupRetryInterval = time.Second * 1
 	CleanupTimeout       = time.Second * 5
+	ReadyTimeout         = time.Minute * 5
+	UpgradeTimeout       = time.Minute * 10
+	TerminateTimeout     = time.Minute * 2
+	VerificationTimeout  = time.Minute * 3
 )
 
 // CreateCluster creates a PravegaCluster CR with the desired spec
@@ -90,7 +94,7 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	t.Logf("waiting for cluster pods to become ready: %s", p.Name)
 
-	err := wait.Poll(RetryInterval, 5*time.Minute, func() (done bool, err error) {
+	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
 		cluster, err := GetCluster(t, f, ctx, p)
 		if err != nil {
 			return false, err
@@ -113,6 +117,40 @@ func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *fram
 	return nil
 }
 
+// WaitForClusterToUpgrade will wait until all pods are upgraded
+func WaitForClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
+	t.Logf("waiting for cluster to upgrade: %s", p.Name)
+
+	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
+		cluster, err := GetCluster(t, f, ctx, p)
+		if err != nil {
+			return false, err
+		}
+
+		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
+		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
+
+		t.Logf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+
+		if errorCondition.Status == corev1.ConditionTrue {
+			return false, fmt.Errorf("failed upgrading cluster: [%s] %s", errorCondition.Reason, errorCondition.Message)
+		}
+
+		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
+			// Cluster upgraded
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster upgraded: %s", p.Name)
+	return nil
+}
+
 // WaitForClusterToTerminate will wait until all cluster pods are terminated
 func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
@@ -122,7 +160,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	}
 
 	// Wait for Pods to terminate
-	err := wait.Poll(RetryInterval, 2*time.Minute, func() (done bool, err error) {
+	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
 		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
 		if err != nil {
 			return false, err
@@ -145,7 +183,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	}
 
 	// Wait for PVCs to terminate
-	err = wait.Poll(RetryInterval, 1*time.Minute, func() (done bool, err error) {
+	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
 		pvcList, err := f.KubeClient.Core().PersistentVolumeClaims(p.Namespace).List(listOptions)
 		if err != nil {
 			return false, err
@@ -180,7 +218,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 		return fmt.Errorf("failed to create job: %s", err)
 	}
 
-	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
+	err = wait.Poll(RetryInterval, VerificationTimeout, func() (done bool, err error) {
 		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
 		if err != nil {
 			return false, err

@@ -10,9 +10,17 @@ spec:
     plural: pravegaclusters
     singular: pravegacluster
   additionalPrinterColumns:
-  - name: Members
+  - name: Version
+    type: string
+    description: The current pravega version
+    JSONPath: .status.currentVersion
+  - name: Desired Version
+    type: string
+    description: The desired pravega version
+    JSONPath: .status.TargetVersion
+  - name: Desired Members
     type: integer
-    description: The number pravega members running
+    description: The number of desired pravega members
     JSONPath: .status.replicas
   - name: Ready Members
     type: integer

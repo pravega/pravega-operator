@@ -12,11 +12,26 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
+	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"k8s.io/api/core/v1"
 )
+
+var (
+	versionRegexp *regexp.Regexp
+)
+
+const (
+	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+)`
+)
+
+func init() {
+	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
+}
 
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
@@ -146,4 +161,48 @@ func RemoveString(slice []string, str string) (result []string) {
 
 func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
 	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+}
+
+func PravegaImage(p *v1alpha1.PravegaCluster) (image string) {
+	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Spec.Version)
+}
+
+func BookkeeperImage(p *v1alpha1.PravegaCluster) (image string) {
+	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Spec.Version)
+}
+
+func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
+	if p.Status.TargetVersion == "" {
+		return "", fmt.Errorf("target version is not set")
+	}
+	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Status.TargetVersion), nil
+}
+
+func BookkeeperTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
+	if p.Status.TargetVersion == "" {
+		return "", fmt.Errorf("target version is not set")
+	}
+	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Status.TargetVersion), nil
+}
+
+func GetPodVersion(pod *v1.Pod) string {
+	return pod.GetAnnotations()["pravega.version"]
+}
+
+func CompareVersions(v1, v2, operator string) (bool, error) {
+	clusterVersion, _ := v.NewSemver(normalizeVersion(v1))
+	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
+	if err != nil {
+		return false, err
+	}
+	return constraints.Check(clusterVersion), nil
+}
+
+func normalizeVersion(version string) string {
+	matches := versionRegexp.FindStringSubmatch(version)
+	if matches == nil || len(matches) <= 1 {
+		// Assume that version is the latest release
+		return "0.5"
+	}
+	return matches[1]
 }

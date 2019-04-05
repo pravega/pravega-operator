@@ -3,15 +3,14 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
+  version: 0.4.0
   zookeeperUri: zk-client:2181
 
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: 0.4.0
-      pullPolicy: IfNotPresent
-
     replicas: 3
+
     resources:
       requests:
         memory: "3Gi"
@@ -57,6 +56,9 @@ spec:
       codahaleStatsOutputFrequencySeconds: 30
 
   pravega:
+    image:
+      repository: pravega/pravega
+
     controllerReplicas: 1
     controllerResources:
       requests:
@@ -77,11 +79,6 @@ spec:
 
     # Turn on Pravega Debug Logging
     debugLogging: false
-
-    image:
-      repository: pravega/pravega
-      tag: 0.4.0
-      pullPolicy: IfNotPresent
 
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]

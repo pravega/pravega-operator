@@ -51,6 +51,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 	Context("Reconcile", func() {
 		var (
 			req reconcile.Request
+			res reconcile.Result
 			p   *v1alpha1.PravegaCluster
 		)
 
@@ -70,68 +71,156 @@ var _ = Describe("PravegaCluster Controller", func() {
 			s.AddKnownTypes(v1alpha1.SchemeGroupVersion, p)
 		})
 
-		Context("Default spec", func() {
+		Context("Without spec", func() {
 			var (
 				client client.Client
 				err    error
 			)
 
 			BeforeEach(func() {
-				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				res, err = r.Reconcile(req)
 			})
 
 			It("shouldn't error", func() {
 				Ω(err).Should(BeNil())
 			})
 
-			Context("Default bookkeeper", func() {
-				It("should have a default bookie resource", func() {
-					foundBk := &appsv1.StatefulSet{}
-					nn := types.NamespacedName{
-						Name:      util.StatefulSetNameForBookie(p.Name),
-						Namespace: Namespace,
-					}
-					err = client.Get(context.TODO(), nn, foundBk)
+			Context("Before defaults are applied", func() {
+				It("should requeue the request", func() {
+					Ω(res.Requeue).Should(BeTrue())
+				})
+
+				It("should set the default cluster spec options", func() {
+					foundPravega := &v1alpha1.PravegaCluster{}
+					err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 					Ω(err).Should(BeNil())
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("500m"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("1Gi"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("1"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("2Gi"))
+					Ω(foundPravega.Spec.Version).Should(Equal("0.4.0"))
+					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
+					Ω(foundPravega.Spec.ExternalAccess).ShouldNot(BeNil())
+					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
+					Ω(foundPravega.Spec.Bookkeeper).ShouldNot(BeNil())
 				})
 			})
 
-			Context("Default Pravega controller", func() {
-				It("should have a default controller resource", func() {
-					foundController := &appsv1.Deployment{}
-					nn := types.NamespacedName{
-						Name:      util.DeploymentNameForController(p.Name),
-						Namespace: Namespace,
-					}
-					err = client.Get(context.TODO(), nn, foundController)
-					Ω(err).Should(BeNil())
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("250m"))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("512Mi"))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("500m"))
-					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("1Gi"))
-				})
-			})
+			Context("After defaults are applied", func() {
 
-			Context("Default Pravega segmentstore", func() {
-				It("should have a default controller resource", func() {
-					foundSS := &appsv1.StatefulSet{}
-					nn := types.NamespacedName{
-						Name:      util.StatefulSetNameForSegmentstore(p.Name),
-						Namespace: Namespace,
-					}
-					err = client.Get(context.TODO(), nn, foundSS)
-					Ω(err).Should(BeNil())
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("500m"))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("1Gi"))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("1"))
-					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("2Gi"))
+				BeforeEach(func() {
+					// 2nd reconcile iteration
+					res, err = r.Reconcile(req)
+				})
+
+				It("should requeue after ReconfileTime delay", func() {
+					Ω(res.RequeueAfter).To(Equal(ReconcileTime))
+				})
+
+				Context("Bookkeeper", func() {
+					It("should create a statefulset", func() {
+						foundBk := &appsv1.StatefulSet{}
+						nn := types.NamespacedName{
+							Name:      util.StatefulSetNameForBookie(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundBk)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a config-map", func() {
+						foundCm := &corev1.ConfigMap{}
+						nn := types.NamespacedName{
+							Name:      util.ConfigMapNameForBookie(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundCm)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a headless-service", func() {
+						foundSvc := &corev1.Service{}
+						nn := types.NamespacedName{
+							Name:      util.HeadlessServiceNameForBookie(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundSvc)
+						Ω(err).Should(BeNil())
+					})
+				})
+
+				Context("Controller", func() {
+					It("should create a deployment", func() {
+						foundController := &appsv1.Deployment{}
+						nn := types.NamespacedName{
+							Name:      util.DeploymentNameForController(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundController)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a config-map", func() {
+						foundCm := &corev1.ConfigMap{}
+						nn := types.NamespacedName{
+							Name:      util.ConfigMapNameForController(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundCm)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a client-service", func() {
+						foundSvc := &corev1.Service{}
+						nn := types.NamespacedName{
+							Name:      util.ServiceNameForController(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundSvc)
+						Ω(err).Should(BeNil())
+					})
+				})
+
+				Context("SegmentStore", func() {
+					It("should create a statefulset", func() {
+						foundSS := &appsv1.StatefulSet{}
+						nn := types.NamespacedName{
+							Name:      util.StatefulSetNameForSegmentstore(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundSS)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a config-map", func() {
+						foundCm := &corev1.ConfigMap{}
+						nn := types.NamespacedName{
+							Name:      util.ConfigMapNameForSegmentstore(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundCm)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should create a headless-service", func() {
+						foundSvc := &corev1.Service{}
+						nn := types.NamespacedName{
+							Name:      util.HeadlessServiceNameForSegmentStore(p.Name),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundSvc)
+						Ω(err).Should(BeNil())
+					})
+
+					It("should not create a client-services", func() {
+						// By default, external access is not enabled, hence, there
+						// should not be any client service
+						foundSvc := &corev1.Service{}
+						nn := types.NamespacedName{
+							Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+							Namespace: Namespace,
+						}
+						err = client.Get(context.TODO(), nn, foundSvc)
+						Ω(err).Should(MatchError("services \"example-pravega-segmentstore-0\" not found"))
+					})
 				})
 			})
 		})
@@ -155,49 +244,105 @@ var _ = Describe("PravegaCluster Controller", func() {
 					},
 				}
 				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.3.2-rc2",
 					Bookkeeper: &v1alpha1.BookkeeperSpec{
+						Replicas:  5,
 						Resources: customReq,
+						Image: &v1alpha1.BookkeeperImageSpec{
+							ImageSpec: v1alpha1.ImageSpec{
+								Repository: "foo/bookkeeper",
+							},
+						},
 					},
 					Pravega: &v1alpha1.PravegaSpec{
+						ControllerReplicas:    2,
+						SegmentStoreReplicas:  4,
 						ControllerResources:   customReq,
 						SegmentStoreResources: customReq,
+						Image: &v1alpha1.PravegaImageSpec{
+							ImageSpec: v1alpha1.ImageSpec{
+								Repository: "bar/pravega",
+							},
+						},
 					},
 				}
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				res, err = r.Reconcile(req)
 			})
 
 			It("shouldn't error", func() {
 				Ω(err).Should(BeNil())
 			})
 
-			Context("Custom bookkeeper", func() {
-				It("should have a custom bookie resource", func() {
-					foundBK := &appsv1.StatefulSet{}
+			It("should requeue after ReconfileTime delay", func() {
+				Ω(res.RequeueAfter).To(Equal(ReconcileTime))
+			})
+
+			Context("Cluster", func() {
+				It("should have a custom version", func() {
+					Ω(p.Spec.Version).Should(Equal("0.3.2-rc2"))
+				})
+			})
+
+			Context("Bookkeeper", func() {
+				var foundBk *appsv1.StatefulSet
+
+				BeforeEach(func() {
+					foundBk = &appsv1.StatefulSet{}
 					nn := types.NamespacedName{
 						Name:      util.StatefulSetNameForBookie(p.Name),
 						Namespace: Namespace,
 					}
-					err = client.Get(context.TODO(), nn, foundBK)
+					err = client.Get(context.TODO(), nn, foundBk)
+				})
+
+				It("should create a bookie statefulset", func() {
 					Ω(err).Should(BeNil())
-					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
-					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
-					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
-					Ω(foundBK.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
+				})
+
+				It("should set number of replicas", func() {
+					Ω(*foundBk.Spec.Replicas).Should(BeEquivalentTo(5))
+				})
+
+				It("should set container image", func() {
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Image).Should(Equal("foo/bookkeeper:0.3.2-rc2"))
+				})
+
+				It("should set pod resource requests and limits", func() {
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
+					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
 			})
 
-			Context("Custom Pravega controller", func() {
-				It("should have a custom controller resource", func() {
-					foundController := &appsv1.Deployment{}
+			Context("Pravega Controller", func() {
+				var foundController *appsv1.Deployment
+
+				BeforeEach(func() {
+					foundController = &appsv1.Deployment{}
 					nn := types.NamespacedName{
 						Name:      util.DeploymentNameForController(p.Name),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundController)
+				})
+
+				It("should create a controller deployment", func() {
 					Ω(err).Should(BeNil())
+				})
+
+				It("should set number of replicas", func() {
+					Ω(*foundController.Spec.Replicas).Should(BeEquivalentTo(2))
+				})
+
+				It("should set container image", func() {
+					Ω(foundController.Spec.Template.Spec.Containers[0].Image).Should(Equal("bar/pravega:0.3.2-rc2"))
+				})
+
+				It("should set pod resource requests and limits", func() {
 					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
 					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
 					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
@@ -205,15 +350,31 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 			})
 
-			Context("Custom Pravega segmentstore", func() {
-				It("should have a custom segmentstore resource", func() {
-					foundSS := &appsv1.StatefulSet{}
+			Context("Pravega SegmentStore", func() {
+				var foundSS *appsv1.StatefulSet
+
+				BeforeEach(func() {
+					foundSS = &appsv1.StatefulSet{}
 					nn := types.NamespacedName{
 						Name:      util.StatefulSetNameForSegmentstore(p.Name),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundSS)
+				})
+
+				It("should create a segmentstore statefulset", func() {
 					Ω(err).Should(BeNil())
+				})
+
+				It("should set number of replicas", func() {
+					Ω(*foundSS.Spec.Replicas).Should(BeEquivalentTo(4))
+				})
+
+				It("should set container image", func() {
+					Ω(foundSS.Spec.Template.Spec.Containers[0].Image).Should(Equal("bar/pravega:0.3.2-rc2"))
+				})
+
+				It("should set pod resource requests and limits", func() {
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))

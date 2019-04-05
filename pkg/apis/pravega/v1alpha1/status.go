@@ -20,6 +20,8 @@ type ClusterConditionType string
 
 const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
+	ClusterConditionUpgrading                      = "Upgrading"
+	ClusterConditionError                          = "Error"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
@@ -76,6 +78,20 @@ type ClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
+func (ps *ClusterStatus) InitConditions() {
+	conditionTypes := []ClusterConditionType{
+		ClusterConditionPodsReady,
+		ClusterConditionUpgrading,
+		ClusterConditionError,
+	}
+	for _, conditionType := range conditionTypes {
+		if _, condition := ps.GetClusterCondition(conditionType); condition == nil {
+			c := newClusterCondition(conditionType, corev1.ConditionFalse, "", "")
+			ps.setClusterCondition(*c)
+		}
+	}
+}
+
 func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
 	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionTrue, "", "")
 	ps.setClusterCondition(*c)
@@ -83,6 +99,26 @@ func (ps *ClusterStatus) SetPodsReadyConditionTrue() {
 
 func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
 	c := newClusterCondition(ClusterConditionPodsReady, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetUpgradingConditionTrue() {
+	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetUpgradingConditionFalse() {
+	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetErrorConditionTrue(reason, message string) {
+	c := newClusterCondition(ClusterConditionError, corev1.ConditionTrue, reason, message)
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetErrorConditionFalse() {
+	c := newClusterCondition(ClusterConditionError, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
