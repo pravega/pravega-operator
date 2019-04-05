@@ -216,7 +216,7 @@ kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path"
 
 ### Upgrade a Pravega cluster
 
-Check out the [upgrade guide](doc/pravega-upgrade-guide.md).
+Check out the [upgrade guide](doc/upgrade-cluster.md).
 
 ### Uninstall the Pravega cluster
 
