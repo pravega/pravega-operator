@@ -13,7 +13,6 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
 	"time"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -24,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,8 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -68,42 +64,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
-
-	admissionWh, err := builder.NewWebhookBuilder().
-		Mutating().
-		Operations(admissionregistrationv1beta1.Create).
-		ForType(&pravegav1alpha1.PravegaCluster{}).
-		Handlers(&podAnnotator{}).
-		WithManager(mgr).
-		Build()
-	if err != nil {
-		fmt.Printf("Failed to create webhook: %v", err)
-	}
-
-	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
-		//CertDir: "/tmp/cert",
-		BootstrapOptions: &webhook.BootstrapOptions{
-			Secret: &types.NamespacedName{
-				Namespace: "default",
-				Name:      "foo-admission-server-secret",
-			},
-
-			Service: &webhook.Service{
-				Namespace: "default",
-				Name:      "foo-admission-server-service",
-				// Selectors should select the pods that runs this webhook server.
-				Selectors: map[string]string{
-					"component": "operator",
-				},
-			},
-		},
-	})
-	if err != nil {
-		// handle error
-		fmt.Printf("Failed to create webhook server: %v", err)
-	}
-
-	svr.Register(admissionWh)
 
 	return nil
 }

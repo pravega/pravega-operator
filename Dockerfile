@@ -28,10 +28,15 @@ RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${GOBIN}/${PROJECT_NAME} \
 # =============================================================================
 FROM alpine:3.7 AS final
 
+RUN apk add --update \
+    sudo \
+    libcap
+
 ARG PROJECT_NAME=pravega-operator
 ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
 
 COPY --from=go-builder ${GOBIN}/${PROJECT_NAME} /usr/local/bin/${PROJECT_NAME}
+RUN sudo setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/${PROJECT_NAME}
 
 RUN adduser -D ${PROJECT_NAME}
 USER ${PROJECT_NAME}

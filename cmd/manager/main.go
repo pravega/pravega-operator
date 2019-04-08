@@ -18,6 +18,7 @@ import (
 
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/controller"
+	"github.com/pravega/pravega-operator/pkg/webhook"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
 
@@ -99,6 +100,11 @@ func main() {
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
+		log.Fatal(err)
+	}
+
+	// Setup webhook
+	if err := webhook.AddToManager(mgr); err != nil {
 		log.Fatal(err)
 	}
 
