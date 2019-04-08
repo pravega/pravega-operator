@@ -18,9 +18,9 @@ import (
 
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/controller"
-	"github.com/pravega/pravega-operator/pkg/webhook"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
+	"github.com/pravega/pravega-operator/pkg/webhook"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"

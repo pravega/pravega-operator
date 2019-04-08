@@ -13,14 +13,14 @@ package webhook
 import (
 	"context"
 	"fmt"
+	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/util"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"os"
-
-	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,14 +38,14 @@ const (
 )
 
 var (
-	CompatibilityMatrix = []string{
-		"v0.1.0",
-		"v0.2.0",
-		"v0.2.1",
-		"v0.3.0",
-		"v0.3.1",
-		"v0.3.2",
-		"v0.4.0",
+	compatibilityMatrix = []string{
+		"0.1.0",
+		"0.2.0",
+		"0.2.1",
+		"0.3.0",
+		"0.3.1",
+		"0.3.2",
+		"0.4.0",
 	}
 )
 
@@ -125,22 +125,41 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 }
 
 func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	// TODO: implement logic to validate a upgrade version
+	if error := pwh.validatePravegaVersion(ctx, p); error != nil {
+		return fmt.Errorf("Failed to pass version validation: %v", error)
+	}
 
+	//TODO: Other validations
 	return nil
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaUpgrade(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	old := &pravegav1alpha1.PravegaCluster{}
 	nn := types.NamespacedName{
 		Namespace: p.Namespace,
 		Name:      p.Name,
 	}
 	err := pwh.client.Get(context.TODO(), nn, old)
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("Failed to get Pravega cluster: %v", err)
 	}
 
+	legal := false
+	for _, v := range compatibilityMatrix {
+		if match, _ := util.CompareVersions(p.Spec.Version, v, "="); match {
+			legal = true
+		}
+	}
+	if !legal {
+		return fmt.Errorf("Illegal Pravega cluster version")
+	}
+
+	if old.Spec.Version == "" {
+		// This is not an upgrade
+		return nil
+	}
+
+	// TODO: implement logic to validate a upgrade version
 	return nil
 }
 
