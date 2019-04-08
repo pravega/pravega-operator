@@ -15,12 +15,16 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
+  version: 0.4.0
   zookeeperUri: zk-client:2181
   bookkeeper:
     replicas: 3
+    imageRepository: pravega/bookkeeper
+    autoRecovery: true
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
+    imageRepository: pravega/pravega
     tier2:
       filesystem:
         persistentVolumeClaim:

@@ -33,15 +33,11 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      util.DeploymentNameForController(p.Name),
 			Namespace: p.Namespace,
+			Labels:    util.LabelsForController(p),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &p.Spec.Pravega.ControllerReplicas,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: util.LabelsForController(p),
-				},
-				Spec: *makeControllerPodSpec(p.Name, p.Spec.Pravega),
-			},
+			Template: MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(p),
 			},
@@ -49,13 +45,23 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 	}
 }
 
-func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.PodSpec {
+func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      util.LabelsForController(p),
+			Annotations: map[string]string{"pravega.version": p.Spec.Version},
+		},
+		Spec: *makeControllerPodSpec(p),
+	}
+}
+
+func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-controller",
-				Image:           pravegaSpec.Image.String(),
-				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
+				Image:           util.PravegaImage(p),
+				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
 				Args: []string{
 					"controller",
 				},
@@ -73,12 +79,12 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: util.ConfigMapNameForController(name),
+								Name: util.ConfigMapNameForController(p.Name),
 							},
 						},
 					},
 				},
-				Resources: *pravegaSpec.ControllerResources,
+				Resources: *p.Spec.Pravega.ControllerResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -105,11 +111,11 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-controller", name),
+		Affinity: util.PodAntiAffinity("pravega-controller", p.Name),
 	}
 
-	if pravegaSpec.ControllerServiceAccountName != "" {
-		podSpec.ServiceAccountName = pravegaSpec.ControllerServiceAccountName
+	if p.Spec.Pravega.ControllerServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
 	return podSpec
@@ -118,13 +124,19 @@ func makeControllerPodSpec(name string, pravegaSpec *api.PravegaSpec) *corev1.Po
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	var javaOpts = []string{
 		"-Xms512m",
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=2",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-Dpravegaservice.clusterName=" + p.Name,
+	}
+
+	if match, _ := util.CompareVersions(p.Spec.Version, "0.4", ">="); match {
+		// Pravega < 0.4 uses a Java version that does not support the options below
+		javaOpts = append(javaOpts,
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:+UseCGroupMemoryLimitForHeap",
+			"-XX:MaxRAMFraction=2",
+		)
 	}
 
 	for name, value := range p.Spec.Pravega.Options {

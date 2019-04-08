@@ -21,6 +21,10 @@ const (
 
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
+
+	// DefaultPravegaVersion is the default tag used for for the Pravega
+	// Docker image
+	DefaultPravegaVersion = "0.4.0"
 )
 
 func init() {
@@ -69,6 +73,16 @@ type ClusterSpec struct {
 	// By default, external access is not enabled
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
 
+	// Version is the expected version of the Pravega cluster.
+	// The pravega-operator will eventually make the Pravega cluster version
+	// equal to the expected version.
+	//
+	// The version must follow the [semver]( http://semver.org) format, for example "3.2.13".
+	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
+	//
+	// If version is not set, default is "0.4.0".
+	Version string `json:"version"`
+
 	// Bookkeeper configuration
 	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`
 
@@ -88,6 +102,15 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 	}
 	if s.ExternalAccess.withDefaults() {
 		changed = true
+	}
+
+	if s.Version == "" {
+		changed = true
+		if s.Pravega != nil && s.Pravega.Image != nil && s.Pravega.Image.Tag != "" {
+			s.Version = s.Pravega.Image.Tag
+		} else {
+			s.Version = DefaultPravegaVersion
+		}
 	}
 
 	if s.Bookkeeper == nil {
@@ -135,7 +158,10 @@ func (e *ExternalAccess) withDefaults() (changed bool) {
 
 // ImageSpec defines the fields needed for a Docker repository image
 type ImageSpec struct {
-	Repository string        `json:"repository"`
-	Tag        string        `json:"tag"`
+	Repository string `json:"repository"`
+
+	// Deprecated: Use `spec.Version` instead
+	Tag string `json:"tag,omitempty"`
+
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }

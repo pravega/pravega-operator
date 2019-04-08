@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -22,10 +20,6 @@ const (
 	// DefaultPravegaImageRepository is the default Docker repository for
 	// the Pravega image
 	DefaultPravegaImageRepository = "pravega/pravega"
-
-	// DefaultPravegaImageTag is the default tag used for for the Pravega
-	// Docker image
-	DefaultPravegaImageTag = "latest"
 
 	// DefaultPravegaImagePullPolicy is the default image pull policy used
 	// for the Pravega Docker image
@@ -86,7 +80,7 @@ type PravegaSpec struct {
 	DebugLogging bool `json:"debugLogging"`
 
 	// Image defines the Pravega Docker image to use.
-	// By default, "pravega/pravega:latest" will be used.
+	// By default, "pravega/pravega" will be used.
 	Image *PravegaImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
@@ -202,21 +196,13 @@ type PravegaImageSpec struct {
 	ImageSpec
 }
 
-// String formats a container image struct as a Docker compatible repository string
-func (s *PravegaImageSpec) String() string {
-	return fmt.Sprintf("%s:%s", s.Repository, s.Tag)
-}
-
 func (s *PravegaImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultPravegaImageRepository
 	}
 
-	if s.Tag == "" {
-		changed = true
-		s.Tag = DefaultPravegaImageTag
-	}
+	s.Tag = ""
 
 	if s.PullPolicy == "" {
 		changed = true

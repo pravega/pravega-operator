@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -23,12 +21,8 @@ const (
 	// the BookKeeper image
 	DefaultBookkeeperImageRepository = "pravega/bookkeeper"
 
-	// DefaultBookkeeperImageTag is the default tag used for for the BookKeeper
-	// Docker image
-	DefaultBookkeeperImageTag = "latest"
-
-	// DefaultBookkeeperImagePullPolicy is the default image pull policy used
-	// for the BookKeeper Docker image
+	// DefaultPravegaImagePullPolicy is the default image pull policy used
+	// for the Pravega Docker image
 	DefaultBookkeeperImagePullPolicy = v1.PullAlways
 
 	// DefaultBookkeeperLedgerVolumeSize is the default volume size for the
@@ -63,7 +57,7 @@ const (
 // BookkeeperSpec defines the configuration of BookKeeper
 type BookkeeperSpec struct {
 	// Image defines the BookKeeper Docker image to use.
-	// By default, "pravega/bookkeeper:latest" will be used.
+	// By default, "pravega/bookkeeper" will be used.
 	Image *BookkeeperImageSpec `json:"image"`
 
 	// Replicas defines the number of BookKeeper replicas.
@@ -144,21 +138,13 @@ type BookkeeperImageSpec struct {
 	ImageSpec
 }
 
-// String formats a container image struct as a Docker compatible repository string
-func (s *BookkeeperImageSpec) String() string {
-	return fmt.Sprintf("%s:%s", s.Repository, s.Tag)
-}
-
 func (s *BookkeeperImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultBookkeeperImageRepository
 	}
 
-	if s.Tag == "" {
-		changed = true
-		s.Tag = DefaultBookkeeperImageTag
-	}
+	s.Tag = ""
 
 	if s.PullPolicy == "" {
 		changed = true

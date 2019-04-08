@@ -41,17 +41,16 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster.Name),
 			Namespace: pravegaCluster.Namespace,
+			Labels:    util.LabelsForSegmentStore(pravegaCluster),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: util.LabelsForSegmentStore(pravegaCluster),
-				},
-				Spec: makeSegmentstorePodSpec(pravegaCluster),
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
+			Template: MakeSegmentStorePodTemplate(pravegaCluster),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
@@ -60,27 +59,35 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 	}
 }
 
-func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec {
+func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      util.LabelsForSegmentStore(p),
+			Annotations: map[string]string{"pravega.version": p.Spec.Version},
+		},
+		Spec: makeSegmentstorePodSpec(p),
+	}
+}
+
+func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: util.ConfigMapNameForSegmentstore(pravegaCluster.Name),
+					Name: util.ConfigMapNameForSegmentstore(p.Name),
 				},
 			},
 		},
 	}
 
-	pravegaSpec := pravegaCluster.Spec.Pravega
-
-	environment = configureTier2Secrets(environment, pravegaSpec)
+	environment = configureTier2Secrets(environment, p.Spec.Pravega)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
-				Image:           pravegaSpec.Image.String(),
-				ImagePullPolicy: pravegaSpec.Image.PullPolicy,
+				Image:           util.PravegaImage(p),
+				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
 				Args: []string{
 					"segmentstore",
 				},
@@ -98,7 +105,7 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 						MountPath: cacheVolumeMountPoint,
 					},
 				},
-				Resources: *pravegaSpec.SegmentStoreResources,
+				Resources: *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -129,14 +136,14 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-segmentstore", pravegaCluster.Name),
+		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
 	}
 
-	if pravegaSpec.SegmentStoreServiceAccountName != "" {
-		podSpec.ServiceAccountName = pravegaSpec.SegmentStoreServiceAccountName
+	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
-	configureTier2Filesystem(&podSpec, pravegaSpec)
+	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
 }
@@ -144,13 +151,19 @@ func makeSegmentstorePodSpec(pravegaCluster *api.PravegaCluster) corev1.PodSpec 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Xms1g",
-		"-XX:+UnlockExperimentalVMOptions",
-		"-XX:+UseCGroupMemoryLimitForHeap",
-		"-XX:MaxRAMFraction=2",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-Dpravegaservice.clusterName=" + p.Name,
+	}
+
+	if match, _ := util.CompareVersions(p.Spec.Version, "0.4", ">="); match {
+		// Pravega < 0.4 uses a Java version that does not support the options below
+		javaOpts = append(javaOpts,
+			"-XX:+UnlockExperimentalVMOptions",
+			"-XX:+UseCGroupMemoryLimitForHeap",
+			"-XX:MaxRAMFraction=2",
+		)
 	}
 
 	for name, value := range p.Spec.Pravega.Options {
