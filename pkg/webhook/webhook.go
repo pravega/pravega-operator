@@ -12,6 +12,7 @@ package webhook
 
 import (
 	"context"
+	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"net/http"
 	"os"
@@ -23,17 +24,29 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
 	admissiontypes "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
 	log "github.com/sirupsen/logrus"
 )
 
 const (
 	CertDir = "/var/run/secrets/kubernetes.io/"
+)
+
+var (
+	CompatibilityMatrix = []string{
+		"v0.1.0",
+		"v0.2.0",
+		"v0.2.1",
+		"v0.3.0",
+		"v0.3.1",
+		"v0.3.2",
+		"v0.4.0",
+	}
 )
 
 // Create webhook server and register webhook to it
@@ -55,7 +68,7 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error){
+func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
 		Mutating().
 		Operations(admissionregistrationv1beta1.Create).
@@ -77,7 +90,7 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 			// TODO: garbage collect webhook service
 			Service: &webhook.Service{
 				Namespace: os.Getenv("WATCH_NAMESPACE"),
-				Name:     "admission-webhook-server-service",
+				Name:      "admission-webhook-server-service",
 				Selectors: map[string]string{
 					"component": "operator",
 				},
@@ -88,7 +101,7 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 
 type pravegaWebhookHandler struct {
 	client  client.Client
-	scheme *runtime.Scheme
+	scheme  *runtime.Scheme
 	decoder admissiontypes.Decoder
 }
 
@@ -111,9 +124,23 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 	return admission.ValidationResponse(true, "")
 }
 
-
-func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, pod *pravegav1alpha1.PravegaCluster) error {
+func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	// TODO: implement logic to validate a upgrade version
+
+	return nil
+}
+
+func (pwh *pravegaWebhookHandler) validatePravegaUpgrade(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+	old := &pravegav1alpha1.PravegaCluster{}
+	nn := types.NamespacedName{
+		Namespace: p.Namespace,
+		Name:      p.Name,
+	}
+	err := pwh.client.Get(context.TODO(), nn, old)
+	if err != nil {
+		return fmt.Errorf("Failed to get Pravega cluster: %v", err)
+	}
+
 	return nil
 }
 
