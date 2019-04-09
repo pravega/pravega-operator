@@ -16,7 +16,7 @@ spec:
       serviceAccountName: pravega-operator
       containers:
         - name: pravega-operator
-          image: tristan1900/pravega-operator:webhook0.1.1
+          image: pravega/pravega-operator:latest
           ports:
           - containerPort: 60000
             name: metrics
