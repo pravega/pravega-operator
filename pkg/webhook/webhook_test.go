@@ -70,6 +70,7 @@ var _ = Describe("Admission webhook", func() {
 			var (
 				client client.Client
 				err    error
+				pass   bool
 			)
 
 			BeforeEach(func() {
@@ -80,10 +81,11 @@ var _ = Describe("Admission webhook", func() {
 			Context("Standard version", func() {
 				It("should pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.3.2",
+						Version: "0.4",
 					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
+					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
 					Ω(err).Should(BeNil())
+					Ω(pass).Should(BeTrue())
 				})
 			})
 
@@ -92,8 +94,9 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.3.2-rc2",
 					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
+					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
 					Ω(err).Should(BeNil())
+					Ω(pass).Should(BeTrue())
 				})
 			})
 
@@ -101,8 +104,9 @@ var _ = Describe("Admission webhook", func() {
 				Context("Empty pravega tag field", func() {
 					It("should pass", func() {
 						p.Spec = v1alpha1.ClusterSpec{}
-						err = pwh.validatePravegaVersion(context.TODO(), p)
+						pass, err = pwh.validatePravegaVersion(context.TODO(), p)
 						Ω(err).Should(BeNil())
+						Ω(pass).Should(BeTrue())
 					})
 				})
 
@@ -118,16 +122,19 @@ var _ = Describe("Admission webhook", func() {
 								},
 							},
 						}
-						err = pwh.validatePravegaVersion(context.TODO(), p)
+						pass, err = pwh.validatePravegaVersion(context.TODO(), p)
 						Ω(err).Should(BeNil())
+						Ω(pass).Should(BeTrue())
 					})
 				})
 			})
 		})
+
 		Context("Invalid version", func() {
 			var (
 				client client.Client
 				err    error
+				pass   bool
 			)
 
 			BeforeEach(func() {
@@ -138,10 +145,11 @@ var _ = Describe("Admission webhook", func() {
 			Context("Version not compatible", func() {
 				It("should not pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.2.8",
+						Version: "1.0.0",
 					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).ShouldNot(BeNil())
+					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+					Ω(err).Should(BeNil())
+					Ω(pass).ShouldNot(BeTrue())
 				})
 			})
 
@@ -150,39 +158,20 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "hahahaha",
 					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).ShouldNot(BeNil())
-				})
-			})
-		})
-		Context("Valid upgrade version", func() {
-			var (
-				client client.Client
-				err    error
-			)
-
-			BeforeEach(func() {
-				p.Spec = v1alpha1.ClusterSpec{
-					Version: "0.3.0",
-				}
-				client = fake.NewFakeClient(p)
-				pwh = &pravegaWebhookHandler{client: client}
-			})
-
-			Context("In upgrade path", func() {
-				It("should pass", func() {
-					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.3.1",
-					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
+					pass, err := pwh.validatePravegaVersion(context.TODO(), p)
 					Ω(err).Should(BeNil())
+					Ω(pass).ShouldNot(BeTrue())
 				})
 			})
 		})
+		// Valid Upgrade is not available currently
+		// TODO: test valid upgrade version
+
 		Context("Invalid upgrade version", func() {
 			var (
 				client client.Client
 				err    error
+				pass   bool
 			)
 
 			BeforeEach(func() {
@@ -196,10 +185,11 @@ var _ = Describe("Admission webhook", func() {
 			Context("Not in upgrade path", func() {
 				It("should not pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.3.2",
+						Version: "0.5.0",
 					}
-					err = pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).ShouldNot(BeNil())
+					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+					Ω(err).Should(BeNil())
+					Ω(pass).ShouldNot(BeTrue())
 				})
 			})
 		})

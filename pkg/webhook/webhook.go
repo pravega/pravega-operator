@@ -34,26 +34,16 @@ import (
 )
 
 const (
-	CertDir = "/var/run/secrets/kubernetes.io/"
+	CertDir = "/tmp"
 )
 
 var (
-	compatibilityMatrix = []string{
-		"0.1.0",
-		"0.2.0",
-		"0.2.1",
-		"0.3.0",
-		"0.3.1",
-		"0.3.2",
-		"0.4.0",
-	}
-	upgradePath = map[string][]string{
-		"0.1.0": []string{"0.2.0"},
-		"0.2.0": []string{"0.3.0"},
-		"0.3.0": []string{"0.3.1"},
-		"0.3.1": []string{"0.3.2"},
-		"0.3.2": []string{"0.4.0"},
-		"0.4.0": []string{"0.5.0"},
+	// The key is the supported versions, the value is a list of versions that can upgrade to.
+	supportedVersions = map[string][]string{
+		"0.1": []string{},
+		"0.2": []string{},
+		"0.3": []string{},
+		"0.4": []string{},
 	}
 )
 
@@ -90,17 +80,12 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 	return webhook.NewServer("admission-webhook-server", mgr, webhook.ServerOptions{
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
-			Secret: &types.NamespacedName{
-				Namespace: os.Getenv("WATCH_NAMESPACE"),
-				Name:      os.Getenv("SECRET_NAME"),
-			},
-
-			// TODO: garbage collect webhook service
+			// TODO: garbage collect webhook k8s service
 			Service: &webhook.Service{
 				Namespace: os.Getenv("WATCH_NAMESPACE"),
 				Name:      "admission-webhook-server-service",
 				Selectors: map[string]string{
-					"component": "operator",
+					"component": "pravega-operator",
 				},
 			},
 		},
@@ -125,24 +110,27 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 	}
 	copy := pravega.DeepCopy()
 
-	err := pwh.validatePravegaManifest(ctx, copy)
+	pass, err := pwh.validatePravegaManifest(ctx, copy)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
+	}
+	if !pass {
+		return admission.ErrorResponse(http.StatusBadRequest, nil)
 	}
 
 	return admission.ValidationResponse(true, "")
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	if error := pwh.validatePravegaVersion(ctx, p); error != nil {
-		return fmt.Errorf("Failed to pass version validation: %v", error)
+func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (bool, error) {
+	if pass, error := pwh.validatePravegaVersion(ctx, p); !pass || error != nil {
+		return pass, error
 	}
 
-	//TODO: Other validations
-	return nil
+	//TODO: Add other validators here
+	return true, nil
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (bool, error) {
 	// Check if the request has a legal Pravega version
 	if p.Spec.Version == "" {
 		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
@@ -151,8 +139,8 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 			p.Spec.Version = pravegav1alpha1.DefaultPravegaVersion
 		}
 	}
-	if !util.ContainsVersion(compatibilityMatrix, p.Spec.Version) {
-		return fmt.Errorf("Illegal Pravega cluster version: %s", p.Spec.Version)
+	if _, ok := supportedVersions[util.NormalizeVersion(p.Spec.Version)]; !ok {
+		return false, nil
 	}
 
 	// Check if the request requires an upgrade
@@ -163,26 +151,25 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 	}
 	err := pwh.client.Get(context.TODO(), nn, found)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("Failed to get current Pravega cluster: %v", err)
+		return false, fmt.Errorf("Failed to get current Pravega cluster: %v", err)
 	}
 
 	// This is not an upgrade if "found" is empty or the requested version is equal to the running version
-	fmt.Printf("the error is %v", err)
 	if errors.IsNotFound(err) || found.Spec.Version == p.Spec.Version {
-		return nil
+		return true, nil
 	}
 
 	// This is an upgrade, check if this requested version is in the upgrade path
-	path, ok := upgradePath[found.Spec.Version]
+	path, ok := supportedVersions[util.NormalizeVersion(found.Spec.Version)]
 	if !ok {
 		// This should never happen
-		return fmt.Errorf("Failed to find current cluster version in the upgrade path")
+		return false, fmt.Errorf("Failed to find current cluster version in the upgrade path")
 	}
 	if !util.ContainsVersion(path, p.Spec.Version) {
-		return fmt.Errorf("Upgrading from version %s to version %s is not supported", found.Spec.Version, p.Spec.Version)
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
 // pravegaWebhookHandler implements inject.Client.

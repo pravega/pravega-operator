@@ -11,7 +11,7 @@ spec:
     metadata:
       labels:
         name: pravega-operator
-        component: operator
+        component: pravega-operator
     spec:
       serviceAccountName: pravega-operator
       containers:
@@ -34,13 +34,3 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "pravega-operator"
-            - name: SECRET_NAME
-              value: "admission-webhook-server-secret"
-          volumeMounts:
-          - name: cert
-            mountPath: "/var/run/secrets/kubernetes.io/"
-      volumes:
-      - name: cert
-        secret:
-          secretName: admission-webhook-server-secret
-
