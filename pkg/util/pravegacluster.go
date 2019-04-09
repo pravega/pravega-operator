@@ -198,6 +198,18 @@ func CompareVersions(v1, v2, operator string) (bool, error) {
 	return constraints.Check(clusterVersion), nil
 }
 
+func ContainsVersion(list []string, version string) bool {
+	result := false
+	for _, v := range list {
+		if match, _ := CompareVersions(version, v, "="); match {
+			fmt.Println(version, v)
+			result = true
+			break
+		}
+	}
+	return result
+}
+
 func normalizeVersion(version string) string {
 	matches := versionRegexp.FindStringSubmatch(version)
 	if matches == nil || len(matches) <= 1 {

@@ -47,6 +47,14 @@ var (
 		"0.3.2",
 		"0.4.0",
 	}
+	upgradePath = map[string][]string{
+		"0.1.0": []string{"0.2.0"},
+		"0.2.0": []string{"0.3.0"},
+		"0.3.0": []string{"0.3.1"},
+		"0.3.1": []string{"0.3.2"},
+		"0.3.2": []string{"0.4.0"},
+		"0.4.0": []string{"0.5.0"},
+	}
 )
 
 // Create webhook server and register webhook to it
@@ -70,7 +78,7 @@ func Add(mgr manager.Manager) error {
 
 func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
-		Mutating().
+		Validating().
 		Operations(admissionregistrationv1beta1.Create).
 		ForType(&pravegav1alpha1.PravegaCluster{}).
 		Handlers(&pravegaWebhookHandler{}).
@@ -107,6 +115,7 @@ type pravegaWebhookHandler struct {
 
 var _ admission.Handler = &pravegaWebhookHandler{}
 
+// Webhook server will call this func when request comes in
 func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes.Request) admissiontypes.Response {
 	log.Printf("Webhook is handling incoming requests")
 	pravega := &pravegav1alpha1.PravegaCluster{}
@@ -134,32 +143,45 @@ func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p
 }
 
 func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	old := &pravegav1alpha1.PravegaCluster{}
+	// Check if the request has a legal Pravega version
+	if p.Spec.Version == "" {
+		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
+			p.Spec.Version = p.Spec.Pravega.Image.Tag
+		} else {
+			p.Spec.Version = pravegav1alpha1.DefaultPravegaVersion
+		}
+	}
+	if !util.ContainsVersion(compatibilityMatrix, p.Spec.Version) {
+		return fmt.Errorf("Illegal Pravega cluster version: %s", p.Spec.Version)
+	}
+
+	// Check if the request requires an upgrade
+	found := &pravegav1alpha1.PravegaCluster{}
 	nn := types.NamespacedName{
 		Namespace: p.Namespace,
 		Name:      p.Name,
 	}
-	err := pwh.client.Get(context.TODO(), nn, old)
+	err := pwh.client.Get(context.TODO(), nn, found)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("Failed to get Pravega cluster: %v", err)
+		return fmt.Errorf("Failed to get current Pravega cluster: %v", err)
 	}
 
-	legal := false
-	for _, v := range compatibilityMatrix {
-		if match, _ := util.CompareVersions(p.Spec.Version, v, "="); match {
-			legal = true
-		}
-	}
-	if !legal {
-		return fmt.Errorf("Illegal Pravega cluster version")
-	}
-
-	if old.Spec.Version == "" {
-		// This is not an upgrade
+	// This is not an upgrade if "found" is empty or the requested version is equal to the running version
+	fmt.Printf("the error is %v", err)
+	if errors.IsNotFound(err) || found.Spec.Version == p.Spec.Version {
 		return nil
 	}
 
-	// TODO: implement logic to validate a upgrade version
+	// This is an upgrade, check if this requested version is in the upgrade path
+	path, ok := upgradePath[found.Spec.Version]
+	if !ok {
+		// This should never happen
+		return fmt.Errorf("Failed to find current cluster version in the upgrade path")
+	}
+	if !util.ContainsVersion(path, p.Spec.Version) {
+		return fmt.Errorf("Upgrading from version %s to version %s is not supported", found.Spec.Version, p.Spec.Version)
+	}
+
 	return nil
 }
 
