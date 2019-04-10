@@ -129,16 +129,18 @@ func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p
 }
 
 func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	// Check if the request has a valid Pravega version
-	requestVersion := ""
 	// Identify the request Pravega version
+	requestVersion := ""
 	if p.Spec.Version == "" {
 		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
 			requestVersion = p.Spec.Pravega.Image.Tag
 		} else {
 			requestVersion = pravegav1alpha1.DefaultPravegaVersion
 		}
+	} else {
+		requestVersion = p.Spec.Version
 	}
+	// Check if the request has a valid Pravega version
 	if _, ok := supportedVersions[util.NormalizeVersion(requestVersion)]; !ok {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}

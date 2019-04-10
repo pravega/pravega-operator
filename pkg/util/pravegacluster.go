@@ -190,7 +190,10 @@ func GetPodVersion(pod *v1.Pod) string {
 }
 
 func CompareVersions(v1, v2, operator string) (bool, error) {
-	clusterVersion, _ := v.NewSemver(NormalizeVersion(v1))
+	clusterVersion, err := v.NewSemver(NormalizeVersion(v1))
+	if err != nil {
+		return false, err
+	}
 	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
 	if err != nil {
 		return false, err
@@ -211,8 +214,7 @@ func ContainsVersion(list []string, version string) bool {
 func NormalizeVersion(version string) string {
 	matches := versionRegexp.FindStringSubmatch(version)
 	if matches == nil || len(matches) <= 1 {
-		// Assume that version is the latest release
-		return "0.5"
+		return ""
 	}
 	return matches[1]
 }
