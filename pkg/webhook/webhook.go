@@ -110,27 +110,28 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 	}
 	copy := pravega.DeepCopy()
 
-	pass, err := pwh.validatePravegaManifest(ctx, copy)
-	if err != nil {
+	code, err := pwh.validatePravegaManifest(ctx, copy)
+
+	switch code {
+	case "400":
+		return admission.ErrorResponse(http.StatusBadRequest, err)
+	case "500":
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
-	}
-	if !pass {
-		return admission.ErrorResponse(http.StatusBadRequest, nil)
 	}
 
 	return admission.ValidationResponse(true, "")
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (bool, error) {
-	if pass, error := pwh.validatePravegaVersion(ctx, p); !pass || error != nil {
-		return pass, error
+func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (string, error) {
+	if code, error := pwh.validatePravegaVersion(ctx, p); code != "200" {
+		return code, error
 	}
 
 	//TODO: Add other validators here
-	return true, nil
+	return "200", nil
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (bool, error) {
+func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) (string, error) {
 	// Check if the request has a legal Pravega version
 	if p.Spec.Version == "" {
 		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
@@ -140,7 +141,7 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 		}
 	}
 	if _, ok := supportedVersions[util.NormalizeVersion(p.Spec.Version)]; !ok {
-		return false, nil
+		return "400", fmt.Errorf("Unsupported Pravega cluster version %s", p.Spec.Version)
 	}
 
 	// Check if the request requires an upgrade
@@ -151,25 +152,25 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 	}
 	err := pwh.client.Get(context.TODO(), nn, found)
 	if err != nil && !errors.IsNotFound(err) {
-		return false, fmt.Errorf("Failed to get current Pravega cluster: %v", err)
+		return "500", fmt.Errorf("Failed to get current Pravega cluster: %v", err)
 	}
 
 	// This is not an upgrade if "found" is empty or the requested version is equal to the running version
 	if errors.IsNotFound(err) || found.Spec.Version == p.Spec.Version {
-		return true, nil
+		return "200", nil
 	}
 
 	// This is an upgrade, check if this requested version is in the upgrade path
 	path, ok := supportedVersions[util.NormalizeVersion(found.Spec.Version)]
 	if !ok {
 		// This should never happen
-		return false, fmt.Errorf("Failed to find current cluster version in the upgrade path")
+		return "500", fmt.Errorf("Failed to find current cluster version in the supported versions")
 	}
 	if !util.ContainsVersion(path, p.Spec.Version) {
-		return false, nil
+		return "400", fmt.Errorf("Unsupported upgrade from version %s to %s", found.Spec.Version, p.Spec.Version)
 	}
 
-	return true, nil
+	return "200", nil
 }
 
 // pravegaWebhookHandler implements inject.Client.

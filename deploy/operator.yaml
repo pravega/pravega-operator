@@ -20,6 +20,8 @@ spec:
           ports:
           - containerPort: 60000
             name: metrics
+          - containerPort: 443
+            name: webhook
           command:
           - pravega-operator
           imagePullPolicy: Always

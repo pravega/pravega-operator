@@ -16,15 +16,12 @@ import (
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func TestWebhook(t *testing.T) {
@@ -44,19 +41,11 @@ var _ = Describe("Admission webhook", func() {
 
 	Context("Version", func() {
 		var (
-			req reconcile.Request
-			//res reconcile.Result
 			p   *v1alpha1.PravegaCluster
 			pwh *pravegaWebhookHandler
 		)
 
 		BeforeEach(func() {
-			req = reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name:      Name,
-					Namespace: Namespace,
-				},
-			}
 			p = &v1alpha1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      Name,
@@ -70,7 +59,7 @@ var _ = Describe("Admission webhook", func() {
 			var (
 				client client.Client
 				err    error
-				pass   bool
+				code   string
 			)
 
 			BeforeEach(func() {
@@ -83,9 +72,9 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.4",
 					}
-					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+					code, err = pwh.validatePravegaManifest(context.TODO(), p)
 					Ω(err).Should(BeNil())
-					Ω(pass).Should(BeTrue())
+					Ω(code).Should(Equal("200"))
 				})
 			})
 
@@ -94,9 +83,9 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.3.2-rc2",
 					}
-					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+					code, err = pwh.validatePravegaManifest(context.TODO(), p)
 					Ω(err).Should(BeNil())
-					Ω(pass).Should(BeTrue())
+					Ω(code).Should(Equal("200"))
 				})
 			})
 
@@ -104,9 +93,9 @@ var _ = Describe("Admission webhook", func() {
 				Context("Empty pravega tag field", func() {
 					It("should pass", func() {
 						p.Spec = v1alpha1.ClusterSpec{}
-						pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+						code, err = pwh.validatePravegaManifest(context.TODO(), p)
 						Ω(err).Should(BeNil())
-						Ω(pass).Should(BeTrue())
+						Ω(code).Should(Equal("200"))
 					})
 				})
 
@@ -116,15 +105,15 @@ var _ = Describe("Admission webhook", func() {
 							Pravega: &v1alpha1.PravegaSpec{
 								Image: &v1alpha1.PravegaImageSpec{
 									ImageSpec: v1alpha1.ImageSpec{
-										Repository: "bar/pravega",
+										Repository: "pravega/pravega",
 										Tag:        "0.4.0",
 									},
 								},
 							},
 						}
-						pass, err = pwh.validatePravegaVersion(context.TODO(), p)
+						code, err = pwh.validatePravegaManifest(context.TODO(), p)
 						Ω(err).Should(BeNil())
-						Ω(pass).Should(BeTrue())
+						Ω(code).Should(Equal("200"))
 					})
 				})
 			})
@@ -134,7 +123,7 @@ var _ = Describe("Admission webhook", func() {
 			var (
 				client client.Client
 				err    error
-				pass   bool
+				code   string
 			)
 
 			BeforeEach(func() {
@@ -145,11 +134,11 @@ var _ = Describe("Admission webhook", func() {
 			Context("Version not compatible", func() {
 				It("should not pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "1.0.0",
+						Version: "0.5.0",
 					}
-					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).Should(BeNil())
-					Ω(pass).ShouldNot(BeTrue())
+					code, err = pwh.validatePravegaManifest(context.TODO(), p)
+					Ω(err).ShouldNot(BeNil())
+					Ω(code).Should(Equal("400"))
 				})
 			})
 
@@ -158,9 +147,9 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "hahahaha",
 					}
-					pass, err := pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).Should(BeNil())
-					Ω(pass).ShouldNot(BeTrue())
+					code, err := pwh.validatePravegaManifest(context.TODO(), p)
+					Ω(err).ShouldNot(BeNil())
+					Ω(code).Should(Equal("400"))
 				})
 			})
 		})
@@ -171,7 +160,7 @@ var _ = Describe("Admission webhook", func() {
 			var (
 				client client.Client
 				err    error
-				pass   bool
+				code   string
 			)
 
 			BeforeEach(func() {
@@ -187,9 +176,9 @@ var _ = Describe("Admission webhook", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.5.0",
 					}
-					pass, err = pwh.validatePravegaVersion(context.TODO(), p)
-					Ω(err).Should(BeNil())
-					Ω(pass).ShouldNot(BeTrue())
+					code, err = pwh.validatePravegaManifest(context.TODO(), p)
+					Ω(err).ShouldNot(BeNil())
+					Ω(code).Should(Equal("400"))
 				})
 			})
 		})
