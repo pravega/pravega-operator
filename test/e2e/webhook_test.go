@@ -32,14 +32,14 @@ func testWebhook(t *testing.T) {
 	}
 	f := framework.Global
 
-	//Test Pravega cluster with a supported version
+	//Test webhook with an unsupported Pravega cluster version
 	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "1.0.0")
 	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
 	if err == nil {
 		t.Fatal(fmt.Errorf("failed to reject request with unsupported version"))
 	}
 
-	// Test Pravega cluster with an unsupported version
+	// Test webhook with a supported Pravega cluster version
 	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
