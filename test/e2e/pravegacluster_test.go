@@ -60,6 +60,7 @@ func testPravegaCluster(t *testing.T) {
 		"testCreateRecreateCluster": testCreateRecreateCluster,
 		"testScaleCluster":          testScaleCluster,
 		"testUpgradeCluster":        testUpgradeCluster,
+		"testWebhook":               testWebhook,
 	}
 
 	for name, f := range testFuncs {
