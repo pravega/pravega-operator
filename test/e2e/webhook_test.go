@@ -12,16 +12,12 @@ package e2e
 
 import (
 	"fmt"
-	"testing"
-
-	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
+	"testing"
 )
 
 func testWebhook(t *testing.T) {
-	g := NewGomegaWithT(t)
-
 	doCleanup := true
 	ctx := framework.NewTestCtx(t)
 	defer func() {
@@ -36,27 +32,25 @@ func testWebhook(t *testing.T) {
 	}
 	f := framework.Global
 
-	// Test Pravega cluster with a supported version
+	//Test Pravega cluster with a supported version
 	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "1.0.0")
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
+	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
 	if err == nil {
 		t.Fatal(fmt.Errorf("failed to reject request with unsupported version"))
 	}
 
 	// Test Pravega cluster with an unsupported version
-	validVerion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
+	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
 
-	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, validVerion)
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Test Pravega cluster upgrade with an unsupported version
-	invalidUpgrade := pravega_e2eutil.NewClusterWithVersion(namespace, "0.4.0")
-
-	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidUpgrade)
-	if err == nil {
-		t.Fatal(fmt.Errorf("failed to reject request with unsupported upgrade version"))
+	podSize := 5
+	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Delete cluster
