@@ -12,6 +12,7 @@ package e2eutil
 
 import (
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -36,19 +37,11 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 }
 
 func NewClusterWithVersion(namespace, version string) *api.PravegaCluster {
-	return &api.PravegaCluster{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "PravegaCluster",
-			APIVersion: "pravega.pravega.io/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
-			Namespace: namespace,
-		},
-		Spec: api.ClusterSpec{
-			Version: version,
-		},
+	cluster := NewDefaultCluster(namespace)
+	cluster.Spec = api.ClusterSpec{
+		Version: version,
 	}
+	return cluster
 }
 
 func newTestJob(namespace string, command string) *batchv1.Job {
