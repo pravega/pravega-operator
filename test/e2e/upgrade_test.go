@@ -31,9 +31,7 @@ func testUpgradeCluster(t *testing.T) {
 	}()
 
 	namespace, err := ctx.GetNamespace()
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
@@ -55,42 +53,30 @@ func testUpgradeCluster(t *testing.T) {
 	}
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
 	podSize := 5
 	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// This is to get the latest Pravega cluster object
 	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(pravega.Status.CurrentVersion).To(Equal(initialVersion))
 
 	pravega.Spec.Version = upgradeVersion
 
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForClusterToUpgrade(t, f, ctx, pravega, upgradeVersion)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// This is to get the latest Pravega cluster object
 	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(pravega.Spec.Version).To(Equal(upgradeVersion))
 	g.Expect(pravega.Status.CurrentVersion).To(Equal(upgradeVersion))
@@ -98,21 +84,15 @@ func testUpgradeCluster(t *testing.T) {
 
 	// Delete cluster
 	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
 	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// A workaround for issue 93
 	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
-	if err != nil {
-		t.Fatal(err)
-	}
+	g.Expect(err).NotTo(HaveOccurred())
 }

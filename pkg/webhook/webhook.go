@@ -14,28 +14,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
 	admissiontypes "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	CertDir = "/tmp"
 )
 
 var (
@@ -49,51 +40,6 @@ var (
 		"0.5": []string{"0.5"},
 	}
 )
-
-// Create webhook server and register webhook to it
-func Add(mgr manager.Manager) error {
-	log.Printf("Initializing webhook")
-	svr, err := newWebhookServer(mgr)
-	if err != nil {
-		log.Printf("Failed to create webhook server: %v", err)
-		return err
-	}
-
-	wh, err := newValidatingWebhook(mgr)
-	if err != nil {
-		log.Printf("Failed to create validating webhook: %v", err)
-		return err
-	}
-
-	svr.Register(wh)
-	return nil
-}
-
-func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
-	return builder.NewWebhookBuilder().
-		Validating().
-		Operations(admissionregistrationv1beta1.Create).
-		ForType(&pravegav1alpha1.PravegaCluster{}).
-		Handlers(&pravegaWebhookHandler{}).
-		WithManager(mgr).
-		Build()
-}
-
-func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
-	return webhook.NewServer("admission-webhook-server", mgr, webhook.ServerOptions{
-		CertDir: CertDir,
-		BootstrapOptions: &webhook.BootstrapOptions{
-			// TODO: garbage collect webhook k8s service
-			Service: &webhook.Service{
-				Namespace: os.Getenv("WATCH_NAMESPACE"),
-				Name:      "admission-webhook-server-service",
-				Selectors: map[string]string{
-					"component": "pravega-operator",
-				},
-			},
-		},
-	})
-}
 
 type pravegaWebhookHandler struct {
 	client  client.Client
@@ -154,7 +100,7 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 	}
 	err := pwh.client.Get(context.TODO(), nn, found)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get access to Pravega resource: %v", err)
+		return fmt.Errorf("failed to get obtain PravegaCluster resource: %v", err)
 	}
 
 	foundVersion := found.Spec.Version

@@ -11,7 +11,20 @@
 package webhook
 
 import (
+	"log"
+	"os"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
+
+	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+)
+
+const (
+	CertDir = "/tmp"
 )
 
 // AddToManagerFuncs is a list of functions to add all Webhooks to the Manager
@@ -30,4 +43,49 @@ func AddToManager(m manager.Manager) error {
 		}
 	}
 	return nil
+}
+
+// Create webhook server and register webhook to it
+func Add(mgr manager.Manager) error {
+	log.Printf("Initializing webhook")
+	svr, err := newWebhookServer(mgr)
+	if err != nil {
+		log.Printf("Failed to create webhook server: %v", err)
+		return err
+	}
+
+	wh, err := newValidatingWebhook(mgr)
+	if err != nil {
+		log.Printf("Failed to create validating webhook: %v", err)
+		return err
+	}
+
+	svr.Register(wh)
+	return nil
+}
+
+func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
+	return builder.NewWebhookBuilder().
+		Validating().
+		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
+		ForType(&pravegav1alpha1.PravegaCluster{}).
+		Handlers(&pravegaWebhookHandler{}).
+		WithManager(mgr).
+		Build()
+}
+
+func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
+	return webhook.NewServer("pravega-admission-webhook", mgr, webhook.ServerOptions{
+		CertDir: CertDir,
+		BootstrapOptions: &webhook.BootstrapOptions{
+			// TODO: garbage collect webhook k8s service
+			Service: &webhook.Service{
+				Namespace: os.Getenv("WATCH_NAMESPACE"),
+				Name:      "pravega-admission-webhook",
+				Selectors: map[string]string{
+					"component": "pravega-operator",
+				},
+			},
+		},
+	})
 }
