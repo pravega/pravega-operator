@@ -13,14 +13,15 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
-	"os"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -120,8 +121,8 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 }
 
 func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	if error := pwh.validatePravegaVersion(ctx, p); error != nil {
-		return error
+	if err := pwh.validatePravegaVersion(ctx, p); err != nil {
+		return err
 	}
 
 	//Add other validators here
