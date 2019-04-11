@@ -194,7 +194,7 @@ func CompareVersions(v1, v2, operator string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
+	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, NormalizeVersion(v2)))
 	if err != nil {
 		return false, err
 	}
