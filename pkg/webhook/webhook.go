@@ -31,13 +31,14 @@ import (
 
 var (
 	// The key is the supported versions, the value is a list of versions that can upgrade to.
-	// The key is also in its value. which means patch version can be upgraded
 	supportedVersions = map[string][]string{
-		"0.1": []string{"0.1"},
-		"0.2": []string{"0.2"},
-		"0.3": []string{"0.3"},
-		"0.4": []string{"0.4"},
-		"0.5": []string{"0.5"},
+		"0.1.0": []string{"0.1.0"},
+		"0.2.0": []string{"0.2.0"},
+		"0.3.0": []string{"0.3.0", "0.3.1", "0.3.2"},
+		"0.3.1": []string{"0.3.1", "0.3.2"},
+		"0.3.2": []string{"0.3.2"},
+		"0.4.0": []string{"0.4.0"},
+		"0.5.0": []string{"0.5.0"},
 	}
 )
 
@@ -88,7 +89,11 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 		requestVersion = p.Spec.Version
 	}
 	// Check if the request has a valid Pravega version
-	if _, ok := supportedVersions[util.NormalizeVersion(requestVersion)]; !ok {
+	normRequestVersion, err := util.NormalizeVersion(requestVersion)
+	if err != nil {
+		return fmt.Errorf("request version is not in valid format: %v", err)
+	}
+	if _, ok := supportedVersions[normRequestVersion]; !ok {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
@@ -98,9 +103,9 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 		Namespace: p.Namespace,
 		Name:      p.Name,
 	}
-	err := pwh.client.Get(context.TODO(), nn, found)
+	err = pwh.client.Get(context.TODO(), nn, found)
 	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to get obtain PravegaCluster resource: %v", err)
+		return fmt.Errorf("failed to obtain PravegaCluster resource: %v", err)
 	}
 
 	foundVersion := found.Spec.Version
@@ -110,12 +115,17 @@ func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p 
 	}
 
 	// This is an upgrade, check if this requested version is in the upgrade path
-	path, ok := supportedVersions[util.NormalizeVersion(foundVersion)]
+	normFoundVersion, err := util.NormalizeVersion(foundVersion)
+	if err != nil {
+		// It should never happen
+		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
+	}
+	upgradeList, ok := supportedVersions[normFoundVersion]
 	if !ok {
-		// This should never happen
+		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")
 	}
-	if !util.ContainsVersion(path, requestVersion) {
+	if !util.ContainsVersion(upgradeList, normRequestVersion) {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
 	}
 

@@ -69,7 +69,7 @@ var _ = Describe("Admission webhook", func() {
 			Context("Standard version", func() {
 				It("should pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.4",
+						Version: "0.4.0",
 					}
 					err = pwh.validatePravegaManifest(context.TODO(), p)
 					Ω(err).Should(BeNil())

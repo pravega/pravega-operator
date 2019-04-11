@@ -130,7 +130,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
-	if match, _ := util.CompareVersions(p.Spec.Version, "0.4", ">="); match {
+	if match, _ := util.CompareVersions(p.Spec.Version, "0.4.0", ">="); match {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		javaOpts = append(javaOpts,
 			"-XX:+UnlockExperimentalVMOptions",
