@@ -99,3 +99,19 @@ spec:
     segmentStoreServiceAccountName: pravega-components
 ...
 ```
+
+When the Pravega cluster is deployed and ready, clients will need to connect to the external Controller address and will automatically discover the external address of all Segment Store pods.
+
+
+```
+$ kubectl get svc -lapp=pravega-cluster
+NAME                                    TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                          AGE
+example-bookie-headless                 ClusterIP      None            <none>          3181/TCP                         4m
+example-pravega-controller              LoadBalancer   10.31.243.62    35.239.48.145   10080:30977/TCP,9090:30532/TCP   4m
+example-pravega-segmentstore-0          LoadBalancer   10.31.252.166   34.66.68.236    12345:32614/TCP                  4m
+example-pravega-segmentstore-1          LoadBalancer   10.31.250.183   34.66.58.131    12345:31966/TCP                  4m
+example-pravega-segmentstore-2          LoadBalancer   10.31.250.233   34.66.231.244   12345:31748/TCP                  4m
+example-pravega-segmentstore-headless   ClusterIP      None            <none>          12345/TCP                        4m
+```
+
+In the example above, clients will connect to the Pravega Controller at `tcp://35.239.48.145:9090`.
