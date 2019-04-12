@@ -209,6 +209,7 @@ var _ = Describe("Admission webhook", func() {
 					}
 					err = pwh.mutatePravegaManifest(context.TODO(), p)
 					Ω(err).ShouldNot(BeNil())
+					Ω(err.Error()).To(Equal("unsupported Pravega cluster version 99.0.0"))
 				})
 			})
 
@@ -219,11 +220,12 @@ var _ = Describe("Admission webhook", func() {
 					}
 					err := pwh.mutatePravegaManifest(context.TODO(), p)
 					Ω(err).ShouldNot(BeNil())
+					Ω(err.Error()).To(Equal("request version is not in valid format: failed to parse version hahahaha"))
 				})
 			})
 		})
 
-		Context("Valid upgrade version", func() {
+		Context("Upgrade version", func() {
 			var (
 				client client.Client
 				err    error
@@ -237,7 +239,7 @@ var _ = Describe("Admission webhook", func() {
 				pwh = &pravegaWebhookHandler{client: client}
 			})
 
-			Context("In upgrade path", func() {
+			Context("Supported and in upgrade path", func() {
 				It("should pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.5.0-002",
@@ -246,29 +248,26 @@ var _ = Describe("Admission webhook", func() {
 					Ω(err).Should(BeNil())
 				})
 			})
-		})
 
-		Context("Invalid upgrade version", func() {
-			var (
-				client client.Client
-				err    error
-			)
-
-			BeforeEach(func() {
-				p.Spec = v1alpha1.ClusterSpec{
-					Version: "0.5.0-001",
-				}
-				client = fake.NewFakeClient(p)
-				pwh = &pravegaWebhookHandler{client: client}
+			Context("Not supported", func() {
+				It("should not pass", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "99.0.0-001",
+					}
+					err = pwh.mutatePravegaManifest(context.TODO(), p)
+					Ω(err).ShouldNot(BeNil())
+					Ω(err.Error()).To(Equal("unsupported Pravega cluster version 99.0.0-001"))
+				})
 			})
 
 			Context("Not in upgrade path", func() {
 				It("should not pass", func() {
 					p.Spec = v1alpha1.ClusterSpec{
-						Version: "0.6.0-001",
+						Version: "0.4.0-001",
 					}
 					err = pwh.mutatePravegaManifest(context.TODO(), p)
 					Ω(err).ShouldNot(BeNil())
+					Ω(err.Error()).To(Equal("unsupported upgrade from version 0.5.0-001 to 0.4.0-001"))
 				})
 			})
 		})
