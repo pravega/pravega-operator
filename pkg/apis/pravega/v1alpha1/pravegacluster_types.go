@@ -106,6 +106,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 
 	if s.Version == "" {
 		s.Version = DefaultPravegaVersion
+		changed = true
 	}
 
 	if s.Bookkeeper == nil {
