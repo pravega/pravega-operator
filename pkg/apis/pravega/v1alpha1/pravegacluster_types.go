@@ -105,12 +105,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 	}
 
 	if s.Version == "" {
-		changed = true
-		if s.Pravega != nil && s.Pravega.Image != nil && s.Pravega.Image.Tag != "" {
-			s.Version = s.Pravega.Image.Tag
-		} else {
-			s.Version = DefaultPravegaVersion
-		}
+		s.Version = DefaultPravegaVersion
 	}
 
 	if s.Bookkeeper == nil {

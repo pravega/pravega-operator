@@ -212,7 +212,7 @@ func CompareVersions(v1, v2, operator string) (bool, error) {
 func ContainsVersion(list []string, version string) bool {
 	result := false
 	for _, v := range list {
-		if result, _ := CompareVersions(version, v, "="); result {
+		if result, _ = CompareVersions(version, v, "="); result {
 			break
 		}
 	}

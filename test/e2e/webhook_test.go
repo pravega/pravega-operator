@@ -34,10 +34,10 @@ func testWebhook(t *testing.T) {
 	f := framework.Global
 
 	//Test webhook with an unsupported Pravega cluster version
-	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0")
+	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0.0")
 	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
 	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0"))
+	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Test webhook with a supported Pravega cluster version
 	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
@@ -53,10 +53,10 @@ func testWebhook(t *testing.T) {
 	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	pravega.Spec.Version = "99.0"
+	pravega.Spec.Version = "99.0.0"
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
 	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0"))
+	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Delete cluster
 	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)

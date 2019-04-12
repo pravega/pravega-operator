@@ -66,7 +66,7 @@ func Add(mgr manager.Manager) error {
 
 func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
-		Validating().
+		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&pravegav1alpha1.PravegaCluster{}).
 		Handlers(&pravegaWebhookHandler{}).

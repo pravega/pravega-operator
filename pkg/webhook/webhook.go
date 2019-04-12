@@ -60,15 +60,15 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 	}
 	copy := pravega.DeepCopy()
 
-	if err := pwh.validatePravegaManifest(ctx, copy); err != nil {
+	if err := pwh.mutatePravegaManifest(ctx, copy); err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
 
-	return admission.ValidationResponse(true, "")
+	return admission.PatchResponse(pravega, copy)
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
-	if err := pwh.validatePravegaVersion(ctx, p); err != nil {
+func (pwh *pravegaWebhookHandler) mutatePravegaManifest(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+	if err := pwh.mutatePravegaVersion(ctx, p); err != nil {
 		return err
 	}
 
@@ -76,18 +76,25 @@ func (pwh *pravegaWebhookHandler) validatePravegaManifest(ctx context.Context, p
 	return nil
 }
 
-func (pwh *pravegaWebhookHandler) validatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	// Identify the request Pravega version
-	requestVersion := ""
+	// Mutate the version if it is empty
 	if p.Spec.Version == "" {
 		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
-			requestVersion = p.Spec.Pravega.Image.Tag
+			p.Spec.Version = p.Spec.Pravega.Image.Tag
 		} else {
-			requestVersion = pravegav1alpha1.DefaultPravegaVersion
+			p.Spec.Version = pravegav1alpha1.DefaultPravegaVersion
 		}
-	} else {
-		requestVersion = p.Spec.Version
 	}
+	// Set Pravega and Bookkeeper tag to empty
+	if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
+		p.Spec.Pravega.Image.Tag = ""
+	}
+	if p.Spec.Bookkeeper != nil && p.Spec.Bookkeeper.Image != nil && p.Spec.Bookkeeper.Image.Tag != "" {
+		p.Spec.Bookkeeper.Image.Tag = ""
+	}
+
+	requestVersion := p.Spec.Version
 	// Check if the request has a valid Pravega version
 	normRequestVersion, err := util.NormalizeVersion(requestVersion)
 	if err != nil {
