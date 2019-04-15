@@ -49,6 +49,9 @@ test-e2e-remote: login
 test-e2e-local:
 	operator-sdk test local ./test/e2e --namespace default --up-local --go-test-flags "-v -timeout 0"
 
+run-local:
+	operator-sdk up local --operator-flags -webhook=false
+
 login:
 	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
 

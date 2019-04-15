@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         name: pravega-operator
+        component: pravega-operator
     spec:
       serviceAccountName: pravega-operator
       containers:

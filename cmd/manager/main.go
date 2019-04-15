@@ -13,18 +13,18 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/pravega/pravega-operator/pkg/webhook"
 	"os"
 	"runtime"
-
-	"github.com/pravega/pravega-operator/pkg/apis"
-	"github.com/pravega/pravega-operator/pkg/controller"
-	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
-	"github.com/pravega/pravega-operator/pkg/version"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
+	"github.com/pravega/pravega-operator/pkg/apis"
+	"github.com/pravega/pravega-operator/pkg/controller"
+	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
+	"github.com/pravega/pravega-operator/pkg/version"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,11 +35,13 @@ import (
 
 var (
 	versionFlag bool
+	webhookFlag bool
 )
 
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
+	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 }
 
 func printVersion() {
@@ -100,6 +102,13 @@ func main() {
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Fatal(err)
+	}
+
+	if webhookFlag {
+		// Setup webhook
+		if err := webhook.AddToManager(mgr); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	log.Print("Starting the Cmd")

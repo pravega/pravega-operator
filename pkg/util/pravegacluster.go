@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+)`
+	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+\.[0-9]+)`
 )
 
 func init() {
@@ -190,19 +190,39 @@ func GetPodVersion(pod *v1.Pod) string {
 }
 
 func CompareVersions(v1, v2, operator string) (bool, error) {
-	clusterVersion, _ := v.NewSemver(normalizeVersion(v1))
-	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, v2))
+	normv1, err := NormalizeVersion(v1)
+	if err != nil {
+		return false, err
+	}
+	normv2, err := NormalizeVersion(v2)
+	if err != nil {
+		return false, err
+	}
+	clusterVersion, err := v.NewSemver(normv1)
+	if err != nil {
+		return false, err
+	}
+	constraints, err := v.NewConstraint(fmt.Sprintf("%s %s", operator, normv2))
 	if err != nil {
 		return false, err
 	}
 	return constraints.Check(clusterVersion), nil
 }
 
-func normalizeVersion(version string) string {
+func ContainsVersion(list []string, version string) bool {
+	result := false
+	for _, v := range list {
+		if result, _ = CompareVersions(version, v, "="); result {
+			break
+		}
+	}
+	return result
+}
+
+func NormalizeVersion(version string) (string, error) {
 	matches := versionRegexp.FindStringSubmatch(version)
 	if matches == nil || len(matches) <= 1 {
-		// Assume that version is the latest release
-		return "0.5"
+		return "", fmt.Errorf("failed to parse version %s", version)
 	}
-	return matches[1]
+	return matches[1], nil
 }

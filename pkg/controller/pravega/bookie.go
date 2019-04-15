@@ -196,7 +196,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:+HeapDumpOnOutOfMemoryError",
 	}
 
-	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.4", ">="); match {
+	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.4.0", ">="); match {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		memoryOpts = append(memoryOpts,
 			"-XX:+UnlockExperimentalVMOptions",
@@ -237,7 +237,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"WAIT_FOR":                 pravegaCluster.Spec.ZookeeperUri,
 	}
 
-	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.5", "<"); match {
+	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.5.0", "<"); match {
 		// Pravega < 0.5 uses BookKeeper 4.5, which does not play well
 		// with hostnames that resolve to different IP addresses over time
 		configData["BK_useHostNameAsBookieID"] = "false"

@@ -9,6 +9,11 @@
 #
 FROM alpine:3.6
 
-USER nobody
+RUN apk add --update \
+    sudo \
+    libcap
 
 ADD build/_output/bin/pravega-operator /usr/local/bin/pravega-operator
+RUN sudo setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/pravega-operator
+
+USER nobody
