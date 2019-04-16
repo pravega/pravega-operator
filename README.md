@@ -412,29 +412,7 @@ spec:
 
 ### Enable external access
 
-By default, a Pravega cluster uses `ClusterIP` services which are only accessible from within Kubernetes. However, when creating the Pravega cluster resource, you can opt to enable external access.
-
-In Pravega, clients initiate the communication with the Pravega Controller, which is a stateless component frontended by a Kubernetes service that load-balances the requests to the backend pods. Then, clients discover the individual Segment Store instances to which they directly read and write data to. Clients need to be able to reach each and every Segment Store pod in the Pravega cluster.
-
-If your Pravega cluster needs to be consumed by clients from outside Kubernetes (or from another Kubernetes deployment), you can enable external access in two ways, depending on your environment constraints and requirements. Both ways will create one service for all Controllers, and one service for each Segment Store pod.
-
-1. Via [`LoadBalancer`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) service type.
-2. Via [`NodePort`](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport) service type.
-
-You can read more about them in the [Kubernetes documentation](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types) to understand which one fits your use case.
-
-Example of configuration for using `LoadBalancer` service types:
-
-```yaml
-...
-spec:
-  externalAccess:
-    enabled: true
-    type: LoadBalancer
-...
-```
-
-Clients will need to connect to the external Controller address and will automatically discover the external address of all Segment Store pods.
+Check out the [external access document](doc/external-access.md).
 
 ## Development
 
