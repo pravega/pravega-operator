@@ -1,9 +1,7 @@
 name: pravega-operator
 version: 0.3.2
 appVersion: 0.3.2
-description: |
-  pravega operator deploys a custom resource for a pravega cluster, and a
-  pod to provision and scale pravega clusters.
+description: pravega operator Helm chart for Kubernetes
 keywords:
 - pravega
 - storage

@@ -1,7 +1,21 @@
+## Install RBAC roles and bindings
 rbac:
   create: true
 
-image:
-  repository: pravega/pravega-operator
-  tag: 0.3.2
-  pullPolicy: Always
+## Service account names and whether to create them
+serviceAccount:
+  create: true
+  name: pravega-operator
+
+# Whether to create custom resource
+pravegaCRD:
+  create: true
+
+# Pravega Operator
+pravegaOperator:
+  create: true
+  name: pravega-operator
+  image:
+    repository: pravega/pravega-operator
+    tag: 0.3.2
+    pullPolicy: Always
