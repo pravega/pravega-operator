@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "pravegaOp.fullname" . }}
+  name: {{ template "pravegaOperator.fullname" . }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: {{ template "pravegaOp.fullname" . }}
+      name: {{ template "pravegaOperator.fullname" . }}
   template:
     metadata:
       labels:
-        name: {{ template "pravegaOp.fullname" . }}
+        name: {{ template "pravegaOperator.fullname" . }}
     spec:
       containers:
-      - name: {{ template "pravegaOp.fullname" . }}
+      - name: {{ template "pravegaOperator.fullname" . }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: "WATCH_NAMESPACE"
-          value: "{{ .Values.watch.namespace }}"
+          value: "{{ .Release.Namespace }}"

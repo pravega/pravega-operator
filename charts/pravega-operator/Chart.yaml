@@ -1,6 +1,6 @@
 name: pravega-operator
-version: 0.1.0
-appVersion: 0.1.0
+version: 0.3.2
+appVersion: 0.3.2
 description: |
   pravega operator deploys a custom resource for a pravega cluster, and a
   pod to provision and scale pravega clusters.

@@ -1,8 +1,8 @@
-{{if ne .Values.watch.namespace ""}}
+{{- if .Values.rbac.create }}
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{ template "pravegaOp.fullname" . }}
+  name: {{ template "pravegaOperator.fullname" . }}
 rules:
 - apiGroups:
   - pravega.pravega.io
@@ -21,7 +21,7 @@ rules:
   - configmaps
   - secrets
   verbs:
-  - "*"
+  - '*'
 - apiGroups:
   - apps
   resources:
@@ -31,18 +31,16 @@ rules:
   - statefulsets
   verbs:
   - "*"
-
----
-
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: default-account-{{ template "pravegaOp.fullname" . }}
-subjects:
-- kind: ServiceAccount
-  name: default
-roleRef:
-  kind: Role
-  name: {{ template "pravegaOp.fullname" . }}
-  apiGroup: rbac.authorization.k8s.io
-{{end}}
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - "*"
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - '*'
+{{- end }}
