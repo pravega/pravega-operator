@@ -1,7 +1,7 @@
 apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
 metadata:
-  name: "{{ .Values.name }}"
+  name: {{ template "pravega.fullname" . }}
 spec:
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
