@@ -70,4 +70,4 @@ required = [
 
 [[constraint]]
   name = "github.com/gruntwork-io/terratest"
-version = "0.13.28"
+  version = "0.13.28"
