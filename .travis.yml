@@ -24,6 +24,10 @@ jobs:
 
     - stage: unit
       name: Unit tests
+      install:
+        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+      before_script:
+        - helm init --client-only
       script:
         - make test-unit
 
