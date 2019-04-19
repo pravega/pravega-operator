@@ -109,7 +109,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{Requeue: true}, nil
+		return reconcile.Result{}, nil
 	}
 
 	err = r.run(pravegaCluster)

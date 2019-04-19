@@ -53,7 +53,7 @@ spec:
       statsProviderClass: "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider"
       codahaleStatsGraphiteEndpoint: "graphite.example.com:2003"
       # Default is 60
-      codahaleStatsOutputFrequencySeconds: 30
+      codahaleStatsOutputFrequencySeconds: "30"
 
   pravega:
     image:
@@ -86,6 +86,26 @@ spec:
       resources:
         requests:
           storage: 20Gi
+
+    # Security configurations for Pravega
+    # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
+    TLS:
+      controller:
+        secret:
+          name: "controller-pki"
+          mountDir: "/etc/secret-volume"
+        options:
+          controller.auth.tlsEnabled: "true"
+          controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
+          controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
+      segmentStore:
+        secret:
+          name: "segmentstore-pki"
+          mountDir: "/etc/secret-volume"
+        options:
+          pravegaservice.enableTls: "true"
+          pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
+          pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
 
     tier2:
       filesystem:

@@ -30,6 +30,7 @@ const (
 	tier2FileMountPoint   = "/mnt/tier2"
 	tier2VolumeName       = "tier2"
 	segmentStoreKind      = "pravega-segmentstore"
+	TLSVolumeName         = "tls-secret"
 )
 
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
@@ -142,6 +143,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
+
+	configureSegmentstoreTLSSecret(&podSpec, p.Spec.Pravega)
 
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
@@ -285,6 +288,25 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
 			},
+		})
+	}
+}
+
+func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
+	if pravegaSpec.TLS.SegmentStore.Secret.Name != "" {
+		vol := corev1.Volume{
+			Name: TLSVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: pravegaSpec.TLS.SegmentStore.Secret.Name,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      TLSVolumeName,
+			MountPath: pravegaSpec.TLS.SegmentStore.Secret.MountDir,
 		})
 	}
 }
