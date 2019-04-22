@@ -36,7 +36,7 @@ build-image:
 
 test: test-unit test-e2e
 
-test-unit:
+test-unit: dep
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
 
 test-e2e: test-e2e-remote

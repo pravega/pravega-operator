@@ -13,7 +13,6 @@ pravegaCRD:
 
 # Pravega Operator
 pravegaOperator:
-  create: true
   name: pravega-operator
   image:
     repository: pravega/pravega-operator
