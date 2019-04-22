@@ -100,6 +100,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 		s.ExternalAccess = &ExternalAccess{}
 	}
+
 	if s.ExternalAccess.withDefaults() {
 		changed = true
 	}
@@ -121,6 +122,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 		s.Pravega = &PravegaSpec{}
 	}
+
 	if s.Pravega.withDefaults() {
 		changed = true
 	}

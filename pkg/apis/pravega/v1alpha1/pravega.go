@@ -195,7 +195,16 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 
 	if s.TLS == nil {
 		changed = true
-		s.TLS = &TLS{}
+		s.TLS = &TLS{
+			Controller: &Member{
+				Secret:  &Secret{Name: ""},
+				Options: map[string]string{},
+			},
+			SegmentStore: &Member{
+				Secret:  &Secret{Name: ""},
+				Options: map[string]string{},
+			},
+		}
 	}
 
 	return changed
