@@ -124,12 +124,12 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 }
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
-	if pravegaSpec.TLS.Controller.Secret.Name != "" {
+	if pravegaSpec.TLS.IsSecureController() {
 		vol := corev1.Volume{
 			Name: TLSVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pravegaSpec.TLS.Controller.Secret.Name,
+					SecretName: pravegaSpec.TLS.Static.ControllerSecret,
 				},
 			},
 		}
@@ -137,7 +137,7 @@ func configureControllerTLSSecrets(podSpec *corev1.PodSpec, pravegaSpec *api.Pra
 
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      TLSVolumeName,
-			MountPath: pravegaSpec.TLS.Controller.Secret.MountDir,
+			MountPath: TLSMountDir,
 		})
 	}
 }
@@ -161,14 +161,6 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 
 	for name, value := range p.Spec.Pravega.Options {
-		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
-	}
-
-	for name, value := range p.Spec.Pravega.TLS.Controller.Options {
-		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
-	}
-
-	for name, value := range p.Spec.Pravega.TLS.SegmentStore.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 

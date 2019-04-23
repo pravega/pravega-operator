@@ -90,22 +90,9 @@ spec:
     # Security configurations for Pravega
     # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
     TLS:
-      controller:
-        secret:
-          name: "controller-pki"
-          mountDir: "/etc/secret-volume"
-        options:
-          controller.auth.tlsEnabled: "true"
-          controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
-          controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
-      segmentStore:
-        secret:
-          name: "segmentstore-pki"
-          mountDir: "/etc/secret-volume"
-        options:
-          pravegaservice.enableTls: "true"
-          pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
-          pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
+      static:
+        controllerSecret: "controller-pki"
+        segmentStoreSecret: "segmentstore-pki"
 
     tier2:
       filesystem:
@@ -138,3 +125,10 @@ spec:
       metrics.enableStatistics: "true"
       metrics.statsdHost: "telegraph.default"
       metrics.statsdPort: "8125"
+      # The mount dir for secrets is fixed in /etc/secret-volume
+      controller.auth.tlsEnabled: "true"
+      controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
+      controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
+      pravegaservice.enableTls: "true"
+      pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
+      pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
