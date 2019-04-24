@@ -24,8 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-
-
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{

@@ -74,7 +74,7 @@ type ClusterSpec struct {
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
 
 	// TLS is the Pravega security configuration that is passed to the Pravega processes.
-  // See the following file for a complete list of options:
+	// See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
 	TLS *TLSPolicy `json:"tls,omitempty"`
 
