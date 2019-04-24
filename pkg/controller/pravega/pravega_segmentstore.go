@@ -137,7 +137,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
-	configureSegmentstoreTLSSecret(&podSpec, p.Spec.Pravega)
+	configureSegmentstoreTLSSecret(&podSpec, p)
 
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
@@ -285,13 +285,13 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 	}
 }
 
-func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
-	if pravegaSpec.TLS.IsSecureSegmentStore() {
+func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.TLS.IsSecureSegmentStore() {
 		vol := corev1.Volume{
 			Name: tlsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pravegaSpec.TLS.Static.SegmentStoreSecret,
+					SecretName: p.Spec.TLS.Static.SegmentStoreSecret,
 				},
 			},
 		}

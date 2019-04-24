@@ -118,18 +118,18 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
-	configureControllerTLSSecrets(podSpec, p.Spec.Pravega)
+	configureControllerTLSSecrets(podSpec, p)
 
 	return podSpec
 }
 
-func configureControllerTLSSecrets(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
-	if pravegaSpec.TLS.IsSecureController() {
+func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.TLS.IsSecureController() {
 		vol := corev1.Volume{
 			Name: tlsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: pravegaSpec.TLS.Static.ControllerSecret,
+					SecretName: p.Spec.TLS.Static.ControllerSecret,
 				},
 			},
 		}
