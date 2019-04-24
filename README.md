@@ -410,46 +410,11 @@ spec:
       metrics.statsdPort: "8125"
 ...
 ```
-### Enable TLS
-Client can communicate with Pravega in a more secure way using TLS. To enable this feature, you will first need to
-create secrets for controller and segmentstore
-```$xslt
-$ kubectl create secret generic controller-pki \
-        --from-file=tlsCertFile=./controller01.pem \
-        --from-file=cacert=./ca-cert \
-        --from-file=tlsKeyFile=./controller01.key.pem \
-        --from-file=tlsKeyStoreFile=./controller01.jks \
-        --from-file=passwordfile=./password 
-        
-$ kubectl create secret generic segmentstore-pki \
-        --from-file=tlsCertFile=./segmentstore01.pem \
-	--from-file=cacert=./ca-cert \
-	--from-file=tlsKeyFile=./segmentstore01.key.pem
-```
-Then pass the secret name to the Pravega operator
-```$xslt
-...
-TLS:
-  static:
-    controllerSecret: "controller-pki"
-    segmentStoreSecret: "segmentstore-pki"
-...
-```
-Finally, specify the configuration in the `options`
-```$xslt
-...
-options:
-    controller.auth.tlsEnabled: "true"
-    controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
-    controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
-    pravegaservice.enableTls: "true"
-    pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
-    pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
-...
-```
-Note that Pravega operator uses `/etc/secret-volume` as the mounting directory for secrets.
 
-For more security configurations, check [here](https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md).
+### Enable TLS
+
+Check out the [TLS document](doc/tls.md).
+
 ### Enable external access
 
 Check out the [external access document](doc/external-access.md).

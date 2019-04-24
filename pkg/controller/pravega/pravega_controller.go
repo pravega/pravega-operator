@@ -126,7 +126,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
 	if pravegaSpec.TLS.IsSecureController() {
 		vol := corev1.Volume{
-			Name: TLSVolumeName,
+			Name: tlsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: pravegaSpec.TLS.Static.ControllerSecret,
@@ -136,8 +136,8 @@ func configureControllerTLSSecrets(podSpec *corev1.PodSpec, pravegaSpec *api.Pra
 		podSpec.Volumes = append(podSpec.Volumes, vol)
 
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      TLSVolumeName,
-			MountPath: TLSMountDir,
+			Name:      tlsVolumeName,
+			MountPath: tlsMountDir,
 		})
 	}
 }

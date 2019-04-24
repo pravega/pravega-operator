@@ -114,10 +114,10 @@ type PravegaSpec struct {
 	// SegmentStoreResources includes CPU and memory resources
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 
-	// TLS is the Pravega security configuration that is passed to the Pravega processes
-	// as JAVA_OPTS. See the following file for a complete list of options:
+	// TLS is the Pravega security configuration that is passed to the Pravega processes.
+  // See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
-	TLS *TLSPolicy `json:"TLS,omitempty"`
+	TLS *TLSPolicy `json:"tls,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -266,21 +266,6 @@ type HDFSSpec struct {
 	Uri               string `json:"uri"`
 	Root              string `json:"root"`
 	ReplicationFactor int32  `json:"replicationFactor"`
-}
-
-type TLS struct {
-	Controller   *Member `json:"controller,omitempty"`
-	SegmentStore *Member `json:"segmentStore,omitempty"`
-}
-
-type Member struct {
-	Secret  *Secret           `json:"secret"`
-	Options map[string]string `json:"options"`
-}
-
-type Secret struct {
-	Name     string `json:"name"`
-	MountDir string `json:"mountDir"`
 }
 
 type TLSPolicy struct {

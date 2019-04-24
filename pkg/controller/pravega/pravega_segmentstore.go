@@ -24,15 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	cacheVolumeName       = "cache"
-	cacheVolumeMountPoint = "/tmp/pravega/cache"
-	tier2FileMountPoint   = "/mnt/tier2"
-	tier2VolumeName       = "tier2"
-	segmentStoreKind      = "pravega-segmentstore"
-	TLSVolumeName         = "tls-secret"
-	TLSMountDir           = "/etc/secret-volume"
-)
+
 
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
@@ -296,7 +288,7 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
 	if pravegaSpec.TLS.IsSecureSegmentStore() {
 		vol := corev1.Volume{
-			Name: TLSVolumeName,
+			Name: tlsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: pravegaSpec.TLS.Static.SegmentStoreSecret,
@@ -306,8 +298,8 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, pravegaSpec *api.Pr
 		podSpec.Volumes = append(podSpec.Volumes, vol)
 
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      TLSVolumeName,
-			MountPath: TLSMountDir,
+			Name:      tlsVolumeName,
+			MountPath: tlsMountDir,
 		})
 	}
 }
