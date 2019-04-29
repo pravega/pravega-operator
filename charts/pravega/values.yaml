@@ -1,0 +1,29 @@
+# Default values for pravega.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+version: 0.5.0
+zookeeperUri: zk-client:2181
+
+externalAccess:
+  enabled: false
+  type: LoadBalancer
+
+bookkeeper:
+  image:
+    repository: pravega/bookkeeper
+  replicas: 3
+  storage:
+    ledgerVolumeRequest: 10Gi
+    journalVolumeRequest: 10Gi
+    indexVolumeRequest: 10Gi
+  autoRecovery: true
+
+pravega:
+  image:
+    repository: pravega/pravega
+  controllerReplicas: 1
+  segmentStoreReplicas: 1
+  debugLogging: false
+  cacheVolumeRequest: 20Gi
+  tier2: pravega-tier2

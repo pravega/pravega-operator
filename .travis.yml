@@ -24,6 +24,14 @@ jobs:
 
     - stage: unit
       name: Unit tests
+      env:
+        - HELM_VERSION=v2.12.0
+        - DEP_VERSION=v0.5.0
+      install:
+        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
+        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+      before_script:
+        - helm init --client-only
       script:
         - make test-unit
 

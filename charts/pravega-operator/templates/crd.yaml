@@ -1,3 +1,4 @@
+{{- if .Values.crd.create }}
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -9,5 +10,28 @@ spec:
     listKind: PravegaClusterList
     plural: pravegaclusters
     singular: pravegacluster
+  additionalPrinterColumns:
+  - name: Version
+    type: string
+    description: The current pravega version
+    JSONPath: .status.currentVersion
+  - name: Desired Version
+    type: string
+    description: The desired pravega version
+    JSONPath: .status.TargetVersion
+  - name: Desired Members
+    type: integer
+    description: The number of desired pravega members
+    JSONPath: .status.replicas
+  - name: Ready Members
+    type: integer
+    description: The number pravega members ready
+    JSONPath: .status.readyReplicas
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
   scope: Namespaced
   version: v1alpha1
+  subresources:
+    status: {}
+{{- end }}

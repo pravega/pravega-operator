@@ -1,0 +1,71 @@
+apiVersion: "pravega.pravega.io/v1alpha1"
+kind: "PravegaCluster"
+metadata:
+  name: {{ template "pravega.fullname" . }}
+spec:
+  version: {{ .Values.version }}
+  zookeeperUri: {{ .Values.zookeeperUri }}
+  externalAccess:
+    enabled: {{ .Values.externalAccess.enabled }}
+    type: {{ .Values.externalAccess.type }}
+  bookkeeper:
+    image:
+      repository: {{ .Values.bookkeeper.image.repository }}
+    replicas: {{ .Values.bookkeeper.replicas }}
+    resources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
+    storage:
+      ledgerVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: {{ .Values.bookkeeper.storage.ledgerVolumeRequest }}
+      journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: {{ .Values.bookkeeper.storage.journalVolumeRequest }}
+      indexVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: {{ .Values.bookkeeper.storage.indexVolumeRequest }}
+    autoRecovery: {{ .Values.bookkeeper.autoRecovery }}
+  pravega:
+    image:
+      repository: {{ .Values.pravega.image.repository }}
+    controllerReplicas: {{ .Values.pravega.controllerReplicas }}
+    controllerResources:
+      requests:
+        memory: "1Gi"
+        cpu: "1000m"
+      limits:
+        memory: "3Gi"
+        cpu: "2000m"
+    segmentStoreReplicas: {{ .Values.pravega.segmentStoreReplicas }}
+    segmentStoreResources:
+      requests:
+        memory: "3Gi"
+        cpu: "1000m"
+      limits:
+        memory: "5Gi"
+        cpu: "2000m"
+    debugLogging: {{ .Values.pravega.debugLogging }}
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: {{ .Values.pravega.cacheVolumeRequest }}
+    tier2:
+      filesystem:
+        persistentVolumeClaim:
+          claimName: {{ .Values.pravega.tier2 }}
