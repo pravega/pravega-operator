@@ -6,6 +6,13 @@ spec:
   version: 0.4.0
   zookeeperUri: zk-client:2181
 
+  # Security configurations for Pravega
+  # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
+  tls:
+    static:
+      controllerSecret: "controller-pki"
+      segmentStoreSecret: "segmentstore-pki"
+
   bookkeeper:
     image:
       repository: pravega/bookkeeper
@@ -86,13 +93,6 @@ spec:
       resources:
         requests:
           storage: 20Gi
-
-    # Security configurations for Pravega
-    # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
-    TLS:
-      static:
-        controllerSecret: "controller-pki"
-        segmentStoreSecret: "segmentstore-pki"
 
     tier2:
       filesystem:
