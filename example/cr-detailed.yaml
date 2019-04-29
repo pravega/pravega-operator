@@ -6,6 +6,13 @@ spec:
   version: 0.4.0
   zookeeperUri: zk-client:2181
 
+  # Security configurations for Pravega
+  # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
+  tls:
+    static:
+      controllerSecret: "controller-pki"
+      segmentStoreSecret: "segmentstore-pki"
+
   bookkeeper:
     image:
       repository: pravega/bookkeeper
@@ -53,7 +60,7 @@ spec:
       statsProviderClass: "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider"
       codahaleStatsGraphiteEndpoint: "graphite.example.com:2003"
       # Default is 60
-      codahaleStatsOutputFrequencySeconds: 30
+      codahaleStatsOutputFrequencySeconds: "30"
 
   pravega:
     image:
@@ -118,3 +125,12 @@ spec:
       metrics.enableStatistics: "true"
       metrics.statsdHost: "telegraph.default"
       metrics.statsdPort: "8125"
+      # The mount dir for secrets is /etc/secret-volume
+      controller.auth.tlsEnabled: "true"
+      controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
+      controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
+      controller.rest.tlsKeyStoreFile: "/etc/secret-volume/controller01.jks"
+      controller.rest.tlsKeyStorePasswordFile: "/etc/secret-volume/password"
+      pravegaservice.enableTls: "true"
+      pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
+      pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"

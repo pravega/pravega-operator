@@ -22,6 +22,7 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Installing on a Custom Namespace with RBAC enabled](#installing-on-a-custom-namespace-with-rbac-enabled)
     * [Tier 2: Google Filestore Storage](#use-google-filestore-storage-as-tier-2)
     * [Tune Pravega Configuration](#tune-pravega-configuration)
+    * [Enable TLS](#enable-TLS)
     * [Enable external access](#enable-external-access)
  * [Development](#development)
     * [Build the Operator Image](#build-the-operator-image)
@@ -409,6 +410,10 @@ spec:
       metrics.statsdPort: "8125"
 ...
 ```
+
+### Enable TLS
+
+Check out the [TLS document](doc/tls.md).
 
 ### Enable external access
 
