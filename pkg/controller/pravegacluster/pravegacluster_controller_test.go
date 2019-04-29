@@ -265,6 +265,12 @@ var _ = Describe("PravegaCluster Controller", func() {
 							},
 						},
 					},
+					TLS: &v1alpha1.TLSPolicy{
+						Static: &v1alpha1.StaticTLS{
+							ControllerSecret: "controller-secret",
+							SegmentStoreSecret: "segmentstore-secret",
+						},
+					},
 				}
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
@@ -348,6 +354,13 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
 					Ω(foundController.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
+
+				It("should set secret volume", func() {
+					Ω(foundController.Spec.Template.Spec.Volumes[0].Name).Should(Equal("tls-secret"))
+					Ω(foundController.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.SecretName).Should(Equal("controller-secret"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name).Should(Equal("tls-secret"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath).Should(Equal("/etc/secret-volume"))
+				})
 			})
 
 			Context("Pravega SegmentStore", func() {
@@ -379,6 +392,13 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
+				})
+
+				It("should set secret volume", func() {
+					Ω(foundSS.Spec.Template.Spec.Volumes[0].Name).Should(Equal("tls-secret"))
+					Ω(foundSS.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.SecretName).Should(Equal("segmentstore-secret"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name).Should(Equal("tls-secret"))
+					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath).Should(Equal("/etc/secret-volume"))
 				})
 			})
 		})
