@@ -267,7 +267,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					},
 					TLS: &v1alpha1.TLSPolicy{
 						Static: &v1alpha1.StaticTLS{
-							ControllerSecret: "controller-secret",
+							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
 						},
 					},
