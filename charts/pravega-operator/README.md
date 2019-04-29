@@ -36,12 +36,10 @@ The following table lists the configurable parameters of the Pravega operator ch
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
+| `image.repository` | Repository for pravega operator image | `pravega/pravega-operator` |
+| `image.tag` | Tag for pravega operator image | `0.3.2` |
+| `image.pullPolicy` | Pull policy for pravega operator image | `IfNotPresent` |
+| `crd.create` | Create pravega CRD | `true` |
 | `rbac.create` | Create RBAC resources | `true` |
 | `serviceAccount.create` | Create service account resources | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
-| `pravegaCRD.create` | Create pravega CRD | `true` |
-| `pravegaOperator.create` | Create pravega operator | `true` |
-| `pravegaOperator.name` | Name for the pravega operator | `pravega-operator` |
-| `pravegaOperator.image.repository` | Repository for pravega operator image | `pravega/pravega-operator` |
-| `pravegaOperator.image.tag` | Tag for pravega operator image | `0.3.2` |
-| `pravegaOperator.image.pullPolicy` | Pull policy for pravega operator image | `IfNotPresent` |
