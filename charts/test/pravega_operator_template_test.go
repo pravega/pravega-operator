@@ -11,8 +11,9 @@
 package charts
 
 import (
-	"strings"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,12 +21,7 @@ import (
 )
 
 func TestPravegaOperatorTemplate(t *testing.T) {
-	// Setup user request
-	var (
-		repo   = "tristan1900/pravega-operator"
-		tag    = "0.3.0"
-		policy = "IfNotPresent"
-	)
+	g := NewGomegaWithT(t)
 
 	// Path to the helm chart
 	helmChartPath := "../pravega-operator"
@@ -33,9 +29,9 @@ func TestPravegaOperatorTemplate(t *testing.T) {
 	// Setup the args.
 	options := &helm.Options{
 		SetValues: map[string]string{
-			"pravegaOperator.image.repository": repo,
-			"pravegaOperator.image.tag":        tag,
-			"pravegaOperator.image.pullPolicy": policy,
+			"image.repository": "tristan1900/pravega-operator",
+			"image.tag":        "0.3.0",
+			"image.pullPolicy": "IfNotPresent",
 		},
 	}
 
@@ -47,14 +43,8 @@ func TestPravegaOperatorTemplate(t *testing.T) {
 	helm.UnmarshalK8SYaml(t, output, &deploy)
 
 	// Verify the output
-	image := strings.Join([]string{repo, tag}, ":")
 	podContainers := deploy.Spec.Template.Spec.Containers
 
-	if podContainers[0].Image != image {
-		t.Fatalf("Rendered container image (%s) is not expected (%s)", podContainers[0].Image, image)
-	}
-
-	if podContainers[0].ImagePullPolicy != corev1.PullIfNotPresent {
-		t.Fatalf("Rendered container image policy (%s) is not expected (%s)", podContainers[0].ImagePullPolicy, policy)
-	}
+	g.Expect(podContainers[0].Image).To(Equal("tristan1900/pravega-operator:0.3.0"))
+	g.Expect(podContainers[0].ImagePullPolicy).To(Equal(corev1.PullIfNotPresent))
 }

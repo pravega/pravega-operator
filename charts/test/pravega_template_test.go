@@ -11,8 +11,9 @@
 package charts
 
 import (
-	"strconv"
 	"testing"
+
+	. "github.com/onsi/gomega"
 
 	"github.com/gruntwork-io/terratest/modules/helm"
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -20,22 +21,7 @@ import (
 )
 
 func TestPravegaTemplate(t *testing.T) {
-	// Setup user request
-	var (
-		version             = "0.4.0"
-		zookeeperUri        = "foo-client:2181"
-		externalAccess_type = "LoadBalancer"
-
-		bookkeeper_image_repository = "tristan1900/bookkeeper"
-		bookkeeper_replicas         = "3"
-		bookkeeper_autoRecovery     = "false"
-
-		pravega_image_repository     = "tristan1900/pravega"
-		pravega_controllerReplicas   = "1"
-		pravega_segmentStoreReplicas = "1"
-		pravega_debugLogging         = "true"
-		pravega_tier2                = "foo"
-	)
+	g := NewGomegaWithT(t)
 
 	// Path to the helm chart
 	helmChartPath := "../pravega"
@@ -43,16 +29,18 @@ func TestPravegaTemplate(t *testing.T) {
 	// Setup the args.
 	options := &helm.Options{
 		SetValues: map[string]string{
-			"version":                      version,
-			"zookeeperUri":                 zookeeperUri,
-			"externalAccess.type":          externalAccess_type,
-			"bookkeeper.image.repository":  bookkeeper_image_repository,
-			"bookkeeper.autoRecovery":      bookkeeper_autoRecovery,
-			"pravega.image.repository":     pravega_image_repository,
-			"pravega.controllerReplicas":   pravega_controllerReplicas,
-			"pravega.segmentStoreReplicas": pravega_segmentStoreReplicas,
-			"pravega.debugLogging":         pravega_debugLogging,
-			"pravega.tier2":                pravega_tier2,
+			"version":                      "0.4.0-beta",
+			"zookeeperUri":                 "foo-client:2181",
+			"externalAccess.enabled":       "true",
+			"externalAccess.type":          "NodePort",
+			"bookkeeper.image.repository":  "tristan1900/bookkeeper",
+			"bookkeeper.replicas":          "5",
+			"bookkeeper.autoRecovery":      "false",
+			"pravega.image.repository":     "tristan1900/pravega",
+			"pravega.controllerReplicas":   "2",
+			"pravega.segmentStoreReplicas": "7",
+			"pravega.debugLogging":         "true",
+			"pravega.tier2":                "foo",
 		},
 	}
 
@@ -64,47 +52,17 @@ func TestPravegaTemplate(t *testing.T) {
 	helm.UnmarshalK8SYaml(t, output, &p)
 
 	// Verify the output
-	if p.Spec.Version != version {
-		t.Fatalf("Rendered pravega version (%s) is not expected (%s)", p.Spec.Version, version)
-	}
-
-	if p.Spec.ZookeeperUri != zookeeperUri {
-		t.Fatalf("Rendered pravega zookeeperUri (%s) is not expected (%s)", p.Spec.ZookeeperUri, zookeeperUri)
-	}
-
-	if p.Spec.ExternalAccess.Type != corev1.ServiceTypeLoadBalancer {
-		t.Fatalf("Rendered pravega external access type (%s) is not expected (%s)", p.Spec.ExternalAccess.Type, externalAccess_type)
-	}
-
-	if p.Spec.Bookkeeper.Image.Repository != bookkeeper_image_repository {
-		t.Fatalf("Rendered bookkeeper repository (%s) is not expected (%s)", p.Spec.Bookkeeper.Image.Repository, bookkeeper_image_repository)
-	}
-
-	replicas, _ := strconv.Atoi(bookkeeper_replicas)
-	if p.Spec.Bookkeeper.Replicas != int32(replicas) {
-		t.Fatalf("Rendered bookkeeper replicas (%d) is not expected (%s)", p.Spec.Bookkeeper.Replicas, bookkeeper_replicas)
-	}
-
-	enable, _ := strconv.ParseBool(bookkeeper_autoRecovery)
-	if *p.Spec.Bookkeeper.AutoRecovery != enable {
-		t.Fatalf("Rendered bookkeeper autorecovery (%t) is not expected (%s)", *p.Spec.Bookkeeper.AutoRecovery, bookkeeper_autoRecovery)
-	}
-
-	if p.Spec.Pravega.Image.Repository != pravega_image_repository {
-		t.Fatalf("Rendered pravega image repo (%s) is not expected (%s)", p.Spec.Pravega.Image.Repository, pravega_image_repository)
-	}
-
-	replicas, _ = strconv.Atoi(pravega_controllerReplicas)
-	if p.Spec.Pravega.ControllerReplicas != int32(replicas) {
-		t.Fatalf("Rendered pravega controller replicas (%d) is not expected (%s)", p.Spec.Pravega.ControllerReplicas, pravega_controllerReplicas)
-	}
-
-	enable, _ = strconv.ParseBool(pravega_debugLogging)
-	if p.Spec.Pravega.DebugLogging != enable {
-		t.Fatalf("Rendered pravega controller replicas (%t) is not expected (%s)", p.Spec.Pravega.DebugLogging, pravega_debugLogging)
-	}
-
-	if p.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim.ClaimName != pravega_tier2 {
-		t.Fatalf("Rendered pravega tier2 (%s) is not expected (%s)", p.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim.ClaimName, pravega_tier2)
-	}
+	boolFalse := false
+	g.Expect(p.Spec.Version).To(Equal("0.4.0-beta"))
+	g.Expect(p.Spec.ZookeeperUri).To(Equal("foo-client:2181"))
+	g.Expect(p.Spec.ExternalAccess.Enabled).To(BeTrue())
+	g.Expect(p.Spec.ExternalAccess.Type).To(Equal(corev1.ServiceTypeNodePort))
+	g.Expect(p.Spec.Bookkeeper.Image.Repository).To(Equal("tristan1900/bookkeeper"))
+	g.Expect(p.Spec.Bookkeeper.Replicas).To(BeEquivalentTo(5))
+	g.Expect(p.Spec.Bookkeeper.AutoRecovery).To(Equal(&boolFalse))
+	g.Expect(p.Spec.Pravega.Image.Repository).To(Equal("tristan1900/pravega"))
+	g.Expect(p.Spec.Pravega.ControllerReplicas).To(BeEquivalentTo(2))
+	g.Expect(p.Spec.Pravega.SegmentStoreReplicas).To(BeEquivalentTo(7))
+	g.Expect(p.Spec.Pravega.DebugLogging).To(BeTrue())
+	g.Expect(p.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim.ClaimName).To(Equal("foo"))
 }
