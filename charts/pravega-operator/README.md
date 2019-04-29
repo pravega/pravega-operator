@@ -1,4 +1,4 @@
-# pravega-operator chart
+# Pravega Operator Helm Chart
 
 Installs [pravega-operator](https://github.com/pravega/pravega-operator) to create/configure/manage Pravega clusters atop Kubernetes.
 

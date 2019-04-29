@@ -1,4 +1,4 @@
-# Pravega chart
+# Pravega Helm Chart
 
 Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
 
@@ -7,8 +7,10 @@ Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
 This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [Kubernetes](http://kubernetes.io) using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega cluster on multiple namespaces.
 
 ## Prerequisites
+
   - Kubernetes 1.10+ with Beta APIs
   - Helm 2.10+
+  - Pravega Operator. You can install it using its own [Helm chart](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator)
 
 ## Installing the Chart
 
@@ -36,10 +38,9 @@ The following table lists the configurable parameters of the Pravega chart and t
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `name` | Name for Pravega cluster | `pravega` |
 | `version` | Version for Pravega cluster | `0.5.0` |
 | `zookeeperUri` | Zookeeper service address | `zk-client:2181` |
-| `externalAccess.enabled` | Enable Pravega external access | `true` |
+| `externalAccess.enabled` | Enable Pravega external access | `false` |
 | `externalAccess.type` | Pravega external access type | `LoadBalancer` |
 | `bookkeeper.image.repository` | Image repo for Bookkeeper image | `pravega/bookkeeper` |
 | `bookkeeper.replicas` | Replicas for Bookkeeper | `3` |
@@ -52,4 +53,4 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `pravega.segmentStoreReplicas` | Replicas for segmentStore | `1` |
 | `pravega.debugLogging` | Enable debug logging | `false` |
 | `pravega.cacheVolumeRequest` | Request storage for cacheVolume | `20Gi` |
-| `pravega.tier2` | Tier2 storage name for Pravega | `pravega-tier2` |
+| `pravega.tier2` | Name of the PVC used for Tier 2 storage | `pravega-tier2` |
