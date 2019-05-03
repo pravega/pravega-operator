@@ -1,4 +1,4 @@
-##Configuration 
+## Configuration 
 This document explains how to configure Pravega
 * [RBAC](rbac.md)
   * [Use non-default service accounts](rbac.md#use-non-default-service-accounts)
@@ -9,5 +9,5 @@ This document explains how to configure Pravega
 * [Tune Pravega Configuration](pravega-options.md)
 * [Tune Bookkeeper Configuration](bookkeeper-options.md)
 * [Enable TLS](tls.md)
-* [Enable external access](external-access.md)
+* [Enable external access](external-****access.md)
 

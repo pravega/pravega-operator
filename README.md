@@ -74,6 +74,7 @@ $ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --s
 where:
 
 - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment. E.g. `zk-client:2181`
+> Note: If multiple zk URIs are specified, use a comma separated list and DO NOT leave any spaces in between.
 - `[Tier2_NAME]` is the Tier 2 PersistentVolumeClaim name. E.g. `pravega-tier2`
 
 
