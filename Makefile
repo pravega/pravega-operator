@@ -57,7 +57,9 @@ login:
 
 push: build login
 	docker push $(REPO):$(VERSION)
-	docker push $(REPO):latest
+	if [[ ${TRAVIS_TAG} =~ ^[0-9]+(\.[0-9]+)+(\.[0-9]+)$ ]]; then
+	  docker push $(REPO):latest
+	fi
 
 clean:
 	rm -f bin/$(PROJECT_NAME)
