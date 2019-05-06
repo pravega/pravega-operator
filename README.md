@@ -11,7 +11,7 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Overview](#overview)
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
-    * [Installation of the Operator](#install-the-operator)
+    * [Install the Operator](#install-the-operator)
     * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
     * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
     * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
@@ -37,6 +37,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 ## Requirements
 
 - Kubernetes 1.8+
+- Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
 
 ## Quickstart
@@ -45,7 +46,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-Use Helm to quickly deploy a Pravega operator with the release name `foo`
+Use Helm to quickly deploy a Pravega operator with the release name `foo`.
 
 ```
 $ helm install charts/pravega-operator --name foo
@@ -55,28 +56,47 @@ Verify that the Pravega Operator is running.
 
 ```
 $ kubectl get deploy
-NAME                 DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
-You can also manually install the operator, check [here](doc/development.md#install-the-operator-manually) for instructions.
+
+You can also manually install the operator with `kubectl` commands. Check out the [development documentation](doc/development.md#install-the-operator-manually) for instructions.
+
 ### Install a sample Pravega cluster
-#### Install Tier2 Storage 
+
+#### Set up Tier 2 Storage
+
 Pravega requires a long term storage provider known as Tier 2 storage.
 
-See [instructions](doc/tier2.md#use-NFS-as-Tier2) on how to install a NFS volume as Tier 2
+Check out the available [options for Tier 2](doc/tier2.md) and how to configure it.
 
-#### Install Pravega cluster
-Use Helm to install a sample Pravega cluster with release name `bar`
+For demo purposes, you can quickly install a toy NFS server.
+
+```
+$ helm install stable/nfs-server-provisioner
+```
+
+And create a PVC for Tier 2 that uses utilizes it.
+
+```
+$ kubectl create -f ./test/e2e/resources/tier2.yaml
+```
+
+#### Install a Pravega cluster
+
+Use Helm to install a sample Pravega cluster with release name `bar`.
+
 ```
 $ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set pravega.tier2=[TIER2_NAME]
 ```
 
 where:
 
-- `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment. E.g. `zk-client:2181`
-> Note: If multiple zk URIs are specified, use a comma separated list and DO NOT leave any spaces in between.
-- `[Tier2_NAME]` is the Tier 2 PersistentVolumeClaim name. E.g. `pravega-tier2`
+- `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment (e.g. `zk-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zk-0:2181,zk-1:2181,zk-2:2181`).
+- `[TIER2_NAME]` is the Tier 2 PersistentVolumeClaim name. `pravega-tier2` if you created the PVC above.
 
+
+Check out the [Pravega Helm Chart](charts/pravega) for more a complete list of installation parameters.
 
 Verify that the cluster instances and its components are being created.
 
@@ -130,7 +150,7 @@ And the `REST` management interface is available at:
 http://<pravega-name>-pravega-controller.<namespace>:10080/
 ```
 
-Check [here](doc/external-access.md) to enable external access to a Pravega cluster.
+Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
 ### Scale a Pravega cluster
 
@@ -157,19 +177,19 @@ $ kubectl delete -f pvc.yaml
 
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
-To delete all clusters, delete all cluster CR objects before uninstalling the operator.
+If you want to delete Pravega clusters, make sure to do it before uninstalling the operator.
 
 ```
 $ helm delete foo
 ```
 
 ## Configuration
-Check out the  [configuration document](doc/configuration.md).
 
+Check out the [configuration document](doc/configuration.md).
 
 ## Development
-Check out the  [development guide](doc/development.md).
 
+Check out the [development guide](doc/development.md).
 
 ## Releases  
 

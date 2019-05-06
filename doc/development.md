@@ -40,24 +40,6 @@ where:
 - `[REGISTRY_HOST]` is your registry host or IP (e.g. `registry.example.com`)
 - `[REGISTRY_PORT]` is your registry port (e.g. `5000`)
 
-### Install the Operator manually
-> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
-
-Register the Pravega cluster custom resource definition (CRD).
-```
-$ kubectl create -f deploy/crd.yaml
-```
-Create the operator role, role binding and service account.
-```
-$ kubectl create -f deploy/role.yaml
-$ kubectl create -f deploy/role_binding.yaml
-$ kubectl create -f deploy/service_account.yaml
-```
-Install the operator.
-```
-$ kubectl create -f deploy/operator.yaml
-```
-
 ### Run the Operator locally
 
 You can run the Operator locally to help with development, testing, and debugging tasks.
