@@ -60,7 +60,7 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
 
-You can also manually install the operator with `kubectl` commands. Check out the [development documentation](doc/development.md#install-the-operator-manually) for instructions.
+You can also manually install the operator with `kubectl` commands. Check out the [manual installation](doc/manual-installation.md#install-the-Operator-manually) for instructions.
 
 ### Install a sample Pravega cluster
 
@@ -170,7 +170,7 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 
 ```
 $ helm delete bar
-$ kubectl delete -f pvc.yaml
+$ kubectl delete -f ./test/e2e/resources/tier2.yaml
 ```
 
 ### Uninstall the Operator
