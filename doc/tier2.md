@@ -12,6 +12,10 @@ The following example uses an NFS volume provisioned by the [NFS Server Provisio
 ```
 $ helm install stable/nfs-server-provisioner
 ```
+You can also connect to a pre-existing NFS server by using [NFS Client Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner)
+```
+helm install --set nfs.server=<address:x.x.x.x> --set nfs.path=</exported/path> --set storageClass.name=nfs --set nfs.mountOptions='{nolock,sec=sys,vers=4.0}' stable/nfs-client-provisioner
+```
 
 Verify that the `nfs` storage class is now available.
 

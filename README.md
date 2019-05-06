@@ -95,7 +95,7 @@ bar-pravega  0.4.0     7                 7               2m
 ```
 
 ```
-$ kubectl get all -l pravega_cluster=example
+$ kubectl get all -l pravega_cluster=bar-pravega
 NAME                                              READY   STATUS    RESTARTS   AGE
 pod/bar-bookie-0                              1/1     Running   0          2m
 pod/bar-bookie-1                              1/1     Running   0          2m
@@ -139,7 +139,7 @@ You can scale Pravega components independently by modifying their corresponding 
 Example of patching the Pravega resource to scale the Segment Store instances to 4.
 
 ```
-kubectl patch PravegaCluster example --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
+kubectl patch PravegaCluster <pravega-name> --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
 ```
 
 ### Upgrade a Pravega cluster
@@ -149,7 +149,7 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 ### Uninstall the Pravega cluster
 
 ```
-$ helm delete foo
+$ helm delete bar
 $ kubectl delete -f pvc.yaml
 ```
 
@@ -160,7 +160,7 @@ $ kubectl delete -f pvc.yaml
 To delete all clusters, delete all cluster CR objects before uninstalling the operator.
 
 ```
-$ helm delete bar
+$ helm delete foo
 ```
 
 ## Configuration
