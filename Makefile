@@ -37,7 +37,7 @@ build-image:
 test: test-unit test-e2e
 
 test-unit: dep
-	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e )
+	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
 test-e2e: test-e2e-remote
 

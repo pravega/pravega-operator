@@ -16,18 +16,23 @@ Error: no available release name found
 The following workaround can be applied to resolve the issue:
 
 1. Create a service account for the Tiller.
+
 ```
 kubectl create serviceaccount --namespace kube-system tiller
 ```
+
 2. Bind that service account to the `cluster-admin` ClusterRole.
+
 ```
 kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 ```
+
 3. Add the service account to the Tiller deployment.
 
 ```
 kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
 ```
+
 The above commands should resolve the errors and `helm install` should work correctly.
 
 ## NFS volume mount failure: wrong fs type

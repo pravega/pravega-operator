@@ -4,7 +4,6 @@ This document shows how to upgrade a Pravega cluster managed by the operator to 
 
 > **Warning:** The upgrade feature is still considered experimental, so its use is discouraged if you care about your data.
 
-
 ## Overview
 
 The activity diagram below shows the overall upgrade process started by an end-user and performed by the operator.
