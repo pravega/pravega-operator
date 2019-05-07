@@ -34,6 +34,8 @@ jobs:
         - helm init --client-only
       script:
         - make test-unit
+      after_success:
+      - bash <(curl -s https://codecov.io/bash)
 
     - stage: e2e
       name: End-to-end tests
