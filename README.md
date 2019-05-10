@@ -32,8 +32,6 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 - [x] Resize cluster
 - [x] Rolling upgrades (experimental)
 
-> Note that unchecked features are in the roadmap but not available yet.
-
 ## Requirements
 
 - Kubernetes 1.8+
@@ -79,7 +77,7 @@ $ helm install stable/nfs-server-provisioner
 And create a PVC for Tier 2 that uses utilizes it.
 
 ```
-$ kubectl create -f ./test/e2e/resources/tier2.yaml
+$ kubectl create -f ./example/pvc-tier2.yaml
 ```
 
 #### Install a Pravega cluster
@@ -93,7 +91,7 @@ $ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --s
 where:
 
 - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment (e.g. `zk-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zk-0:2181,zk-1:2181,zk-2:2181`).
-- `[TIER2_NAME]` is the Tier 2 PersistentVolumeClaim name. `pravega-tier2` if you created the PVC above.
+- `[TIER2_NAME]` is the Tier 2 `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
 
 
 Check out the [Pravega Helm Chart](charts/pravega) for more a complete list of installation parameters.
@@ -169,8 +167,8 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 ### Uninstall the Pravega cluster
 
 ```
-$ helm delete bar
-$ kubectl delete -f ./test/e2e/resources/tier2.yaml
+$ helm delete bar --purge
+$ kubectl delete -f ./example/pvc-tier2.yaml
 ```
 
 ### Uninstall the Operator
@@ -180,7 +178,7 @@ $ kubectl delete -f ./test/e2e/resources/tier2.yaml
 If you want to delete Pravega clusters, make sure to do it before uninstalling the operator.
 
 ```
-$ helm delete foo
+$ helm delete foo --purge
 ```
 
 ## Configuration
