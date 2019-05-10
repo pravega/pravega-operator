@@ -24,6 +24,14 @@ Install the operator.
 $ kubectl create -f deploy/operator.yaml
 ```
 
+### Set up Tier 2 Storage
+
+Pravega requires a long term storage provider known as Tier 2 storage.
+
+Check out the available [options for Tier 2](tier2.md) and how to configure it.
+
+In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](tier2.md#use-nfs-as-tier-2). 
+
 ### Install the Pravega cluster manually
 
 Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (3 Bookies, 1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
