@@ -5,6 +5,7 @@
 * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
+* [Recover Operator when node fails](#recover-operator-when-node-fails)
 
 ## Helm Error: no available release name found
 
@@ -72,3 +73,14 @@ kubectl delete node <node name>
 ```
 After the failed node is deleted from Kubernetes, the Statefulset pods on that node will be rescheduled to other available nodes. 
 
+## Recover Operator when node fails
+
+If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
+not function properly because it has a leader election locking mechanism. 
+
+To make it work, the cluster admin will need to delete the lock by running
+```
+kubectl delete configmap pravega-operator-lock
+```
+After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
+be deleted by Deployment controller. 
