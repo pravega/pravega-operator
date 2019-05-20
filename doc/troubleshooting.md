@@ -64,7 +64,7 @@ mount: wrong fs type, bad option, bad superblock on 10.100.200.247:/export/pvc-6
 ## Recover Statefulset when node fails
 
 When a node failure happens, unlike Deployment Pod, the Statefulset Pod on that failed node will not be rescheduled to other available nodes automatically.
-This is because Kubernetes guarantees at most once execution of a Statefulset.
+This is because Kubernetes guarantees at most once execution of a Statefulset. See the [design](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/pod-safety.md).
 
 If the failed node is not coming back, the cluster admin can manually recover the lost pod of Statefulset.
 To do that, the cluster admin can delete the failed node object in the apiserver by running 
@@ -76,7 +76,7 @@ After the failed node is deleted from Kubernetes, the Statefulset pods on that n
 ## Recover Operator when node fails
 
 If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
-not function properly because it has a leader election locking mechanism. 
+not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/master/doc/proposals/leader-for-life.md).
 
 To make it work, the cluster admin will need to delete the lock by running
 ```
