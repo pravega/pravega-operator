@@ -53,8 +53,8 @@ Once an upgrade request has been received, the operator will apply the rolling u
 The order in which the components will be upgraded is the following:
 
 1. BookKeeper
-2. Pravega Controller
-3. Pravega Segment Store
+2. Pravega Segment Store
+3. Pravega Controller
 
 The upgrade workflow is as follows:
 
