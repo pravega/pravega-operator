@@ -63,7 +63,7 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 	copy := pravega.DeepCopy()
 
 	if err := pwh.clusterIsAvailable(ctx, copy); err != nil {
-		return admission.ErrorResponse(http.StatusBadRequest, err)
+		return admission.ErrorResponse(http.StatusServiceUnavailable, err)
 	}
 
 	if err := pwh.mutatePravegaManifest(ctx, copy); err != nil {
