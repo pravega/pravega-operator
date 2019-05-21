@@ -4,6 +4,8 @@
 
 * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
+* [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
+* [Recover Operator when node fails](#recover-operator-when-node-fails)
 
 ## Helm Error: no available release name found
 
@@ -58,3 +60,27 @@ mount: wrong fs type, bad option, bad superblock on 10.100.200.247:/export/pvc-6
        In some cases useful info is found in syslog - try
        dmesg | tail or so.
 ```
+
+## Recover Statefulset when node fails
+
+When a node failure happens, unlike Deployment Pod, the Statefulset Pod on that failed node will not be rescheduled to other available nodes automatically.
+This is because Kubernetes guarantees at most once execution of a Statefulset. See the [design](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/pod-safety.md).
+
+If the failed node is not coming back, the cluster admin can manually recover the lost pod of Statefulset.
+To do that, the cluster admin can delete the failed node object in the apiserver by running 
+```
+kubectl delete node <node name>
+```
+After the failed node is deleted from Kubernetes, the Statefulset pods on that node will be rescheduled to other available nodes. 
+
+## Recover Operator when node fails
+
+If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
+not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/master/doc/proposals/leader-for-life.md).
+
+To make it work, the cluster admin will need to delete the lock by running
+```
+kubectl delete configmap pravega-operator-lock
+```
+After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
+be deleted by Deployment controller. 
