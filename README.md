@@ -17,6 +17,7 @@ The project is currently alpha. While no breaking API changes are currently plan
     * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
+    * [Manual installation](#manual-installation)
  * [Configuration](#configuration)
  * [Development](#development)
 * [Releases](#releases)
@@ -57,8 +58,6 @@ $ kubectl get deploy
 NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
-
-You can also manually install the operator with `kubectl` commands. Check out the [manual installation](doc/manual-installation.md#install-the-Operator-manually) for instructions.
 
 ### Install a sample Pravega cluster
 
@@ -180,6 +179,10 @@ If you want to delete Pravega clusters, make sure to do it before uninstalling t
 ```
 $ helm delete foo --purge
 ```
+
+### Manual installation
+
+You can also manually install/uninstall the operator and Pravega with `kubectl` commands. Check out the [manual installation](doc/manual-installation.md) document for instructions.
 
 ## Configuration
 
