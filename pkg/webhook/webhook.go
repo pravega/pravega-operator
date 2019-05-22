@@ -15,6 +15,8 @@ import (
 	"fmt"
 	"net/http"
 
+	corev1 "k8s.io/api/core/v1"
+
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -59,6 +61,10 @@ func (pwh *pravegaWebhookHandler) Handle(ctx context.Context, req admissiontypes
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
 	copy := pravega.DeepCopy()
+
+	if err := pwh.clusterIsAvailable(ctx, copy); err != nil {
+		return admission.ErrorResponse(http.StatusServiceUnavailable, err)
+	}
 
 	if err := pwh.mutatePravegaManifest(ctx, copy); err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
@@ -136,6 +142,32 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 		return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
 	}
 
+	return nil
+}
+
+func (pwh *pravegaWebhookHandler) clusterIsAvailable(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+	found := &pravegav1alpha1.PravegaCluster{}
+	nn := types.NamespacedName{
+		Namespace: p.Namespace,
+		Name:      p.Name,
+	}
+	err := pwh.client.Get(context.TODO(), nn, found)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to obtain PravegaCluster resource: %v", err)
+	}
+
+	_, upgrade := found.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
+	if upgrade != nil && upgrade.Status == corev1.ConditionTrue {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version && p.Spec.Version != found.Status.CurrentVersion {
+			return fmt.Errorf("failed to process the request, cluster is upgrading")
+		}
+	}
+
+	// Add other conditions here
 	return nil
 }
 
