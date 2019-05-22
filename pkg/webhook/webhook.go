@@ -160,8 +160,11 @@ func (pwh *pravegaWebhookHandler) clusterIsAvailable(ctx context.Context, p *pra
 	}
 
 	_, upgrade := found.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
-	if upgrade.Status == corev1.ConditionTrue {
-		return fmt.Errorf("failed to process the request, cluster is upgrading")
+	if upgrade != nil && upgrade.Status == corev1.ConditionTrue {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version && p.Spec.Version != found.Status.CurrentVersion {
+			return fmt.Errorf("failed to process the request, cluster is upgrading")
+		}
 	}
 
 	// Add other conditions here
