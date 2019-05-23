@@ -1,0 +1,49 @@
+# Copyright (c) 2017 Dell Inc., or its subsidiaries. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+
+site_name: 'Exploring Pravega-operator'
+site_url: 'http://pravega.io/'
+site_description: 'Documentation to help you get familiar with Pravega-operator'
+
+repo_url: 'https://github.com/pravega/pravega'
+edit_uri: 'tree/master/doc'
+
+theme: 'material'
+
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite(guess_lang=false)
+  - footnotes
+  - meta
+  - toc(permalink=true)
+  - pymdownx.betterem(smart_enable=all)
+  - pymdownx.caret
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+
+pages:
+  - Pravega-operator:
+      - 'Bookkeeper Options': 'bookkeeper-options.md'
+      - 'Configurations': 'configuration.md'
+      - 'Develpoment': 'development.md
+      - 'External Access': 'external-access.md'
+      - 'Manual Installation': 'manual-installation.md'
+      - 'Pravega Options': 'pravega-options.md'
+      - 'RBAC': 'rbac.md'
+      - 'Tier 2 Storage': 'tier2.md	'
+      - 'TLS': 'tls.md'
+      - 'TroubleShooting': 'troubleshooting.md'
+      -'Upgrade Cluster': 'upgrade-cluster.md'
+      - extra:
+    version: 0.1
+
+google_analytics: ['UA-1508605-1', 'pravega.io']
