@@ -34,15 +34,15 @@ pages:
   - Pravega-operator:
       - 'Bookkeeper Options': 'bookkeeper-options.md'
       - 'Configurations': 'configuration.md'
-      - 'Develpoment': 'development.md
+      - 'Develpoment': 'development.md'
       - 'External Access': 'external-access.md'
       - 'Manual Installation': 'manual-installation.md'
       - 'Pravega Options': 'pravega-options.md'
       - 'RBAC': 'rbac.md'
-      - 'Tier 2 Storage': 'tier2.md	'
+      - 'Tier 2 Storage': 'tier2.md'
       - 'TLS': 'tls.md'
       - 'TroubleShooting': 'troubleshooting.md'
-      -'Upgrade Cluster': 'upgrade-cluster.md'
+      - 'Upgrade Cluster': 'upgrade-cluster.md'
       - extra:
     version: 0.1
 
