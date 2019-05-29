@@ -10,8 +10,8 @@ site_name: 'Exploring Pravega-operator'
 site_url: 'http://pravega.io/'
 site_description: 'Documentation to help you get familiar with Pravega-operator'
 
-repo_url: 'https://github.com/pravega/pravega'
-edit_uri: 'tree/master/doc'
+repo_url: 'https://github.com/pravega/pravega-operator'
+edit_uri: 'tree/master/doc/docs'
 
 theme: 'material'
 
@@ -19,31 +19,35 @@ theme: 'material'
 # Extensions
 markdown_extensions:
   - admonition
-  - codehilite(guess_lang=false)
+  - codehilite:
+      guess_lang: false
   - footnotes
   - meta
-  - toc(permalink=true)
-  - pymdownx.betterem(smart_enable=all)
+  - toc:
+      permalink: true
+  - pymdownx.betterem:
+      smart_enable: all
   - pymdownx.caret
   - pymdownx.inlinehilite
   - pymdownx.magiclink
   - pymdownx.smartsymbols
   - pymdownx.superfences
 
-pages:
+nav:
   - Pravega-operator:
-      - 'Bookkeeper Options': 'bookkeeper-options.md'
-      - 'Configurations': 'configuration.md'
-      - 'Develpoment': 'development.md'
-      - 'External Access': 'external-access.md'
       - 'Manual Installation': 'manual-installation.md'
-      - 'Pravega Options': 'pravega-options.md'
+      - 'Develpoment': 'development.md'
+      - 'Upgrade Cluster': 'upgrade-cluster.md'
+      - 'Configurations': 'configuration.md'
       - 'RBAC': 'rbac.md'
       - 'Tier 2 Storage': 'tier2.md'
+      - 'Pravega Options': 'pravega-options.md'
+      - 'Bookkeeper Options': 'bookkeeper-options.md'
       - 'TLS': 'tls.md'
+      - 'External Access': 'external-access.md'
       - 'TroubleShooting': 'troubleshooting.md'
-      - 'Upgrade Cluster': 'upgrade-cluster.md'
-      - extra:
+
+- extra:
     version: 0.1
 
 google_analytics: ['UA-1508605-1', 'pravega.io']
