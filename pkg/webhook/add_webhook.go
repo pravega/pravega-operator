@@ -80,7 +80,7 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 		BootstrapOptions: &webhook.BootstrapOptions{
 			// TODO: garbage collect webhook k8s service
 			Service: &webhook.Service{
-				Namespace: os.Getenv("WATCH_NAMESPACE"),
+				Namespace: os.Getenv("WEBHOOK_NAMESPACE"),
 				Name:      "pravega-admission-webhook",
 				Selectors: map[string]string{
 					"component": "pravega-operator",
