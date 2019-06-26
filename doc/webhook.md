@@ -13,7 +13,8 @@ The server is behind a Kubernetes Service and provides a certificate to the apis
 building a webhook, see [here](https://github.com/kubernetes-sigs/kubebuilder/blob/86026527c754a144defa6474af6fb352143b9270/docs/book/beyond_basics/sample_webhook.md).
 
 The webhook feature itself is enabled by default but it can be disabled if `webhook=false` is specified when installing the 
-operator locally using `operator-sdk up local`. E.g. ` operator-sdk up local --operator-flags -webhook=false`.
+operator locally using `operator-sdk up local`. E.g. ` operator-sdk up local --operator-flags -webhook=false`. The use case of this is that webhook needs to be
+disabled when developing the operator locally since webhook can only be deployed in Kubernetes environment. 
 
 ### How to deploy
 The webhook is deployed along with the Pravega operator, thus there is no extra steps needed. However, there are some configurations that are necessary to make webhook work.
