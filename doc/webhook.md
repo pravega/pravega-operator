@@ -3,13 +3,17 @@
 [Admission webhooks](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) are HTTP callbacks that receive admission requests and do something with them.
 There are  two webhooks [ValidatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#validatingadmissionwebhook) and 
 [MutatingAdmissionWebhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) which are basically 
-doing the same thing except MutatingAdmissionWebhook can modify the requests. In our case, we use MutatingAdmissionWebhook.
+doing the same thing except MutatingAdmissionWebhook can modify the requests. In our case, we use MutatingAdmissionWebhook because it can validate requests as well as mutating them. E.g. clear the image tag 
+if version is specified.
 
 In the Pravega operator repo, we are leveraging the webhook implementation from controller-runtime package, here is the [GoDoc](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook). 
 In detail, there are two steps that developers need to do 1) create webhook server and 2) implement the handler.
 The webhook server registers webhook configuration with the apiserver and creates an HTTP server to route requests to the handlers.
 The server is behind a Kubernetes Service and provides a certificate to the apiserver when serving requests. The kubebuilder has a detailed instruction of 
 building a webhook, see [here](https://github.com/kubernetes-sigs/kubebuilder/blob/86026527c754a144defa6474af6fb352143b9270/docs/book/beyond_basics/sample_webhook.md).
+
+The webhook feature itself is enabled by default but it can be disabled if `webhook=false` is specified when installing the 
+operator locally using `operator-sdk up local`. E.g. ` operator-sdk up local --operator-flags -webhook=false`.
 
 ### How to deploy
 The webhook is deployed along with the Pravega operator, thus there is no extra steps needed. However, there are some configurations that are necessary to make webhook work.
