@@ -10,6 +10,10 @@ spec:
     plural: pravegaclusters
     singular: pravegacluster
   additionalPrinterColumns:
+  - name: Version
+    type: string
+    description: The current pravega version
+    JSONPath: .spec.pravega.image.tag
   - name: Desired Members
     type: integer
     description: The number of desired pravega members
