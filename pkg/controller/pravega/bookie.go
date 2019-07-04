@@ -115,11 +115,11 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 				VolumeMounts: []corev1.VolumeMount{
 					{
 						Name:      LedgerDiskName,
-						MountPath: "/bk/journal",
+						MountPath: "/bk/ledgers",
 					},
 					{
 						Name:      JournalDiskName,
-						MountPath: "/bk/ledgers",
+						MountPath: "/bk/journal",
 					},
 					{
 						Name:      IndexDiskName,
