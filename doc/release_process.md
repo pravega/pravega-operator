@@ -4,7 +4,7 @@
 Pravega Operator follows the [Semantic Versioning](https://semver.org/) model for numbering releases.
 
 ## Introduction
-This page documents the tagging, branching and release process followed when releasing Pravega Operator versions.
+This page documents the tagging, branching and release process followed for Pravega Operator.
 
 ## Types of Releases
 
