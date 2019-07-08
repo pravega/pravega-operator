@@ -1,5 +1,8 @@
 # Pravega Operator Release Process
 
+## Release Versioning
+Pravega Operator follows the [Semantic Versioning](https://semver.org/) model for numbering releases.
+
 ## Introduction
 This page documents the tagging, branching and release process followed when releasing Pravega Operator versions.
 
@@ -9,7 +12,7 @@ This page documents the tagging, branching and release process followed when rel
 
 This is a minor release with backward compatible changes and bug fixes.
 
-1. Create a new branch with last number bumped up from the existing base release.
+1. Create a new branch with last number bumped up from the existing release branch.
    For example, if the existing release branch is 0.3.2, the new branch will be named 0.3.3.
    `$ git clone --branch <tag-name> git@github.com:pravega/pravega-operator.git `
    `$ git checkout -b <release-branch-name>`
@@ -30,6 +33,8 @@ This is a minor release with backward compatible changes and bug fixes.
     `$ git tag <tag-name>`
     `$ git push origin <tag-name>`
     
+   It is possible that a release candidate is problematic and we need to do a new release candidate. In this case, we need to repeat        this tagging step as many times as needed.
+    
 6. Push docker image for release to docker hub pravega repo:
     `$ make build-image`
     `$ docker tag pravega/pravega-operator:latest pravega/pravega-operator:<tag-name>`
@@ -37,8 +42,10 @@ This is a minor release with backward compatible changes and bug fixes.
 
 ### Major Release (Feature + bugfixes)
 
-## Release Versioning
-Pravega Operator follows the [Semantic Versioning](https://semver.org/) model for numbering releases.
+This has non backward compatible changes.
+
+
+
 
 ## Reference
 https://github.com/pravega/pravega/wiki/How-to-release
