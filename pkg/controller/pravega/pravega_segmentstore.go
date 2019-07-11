@@ -25,7 +25,7 @@ import (
 )
 
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
+	sts := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
@@ -46,9 +46,14 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
 		},
 	}
+
+	if pravegaCluster.Spec.Pravega.CacheVolumeClaimTemplate != nil {
+		sts.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega)
+	}
+
+	return sts
 }
 
 func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
@@ -129,6 +134,17 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
+	}
+
+	if p.Spec.Pravega.CacheVolumeClaimTemplate == nil {
+		podSpec.Volumes = []corev1.Volume{
+			{
+				Name: cacheVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		}
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {

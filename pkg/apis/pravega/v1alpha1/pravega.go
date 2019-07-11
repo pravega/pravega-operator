@@ -139,18 +139,6 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.Options = map[string]string{}
 	}
 
-	if s.CacheVolumeClaimTemplate == nil {
-		changed = true
-		s.CacheVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
-			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
-			Resources: v1.ResourceRequirements{
-				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse(DefaultPravegaCacheVolumeSize),
-				},
-			},
-		}
-	}
-
 	if s.Tier2 == nil {
 		changed = true
 		s.Tier2 = &Tier2Spec{}
