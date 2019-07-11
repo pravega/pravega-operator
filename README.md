@@ -35,7 +35,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 ## Requirements
 
-- Kubernetes 1.8+
+- Kubernetes 1.9+
 - Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
 
