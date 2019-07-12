@@ -25,9 +25,9 @@ import (
 
 const (
 	CertDir           = "/tmp"
-	WebHookConfigName = "pravega-operator-webhook-config"
-	WebHookName       = "pravega-upgrade-webhook"
-	WebHookSvcName    = "pravega-upgrade-webhook-svc"
+	WebhookConfigName = "pravega-upgrade-webhook-config"
+	WebhookName       = "upgradepravegaclusters.pravega.io"
+	WebhookSvcName    = "pravega-upgrade-webhook-svc"
 )
 
 // AddToManagerFuncs is a list of functions to add all Webhooks to the Manager
@@ -70,7 +70,7 @@ func Add(mgr manager.Manager) error {
 
 func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
-		Name(WebHookName).
+		Name(WebhookName).
 		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&pravegav1alpha1.PravegaCluster{}).
@@ -80,14 +80,14 @@ func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 }
 
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
-	return webhook.NewServer(WebHookSvcName, mgr, webhook.ServerOptions{
+	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
-			MutatingWebhookConfigName: WebHookConfigName,
+			MutatingWebhookConfigName: WebhookConfigName,
 			// TODO: garbage collect webhook k8s service
 			Service: &webhook.Service{
 				Namespace: os.Getenv("WATCH_NAMESPACE"),
-				Name:      WebHookSvcName,
+				Name:      WebhookSvcName,
 				Selectors: map[string]string{
 					"component": "pravega-operator",
 				},
