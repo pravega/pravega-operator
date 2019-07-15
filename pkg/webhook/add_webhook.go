@@ -25,9 +25,9 @@ import (
 
 const (
 	CertDir           = "/tmp"
-	WebhookConfigName = "pravega-upgrade-webhook-config"
-	WebhookName       = "upgradepravegaclusters.pravega.io"
-	WebhookSvcName    = "pravega-upgrade-webhook-svc"
+	WebhookConfigName = "pravega-webhook-config"
+	WebhookName       = "pravegawebhook.pravega.io"
+	WebhookSvcName    = "pravega-webhook-svc"
 )
 
 // AddToManagerFuncs is a list of functions to add all Webhooks to the Manager
