@@ -18,7 +18,7 @@ spec:
   - name: Desired Version
     type: string
     description: The desired pravega version
-    JSONPath: .status.TargetVersion
+    JSONPath: .spec.version
   - name: Desired Members
     type: integer
     description: The number of desired pravega members
