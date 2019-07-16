@@ -126,13 +126,14 @@ func makeBookiePodSpec(clusterName string, bookkeeperSpec *v1alpha1.BookkeeperSp
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: []string{"/bin/sh", "-c", "/opt/bookkeeper/bin/bookkeeper shell bookiesanity"},
+							Command: []string{"/bin/sh", "-c", "/opt/bookkeeper/bin/bookkeeper shell bookiesanity -timeout 5"},
 						},
 					},
 					// Bookie pods should start fast. We give it up to 1.5 minute to become ready.
 					InitialDelaySeconds: 20,
 					PeriodSeconds:       10,
 					FailureThreshold:    9,
+					TimeoutSeconds:      5,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
