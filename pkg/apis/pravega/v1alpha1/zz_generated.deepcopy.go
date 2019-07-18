@@ -389,11 +389,13 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 			(*out)[key] = val
 		}
 	}
-	if in.CacheVolumeClaimTemplate != nil {
-		in, out := &in.CacheVolumeClaimTemplate, &out.CacheVolumeClaimTemplate
-		*out = new(v1.PersistentVolumeClaimSpec)
-		(*in).DeepCopyInto(*out)
-	}
+	/*
+		if in.CacheVolumeClaimTemplate != nil {
+			in, out := &in.CacheVolumeClaimTemplate, &out.CacheVolumeClaimTemplate
+			*out = new(v1.PersistentVolumeClaimSpec)
+			(*in).DeepCopyInto(*out)
+		}
+	*/
 	if in.Tier2 != nil {
 		in, out := &in.Tier2, &out.Tier2
 		*out = new(Tier2Spec)

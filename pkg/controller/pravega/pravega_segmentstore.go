@@ -20,6 +20,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -46,7 +47,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
+			//VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
 		},
 	}
 }
@@ -73,8 +74,18 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
-
+	storageSize := resource.MustParse("3Gi")
 	podSpec := corev1.PodSpec{
+		Volumes: []corev1.Volume{
+			{
+				Name: cacheVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{
+						Medium:    corev1.StorageMediumMemory,
+						SizeLimit: &storageSize,
+					},
+				},
+			}},
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
@@ -106,7 +117,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					},
 					// Segment Stores can take a few minutes to become ready when the cluster
 					// is configured with external enabled as they need to wait for the allocation
-					// of the external IP address.
+					// of the external IP address.str
 					// This config gives it up to 5 minutes to become ready.
 					PeriodSeconds:    10,
 					FailureThreshold: 30,
@@ -210,6 +221,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 }
 
+/*
 func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
@@ -220,7 +232,7 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 		},
 	}
 }
-
+*/
 func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 	if pravegaSpec.Tier2.FileSystem != nil {
 		return map[string]string{
