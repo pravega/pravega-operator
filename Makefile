@@ -23,7 +23,7 @@ all: check test build
 dep:
 	dep ensure -v
 
-build: build-go build-image
+build: dep build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
@@ -39,7 +39,7 @@ test: test-unit test-e2e
 test-unit: dep
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
-test-e2e: test-e2e-remote
+test-e2e: dep test-e2e-remote
 
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
