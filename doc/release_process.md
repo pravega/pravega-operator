@@ -36,7 +36,7 @@ This is a minor release with backward compatible changes and bug fixes.
    Tag name should correspond to release-branch-name-<release-candidate-version>. 
    For example: `0.3.3-rc1` for the first release candidate.
    
-    `$ git tag <tag-name>`
+    `$ git tag -a <tag-name> -m "<description>"`
     
     `$ git push origin <tag-name>`
     
