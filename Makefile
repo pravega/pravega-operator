@@ -53,7 +53,7 @@ run-local:
 	operator-sdk up local --operator-flags -webhook=false
 
 login:
-	echo "$DOCKER_TEST_PASS" | docker login -u "$DOCKER_TEST_USER" --password-stdin
+	echo "$(DOCKER_TEST_PASS)" | docker login -u "$(DOCKER_TEST_USER)" --password-stdin
 
 push: build login
 	docker push $(REPO):$(VERSION)
