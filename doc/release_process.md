@@ -26,7 +26,7 @@ This is a minor release with backward compatible changes and bug fixes.
     
 3. Make sure all unit and end to end tests pass successfully. 
 
-    `make test`
+    `$ make test`
     
 4. Push changes to the newly created release branch.
 
