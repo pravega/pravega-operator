@@ -34,6 +34,68 @@
   revision = "de5bf2ad457846296e2031421a34e2568e304e35"
 
 [[projects]]
+  digest = "1:f1a1a4a4ba0ce0e5321caea1776f0d5d6cc5fd70acc1b21c8a12e5a3093d4167"
+  name = "github.com/aws/aws-sdk-go"
+  packages = [
+    "aws",
+    "aws/awserr",
+    "aws/awsutil",
+    "aws/client",
+    "aws/client/metadata",
+    "aws/corehandlers",
+    "aws/credentials",
+    "aws/credentials/ec2rolecreds",
+    "aws/credentials/endpointcreds",
+    "aws/credentials/processcreds",
+    "aws/credentials/stscreds",
+    "aws/crr",
+    "aws/csm",
+    "aws/defaults",
+    "aws/ec2metadata",
+    "aws/endpoints",
+    "aws/request",
+    "aws/session",
+    "aws/signer/v4",
+    "internal/ini",
+    "internal/s3err",
+    "internal/sdkio",
+    "internal/sdkrand",
+    "internal/sdkuri",
+    "internal/shareddefaults",
+    "private/protocol",
+    "private/protocol/ec2query",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
+    "private/protocol/json/jsonutil",
+    "private/protocol/jsonrpc",
+    "private/protocol/query",
+    "private/protocol/query/queryutil",
+    "private/protocol/rest",
+    "private/protocol/restxml",
+    "private/protocol/xml/xmlutil",
+    "service/acm",
+    "service/autoscaling",
+    "service/cloudwatchlogs",
+    "service/dynamodb",
+    "service/ec2",
+    "service/ecs",
+    "service/iam",
+    "service/kms",
+    "service/rds",
+    "service/s3",
+    "service/s3/s3iface",
+    "service/s3/s3manager",
+    "service/sns",
+    "service/sqs",
+    "service/ssm",
+    "service/sts",
+    "service/sts/stsiface",
+  ]
+  pruneopts = "NT"
+  revision = "f062d235348647a0e3ed2cadb16640cf03c8acfb"
+  version = "v1.21.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c819830f4f5ef85874a90ac3cbcc96cd322c715f5c96fbe4722eacd3dafbaa07"
   name = "github.com/beorn7/perks"
@@ -42,12 +104,35 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
+  digest = "1:e46315224cd835234c05036394ffe8a8427284f6521ac22db1f4176bef2cb98f"
+  name = "github.com/boombuler/barcode"
+  packages = [
+    ".",
+    "qr",
+    "utils",
+  ]
+  pruneopts = "NT"
+  revision = "3cfea5ab600ae37946be2b763b8ec2c1cf2d272d"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:4b8b5811da6970495e04d1f4e98bb89518cc3cfc3b3f456bdb876ed7b6c74049"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   pruneopts = "NT"
   revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
   version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:72b674cb4faedad73fdb82e7a4d04f40bd2c06b8e75de601f5e6ac4526bb2cb0"
+  name = "github.com/docker/spdystream"
+  packages = [
+    ".",
+    "spdy",
+  ]
+  pruneopts = "NT"
+  revision = "6480d4af844c189cf5dd913db24ddd339d3a4f85"
 
 [[projects]]
   digest = "1:e6f888d4be8ec0f05c50e2aba83da4948b58045dee54d03be81fa74ea673302c"
@@ -67,6 +152,14 @@
   pruneopts = "NT"
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:fce997da6d3f86c728815459582c2228b69a1a327c7f0dcb089597770c23d36e"
+  name = "github.com/go-errors/errors"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "d98b870cc4e05f1545532a80e9909be8216095b6"
 
 [[projects]]
   branch = "master"
@@ -115,6 +208,14 @@
   pruneopts = "NT"
   revision = "5899d5c5e619fda5fa86e14795a835f473ca284c"
   version = "v0.17.2"
+
+[[projects]]
+  digest = "1:13e9a236e56e18fecb73f5b2f2eb7f60060a1a9bc27e5a7328ab22e275ecb63e"
+  name = "github.com/go-sql-driver/mysql"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "72cd26f257d44c1114970e19afddcd812016007e"
+  version = "v1.4.1"
 
 [[projects]]
   digest = "1:756ec597ae63e724366f1b393e9477d3e4d980baf1790a029494a336386e89f1"
@@ -213,6 +314,38 @@
   revision = "c63ab54fda8f77302f8d414e19933f2b6026a089"
 
 [[projects]]
+  digest = "1:132e107e80591811b8ff7f4a9cfbc164f4cbc134eb2b96358b7fef335ba39e94"
+  name = "github.com/gruntwork-io/gruntwork-cli"
+  packages = [
+    "collections",
+    "errors",
+  ]
+  pruneopts = "NT"
+  revision = "6a2163138f3d10377f313428e7e367b0a6c0c1c9"
+  version = "v0.4.2"
+
+[[projects]]
+  digest = "1:53c9ace70e66fcfbb64a535a7ff75c144e021ded45f726a4b601d0713fac3afc"
+  name = "github.com/gruntwork-io/terratest"
+  packages = [
+    "modules/aws",
+    "modules/collections",
+    "modules/customerrors",
+    "modules/environment",
+    "modules/files",
+    "modules/helm",
+    "modules/k8s",
+    "modules/logger",
+    "modules/random",
+    "modules/retry",
+    "modules/shell",
+    "modules/ssh",
+  ]
+  pruneopts = "NT"
+  revision = "03959c963394b6d4547f456f3eacaca0790c9c00"
+  version = "v0.17.5"
+
+[[projects]]
   digest = "1:c7d9de42b661ba85788f5f631cbac165795a2ff7dc1c59a4241d6228b129c3e4"
   name = "github.com/hashicorp/go-version"
   packages = ["."]
@@ -252,6 +385,21 @@
   pruneopts = "NT"
   revision = "9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4"
   version = "v0.3.6"
+
+[[projects]]
+  digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
+  digest = "1:1234e31f3de67447e344dabcdf72c4588d31b8eed2d28f1889377ec006a086a9"
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "c2b33e84"
 
 [[projects]]
   digest = "1:f5b9328966ccea0970b1d15075698eff0ddb3e75889560aad2e9f76b289b536a"
@@ -312,6 +460,14 @@
   pruneopts = "NT"
   revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
   version = "v1.0.1"
+
+[[projects]]
+  digest = "1:f9f72e583aaacf1d1ac5d6121abd4afd3c690baa9e14e1d009df26bf831ba347"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "af06845cf3004701891bf4fdb884bfe4920b3727"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
@@ -422,6 +578,26 @@
   version = "v2.0.1"
 
 [[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "NT"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  digest = "1:251c5fb5db8de4603f3c02574e34bf716eac78e4e61fd6c8e7c3334858fa9173"
+  name = "github.com/pquerna/otp"
+  packages = [
+    ".",
+    "hotp",
+    "totp",
+  ]
+  pruneopts = "NT"
+  revision = "43bebefda392017900e7a7b237b4c914c6a55b50"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:ec2a29e3bd141038ae5c3d3a4f57db0c341fcc1d98055a607aedd683aed124ee"
   name = "github.com/prometheus/client_golang"
   packages = [
@@ -506,12 +682,39 @@
   version = "v1.1.2"
 
 [[projects]]
+  digest = "1:37a91e5093cb260946900c75198c293f3439187e43f48e1a3ae10b4aa55bd7ad"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "f2b07da1e2c38d5f12845a4f607e2e1018cbb1f5"
+  version = "v0.0.5"
+
+[[projects]]
   digest = "1:9d8420bbf131d1618bde6530af37c3799340d3762cc47210c1d9532a4c3a2779"
   name = "github.com/spf13/pflag"
   packages = ["."]
   pruneopts = "NT"
   revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
   version = "v1.0.3"
+
+[[projects]]
+  digest = "1:8e8fc2cb42cfa0a18fda0c9c4034092faa7aac773da5efdde8828eb4b96c001d"
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "require",
+  ]
+  pruneopts = "NT"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
+
+[[projects]]
+  digest = "1:1beaa00290a7677eae3e3221b99208f94089aa893cc60dd5622f19c42d5eefb0"
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
 
 [[projects]]
   digest = "1:22f696cee54865fb8e9ff91df7b633f6b8f22037a8015253c6b6a71ca82219c7"
@@ -548,7 +751,17 @@
   branch = "master"
   digest = "1:d6d3b59b8c4ceb6a7db2f20169719e57a8dcfa2c055b4418feb3fcc7bbd1a936"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
+    "poly1305",
+    "ssh",
+    "ssh/agent",
+    "ssh/terminal",
+  ]
   pruneopts = "NT"
   revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
 
@@ -657,6 +870,7 @@
   name = "google.golang.org/appengine"
   packages = [
     ".",
+    "cloudsql",
     "internal",
     "internal/app_identity",
     "internal/base",
@@ -787,6 +1001,8 @@
     "pkg/util/diff",
     "pkg/util/errors",
     "pkg/util/framer",
+    "pkg/util/httpstream",
+    "pkg/util/httpstream/spdy",
     "pkg/util/intstr",
     "pkg/util/json",
     "pkg/util/mergepatch",
@@ -803,6 +1019,7 @@
     "pkg/version",
     "pkg/watch",
     "third_party/forked/golang/json",
+    "third_party/forked/golang/netutil",
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "NT"
@@ -855,6 +1072,7 @@
     "pkg/version",
     "plugin/pkg/client/auth/exec",
     "plugin/pkg/client/auth/gcp",
+    "plugin/pkg/client/auth/oidc",
     "rest",
     "rest/watch",
     "restmapper",
@@ -870,9 +1088,11 @@
     "tools/leaderelection/resourcelock",
     "tools/metrics",
     "tools/pager",
+    "tools/portforward",
     "tools/record",
     "tools/reference",
     "transport",
+    "transport/spdy",
     "util/buffer",
     "util/cert",
     "util/connrotation",
@@ -961,6 +1181,14 @@
   revision = "0317810137be915b9cf888946c6e115c1bfac693"
 
 [[projects]]
+  digest = "1:a87ae7b65dbe78371c8288e13b6f1ab90a3ee72c8593cec31bca425d86044ed5"
+  name = "k8s.io/kubernetes"
+  packages = ["pkg/kubectl/generate"]
+  pruneopts = "NT"
+  revision = "4485c6f18cee9a5d3c3b4e523bd27972b1b53892"
+  version = "v1.15.1"
+
+[[projects]]
   digest = "1:e03ddaf9f31bccbbb8c33eabad2c85025a95ca98905649fd744e0a54c630a064"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
@@ -1008,6 +1236,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/gruntwork-io/terratest/modules/helm",
     "github.com/hashicorp/go-version",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
@@ -1035,6 +1264,7 @@
     "k8s.io/apimachinery/pkg/util/wait",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
+    "k8s.io/client-go/plugin/pkg/client/auth/oidc",
     "k8s.io/code-generator/cmd/client-gen",
     "k8s.io/code-generator/cmd/conversion-gen",
     "k8s.io/code-generator/cmd/deepcopy-gen",
