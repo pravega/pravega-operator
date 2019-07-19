@@ -9,7 +9,7 @@
 SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
-REPO=pravega/$(PROJECT_NAME)
+REPO=tristan1900/$(PROJECT_NAME)
 VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
 GIT_SHA=$(shell git rev-parse --short HEAD)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
@@ -53,7 +53,7 @@ run-local:
 	operator-sdk up local --operator-flags -webhook=false
 
 login:
-	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
+	@docker login -u "$(DOCKER_TEST_USER)" -p "$(DOCKER__TEST_PASS)"
 
 push: build login
 	docker push $(REPO):$(VERSION)

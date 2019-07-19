@@ -6,6 +6,8 @@
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [Recover Operator when node fails](#recover-operator-when-node-fails)
+* [WATCH_NAMESPACE not set](#WATCH_NAMESPACE-not-set)
+* [Logs missing when Pravega upgrades](Log-missing-when-Pravega-upgrades)
 
 ## Helm Error: no available release name found
 
@@ -84,3 +86,19 @@ kubectl delete configmap pravega-operator-lock
 ```
 After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
 be deleted by Deployment controller. 
+
+## WATCH_NAMESPACE not set
+
+When customizing the operator deployment manifest, make sure to pass the `WATCH_NAMESPACE` to the operator pod
+as the `deploy/operator.yaml` does.
+This is necessary for operator to monitor a specific namespace, it also helps the operator to deploy the webhook serivce.
+Leaving it empty means the operator will monitor all the namespaces, which is 
+not our design and it will also break the webhook in the operator. 
+
+## Logs missing when Pravega upgrades
+
+Users may find Pravega logs are missing after upgrading. This is because the operator uses the Kubernetes 
+[rolling update](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#updating-statefulsets)
+strategy to upgrade pod one at a time. This strategy will use a new replicaset for the update, it will kill one pod in the 
+old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
+replicaset, thus the logs will be missing when running `kubectl logs`.
