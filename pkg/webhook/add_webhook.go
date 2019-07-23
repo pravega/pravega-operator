@@ -98,7 +98,7 @@ func newMutatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
-		BootstrapOptions: &webhook.BootstrapOptions {
+		BootstrapOptions: &webhook.BootstrapOptions{
 			MutatingWebhookConfigName: WebhookConfigName,
 		},
 	})
