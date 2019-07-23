@@ -8,6 +8,7 @@ Requirements:
 Use the `make` command to build the Pravega operator image.
 
 ```
+$ make dep
 $ make build
 ```
 That will generate a Docker image with the format

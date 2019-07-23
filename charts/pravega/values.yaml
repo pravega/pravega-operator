@@ -9,6 +9,9 @@ externalAccess:
   enabled: false
   type: LoadBalancer
 
+serviceAccount:
+  name: pravega-components
+
 bookkeeper:
   image:
     repository: pravega/bookkeeper

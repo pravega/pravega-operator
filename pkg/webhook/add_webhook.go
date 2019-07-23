@@ -13,14 +13,15 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"log"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -34,7 +35,10 @@ import (
 )
 
 const (
-	CertDir = "/tmp"
+	CertDir           = "/tmp"
+	WebhookConfigName = "pravega-webhook-config"
+	WebhookName       = "pravegawebhook.pravega.io"
+	WebhookSvcName    = "pravega-webhook-svc"
 )
 
 // AddToManagerFuncs is a list of functions to add all Webhooks to the Manager
@@ -58,19 +62,21 @@ func AddToManager(m manager.Manager) error {
 // Create webhook server and register webhook to it
 func Add(mgr manager.Manager) error {
 	log.Printf("Initializing webhook")
+
 	svr, err := newWebhookServer(mgr)
 	if err != nil {
 		log.Printf("Failed to create webhook server: %v", err)
 		return err
 	}
 
-	wh, err := newValidatingWebhook(mgr)
+	wh, err := newMutatingWebhook(mgr)
 	if err != nil {
 		log.Printf("Failed to create validating webhook: %v", err)
 		return err
 	}
 
 	svr.Register(wh)
+
 	err = createWebhookK8sService(mgr)
 	if err != nil {
 		log.Printf("Failed to create webhook svc: %v", err)
@@ -78,8 +84,9 @@ func Add(mgr manager.Manager) error {
 	return nil
 }
 
-func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
+func newMutatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
+		Name(WebhookName).
 		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&pravegav1alpha1.PravegaCluster{}).
@@ -89,25 +96,31 @@ func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 }
 
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
-	return webhook.NewServer("pravega-admission-webhook", mgr, webhook.ServerOptions{
+	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
+		BootstrapOptions: &webhook.BootstrapOptions {
+			MutatingWebhookConfigName: WebhookConfigName,
+		},
 	})
 }
 
 func createWebhookK8sService(mgr manager.Manager) error {
+	// Use non-default kube client to talk to apiserver directly since the default kube client uses cache and
+	// that cache is not updated quickly enough for this method to use to get the operator deployment.
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 	c, _ := client.New(cfg, client.Options{Scheme: mgr.GetScheme()})
-	// create webhook k8s service
+
+	// create webhook k8s service object
 	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pravega-admission-webhook",
+			Name:      WebhookSvcName,
 			Namespace: os.Getenv("WATCH_NAMESPACE"),
 		},
 		Spec: corev1.ServiceSpec{
@@ -123,6 +136,7 @@ func createWebhookK8sService(mgr manager.Manager) error {
 			},
 		},
 	}
+
 	// get operator deployment
 	nn := types.NamespacedName{Namespace: os.Getenv("WATCH_NAMESPACE"), Name: os.Getenv("OPERATOR_NAME")}
 	deployment := &appsv1.Deployment{}
@@ -130,8 +144,11 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	if err != nil {
 		return fmt.Errorf("failed to get operator deployment: %v", err)
 	}
-	// add owner reference
+
+	// add owner reference so the k8s service could be garbage collected
 	controllerutil.SetControllerReference(deployment, svc, mgr.GetScheme())
+
+	// create webhook k8s service
 	err = c.Create(context.TODO(), svc)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return fmt.Errorf("failed to create webhook k8s service: %v", err)
