@@ -265,8 +265,13 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
 		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
 		// StatefulSet upgrade completed
-		// TODO: wait until there is no under replicated ledger
-		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
+		underreplicated, err := util.IsLedgerUnderreplicated(p)
+		if err != nil {
+			return false, fmt.Errorf("failed to check underreplicated ledgers: %v", err)
+		}
+		if underreplicated {
+			return false, nil
+		}
 		return true, nil
 	}
 

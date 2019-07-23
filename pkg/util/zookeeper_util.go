@@ -84,3 +84,32 @@ func ListSubTreeBFS(conn *zk.Conn, root string) (*list.List, error) {
 	}
 	return tree, nil
 }
+
+func IsLedgerUnderreplicated(p *v1alpha1.PravegaCluster) (bool, error) {
+	host := []string{p.Spec.ZookeeperUri}
+	conn, _, err := zk.Connect(host, time.Second*5)
+	if err != nil {
+		return false, fmt.Errorf("failed to connect to zookeeper: %v", err)
+	}
+	defer conn.Close()
+
+	root := fmt.Sprintf("/%s/%s/%s/%s/%s/%s", PravegaPath, p.Name, "bookkeeper", "ledgers", "underreplication", "ledgers")
+	exist, _, err := conn.Exists(root)
+	if err != nil {
+		return false, fmt.Errorf("failed to check if underreplication ledgers path exists: %v", err)
+	}
+
+	if exist {
+		tree, err := ListSubTreeBFS(conn, root)
+		if err != nil {
+			return false, fmt.Errorf("failed to construct BFS tree: %v", err)
+		}
+
+		// If there are no under replicated ledgers, the return should only contain the root znode.
+		if tree.Len() > 1 {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
