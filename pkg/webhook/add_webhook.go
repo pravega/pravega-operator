@@ -14,8 +14,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -29,9 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-
-	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 )
 
 const (
@@ -114,6 +113,10 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	c, _ := client.New(cfg, client.Options{Scheme: mgr.GetScheme()})
 
 	// create webhook k8s service object
+	ns, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return err
+	}
 	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -121,7 +124,7 @@ func createWebhookK8sService(mgr manager.Manager) error {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      WebhookSvcName,
-			Namespace: os.Getenv("WATCH_NAMESPACE"),
+			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
@@ -138,7 +141,11 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	}
 
 	// get operator deployment
-	nn := types.NamespacedName{Namespace: os.Getenv("WATCH_NAMESPACE"), Name: os.Getenv("OPERATOR_NAME")}
+	name, err := k8sutil.GetOperatorName()
+	if err != nil {
+		return err
+	}
+	nn := types.NamespacedName{Namespace: ns, Name: name}
 	deployment := &appsv1.Deployment{}
 	err = c.Get(context.TODO(), nn, deployment)
 	if err != nil {
