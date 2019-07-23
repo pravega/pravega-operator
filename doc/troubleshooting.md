@@ -6,7 +6,6 @@
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [Recover Operator when node fails](#recover-operator-when-node-fails)
-* [WATCH_NAMESPACE not set](#WATCH_NAMESPACE-not-set)
 * [Logs missing when Pravega upgrades](Log-missing-when-Pravega-upgrades)
 
 ## Helm Error: no available release name found
