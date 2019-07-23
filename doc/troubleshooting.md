@@ -87,14 +87,6 @@ kubectl delete configmap pravega-operator-lock
 After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
 be deleted by Deployment controller. 
 
-## WATCH_NAMESPACE not set
-
-When customizing the operator deployment manifest, make sure to pass the `WATCH_NAMESPACE` to the operator pod
-as the `deploy/operator.yaml` does.
-This is necessary for operator to monitor a specific namespace, it also helps the operator to deploy the webhook serivce.
-Leaving it empty means the operator will monitor all the namespaces, which is 
-not our design and it will also break the webhook in the operator. 
-
 ## Logs missing when Pravega upgrades
 
 Users may find Pravega logs are missing after upgrading. This is because the operator uses the Kubernetes 
