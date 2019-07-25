@@ -25,6 +25,9 @@ const (
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
 	DefaultPravegaVersion = "0.4.0"
+
+	// Default Domain Name
+	DefaultDomainName = "pravega.io"
 )
 
 func init() {
@@ -152,17 +155,27 @@ type ExternalAccess struct {
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
 	Type v1.ServiceType `json:"type,omitempty"`
+
+	// Domain Name to be used for External Access
+	// This value is ignored if External Access is disabled
+	DomainName string `json:"domainName,omitempty"`
 }
 
 func (e *ExternalAccess) withDefaults() (changed bool) {
-	if e.Enabled == false && e.Type != "" {
+	if e.Enabled == false && (e.Type != "" || e.DomainName != "") {
 		changed = true
 		e.Type = ""
-	} else if e.Enabled == true && e.Type == "" {
-		changed = true
-		e.Type = DefaultServiceType
+		e.DomainName = ""
+	} else if e.Enabled == true {
+		if e.Type == "" {
+			changed = true
+			e.Type = DefaultServiceType
+		}
+		if e.DomainName == "" {
+			changed = true
+			e.DomainName = DefaultDomainName
+		}
 	}
-
 	return changed
 }
 

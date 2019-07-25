@@ -11,9 +11,8 @@
 package pravega
 
 import (
-	"strings"
-
 	"fmt"
+	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -22,6 +21,11 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	externalDNSAnnotationKey = "external-dns.alpha.kubernetes.io/hostname"
+	dot                      = "."
 )
 
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
@@ -329,18 +333,31 @@ func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 
 func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
+	var ssPodName string
+	var ssFQDN string
+
+	domainName := strings.TrimSpace(pravegaCluster.Spec.ExternalAccess.DomainName)
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
 	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
+		ssPodName = util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
+		if strings.HasSuffix(domainName, dot) {
+			ssFQDN = ssPodName + dot + domainName
+		} else {
+			ssFQDN = ssPodName + dot + pravegaCluster.Spec.ExternalAccess.DomainName + dot
+		}
 		service = &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      util.ServiceNameForSegmentStore(pravegaCluster.Name, i),
+				Name:      ssPodName,
 				Namespace: pravegaCluster.Namespace,
 				Labels:    util.LabelsForSegmentStore(pravegaCluster),
+				Annotations: map[string]string{
+					externalDNSAnnotationKey: ssFQDN,
+				},
 			},
 			Spec: corev1.ServiceSpec{
 				Type: pravegaCluster.Spec.ExternalAccess.Type,
