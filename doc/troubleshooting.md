@@ -5,6 +5,7 @@
 * [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
+* [Recover Operator when node fails](#recover-operator-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
 
 ## Helm Error: no available release name found
