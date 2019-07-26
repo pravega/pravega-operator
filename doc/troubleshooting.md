@@ -88,8 +88,8 @@ be deleted by Deployment controller.
 
 ## External-IP details truncated in older Kubectl Client Versions
 
-If we enable external access while deploying a Pravega Cluster, an external IP is assigned to the Pravega Controller endpoint, which is used by users to access it. These external IP details can be viewed in the output of the `kubectl get svc`. 
-However, if we use an older Kubectl client version `v1.10.x` or lower, the external IP details in the output of the `kubectl get svc` are truncated.
+When pravega is deployed with "external-access enabled", an external IP is assigned to the Pravega Controller and Segment Store services, which is used by clients to access it. These external IP details can be viewed in the output of the `kubectl get svc`. 
+However, when using kubectl client version `v1.10.x` or lower, the External IP for the Controller and Segment Store services appears truncated in the output.
 
 ```
 # kubectl get svc
@@ -106,7 +106,7 @@ pravega-zk-headless                     ClusterIP      None             <none>  
 
 ```
 
-However this problem has been solved in Kubectl client version `v1.11.x` onwards.
+However this problem has been solved in kubectl client version `v1.11.x` onwards.
 
 ```
 # kubectl get svc
@@ -123,4 +123,29 @@ pravega-zk-headless                     ClusterIP      None             <none>  
 
 ```
 
-Also, while using older kubectl client versions, external IP details can still be viewed by doing a `kubectl describe svc` on the exposed service.
+Also, while using kubectl client version `v1.10.x` or lower, the complete external IP can still be viewed by doing a `kubectl describe svc` for the concerned service.
+
+```
+# kubectl describe svc pravega-pravega-controller
+Name:                     pravega-pravega-controller
+Namespace:                default
+Labels:                   app=pravega-cluster
+                          component=pravega-controller
+                          pravega_cluster=pravega
+Annotations:              ncp/internal_ip_for_policy=100.64.161.119
+Selector:                 app=pravega-cluster,component=pravega-controller,pravega_cluster=pravega
+Type:                     LoadBalancer
+IP:                       10.100.200.34
+LoadBalancer Ingress:     10.247.114.149, 100.64.161.119
+Port:                     rest  10080/TCP
+TargetPort:               10080/TCPc
+NodePort:                 rest  32097/TCP
+Endpoints:                
+Port:                     grpc  9090/TCP
+TargetPort:               9090/TCP
+NodePort:                 grpc  32705/TCP
+Endpoints:                
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+```
