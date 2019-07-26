@@ -88,8 +88,8 @@ be deleted by Deployment controller.
 
 ## External-IP details truncated in older Kubectl Client Versions
 
-When pravega is deployed with "external-access enabled", an external IP is assigned to the Pravega Controller and Segment Store services, which is used by clients to access it. These external IP details can be viewed in the output of the `kubectl get svc`. 
-However, when using kubectl client version `v1.10.x` or lower, the External IP for the Controller and Segment Store services appears truncated in the output.
+When Pravega is deployed with "external-access enabled", an External-IP is assigned to its controller and segment store services, which is used by clients to access it. The External-IP details can be viewed in the output of the `kubectl get svc`. 
+However, when using kubectl client version `v1.10.x` or lower, the External-IP for the controller and segment store services appears truncated in the output.
 
 ```
 # kubectl get svc
@@ -106,7 +106,7 @@ pravega-zk-headless                     ClusterIP      None             <none>  
 
 ```
 
-However this problem has been solved in kubectl client version `v1.11.x` onwards.
+This problem has however been solved in kubectl client version `v1.11.x` onwards.
 
 ```
 # kubectl get svc
@@ -123,7 +123,7 @@ pravega-zk-headless                     ClusterIP      None             <none>  
 
 ```
 
-Also, while using kubectl client version `v1.10.x` or lower, the complete external IP can still be viewed by doing a `kubectl describe svc` for the concerned service.
+Also, while using kubectl client version `v1.10.x` or lower, the complete External-IP can still be viewed by doing a `kubectl describe svc` for the concerned service.
 
 ```
 # kubectl describe svc pravega-pravega-controller
