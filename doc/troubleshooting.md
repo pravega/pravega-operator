@@ -88,8 +88,8 @@ be deleted by Deployment controller.
 
 ## Logs missing when Pravega upgrades
 
-Users may find Pravega logs are missing after upgrading. This is because the operator uses the Kubernetes 
+Users may find Pravega logs for old pods to be missing post upgrade. This is because the operator uses the Kubernetes 
 [rolling update](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#updating-statefulsets)
 strategy to upgrade pod one at a time. This strategy will use a new replicaset for the update, it will kill one pod in the 
 old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
-replicaset, thus the logs will be missing when running `kubectl logs`.
+replicaset, thus the logs for the old pod cannot be obtained using `kubectl logs`.
