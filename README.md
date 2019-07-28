@@ -73,7 +73,7 @@ For demo purposes, you can quickly install a toy NFS server.
 $ helm install stable/nfs-server-provisioner
 ```
 
-And create a PVC for Tier 2 that uses utilizes it.
+And create a PVC for Tier 2 that utilizes it.
 
 ```
 $ kubectl create -f ./example/pvc-tier2.yaml

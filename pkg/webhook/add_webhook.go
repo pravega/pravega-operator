@@ -12,15 +12,14 @@ package webhook
 
 import (
 	"log"
-	"os"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-
-	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 )
 
 const (
@@ -80,13 +79,17 @@ func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 }
 
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
+	namespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return nil, err
+	}
 	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			MutatingWebhookConfigName: WebhookConfigName,
 			// TODO: garbage collect webhook k8s service
 			Service: &webhook.Service{
-				Namespace: os.Getenv("WATCH_NAMESPACE"),
+				Namespace: namespace,
 				Name:      WebhookSvcName,
 				Selectors: map[string]string{
 					"component": "pravega-operator",

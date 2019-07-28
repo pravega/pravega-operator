@@ -7,6 +7,7 @@
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [Recover Operator when node fails](#recover-operator-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
+* [Logs missing when Pravega upgrades](Log-missing-when-Pravega-upgrades)
 
 ## Helm Error: no available release name found
 
@@ -149,3 +150,11 @@ Session Affinity:         None
 External Traffic Policy:  Cluster
 Events:                   <none>
 ```
+
+## Logs missing when Pravega upgrades
+
+Users may find Pravega logs for old pods to be missing post upgrade. This is because the operator uses the Kubernetes 
+[rolling update](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#updating-statefulsets)
+strategy to upgrade pod one at a time. This strategy will use a new replicaset for the update, it will kill one pod in the 
+old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
+replicaset, thus the logs for the old pod cannot be obtained using `kubectl logs`.
