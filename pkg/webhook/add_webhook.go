@@ -95,6 +95,10 @@ func newMutatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 }
 
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
+	namespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return nil, err
+	}
 	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
