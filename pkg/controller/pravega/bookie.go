@@ -125,6 +125,10 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 						Name:      IndexDiskName,
 						MountPath: "/bk/index",
 					},
+					{
+						Name:      heapDumpName,
+						MountPath: heapDumpDir,
+					},
 				},
 				Resources: *p.Spec.Bookkeeper.Resources,
 				ReadinessProbe: &corev1.Probe{
@@ -155,6 +159,14 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 			},
 		},
 		Affinity: util.PodAntiAffinity("bookie", p.Name),
+		Volumes: []corev1.Volume{
+			{
+				Name: heapDumpName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		},
 	}
 
 	if p.Spec.Bookkeeper.ServiceAccountName != "" {
@@ -194,6 +206,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=" + heapDumpDir,
 	}
 
 	if match, _ := util.CompareVersions(pravegaCluster.Spec.Version, "0.4.0", ">="); match {
