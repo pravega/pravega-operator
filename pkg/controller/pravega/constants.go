@@ -19,5 +19,5 @@ const (
 	tlsVolumeName         = "tls-secret"
 	tlsMountDir           = "/etc/secret-volume"
 	heapDumpName          = "heap-dump"
-	heapDumpDir           = "/tmp/dumpFile/heap"
+	heapDumpDir           = "/tmp/dumpfile/heap"
 )
