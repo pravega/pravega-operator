@@ -395,7 +395,8 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 
 				It("should set secret volume", func() {
-					Ω(foundSS.Spec.Template.Spec.Volumes[0].Name).Should(Equal("tls-secret"))
+					Ω(foundSS.Spec.Template.Spec.Volumes[0].Name).Should(Equal("heap-dump"))
+					Ω(foundSS.Spec.Template.Spec.Volumes[1].Name).Should(Equal("tls-secret"))
 					Ω(foundSS.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.SecretName).Should(Equal("segmentstore-secret"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name).Should(Equal("tls-secret"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath).Should(Equal("/etc/secret-volume"))
