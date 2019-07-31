@@ -6,6 +6,7 @@
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [Recover Operator when node fails](#recover-operator-when-node-fails)
+* [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
 * [Logs missing when Pravega upgrades](Log-missing-when-Pravega-upgrades)
 
 ## Helm Error: no available release name found
@@ -85,6 +86,70 @@ kubectl delete configmap pravega-operator-lock
 ```
 After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
 be deleted by Deployment controller. 
+
+## External-IP details truncated in older Kubectl Client Versions
+
+When Pravega is deployed with `external-access enabled`, an External-IP is assigned to its controller and segment store services, which is used by clients to access it. The External-IP details can be viewed in the output of the `kubectl get svc`. 
+However, when using kubectl client version `v1.10.x` or lower, the External-IP for the controller and segment store services appears truncated in the output.
+
+```
+# kubectl get svc
+NAME                                    TYPE           CLUSTER-IP       EXTERNAL-IP        PORT(S)                          AGE
+kubernetes                              ClusterIP      10.100.200.1     <none>             443/TCP                          6d
+pravega-bookie-headless                 ClusterIP      None             <none>             3181/TCP                         6d
+pravega-pravega-controller              LoadBalancer   10.100.200.11    10.240.124.15...   10080:31391/TCP,9090:30301/TCP   6d
+pravega-pravega-segmentstore-0          LoadBalancer   10.100.200.59    10.240.124.15...   12345:30597/TCP                  6d
+pravega-pravega-segmentstore-1          LoadBalancer   10.100.200.42    10.240.124.15...   12345:30840/TCP                  6d
+pravega-pravega-segmentstore-2          LoadBalancer   10.100.200.83    10.240.124.15...   12345:31170/TCP                  6d
+pravega-pravega-segmentstore-headless   ClusterIP      None             <none>             12345/TCP                        6d
+pravega-zk-client                       ClusterIP      10.100.200.120   <none>             2181/TCP                         6d
+pravega-zk-headless                     ClusterIP      None             <none>             2888/TCP,3888/TCP                6d
+
+```
+
+This problem has however been solved in kubectl client version `v1.11.0` onwards.
+
+```
+# kubectl get svc
+NAME                                    TYPE           CLUSTER-IP       EXTERNAL-IP                     PORT(S)                          AGE
+kubernetes                              ClusterIP      10.100.200.1     <none>                          443/TCP                          6d20h
+pravega-bookie-headless                 ClusterIP      None             <none>                          3181/TCP                         6d3h
+pravega-pravega-controller              LoadBalancer   10.100.200.11    10.240.124.155,100.64.112.185   10080:31391/TCP,9090:30301/TCP   6d3h
+pravega-pravega-segmentstore-0          LoadBalancer   10.100.200.59    10.240.124.156,100.64.112.185   12345:30597/TCP                  6d3h
+pravega-pravega-segmentstore-1          LoadBalancer   10.100.200.42    10.240.124.157,100.64.112.185   12345:30840/TCP                  6d3h
+pravega-pravega-segmentstore-2          LoadBalancer   10.100.200.83    10.240.124.158,100.64.112.185   12345:31170/TCP                  6d3h
+pravega-pravega-segmentstore-headless   ClusterIP      None             <none>                          12345/TCP                        6d3h
+pravega-zk-client                       ClusterIP      10.100.200.120   <none>                          2181/TCP                         6d3h
+pravega-zk-headless                     ClusterIP      None             <none>                          2888/TCP,3888/TCP                6d3h
+
+```
+
+Also, while using kubectl client version `v1.10.x` or lower, the complete External-IP can still be viewed by doing a `kubectl describe svc` for the concerned service.
+
+```
+# kubectl describe svc pravega-pravega-controller
+Name:                     pravega-pravega-controller
+Namespace:                default
+Labels:                   app=pravega-cluster
+                          component=pravega-controller
+                          pravega_cluster=pravega
+Annotations:              ncp/internal_ip_for_policy=100.64.161.119
+Selector:                 app=pravega-cluster,component=pravega-controller,pravega_cluster=pravega
+Type:                     LoadBalancer
+IP:                       10.100.200.34
+LoadBalancer Ingress:     10.247.114.149, 100.64.161.119
+Port:                     rest  10080/TCP
+TargetPort:               10080/TCPc
+NodePort:                 rest  32097/TCP
+Endpoints:                
+Port:                     grpc  9090/TCP
+TargetPort:               9090/TCP
+NodePort:                 grpc  32705/TCP
+Endpoints:                
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+```
 
 ## Logs missing when Pravega upgrades
 
