@@ -20,10 +20,7 @@ import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -76,9 +73,9 @@ func Add(mgr manager.Manager) error {
 
 	svr.Register(wh)
 
-	err = createWebhookK8sService(mgr)
+	err = addOwnerReferenceToWebhookK8sService(mgr)
 	if err != nil {
-		log.Printf("Failed to create webhook svc: %v", err)
+		log.Printf("Failed to update webhook svc: %v", err)
 	}
 	return nil
 }
@@ -95,15 +92,26 @@ func newMutatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 }
 
 func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
+	namespace, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return nil, err
+	}
 	return webhook.NewServer(WebhookSvcName, mgr, webhook.ServerOptions{
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			MutatingWebhookConfigName: WebhookConfigName,
+			Service: &webhook.Service{
+				Namespace: namespace,
+				Name:      WebhookSvcName,
+				Selectors: map[string]string{
+					"component": "pravega-operator",
+				},
+			},
 		},
 	})
 }
 
-func createWebhookK8sService(mgr manager.Manager) error {
+func addOwnerReferenceToWebhookK8sService(mgr manager.Manager) error {
 	// Use non-default kube client to talk to apiserver directly since the default kube client uses cache and
 	// that cache is not updated quickly enough for this method to use to get the operator deployment.
 	cfg, err := config.GetConfig()
@@ -112,32 +120,17 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	}
 	c, _ := client.New(cfg, client.Options{Scheme: mgr.GetScheme()})
 
-	// create webhook k8s service object
+	// get webhook k8s service object
+	svc := &corev1.Service{}
 	ns, err := k8sutil.GetOperatorNamespace()
 	if err != nil {
 		return err
 	}
-	svc := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      WebhookSvcName,
-			Namespace: ns,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: map[string]string{
-				"component": "pravega-operator",
-			},
-			Ports: []corev1.ServicePort{
-				{
-					// When using service, kube-apiserver will send admission request to port 443.
-					Port:       443,
-					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 443},
-				},
-			},
-		},
+	nn := types.NamespacedName{Namespace: ns, Name: WebhookSvcName}
+
+	err = c.Get(context.TODO(), nn, svc)
+	if err != nil {
+		return fmt.Errorf("failed to get webhook service: %v", err)
 	}
 
 	// get operator deployment
@@ -145,8 +138,9 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
-	nn := types.NamespacedName{Namespace: ns, Name: name}
+	nn = types.NamespacedName{Namespace: ns, Name: name}
 	deployment := &appsv1.Deployment{}
+
 	err = c.Get(context.TODO(), nn, deployment)
 	if err != nil {
 		return fmt.Errorf("failed to get operator deployment: %v", err)
@@ -155,10 +149,10 @@ func createWebhookK8sService(mgr manager.Manager) error {
 	// add owner reference so the k8s service could be garbage collected
 	controllerutil.SetControllerReference(deployment, svc, mgr.GetScheme())
 
-	// create webhook k8s service
-	err = c.Create(context.TODO(), svc)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create webhook k8s service: %v", err)
+	// update webhook k8s service
+	err = c.Update(context.TODO(), svc)
+	if err != nil {
+		return fmt.Errorf("failed to update webhook k8s service: %v", err)
 	}
 	return nil
 }
