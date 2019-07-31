@@ -9,7 +9,7 @@
 SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
-REPO=pravega/$(PROJECT_NAME)
+REPO=tristan1900/$(PROJECT_NAME)
 VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
 GIT_SHA=$(shell git rev-parse --short HEAD)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
@@ -23,7 +23,7 @@ all: check test build
 dep:
 	dep ensure -v
 
-build: build-go build-image
+build: dep build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
@@ -39,7 +39,7 @@ test: test-unit test-e2e
 test-unit: dep
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
-test-e2e: test-e2e-remote
+test-e2e: dep test-e2e-remote
 
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
@@ -53,7 +53,7 @@ run-local:
 	operator-sdk up local --operator-flags -webhook=false
 
 login:
-	@docker login -u "$(DOCKER_USER)" -p "$(DOCKER_PASS)"
+	echo "$(DOCKER_TEST_PASS)" | docker login -u "$(DOCKER_TEST_USER)" --password-stdin
 
 push: build login
 	docker push $(REPO):$(VERSION)
