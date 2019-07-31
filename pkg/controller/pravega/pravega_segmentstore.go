@@ -335,16 +335,22 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 	var service *corev1.Service
 	var ssPodName string
 	var ssFQDN string
+	var annotationMap map[string]string
 
-	domainName := strings.TrimSpace(pravegaCluster.Spec.ExternalAccess.DomainName)
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
 	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
 		ssPodName = util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
-		if strings.HasSuffix(domainName, dot) {
-			ssFQDN = ssPodName + dot + domainName
+		if pravegaCluster.Spec.ExternalAccess.DomainName != "" {
+			domainName := strings.TrimSpace(pravegaCluster.Spec.ExternalAccess.DomainName)
+			if strings.HasSuffix(domainName, dot) {
+				ssFQDN = ssPodName + dot + domainName
+			} else {
+				ssFQDN = ssPodName + dot + domainName + dot
+			}
+			annotationMap = map[string]string{externalDNSAnnotationKey: ssFQDN}
 		} else {
-			ssFQDN = ssPodName + dot + pravegaCluster.Spec.ExternalAccess.DomainName + dot
+			annotationMap = map[string]string{}
 		}
 		service = &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -352,12 +358,10 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      ssPodName,
-				Namespace: pravegaCluster.Namespace,
-				Labels:    util.LabelsForSegmentStore(pravegaCluster),
-				Annotations: map[string]string{
-					externalDNSAnnotationKey: ssFQDN,
-				},
+				Name:        ssPodName,
+				Namespace:   pravegaCluster.Namespace,
+				Labels:      util.LabelsForSegmentStore(pravegaCluster),
+				Annotations: annotationMap,
 			},
 			Spec: corev1.ServiceSpec{
 				Type: pravegaCluster.Spec.ExternalAccess.Type,

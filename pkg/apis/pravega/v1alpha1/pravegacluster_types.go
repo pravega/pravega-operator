@@ -25,9 +25,6 @@ const (
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
 	DefaultPravegaVersion = "0.4.0"
-
-	// Default Domain Name
-	DefaultDomainName = "pravega.io"
 )
 
 func init() {
@@ -170,10 +167,6 @@ func (e *ExternalAccess) withDefaults() (changed bool) {
 		if e.Type == "" {
 			changed = true
 			e.Type = DefaultServiceType
-		}
-		if e.DomainName == "" {
-			changed = true
-			e.DomainName = DefaultDomainName
 		}
 	}
 	return changed
