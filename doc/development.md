@@ -12,20 +12,22 @@ Install gvm:
 ```
 bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
 ```
-
 If you see a message like:
 ``` Please restart your terminal session or to get started right away use: 
-source /home/<user homedir>/.gvm/scripts/gvm ```
-Please execute above source command
-Try running `gvm` on the terminal, (if bison is not installed on your machine install using `sudo apt-get install bison`)
-
-To see all installed go versions:
-```gvm list```
+source /home/<user homedir>/.gvm/scripts/gvm 
+```
+Please execute the source command
+Try running `gvm` on the terminal, (If bison is not installed, install using `sudo apt-get install bison`)
+To see all currently installed go versions:
+```gvm list
+```
 
 To install a new go version:
-``` gvm install go1.4 -B ```
-``` gvm use go1.4```
-``` gvm install go1.11 --binary```
+``` 
+gvm install go1.4 -B 
+gvm use go1.4
+gvm install go1.11 --binary
+```
 
 ### Build the operator image
 
