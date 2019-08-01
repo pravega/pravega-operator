@@ -9,7 +9,8 @@ You can install go directly or use gvm ( go version manager)
 
 Install gvm:
 
-```bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+```
+bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
 ```
 
 If you see a message like:
@@ -22,7 +23,9 @@ To see all installed go versions:
 ```gvm list```
 
 To install a new go version:
-```gvm install go1.11 --binary```
+``` gvm install go1.4 -B ```
+``` gvm use go1.4```
+``` gvm install go1.11 --binary```
 
 ### Build the operator image
 
