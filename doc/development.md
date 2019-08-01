@@ -12,12 +12,6 @@ Install gvm:
 ```
 bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
 ```
-If you see a message like:
-``` Please restart your terminal session or to get started right away use: 
-source /home/<user homedir>/.gvm/scripts/gvm 
-```
-Please execute the source command
-Try running `gvm` on the terminal, (If bison is not installed, install using `sudo apt-get install bison`)
 To see all currently installed go versions:
 ```gvm list
 ```
