@@ -1,9 +1,32 @@
 ## Development
 
-### Build the operator image
-
 Requirements:
   - Go 1.10+
+  
+### Install Go
+
+You can install go directly or use gvm ( go version manager)
+
+Install gvm:
+
+```bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
+```
+
+If you see a message like:
+``` Please restart your terminal session or to get started right away use: 
+source /home/<user homedir>/.gvm/scripts/gvm ```
+Please execute above source command
+Try running `gvm` on the terminal, (if bison is not installed on your machine install using `sudo apt-get install bison`)
+
+To see all installed go versions:
+```gvm list```
+
+To install a new go version:
+```gvm install go1.11 --binary```
+
+### Build the operator image
+
+
 
 Use the `make` command to build the Pravega operator image.
 
