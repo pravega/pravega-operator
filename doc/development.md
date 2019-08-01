@@ -42,6 +42,7 @@ cd $GOPATH
 go get github.com:pravega/pravega-operator
 ```
 This should clone operator code under `$GOPATH/src/github.com/pravega/pravega-operator`
+
 Install dep
 ```
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
