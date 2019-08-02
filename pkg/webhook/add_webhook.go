@@ -11,11 +11,19 @@
 package webhook
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -57,17 +65,22 @@ func Add(mgr manager.Manager) error {
 		return err
 	}
 
-	wh, err := newValidatingWebhook(mgr)
+	wh, err := newMutatingWebhook(mgr)
 	if err != nil {
 		log.Printf("Failed to create validating webhook: %v", err)
 		return err
 	}
 
 	svr.Register(wh)
+
+	err = addOwnerReferenceToWebhookK8sService(mgr)
+	if err != nil {
+		log.Printf("Failed to update webhook svc: %v", err)
+	}
 	return nil
 }
 
-func newValidatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
+func newMutatingWebhook(mgr manager.Manager) (*admission.Webhook, error) {
 	return builder.NewWebhookBuilder().
 		Name(WebhookName).
 		Mutating().
@@ -87,7 +100,6 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 		CertDir: CertDir,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			MutatingWebhookConfigName: WebhookConfigName,
-			// TODO: garbage collect webhook k8s service
 			Service: &webhook.Service{
 				Namespace: namespace,
 				Name:      WebhookSvcName,
@@ -97,4 +109,50 @@ func newWebhookServer(mgr manager.Manager) (*webhook.Server, error) {
 			},
 		},
 	})
+}
+
+func addOwnerReferenceToWebhookK8sService(mgr manager.Manager) error {
+	// Use non-default kube client to talk to apiserver directly since the default kube client uses cache and
+	// that cache is not updated quickly enough for this method to use to get the operator deployment.
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	c, _ := client.New(cfg, client.Options{Scheme: mgr.GetScheme()})
+
+	// get webhook k8s service object
+	svc := &corev1.Service{}
+	ns, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		return err
+	}
+	nn := types.NamespacedName{Namespace: ns, Name: WebhookSvcName}
+
+	err = c.Get(context.TODO(), nn, svc)
+	if err != nil {
+		return fmt.Errorf("failed to get webhook service: %v", err)
+	}
+
+	// get operator deployment
+	name, err := k8sutil.GetOperatorName()
+	if err != nil {
+		return err
+	}
+	nn = types.NamespacedName{Namespace: ns, Name: name}
+	deployment := &appsv1.Deployment{}
+
+	err = c.Get(context.TODO(), nn, deployment)
+	if err != nil {
+		return fmt.Errorf("failed to get operator deployment: %v", err)
+	}
+
+	// add owner reference so the k8s service could be garbage collected
+	controllerutil.SetControllerReference(deployment, svc, mgr.GetScheme())
+
+	// update webhook k8s service
+	err = c.Update(context.TODO(), svc)
+	if err != nil {
+		return fmt.Errorf("failed to update webhook k8s service: %v", err)
+	}
+	return nil
 }

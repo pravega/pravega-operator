@@ -32,17 +32,11 @@ an example of the additional permission
   - '*'
 ```
 
-2. Namespace
+2. Webhook service label selector
 
-The Kubernetes service needs to be created in the same namespace with the webhook server. 
-Kuberenetes uses the [downawrd api](https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api)
-to expose pod information to containers. Here is how it get passed in the `operator.yaml` file.
-```
-env:
-- name: WEBHOOK_NAMESPACE
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.namespace
+The webhook will deploy a Kubernetes service. This service will need to select the operator pod as its backend.
+The way to select is using Kubernetes label selector and user will need to specify `"component": "pravega-operator"` as the label
+when deploying the Pravega operator deployment. 
 ```
 
 ### What it does
