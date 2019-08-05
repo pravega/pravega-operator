@@ -356,10 +356,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 
 				It("should set secret volume", func() {
-					Ω(foundController.Spec.Template.Spec.Volumes[0].Name).Should(Equal("tls-secret"))
-					Ω(foundController.Spec.Template.Spec.Volumes[0].VolumeSource.Secret.SecretName).Should(Equal("controller-secret"))
-					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name).Should(Equal("tls-secret"))
-					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath).Should(Equal("/etc/secret-volume"))
+					Ω(foundController.Spec.Template.Spec.Volumes[0].Name).Should(Equal("heap-dump"))
+					Ω(foundController.Spec.Template.Spec.Volumes[1].Name).Should(Equal("tls-secret"))
+					Ω(foundController.Spec.Template.Spec.Volumes[1].VolumeSource.Secret.SecretName).Should(Equal("controller-secret"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name).Should(Equal("tls-secret"))
+					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath).Should(Equal("/etc/secret-volume"))
 				})
 			})
 
