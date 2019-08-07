@@ -148,26 +148,30 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
+		"-Dpravegaservice.clusterName=" + p.Name,
+	}
+
+	jvmOpts := []string{
 		"-Xms1g",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
-		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
 	if match, _ := util.CompareVersions(p.Spec.Version, "0.4.0", ">="); match {
 		// Pravega < 0.4 uses a Java version that does not support the options below
-		javaOpts = append(javaOpts,
+		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
 			"-XX:+UseCGroupMemoryLimitForHeap",
 			"-XX:MaxRAMFraction=2",
 		)
 	}
 
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.JVM.Segmentstore)...)
+
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
-
 	configData := map[string]string{
 		"AUTHORIZATION_ENABLED": "false",
 		"CLUSTER_NAME":          p.Name,

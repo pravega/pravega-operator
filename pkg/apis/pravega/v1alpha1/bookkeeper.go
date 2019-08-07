@@ -82,6 +82,11 @@ type BookkeeperSpec struct {
 	// in bookkeeper. Some examples can be found here
 	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
 	Options map[string]string `json:"options"`
+
+	// JVM is the JVM options for bookkeeper. It will be passed to the JVM for performance tuning.
+	// If this field is not specified, the operator will use a set of default
+	// options that is good enough for general deployment.
+	JVM *BookkeeperJVMOptions `json:"jvm"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -130,12 +135,22 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		s.Options = map[string]string{}
 	}
 
+	if s.JVM == nil {
+		s.JVM = &BookkeeperJVMOptions{}
+	}
+
 	return changed
 }
 
 // BookkeeperImageSpec defines the fields needed for a BookKeeper Docker image
 type BookkeeperImageSpec struct {
 	ImageSpec
+}
+
+type BookkeeperJVMOptions struct {
+	MemoryOpts    []string `json:"memoryOpts"`
+	GcOpts        []string `json:"gcOpts"`
+	GcLoggingOpts []string `json:"gcLoggingOpts"`
 }
 
 func (s *BookkeeperImageSpec) withDefaults() (changed bool) {

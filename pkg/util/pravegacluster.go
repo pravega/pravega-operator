@@ -226,3 +226,61 @@ func NormalizeVersion(version string) (string, error) {
 	}
 	return matches[1], nil
 }
+
+func UpdateOneJVMOption(arg string, m map[string]string) {
+	if strings.HasPrefix(arg, "-Xms") {
+		m["-Xms"] = string(arg[4:])
+		return
+	}
+
+	if strings.HasPrefix(arg, "-XX:") {
+		if arg[4] == '+' || arg[4] == '-' {
+			m[arg[5:]] = string(arg[4])
+			return
+		}
+		s := strings.Split(arg[4:], "=")
+		m[s[0]] = s[1]
+		return
+	}
+
+	m[arg] = ""
+	return
+}
+
+func GenerateJVMOption(k, v string) string {
+	if v == "" {
+		return k
+	}
+
+	if k == "-Xms" {
+		return fmt.Sprintf("%v%v", k, v)
+	}
+
+	if v == "+" || v == "-" {
+		return fmt.Sprintf("-XX:%v%v", v, k)
+	}
+
+	return fmt.Sprintf("-XX:%v=%v", k, v)
+}
+
+func OverrideDefaultJVMOptions(defaultOpts []string, overrideOpts []string) []string {
+	if overrideOpts == nil {
+		return defaultOpts
+	}
+
+	m := map[string]string{}
+	for _, v := range defaultOpts {
+		UpdateOneJVMOption(v, m)
+	}
+
+	for _, v := range overrideOpts {
+		UpdateOneJVMOption(v, m)
+	}
+
+	jvmOpts := []string{}
+	for k, v := range m {
+		jvmOpts = append(jvmOpts, GenerateJVMOption(k, v))
+	}
+
+	return jvmOpts
+}

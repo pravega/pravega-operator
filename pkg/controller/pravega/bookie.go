@@ -204,6 +204,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 			"-XX:MaxRAMFraction=2",
 		)
 	}
+	memoryOpts = util.OverrideDefaultJVMOptions(memoryOpts, pravegaCluster.Spec.Bookkeeper.JVM.MemoryOpts)
 
 	gcOpts := []string{
 		"-XX:+UseG1GC",
@@ -217,6 +218,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:+DisableExplicitGC",
 		"-XX:-ResizePLAB",
 	}
+	gcOpts = util.OverrideDefaultJVMOptions(gcOpts, pravegaCluster.Spec.Bookkeeper.JVM.GcOpts)
 
 	gcLoggingOpts := []string{
 		"-XX:+PrintGCDetails",
@@ -226,6 +228,7 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 		"-XX:NumberOfGCLogFiles=5",
 		"-XX:GCLogFileSize=64m",
 	}
+	gcLoggingOpts = util.OverrideDefaultJVMOptions(gcLoggingOpts, pravegaCluster.Spec.Bookkeeper.JVM.GcLoggingOpts)
 
 	configData := map[string]string{
 		"BOOKIE_MEM_OPTS":          strings.Join(memoryOpts, " "),
