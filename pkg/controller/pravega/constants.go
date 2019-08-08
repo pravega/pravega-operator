@@ -18,4 +18,6 @@ const (
 	segmentStoreKind      = "pravega-segmentstore"
 	tlsVolumeName         = "tls-secret"
 	tlsMountDir           = "/etc/secret-volume"
+	heapDumpName          = "heap-dump"
+	heapDumpDir           = "/tmp/dumpfile/heap"
 )
