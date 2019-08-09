@@ -256,7 +256,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 						},
 						JVM: &v1alpha1.BookkeeperJVMOptions{
 							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
-							GcOpts:        []string{"-XX:MaxGCPauseMillis=20"},
+							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
 							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
 						},
 					},
@@ -344,11 +344,13 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms2g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=2g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=20")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:-UseG1GC")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=10")).Should(BeTrue())
 
 					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms1g")).Should(BeFalse())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeFalse())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=10")).Should(BeFalse())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:+UseG1GC")).Should(BeFalse())
 					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=5")).Should(BeFalse())
 				})
 			})

@@ -230,10 +230,16 @@ func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.Config
 	}
 	gcLoggingOpts = util.OverrideDefaultJVMOptions(gcLoggingOpts, pravegaCluster.Spec.Bookkeeper.JVM.GcLoggingOpts)
 
+	extraOpts := []string{}
+	if pravegaCluster.Spec.Bookkeeper.JVM.ExtraOpts != nil {
+		extraOpts = pravegaCluster.Spec.Bookkeeper.JVM.ExtraOpts
+	}
+
 	configData := map[string]string{
 		"BOOKIE_MEM_OPTS":          strings.Join(memoryOpts, " "),
 		"BOOKIE_GC_OPTS":           strings.Join(gcOpts, " "),
 		"BOOKIE_GC_LOGGING_OPTS":   strings.Join(gcLoggingOpts, " "),
+		"BOOKIE_EXTRA_OPTS":        strings.Join(extraOpts, " "),
 		"ZK_URL":                   pravegaCluster.Spec.ZookeeperUri,
 		"BK_useHostNameAsBookieID": "true",
 		"PRAVEGA_CLUSTER_NAME":     pravegaCluster.ObjectMeta.Name,

@@ -151,6 +151,7 @@ type BookkeeperJVMOptions struct {
 	MemoryOpts    []string `json:"memoryOpts"`
 	GcOpts        []string `json:"gcOpts"`
 	GcLoggingOpts []string `json:"gcLoggingOpts"`
+	ExtraOpts     []string `json:"extraOpts"`
 }
 
 func (s *BookkeeperImageSpec) withDefaults() (changed bool) {

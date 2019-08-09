@@ -60,6 +60,11 @@ func (in *BookkeeperJVMOptions) DeepCopyInto(out *BookkeeperJVMOptions) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.ExtraOpts != nil {
+		in, out := &in.ExtraOpts, &out.ExtraOpts
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
