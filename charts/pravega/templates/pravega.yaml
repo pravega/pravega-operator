@@ -9,6 +9,9 @@ spec:
     enabled: {{ .Values.externalAccess.enabled }}
     type: {{ .Values.externalAccess.type }}
   bookkeeper:
+    {{- if .Values.externalAccess.enabled }}
+    serviceAccountName: {{ .Values.serviceAccount.name }}
+    {{- end }}
     image:
       repository: {{ .Values.bookkeeper.image.repository }}
     replicas: {{ .Values.bookkeeper.replicas }}
@@ -40,6 +43,10 @@ spec:
             storage: {{ .Values.bookkeeper.storage.indexVolumeRequest }}
     autoRecovery: {{ .Values.bookkeeper.autoRecovery }}
   pravega:
+    {{- if .Values.externalAccess.enabled }}
+    controllerServiceAccountName: {{ .Values.serviceAccount.name }}
+    segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
+    {{- end }}
     image:
       repository: {{ .Values.pravega.image.repository }}
     controllerReplicas: {{ .Values.pravega.controllerReplicas }}
