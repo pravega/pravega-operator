@@ -11,9 +11,8 @@
 package pravega
 
 import (
-	"strings"
-
 	"fmt"
+	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -133,27 +132,40 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	}
 
 	configureControllerTLSSecrets(podSpec, p)
-
+	configureAuthSecrets(podSpec, p)
 	return podSpec
 }
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.TLS.IsSecureController() {
-		vol := corev1.Volume{
-			Name: tlsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: p.Spec.TLS.Static.ControllerSecret,
-				},
-			},
-		}
-		podSpec.Volumes = append(podSpec.Volumes, vol)
-
-		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      tlsVolumeName,
-			MountPath: tlsMountDir,
-		})
+		addSecretVolumeWithMount(podSpec, p, tlsVolumeName, p.Spec.TLS.Static.ControllerSecret, tlsVolumeName, tlsMountDir)
 	}
+}
+
+func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.IsEnabled() {
+		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.ControllerAuthSecret,
+			authVolumeName, authMountDir)
+	}
+}
+
+func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
+	volumeName string, secretName string,
+	mountName string, mountDir string) {
+	vol := corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+			},
+		},
+	}
+	podSpec.Volumes = append(podSpec.Volumes, vol)
+
+	podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+		Name:      mountName,
+		MountPath: mountDir,
+	})
 }
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
@@ -179,15 +191,15 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
+	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
 	configData := map[string]string{
 		"CLUSTER_NAME":           p.Name,
 		"ZK_URL":                 p.Spec.ZookeeperUri,
 		"JAVA_OPTS":              strings.Join(javaOpts, " "),
 		"REST_SERVER_PORT":       "10080",
 		"CONTROLLER_SERVER_PORT": "9090",
-		"AUTHORIZATION_ENABLED":  "false",
-		"TOKEN_SIGNING_KEY":      "secret",
-		"USER_PASSWORD_FILE":     "/etc/pravega/conf/passwd",
+		"AUTHORIZATION_ENABLED":  authEnabledStr,
+		"TOKEN_SIGNING_KEY":      defaultTokenSigningKey,
 		"TLS_ENABLED":            "false",
 		"WAIT_FOR":               p.Spec.ZookeeperUri,
 	}
@@ -204,7 +216,6 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		},
 		Data: configData,
 	}
-
 	return configMap
 }
 
