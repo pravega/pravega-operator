@@ -21,7 +21,7 @@ admin:353030303a6331326661353762333539373565346134303834303739393438393337336164
 
 ```
 $ kubectl create secret generic password-auth \
-  --from-file=./userPassword.txt \
+  --from-file=./userpass.txt \
 ```
 
 Ensure secret is created:
@@ -55,7 +55,7 @@ spec:
   pravega:
     options:
       controller.auth.enabled: "true"
-      controller.auth.userPasswordFile: "/etc/auth-volume/userpass.txt"
+      controller.auth.userPasswordFile: "/etc/auth-passwd-volume/userpass.txt"
       controller.auth.tokenSigningKey: "secret"
       autoScale.authEnabled: "true"
       autoScale.tokenSigningKey: "secret"
