@@ -315,8 +315,10 @@ func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, vers
 
 		if !util.IsPodReady(pod) {
 			// At least one updated pod is still not ready
-			if pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" {
-				return false, fmt.Errorf("pod %s update failed because of ImagePullBackOff", pod.Name)
+			if pod.Status.ContainerStatuses[0].State.Waiting != nil && pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" {
+				return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+			} else if pod.Status.ContainerStatuses[0].State.Terminated != nil && pod.Status.ContainerStatuses[0].State.Terminated.ExitCode != 0 {
+				return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Terminated.Reason)
 			}
 			return false, nil
 		}
