@@ -20,7 +20,7 @@ const (
 	tlsMountDir            = "/etc/secret-volume"
 	heapDumpName           = "heap-dump"
 	heapDumpDir            = "/tmp/dumpfile/heap"
-	authVolumeName         = "auth-secret"
-	authMountDir           = "/etc/auth-volume"
+	authVolumeName         = "auth-passwd-secret"
+	authMountDir           = "/etc/auth-passwd-volume"
 	defaultTokenSigningKey = "secret"
 )

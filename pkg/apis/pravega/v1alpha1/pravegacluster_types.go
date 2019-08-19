@@ -208,7 +208,8 @@ type AuthenticationParameters struct {
 	Enabled bool `json:"enabled"`
 
 	// name of Secret containing Authentication Parameters like username, password and acl
-	ControllerAuthSecret string `json:"controllerAuthSecret,omitempty"`
+	// optional - to be used only when PasswordAuthHandler is used for authentication
+	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
 }
 
 func (ap *AuthenticationParameters) IsEnabled() bool {
