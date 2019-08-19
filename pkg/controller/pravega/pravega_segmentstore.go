@@ -100,6 +100,10 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						Name:      cacheVolumeName,
 						MountPath: cacheVolumeMountPoint,
 					},
+					{
+						Name:      heapDumpName,
+						MountPath: heapDumpDir,
+					},
 				},
 				Resources: *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
@@ -133,6 +137,14 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
+		Volumes: []corev1.Volume{
+			{
+				Name: heapDumpName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		},
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
@@ -152,6 +164,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
 		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:HeapDumpPath=" + heapDumpDir,
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
