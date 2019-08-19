@@ -1,19 +1,18 @@
 # Enable Authentication
 
-Client can communicate with Pravega in a more secure way by enabling Authentication.
-Authentication Handler can be implemented in different ways. For details see [Pravega AUthentication](https://github.com/pravega/pravega/blob/master/documentation/src/docs/auth/auth-plugin.md) for details.
+Pravega supports pluggable authentication and authorization (referred to as auth for short). For details please see [Pravega Authentication](https://github.com/pravega/pravega/blob/master/documentation/src/docs/auth/auth-plugin.md).
 
-PasswordAuthHandler(default) is the most basic authentication handler.
-For using this, user needs to do the following:
+By default, the PasswordAuthHandler plugin is installed on the system.
+To use the default `PasswordAuthHandler` plugin for `auth`, the following steps can be followed:
 
-1. Create a userPassword file containing `<user>:<password>:<acl>;` on each line for one user.
+1. Create a file containing `<user>:<password>:<acl>;` with one line per user.
 Delimiter should be `:` with `;` at the end of each line.
-Use the   [PasswordCreatorTool](https://github.com/pravega/pravega/blob/master/controller/src/test/java/io/pravega/controller/auth/PasswordFileCreatorTool.java) to create a new file with the password encrypted. Use this file when creating the secret in next step.
+Use the   [PasswordCreatorTool](https://github.com/pravega/pravega/blob/master/controller/src/test/java/io/pravega/controller/auth/PasswordFileCreatorTool.java) to create a new file with the password encrypted.
+Use this file when creating the secret in next step.
+Sample encrypted password file:
 
-Example:
-
-cat userPassword.txt
 ```
+cat userpass.txt
 admin:353030303a633132666135376233353937356534613430383430373939343839333733616463363433616532363238653930346230333035393666643961316264616661393a3639376330623663396634343864643262663335326463653062613965336439613864306264323839633037626166663563613166333733653631383732353134643961303435613237653130353633633031653364366565316434626534656565636335663666306465663064376165313765646263656638373764396361:*,READ_UPDATE;
 ```
 
@@ -25,6 +24,7 @@ $ kubectl create secret generic password-auth \
 ```
 
 Ensure secret is created:
+
 ```
 $ kubectl describe secret password-auth
 
@@ -40,7 +40,7 @@ Data
 userpass.txt:  418 bytes
 ```
 
-3. Then specify the secret names in the `authentication` block and these parameters in the `options` block.
+3. Specify the secret names in the `authentication` block and these parameters in the `options` block.
 
 ```
 apiVersion: "pravega.pravega.io/v1alpha1"
@@ -65,7 +65,14 @@ spec:
 ...
 ```
 
-YWRtaW46MTExMV9hYWFh is base64encoded(admin:1111_aaaa) where admin is username and 1111_aaaa is the password to be used for segmentstore to controller communication.
+`pravega.client.auth.method` and `pravega.client.auth.token` represent the auth method and token to be used for internal communications from the Segment Store to the Controller.
+If you intend to use the default auth plugin, these values are:
+```
+pravega.client.auth.method: Basic
+pravega.client.auth.token: Base 64 encoded value of <username>:<pasword>,
+```
+where username and password are credentials you intend to use.
+
 Note that Pravega operator uses `/etc/auth-passwd-volume` as the mounting directory for secrets.
 
-For more security configurations, check [here](https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md).
+For more security configurations, please check [here](https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md).
