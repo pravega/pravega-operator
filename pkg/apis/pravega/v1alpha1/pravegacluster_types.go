@@ -55,7 +55,6 @@ type PravegaCluster struct {
 // WithDefaults set default values when not defined in the spec.
 func (p *PravegaCluster) WithDefaults() (changed bool) {
 	changed = p.Spec.withDefaults()
-
 	return changed
 }
 
@@ -77,6 +76,11 @@ type ClusterSpec struct {
 	// See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
 	TLS *TLSPolicy `json:"tls,omitempty"`
+
+	// Authentication can be enabled for authorizing all communication from clients to controller and segment store
+	// See the following file for a complete list of options:
+	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
+	Authentication *AuthenticationParameters `json:"authentication,omitempty"`
 
 	// Version is the expected version of the Pravega cluster.
 	// The pravega-operator will eventually make the Pravega cluster version
@@ -115,6 +119,11 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		s.TLS = &TLSPolicy{
 			Static: &StaticTLS{},
 		}
+	}
+
+	if s.Authentication == nil {
+		changed = true
+		s.Authentication = &AuthenticationParameters{}
 	}
 
 	if s.Version == "" {
@@ -194,6 +203,23 @@ func (tp *TLSPolicy) IsSecureSegmentStore() bool {
 		return false
 	}
 	return len(tp.Static.SegmentStoreSecret) != 0
+}
+
+type AuthenticationParameters struct {
+	// Enabled specifies whether or not authentication is enabled
+	// By default, authentication is not enabled
+	Enabled bool `json:"enabled"`
+
+	// name of Secret containing Password based Authentication Parameters like username, password and acl
+	// optional - used only by PasswordAuthHandler for authentication
+	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
+}
+
+func (ap *AuthenticationParameters) IsEnabled() bool {
+	if ap == nil {
+		return false
+	}
+	return ap.Enabled
 }
 
 // ImageSpec defines the fields needed for a Docker repository image

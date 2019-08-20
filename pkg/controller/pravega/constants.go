@@ -11,13 +11,16 @@
 package pravega
 
 const (
-	cacheVolumeName       = "cache"
-	cacheVolumeMountPoint = "/tmp/pravega/cache"
-	tier2FileMountPoint   = "/mnt/tier2"
-	tier2VolumeName       = "tier2"
-	segmentStoreKind      = "pravega-segmentstore"
-	tlsVolumeName         = "tls-secret"
-	tlsMountDir           = "/etc/secret-volume"
-	heapDumpName          = "heap-dump"
-	heapDumpDir           = "/tmp/dumpfile/heap"
+	cacheVolumeName        = "cache"
+	cacheVolumeMountPoint  = "/tmp/pravega/cache"
+	tier2FileMountPoint    = "/mnt/tier2"
+	tier2VolumeName        = "tier2"
+	segmentStoreKind       = "pravega-segmentstore"
+	tlsVolumeName          = "tls-secret"
+	tlsMountDir            = "/etc/secret-volume"
+	heapDumpName           = "heap-dump"
+	heapDumpDir            = "/tmp/dumpfile/heap"
+	authVolumeName         = "auth-passwd-secret"
+	authMountDir           = "/etc/auth-passwd-volume"
+	defaultTokenSigningKey = "secret"
 )
