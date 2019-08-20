@@ -11,5 +11,6 @@ This document explains how to configure Pravega
 * [Tune Pravega Configuration](pravega-options.md)
 * [Tune Bookkeeper Configuration](bookkeeper-options.md)
 * [Enable TLS](tls.md)
+* [Enable Authentication](auth.md)
 * [Enable external access](external-access.md)
 * [Enable admission webhook](webhook.md)

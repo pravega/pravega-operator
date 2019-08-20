@@ -77,6 +77,9 @@ type ClusterSpec struct {
 	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
 	TLS *TLSPolicy `json:"tls,omitempty"`
 
+	// Authentication can be enabled for authorizing all communication from clients to controller and segment store
+	// See the following file for a complete list of options:
+	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
 	Authentication *AuthenticationParameters `json:"authentication,omitempty"`
 
 	// Version is the expected version of the Pravega cluster.
@@ -207,8 +210,8 @@ type AuthenticationParameters struct {
 	// By default, authentication is not enabled
 	Enabled bool `json:"enabled"`
 
-	// name of Secret containing Authentication Parameters like username, password and acl
-	// optional - to be used only when PasswordAuthHandler is used for authentication
+	// name of Secret containing Password based Authentication Parameters like username, password and acl
+	// optional - used only by PasswordAuthHandler for authentication
 	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
 }
 
