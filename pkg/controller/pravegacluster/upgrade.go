@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
@@ -87,7 +88,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 	// Setting target version and condition.
 	// The upgrade process will start on the next reconciliation
 	p.Status.TargetVersion = p.Spec.Version
-	p.Status.SetUpgradingConditionTrue()
+	p.Status.SetUpgradingConditionTrue("", "")
 
 	return nil
 }
@@ -175,6 +176,15 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	log.Printf("deployment (%s) status: %d updated, %d ready, %d target", deploy.Name,
 		deploy.Status.UpdatedReplicas, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 
+	// Check whether the controller upgrade fail to have progress.
+	for _, v := range deploy.Status.Conditions {
+		if v.Type == appsv1.DeploymentProgressing &&
+			v.Status == corev1.ConditionFalse && v.Reason == "ProgressDeadlineExceeded" {
+			// upgrade fails
+			return false, fmt.Errorf("updating deployment (%s) failed due to %s", deploy.Name, v.Reason)
+		}
+	}
+
 	// Check whether the upgrade is in progress or has completed
 	if deploy.Status.UpdatedReplicas != deploy.Status.Replicas ||
 		deploy.Status.UpdatedReplicas != deploy.Status.ReadyReplicas {
@@ -218,12 +228,43 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 
 	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
-
 	// Check whether the upgrade is in progress or has completed
 	if sts.Status.UpdatedReplicas != sts.Status.Replicas ||
 		sts.Status.UpdatedReplicas != sts.Status.ReadyReplicas {
 		// Upgrade still in progress
 		return false, nil
+	}
+
+	// Check if segmentstore fail to have progress
+	err = checkUpgradeCondition(p, pravegav1alpha1.UpgradingSegmentstoreReason, sts.Status.UpdatedReplicas)
+	if err != nil {
+		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
+	}
+
+	// Upgrade still in progress
+	// If all replicas are ready, upgrade an old pod
+	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	if err != nil {
+		// Abort if there is any errors with the updated pods
+		return false, err
+	}
+
+	if ready {
+		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
+		if err != nil {
+			return false, err
+		}
+
+		if pod == nil {
+			return false, fmt.Errorf("could not obtain outdated pod")
+		}
+
+		log.Infof("upgrading pod: %s", pod.Name)
+
+		err = r.client.Delete(context.TODO(), pod)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	// StatefulSet upgrade completed
@@ -268,6 +309,12 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// TODO: wait until there is no under replicated ledger
 		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
 		return true, nil
+	}
+
+	// Check if bookkeeper fail to have progress
+	err = checkUpgradeCondition(p, pravegav1alpha1.UpgradingBookkeeperReason, sts.Status.UpdatedReplicas)
+	if err != nil {
+		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
 	}
 
 	// Upgrade still in progress
@@ -377,4 +424,19 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(sts *appsv1.StatefulSet, ve
 		pods = append(pods, podItem.DeepCopy())
 	}
 	return pods, nil
+}
+
+func checkUpgradeCondition(p *pravegav1alpha1.PravegaCluster, reason string, updatedReplicas int32) error {
+	_, lastCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
+	if lastCondition.Reason == reason && lastCondition.Message != string(updatedReplicas) {
+		// nothing changed, check if reaches timeout
+		parsedTime, _ := time.Parse(time.RFC3339, lastCondition.LastUpdateTime)
+		if time.Now().After(parsedTime.Add(time.Duration(10 * time.Minute))) {
+			// timeout has passed
+			return fmt.Errorf("progress deadline exceeded")
+		}
+	}
+	// update the status to the latest, this will also set the transition timestamp to now
+	p.Status.SetUpgradingConditionTrue(reason, string(updatedReplicas))
+	return nil
 }

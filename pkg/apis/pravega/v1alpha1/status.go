@@ -22,6 +22,11 @@ const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
 	ClusterConditionUpgrading                      = "Upgrading"
 	ClusterConditionError                          = "Error"
+
+	// Reasons for cluster upgrading condition
+	UpgradingControllerReason   = "UpgradingController"
+	UpgradingSegmentstoreReason = "UpgradingSegmentstore"
+	UpgradingBookkeeperReason   = "UpgradingBookkeeper"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
@@ -102,7 +107,7 @@ func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
 	ps.setClusterCondition(*c)
 }
 
-func (ps *ClusterStatus) SetUpgradingConditionTrue() {
+func (ps *ClusterStatus) SetUpgradingConditionTrue(reason, message string) {
 	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, "", "")
 	ps.setClusterCondition(*c)
 }
