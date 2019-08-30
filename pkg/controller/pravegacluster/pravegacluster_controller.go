@@ -138,9 +138,16 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 		return fmt.Errorf("failed to sync cluster size: %v", err)
 	}
 
+	// Upgrade
 	err = r.syncClusterVersion(p)
 	if err != nil {
 		return fmt.Errorf("failed to sync cluster version: %v", err)
+	}
+
+	// Rollback
+	err = r.rollbackFailedUpgrade(p)
+	if err != nil {
+		return fmt.Errorf("Rollback attempt failed: %v", err)
 	}
 
 	err = r.reconcileClusterStatus(p)
@@ -151,6 +158,7 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 }
 
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
+
 	err = r.deployBookie(p)
 	if err != nil {
 		log.Printf("failed to deploy bookie: %v", err)
@@ -168,10 +176,12 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 		log.Printf("failed to deploy segment store: %v", err)
 		return err
 	}
+
 	return nil
 }
 
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaCluster) (err error) {
+
 	pdb := pravega.MakeControllerPodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
@@ -251,6 +261,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 }
 
 func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster) (err error) {
+
 	headlessService := pravega.MakeBookieHeadlessService(p)
 	controllerutil.SetControllerReference(p, headlessService, r.scheme)
 	err = r.client.Create(context.TODO(), headlessService)
@@ -439,7 +450,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 
 func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.PravegaCluster) error {
 
-	p.Status.InitConditions()
+	p.Status.Init()
 
 	expectedSize := util.GetClusterExpectedSize(p)
 	listOps := &client.ListOptions{
@@ -480,6 +491,20 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.Prav
 	err = r.client.Status().Update(context.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to update cluster status: %v", err)
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) rollbackFailedUpgrade(p *pravegav1alpha1.PravegaCluster) error {
+	if p.Status.HasUpgradeFailed() {
+		// start rollback to previous version
+		previousVersion, err := p.Status.GetLastVersion()
+		if err != nil {
+			return fmt.Errorf("Error retrieving previous cluster version %v", err)
+		}
+		log.Printf("Rolling back to last cluster version  %v", previousVersion)
+		//Rollback cluster to previous version
+		return r.rollbackClusterVersion(p, previousVersion)
 	}
 	return nil
 }

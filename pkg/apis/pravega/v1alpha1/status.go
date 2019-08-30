@@ -11,6 +11,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,6 +23,7 @@ type ClusterConditionType string
 const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
 	ClusterConditionUpgrading                      = "Upgrading"
+	ClusterConditionRollback                       = "RollbackInProgress"
 	ClusterConditionError                          = "Error"
 )
 
@@ -35,6 +38,8 @@ type ClusterStatus struct {
 	// TargetVersion is the version the cluster upgrading to.
 	// If the cluster is not upgrading, TargetVersion is empty.
 	TargetVersion string `json:"targetVersion,omitempty"`
+
+	VersionHistory []string `json:"versionHistory,omitempty"`
 
 	// Replicas is the number of desired replicas in the cluster
 	Replicas int32 `json:"replicas"`
@@ -78,7 +83,8 @@ type ClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
-func (ps *ClusterStatus) InitConditions() {
+func (ps *ClusterStatus) Init() {
+	// Initialise conditions
 	conditionTypes := []ClusterConditionType{
 		ClusterConditionPodsReady,
 		ClusterConditionUpgrading,
@@ -89,6 +95,12 @@ func (ps *ClusterStatus) InitConditions() {
 			c := newClusterCondition(conditionType, corev1.ConditionFalse, "", "")
 			ps.setClusterCondition(*c)
 		}
+	}
+
+	// Set current cluster version in version history,
+	// so if the first upgrade fails we can rollback to this version
+	if ps.VersionHistory == nil && ps.CurrentVersion != "" {
+		ps.VersionHistory = []string{ps.CurrentVersion}
 	}
 }
 
@@ -112,6 +124,22 @@ func (ps *ClusterStatus) SetUpgradingConditionFalse() {
 	ps.setClusterCondition(*c)
 }
 
+func (ps *ClusterStatus) SetComponent(componentName string) {
+	_, upgradeCondition := ps.GetClusterCondition(ClusterConditionUpgrading)
+	if upgradeCondition != nil && upgradeCondition.Status == corev1.ConditionTrue {
+		message := fmt.Sprintf("Upgrading component: %s", componentName)
+		c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, "", message)
+		ps.setClusterCondition(*c)
+	}
+
+	_, rollbackCondition := ps.GetClusterCondition(ClusterConditionRollback)
+	if rollbackCondition != nil && rollbackCondition.Status == corev1.ConditionTrue {
+		message := fmt.Sprintf("Rollingback component: %s", componentName)
+		c := newClusterCondition(ClusterConditionRollback, corev1.ConditionTrue, "", message)
+		ps.setClusterCondition(*c)
+	}
+}
+
 func (ps *ClusterStatus) SetErrorConditionTrue(reason, message string) {
 	c := newClusterCondition(ClusterConditionError, corev1.ConditionTrue, reason, message)
 	ps.setClusterCondition(*c)
@@ -119,6 +147,15 @@ func (ps *ClusterStatus) SetErrorConditionTrue(reason, message string) {
 
 func (ps *ClusterStatus) SetErrorConditionFalse() {
 	c := newClusterCondition(ClusterConditionError, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetRollbackConditionTrue() {
+	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionTrue, "", "")
+	ps.setClusterCondition(*c)
+}
+func (ps *ClusterStatus) SetRollbackConditionFalse() {
+	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
@@ -164,4 +201,31 @@ func (ps *ClusterStatus) setClusterCondition(newCondition ClusterCondition) {
 	}
 
 	ps.Conditions[position] = *existingCondition
+}
+
+func (ps *ClusterStatus) AddToVersionHistory(version string) {
+	lastIndex := len(ps.VersionHistory) - 1
+	if version != "" && ps.VersionHistory[lastIndex] != version {
+		ps.VersionHistory = append(ps.VersionHistory, version)
+		log.Printf("Updating version history adding version %v", version)
+	}
+}
+
+func (ps *ClusterStatus) GetLastVersion() (previousVersion string, err error) {
+	if ps.VersionHistory == nil {
+		return "", fmt.Errorf("ERROR: No previous cluster version found")
+	}
+	len := len(ps.VersionHistory)
+	return ps.VersionHistory[len-1], nil
+}
+
+func (ps *ClusterStatus) HasUpgradeFailed() bool {
+	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
+	if errorCondition == nil {
+		return false
+	}
+	if errorCondition.Status == corev1.ConditionTrue && errorCondition.Reason == "UpgradeFailed" {
+		return true
+	}
+	return false
 }
