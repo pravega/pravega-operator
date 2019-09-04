@@ -213,7 +213,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	}
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetComponent(name)
+		p.Status.SetUpgradedReplicasForComponent(name, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
@@ -276,7 +276,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetComponent(name)
+		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
@@ -300,12 +300,21 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		// StatefulSet upgrade completed
 		// TODO: wait until there is no under replicated ledger
 		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
+		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
 	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-
+	p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+	err = r.client.Update(context.TODO(), sts)
+	if err != nil {
+		return false, err
+	}
 	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
@@ -348,7 +357,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetComponent(name)
+		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
@@ -371,12 +380,21 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// StatefulSet upgrade completed
 		// TODO: wait until there is no under replicated ledger
 		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
+		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
 		return true, nil
 	}
 
 	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-
+	p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+	err = r.client.Update(context.TODO(), sts)
+	if err != nil {
+		return false, err
+	}
 	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
@@ -400,7 +418,6 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 			return false, err
 		}
 	}
-
 	// wait until the next reconcile iteration
 	return false, nil
 }
@@ -412,15 +429,12 @@ func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, vers
 	}
 
 	for _, pod := range pods {
-		//TODO: find out a more reliable way to determine if a pod is having issues
-		if pod.Status.ContainerStatuses[0].RestartCount > 1 {
-			return false, fmt.Errorf("pod %s is restarting", pod.Name)
-		}
-
 		if !util.IsPodReady(pod) {
 			// At least one updated pod is still not ready
-			if pod.Status.ContainerStatuses[0].State.Waiting != nil && pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" {
-				return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+			if pod.Status.ContainerStatuses[0].State.Waiting != nil {
+				if pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" || pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff" {
+					return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+				}
 			}
 			return false, nil
 		}

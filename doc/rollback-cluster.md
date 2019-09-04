@@ -11,10 +11,11 @@ An Upgrade can fail because of following reasons:
 3. K8s Cluster Issues.
 4. Application issues (Application runtime misconfiguration or code bugs)
 
-An upgrade failure can manifest through a Pod to staying in `Pending` state forever or having continous restarts after moving to Running state (CrashLoopBackOff).
-Here we try to fail-fast by explicitly checking for some common causes for upgrade failure like `ErrImagePull` and failing the upgrade if any pod faces this issue during upgrade.
-We also have a time threshold within which deployment to a pod should complete. If it does not, then we fail the upgrade.
-To indicate upgrade failure we set the folling condition on PravegaCluster status:
+An upgrade failure can manifest through a Pod to staying in `Pending` state forever or continuously restarting or crashing (CrashLoopBackOff).
+A component deployment failure needs to be tracked and mapped to "Upgrade Failure" for Pravega Cluster.
+Here we try to fail-fast by explicitly checking for some common causes for deployment failure like image pull errors or  CrashLoopBackOff State and failing the upgrade if any pod runs into this state during upgrade.
+
+The following Pravega Cluster Status Condition indicates an Upgrade Failure:
 
 ```
 ClusterConditionType: Error
@@ -25,21 +26,29 @@ Message: <Details of exception/cause of failure>
 
 ## Rollback Trigger
 
-Rollback is triggered by the PravegaCluster moving to `ClusterConditionType: Error` with `Reason:UpgradeFailed` state.
+A Rollback is triggered by Upgrade Failure condition i.e the Cluster moving to
+`ClusterConditionType: Error` and
+`Reason:UpgradeFailed` state.
 
-## Rollback implementation
+## Rollback Implementation
 When Rollback is started cluster moves into ClusterCondition `RollbackInProgress`.
 Once Rollback completes this condition is set to false.
+The order in which the components are rolled back is the following:
 
-A new data structure is added clusterStatus to maintain all previous cluster versions .
+1. BookKeeper
+2. Pravega Segment Store
+3. Pravega Controller
+
+A new field `versionHistory` has been added to Pravega ClusterStatus to maintain history of previous cluster versions .
 ```
 VersionHistory []string `json:"versionHistory,omitempty"`
 ```
-For now, operator would support automated rollback only to the previous cluster version. Later, operator may support rollback to any supported previous version, but this would need to be invoked manually.
+Currently, operator only supports automated rollback to the previous cluster version.
+Later, rollback to any other previous version(s), may be supported.
 
-Rollback involves moving each component in the cluster back to its previous cluster version. As in case of upgrade, operator would rollback one component at a time and one pod at a time.
+Rollback involves moving all components in the cluster back to the previous cluster version. As in case of upgrade, operator would rollback one component at a time and one pod at a time to maintain HA.
 
-If Rollback completes successfully, cluster state would be set back to `PodsReady` which would mean the cluster is now in a stable state.
+If Rollback completes successfully, cluster state goes back to `PodsReady` which would mean the cluster is now in a stable state.
 If Rollback Fails, cluster would move to state `RollbackError` and User would be prompted for manual intervention.
 
 
