@@ -116,21 +116,27 @@ example-pravega-segmentstore-headless   ClusterIP      None            <none>   
 
 In the example above, clients will connect to the Pravega Controller at `tcp://35.239.48.145:9090`.
 
-# Using External DNS names for segment store pods
+# Using External DNS names with segmentstore
 
-Given a domain suffix for the cluster, each segment store pod can be assigned a DNS name. An external DNS service can resolve this DNS name to the pod externalIP.
-Domain name can be provided in the manifest using `domainname` key under `externalAccess`.
-Segment store dns name is created by prefixing the domain name with segmentstore pod-name.
+When external access is enabled, a domain suffix can be provided in the cluster spec.
+Each segmentstore external service is assigned a DNS name which is created by prefixing the domain name with segmentstore pod-name.
 
-1. External Access with External DNS
-To enable external access with dns set the folloing in the manifest file:
+An [external DNS service](https://github.com/kubernetes-incubator/external-dns) (like AWS Route53, Google CloudDNS) could resolve this DNS name to the pods' externalIP when external clients try to access the segment store service.
+
+External access can be enabled with/without DNS names support.
+
+1. External Access=enabled with DNS names.
+
+Configuration:
 ```
 externalAccess:
     enabled: true
     type: LoadBalancer
     domainName: example.com
 ```
-After deployment, you should see:
+
+Post deployment, you should see:
+
 ```$> $kubectl describe svc pravega-pravega-segmentstore-0
 . . .
 metadata:
@@ -139,10 +145,23 @@ metadata:
     ncp/internal_ip_for_policy: 100.64.65.241
 . . .
 ```
-In this case, external dnsname `pravega-pravega-segmentstore-0.example.com` is advertised by segment store for accepting connections from controller and clients. SegmentStore logs show `publishedIPAddress: pravega-pravega-segmentstore-0.example.com`
 
-2. When external_access = true, but 'domainName' is not added in manifest, external-dns annotation is not added to the service and externalIP is advertised by segment store. SegmentStore logs show `publishedIPAddress: 10.240.119.222`
+In this case, external DNS name `pravega-pravega-segmentstore-0.example.com` is advertised by segment store for accepting connections from controller and clients.
+SegmentStore logs show `publishedIPAddress: pravega-pravega-segmentstore-0.example.com`
 
+2. External Access=enabled without DNS names.
+When external access is enabled but 'domainName' is not provided in the manifest, external-dns annotation is not added to the segmentstore services and externalIP is advertised by segment store instead of DNS names.
+SegmentStore logs show `publishedIPAddress: <SegmentStore Service External IP>`
+
+Configuration:
+```
+externalAccess:
+    enabled: true
+    type: LoadBalancer
+
+```
+
+Post deployment, no annotation is seen on SegmentStore external service:
 ```$> $kubectl describe svc pravega-pravega-segmentstore-0
 . . .
 metadata:
@@ -151,5 +170,3 @@ metadata:
 . . .
 
 ```
-
-3. When external access is disabled, ClusterIP is advertised by Segment Store. 
