@@ -176,19 +176,17 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	log.Printf("deployment (%s) status: %d updated, %d ready, %d target", deploy.Name,
 		deploy.Status.UpdatedReplicas, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 
-	// Check whether the controller upgrade fail to have progress.
-	for _, v := range deploy.Status.Conditions {
-		if v.Type == appsv1.DeploymentProgressing &&
-			v.Status == corev1.ConditionFalse && v.Reason == "ProgressDeadlineExceeded" {
-			// upgrade fails
-			return false, fmt.Errorf("updating deployment (%s) failed due to %s", deploy.Name, v.Reason)
-		}
-	}
-
 	// Check whether the upgrade is in progress or has completed
 	if deploy.Status.UpdatedReplicas != deploy.Status.Replicas ||
 		deploy.Status.UpdatedReplicas != deploy.Status.ReadyReplicas {
-		// Update still in progress
+		// Update still in progress, check if there is progress made within a timeout.
+		for _, v := range deploy.Status.Conditions {
+			if v.Type == appsv1.DeploymentProgressing &&
+				v.Status == corev1.ConditionFalse && v.Reason == "ProgressDeadlineExceeded" {
+				// upgrade fails
+				return false, fmt.Errorf("updating deployment (%s) failed due to %s", deploy.Name, v.Reason)
+			}
+		}
 		return false, nil
 	}
 
@@ -229,19 +227,19 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
 	// Check whether the upgrade is in progress or has completed
-	if sts.Status.UpdatedReplicas != sts.Status.Replicas ||
-		sts.Status.UpdatedReplicas != sts.Status.ReadyReplicas {
-		// Upgrade still in progress
-		return false, nil
+	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
+		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
+		// StatefulSet upgrade completed
+		return true, nil
 	}
+	// Upgrade still in progress
 
-	// Check if segmentstore fail to have progress
+	// Check if segmentstore fail to have progress within a timeout
 	err = checkUpgradeCondition(p, pravegav1alpha1.UpgradingSegmentstoreReason, sts.Status.UpdatedReplicas)
 	if err != nil {
 		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
 	}
 
-	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
 	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
 	if err != nil {
@@ -362,7 +360,8 @@ func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, vers
 
 		if !util.IsPodReady(pod) {
 			// At least one updated pod is still not ready
-			if pod.Status.ContainerStatuses[0].State.Waiting != nil && pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" {
+			if pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
+				pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
 				return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
 			}
 			return false, nil
