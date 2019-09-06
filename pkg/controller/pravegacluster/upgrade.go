@@ -214,7 +214,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	}
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpgradedReplicasForComponent(name, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+		p.Status.SetUpdatedReplicasForComponent(name, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
@@ -277,7 +277,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
@@ -301,7 +301,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		// StatefulSet upgrade completed
 		// TODO: wait until there is no under replicated ledger
 		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
-		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
@@ -311,7 +311,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 
 	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-	p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+	p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 	err = r.client.Update(context.TODO(), sts)
 	if err != nil {
 		return false, err
@@ -358,7 +358,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
@@ -381,7 +381,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// StatefulSet upgrade completed
 		// TODO: wait until there is no under replicated ledger
 		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
-		p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
@@ -391,7 +391,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 
 	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-	p.Status.SetUpgradedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+	p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 	err = r.client.Update(context.TODO(), sts)
 	if err != nil {
 		return false, err

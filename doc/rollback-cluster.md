@@ -1,8 +1,9 @@
-# Pravega cluster rollback
+# Pravega Cluster Rollback
 
-This document shows how to automated rollback of Pravega cluster is implemented by the operator  while preserving the cluster's state and data whenever possible.
+This document details how manual rollback can be triggered after a Pravega cluster upgrade fails.
+Note that a rollback can be triggered only on Upgrade Failure.
 
-## Failing an Upgrade
+## Upgrade Failure
 
 An Upgrade can fail because of following reasons:
 
@@ -15,7 +16,7 @@ An upgrade failure can manifest through a Pod to staying in `Pending` state fore
 A component deployment failure needs to be tracked and mapped to "Upgrade Failure" for Pravega Cluster.
 Here we try to fail-fast by explicitly checking for some common causes for deployment failure like image pull errors or  CrashLoopBackOff State and failing the upgrade if any pod runs into this state during upgrade.
 
-The following Pravega Cluster Status Condition indicates an Upgrade Failure:
+The following Pravega Cluster Status Condition indicates a Failed Upgrade:
 
 ```
 ClusterConditionType: Error
@@ -23,12 +24,46 @@ Status: True
 Reason: UpgradeFailed
 Message: <Details of exception/cause of failure>
 ```
+After an Upgrade Failure output of `kubectl describe pravegacluster pravega` would look like this:
 
-## Rollback Trigger
+```
+$> kubectl describe pravegacluster pravega
+. . .
+Spec:
+. . .
+Version:        0.6.0-2252.b6f6512
+. . .
+Status:
+. . .
+Conditions:
+    Last Transition Time:  2019-09-06T09:00:13Z
+    Last Update Time:      2019-09-06T09:00:13Z
+    Status:                False
+    Type:                  Upgrading
+    Last Transition Time:  2019-09-06T08:58:40Z
+    Last Update Time:      2019-09-06T08:58:40Z
+    Status:                False
+    Type:                  PodsReady
+    Last Transition Time:  2019-09-06T09:00:13Z
+    Last Update Time:      2019-09-06T09:00:13Z
+    Message:               failed to sync segmentstore version. pod pravega-pravega-segmentstore-0 update failed because of ImagePullBackOff
+    Reason:                UpgradeFailed
+    Status:                True
+    Type:                  Error
+  . . .
+  Current Version:         0.6.0-2239.6e24df7
+. . .
+Version History:
+    0.6.0-2239.6e24df7
+```
+where `0.6.0-2252.b6f6512` is the version we tried upgrading to and `0.6.0-2239.6e24df7` is the version before upgrade.
 
-A Rollback is triggered by Upgrade Failure condition i.e the Cluster moving to
-`ClusterConditionType: Error` and
-`Reason:UpgradeFailed` state.
+## Manual Rollback Trigger
+A Rollback is triggered when a Pravgea Cluster is `UpgradeFailed` Error State and a user manually updates in the PravegaCluster spec the version field to point to cluster version prior to upgrade.
+
+Note:
+1. Rollback to any other cluster version (other than the previousVersion) is not supported at this point.
+2. Changing the cluster spec version to the previous cluster version, when cluster is not in `UpgradeFailed` state, will trigger a rollback, but will be treated like a regular upgrade.
 
 ## Rollback Implementation
 When Rollback is started cluster moves into ClusterCondition `RollbackInProgress`.
@@ -39,17 +74,20 @@ The order in which the components are rolled back is the following:
 2. Pravega Segment Store
 3. Pravega Controller
 
-A new field `versionHistory` has been added to Pravega ClusterStatus to maintain history of previous cluster versions .
-```
-VersionHistory []string `json:"versionHistory,omitempty"`
-```
-Currently, operator only supports automated rollback to the previous cluster version.
-Later, rollback to any other previous version(s), may be supported.
+A new field `versionHistory` has been added to Pravega ClusterStatus to maintain history of upgrades.
 
 Rollback involves moving all components in the cluster back to the previous cluster version. As in case of upgrade, operator would rollback one component at a time and one pod at a time to maintain HA.
 
 If Rollback completes successfully, cluster state goes back to `PodsReady` which would mean the cluster is now in a stable state.
-If Rollback Fails, cluster would move to state `RollbackError` and User would be prompted for manual intervention.
+If Rollback Fails, the cluster would move to state `RollbackFailed` indicated by this cluster condition:
+```
+ClusterConditionType: Error
+Status: True
+Reason: RollbackFailed
+Message: <Details of exception/cause of failure>
+```
+
+Manual intervention would be needed for resolving this.
 
 
 

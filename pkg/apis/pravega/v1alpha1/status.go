@@ -124,11 +124,11 @@ func (ps *ClusterStatus) SetUpgradingConditionFalse() {
 	ps.setClusterCondition(*c)
 }
 
-func (ps *ClusterStatus) SetUpgradedReplicasForComponent(componentName string, updatedReplicas int32, totalReplicas int32) {
+func (ps *ClusterStatus) SetUpdatedReplicasForComponent(componentName string, updatedReplicas int32, totalReplicas int32) {
 	_, upgradeCondition := ps.GetClusterCondition(ClusterConditionUpgrading)
 	if upgradeCondition != nil && upgradeCondition.Status == corev1.ConditionTrue {
-		reason := fmt.Sprintf("Upgrading component: %s", componentName)
-		message := fmt.Sprintf("Upgraded Replicas: %v, Total Replicas: %v", updatedReplicas, totalReplicas)
+		reason := fmt.Sprintf("Updating component: %s", componentName)
+		message := fmt.Sprintf("Updated Replicas: %v, Total Replicas: %v", updatedReplicas, totalReplicas)
 		c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, reason, message)
 		ps.setClusterCondition(*c)
 	}
