@@ -205,20 +205,35 @@ func (ps *ClusterStatus) AddToVersionHistory(version string) {
 	}
 }
 
-func (ps *ClusterStatus) GetLastVersion() (previousVersion string, err error) {
-	if ps.VersionHistory == nil {
-		return "", fmt.Errorf("ERROR: No previous cluster version found")
-	}
+func (ps *ClusterStatus) GetLastVersion() (previousVersion string) {
 	len := len(ps.VersionHistory)
-	return ps.VersionHistory[len-1], nil
+	return ps.VersionHistory[len-1]
 }
 
-func (ps *ClusterStatus) HasUpgradeFailed() bool {
+func (ps *ClusterStatus) IsClusterInUpgradeFailedState() bool {
 	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
 	if errorCondition == nil {
 		return false
 	}
 	if errorCondition.Status == corev1.ConditionTrue && errorCondition.Reason == "UpgradeFailed" {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInUpgradeFailedOrRollbackState() bool {
+	if ps.IsClusterInUpgradeFailedState() || ps.IsClusterInRollbackState() {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInRollbackState() bool {
+	_, rollbackCondition := ps.GetClusterCondition(ClusterConditionRollback)
+	if rollbackCondition == nil {
+		return false
+	}
+	if rollbackCondition.Status == corev1.ConditionTrue {
 		return true
 	}
 	return false

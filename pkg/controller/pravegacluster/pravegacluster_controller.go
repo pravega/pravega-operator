@@ -496,15 +496,19 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1alpha1.Prav
 }
 
 func (r *ReconcilePravegaCluster) rollbackFailedUpgrade(p *pravegav1alpha1.PravegaCluster) error {
-	if p.Status.HasUpgradeFailed() {
+	if r.isRollbackTriggered(p) {
 		// start rollback to previous version
-		previousVersion, err := p.Status.GetLastVersion()
-		if err != nil {
-			return fmt.Errorf("Error retrieving previous cluster version %v", err)
-		}
+		previousVersion := p.Status.GetLastVersion()
 		log.Printf("Rolling back to last cluster version  %v", previousVersion)
 		//Rollback cluster to previous version
 		return r.rollbackClusterVersion(p, previousVersion)
 	}
 	return nil
+}
+
+func (r *ReconcilePravegaCluster) isRollbackTriggered(p *pravegav1alpha1.PravegaCluster) bool {
+	if p.Status.IsClusterInUpgradeFailedState() && p.Spec.Version == p.Status.GetLastVersion() {
+		return true
+	}
+	return false
 }

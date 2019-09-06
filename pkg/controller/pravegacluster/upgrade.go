@@ -37,6 +37,10 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		r.client.Status().Update(context.TODO(), p)
 	}()
 
+	if p.Status.IsClusterInUpgradeFailedOrRollbackState() {
+		return nil
+	}
+
 	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
 	_, readyCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionPodsReady)
 
@@ -91,7 +95,6 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 
 	// Need to sync cluster versions
 	log.Printf("syncing cluster version from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
-
 	// Setting target version and condition.
 	// The upgrade process will start on the next reconciliation
 	p.Status.TargetVersion = p.Spec.Version
@@ -106,7 +109,6 @@ func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaC
 	// when updating the CR below
 	status := p.Status.DeepCopy()
 
-	p.Spec.Version = p.Status.CurrentVersion
 	if err := r.client.Update(context.TODO(), p); err != nil {
 		return err
 	}
@@ -117,14 +119,15 @@ func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaC
 
 func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.PravegaCluster, version string) (err error) {
 	_, rollbackCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
-	if rollbackCondition == nil {
+	if rollbackCondition == nil || rollbackCondition.Status != corev1.ConditionTrue {
 		// We're in the first iteration for Rollback
 		// Add Rollback Condition to Cluster Status
+		log.Printf("Updating Target Version to  %v", version)
+		p.Status.TargetVersion = version
 		p.Status.SetRollbackConditionTrue()
-		p.Spec.Version = version
-		p.Status.TargetVersion = p.Spec.Version
 		updateErr := r.client.Status().Update(context.TODO(), p)
 		if updateErr != nil {
+			p.Status.SetRollbackConditionFalse()
 			log.Printf("Error updating cluster: %v", updateErr.Error())
 			return fmt.Errorf("Error updating cluster status. %v", updateErr)
 		}
@@ -141,12 +144,11 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 
 	if syncCompleted {
 		// All component versions have been synced
-		p.Status.AddToVersionHistory(p.Status.CurrentVersion)
 		p.Status.CurrentVersion = p.Status.TargetVersion
 		// Set Error/UpgradeFailed Condition to 'false', so rollback is not triggered again
 		p.Status.SetErrorConditionFalse()
 		r.clearRollbackStatus(p)
-		log.Printf("Rollback completed for all pravega components.")
+		log.Printf("Rollback to version %v completed for all pravega components.", version)
 	}
 	return nil
 }
@@ -159,7 +161,6 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 	// when updating the CR below
 	status := p.Status.DeepCopy()
 
-	p.Spec.Version = p.Status.CurrentVersion
 	if err := r.client.Update(context.TODO(), p); err != nil {
 		return err
 	}
