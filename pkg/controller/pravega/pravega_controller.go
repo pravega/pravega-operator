@@ -36,9 +36,9 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 			Labels:    util.LabelsForController(p),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &p.Spec.Pravega.ControllerReplicas,
+			Replicas:             &p.Spec.Pravega.ControllerReplicas,
 			RevisionHistoryLimit: &zero,
-			Template: MakeControllerPodTemplate(p),
+			Template:             MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(p),
 			},
