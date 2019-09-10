@@ -68,11 +68,11 @@ Note:
 ## Rollback Implementation
 When Rollback is started cluster moves into ClusterCondition `RollbackInProgress`.
 Once Rollback completes this condition is set to false.
-The order in which the components are rolled back is the following:
+The order in which the components are rolled back the reverse as upgrade :
 
-1. BookKeeper
+1. Pravega Controller
 2. Pravega Segment Store
-3. Pravega Controller
+3. BookKeeper
 
 A new field `versionHistory` has been added to Pravega ClusterStatus to maintain history of upgrades.
 
