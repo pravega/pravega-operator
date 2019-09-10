@@ -64,7 +64,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 			return r.clearUpgradeStatus(p)
 		}
 
-		syncCompleted, err := r.syncComponentsVersion(p)
+		syncCompleted, err := r.syncComponentsVersion(p, false)
 		if err != nil {
 			log.Printf("error syncing cluster version, upgrade failed. %v", err)
 			p.Status.SetErrorConditionTrue("UpgradeFailed", err.Error())
@@ -133,7 +133,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		}
 	}
 
-	syncCompleted, err := r.syncComponentsVersion(p)
+	syncCompleted, err := r.syncComponentsVersion(p, true)
 	if err != nil {
 		// error rolling back, set appropriate status and ask for manual intervention
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
@@ -169,8 +169,8 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	for _, component := range []componentSyncVersionFun{
+func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster, isRollback bool) (synced bool, err error) {
+	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
 			name: "bookkeeper",
 			fun:  r.syncBookkeeperVersion,
@@ -183,20 +183,43 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 			name: "controller",
 			fun:  r.syncControllerVersion,
 		},
-	} {
-		synced, err := component.fun(p)
-		if err != nil {
-			return false, fmt.Errorf("failed to sync %s version. %s", component.name, err)
-		}
+	}
 
-		if synced {
-			log.Printf("%s version sync has been completed", component.name)
-		} else {
-			// component version sync is still in progress
-			// Do not continue with the next component until this one is done
-			return false, nil
+	if isRollback {
+		startIndex := len(componentSyncFuncs) - 1
+		// update components in reverse order
+		for i := startIndex; i >= 0; i-- {
+			log.Printf("Rollback: syncing component %v", i)
+			component := componentSyncFuncs[i]
+			synced, err := r.syncComponent(component, p)
+			if !synced {
+				return synced, err
+			}
+		}
+	} else {
+		for _, component := range componentSyncFuncs {
+			synced, err := r.syncComponent(component, p)
+			if !synced {
+				return synced, err
+			}
 		}
 	}
+	log.Printf("Version sync completed for all components.")
+	return true, nil
+}
+
+func (r *ReconcilePravegaCluster) syncComponent(component componentSyncVersionFun, p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+	isSyncComplete, err := component.fun(p)
+	if err != nil {
+		return false, fmt.Errorf("failed to sync %s version. %s", component.name, err)
+	}
+
+	if !isSyncComplete {
+		// component version sync is still in progress
+		// Do not continue with the next component until this one is done
+		return false, nil
+	}
+	log.Printf("%s version sync has been completed", component.name)
 	return true, nil
 }
 
