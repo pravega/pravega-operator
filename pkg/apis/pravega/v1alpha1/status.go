@@ -108,7 +108,7 @@ func (ps *ClusterStatus) SetPodsReadyConditionFalse() {
 }
 
 func (ps *ClusterStatus) SetUpgradingConditionTrue(reason, message string) {
-	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, "", "")
+	c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, reason, message)
 	ps.setClusterCondition(*c)
 }
 

@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 type componentSyncVersionFun struct {
@@ -168,6 +169,10 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 		if err != nil {
 			return false, err
 		}
+
+		// Set the upgrade condition reason to be UpgradingControllerReason, message to be 0
+		p.Status.SetUpgradingConditionTrue(pravegav1alpha1.UpgradingControllerReason, "0")
+
 		// Updated pod template. Upgrade process has been triggered
 		return false, nil
 	}
@@ -179,7 +184,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	// Check whether the upgrade is in progress or has completed
 	if deploy.Status.UpdatedReplicas != deploy.Status.Replicas ||
 		deploy.Status.UpdatedReplicas != deploy.Status.ReadyReplicas {
-		// Update still in progress, check if there is progress made within a timeout.
+		// Update still in progress, check if there is progress made within the timeout.
 		for _, v := range deploy.Status.Conditions {
 			if v.Type == appsv1.DeploymentProgressing &&
 				v.Status == corev1.ConditionFalse && v.Reason == "ProgressDeadlineExceeded" {
@@ -187,6 +192,17 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 				return false, fmt.Errorf("updating deployment (%s) failed due to %s", deploy.Name, v.Reason)
 			}
 		}
+		// Check if the updated pod has error. If so, return error and fail fast
+		pods, err := r.getDeployPodsWithVersion(deploy, p.Status.TargetVersion)
+		if err != nil {
+			return false, err
+		}
+		_, err = r.checkUpdatedPods(pods, p.Status.TargetVersion)
+		if err != nil {
+			// Abort if there is any errors with the updated pods
+			return false, err
+		}
+		// Wait until next reconcile iteration
 		return false, nil
 	}
 
@@ -218,6 +234,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		if err != nil {
 			return false, err
 		}
+
+		// Set the upgrade condition reason to be UpgradingSegmentstoreReason, message to be 0
+		p.Status.SetUpgradingConditionTrue(pravegav1alpha1.UpgradingSegmentstoreReason, "0")
+
 		// Updated pod template. Upgrade process has been triggered
 		return false, nil
 	}
@@ -241,7 +261,11 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 
 	// If all replicas are ready, upgrade an old pod
-	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
+	if err != nil {
+		return false, err
+	}
+	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
 		return false, err
@@ -265,8 +289,8 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		}
 	}
 
-	// StatefulSet upgrade completed
-	return true, nil
+	// Wait until next reconcile iteration
+	return false, nil
 }
 
 func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
@@ -291,6 +315,10 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		if err != nil {
 			return false, err
 		}
+
+		// Set the upgrade condition reason to be UpgradingBookkeeperReason, message to be 0
+		p.Status.SetUpgradingConditionTrue(pravegav1alpha1.UpgradingBookkeeperReason, "0")
+
 		// Updated pod template
 		return false, nil
 	}
@@ -309,16 +337,20 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		return true, nil
 	}
 
+	// Upgrade still in progress
+
 	// Check if bookkeeper fail to have progress
 	err = checkUpgradeCondition(p, pravegav1alpha1.UpgradingBookkeeperReason, sts.Status.UpdatedReplicas)
 	if err != nil {
 		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
 	}
 
-	// Upgrade still in progress
 	// If all replicas are ready, upgrade an old pod
-
-	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
+	if err != nil {
+		return false, err
+	}
+	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
 		return false, err
@@ -346,12 +378,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	return false, nil
 }
 
-func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, version string) (bool, error) {
-	pods, err := r.getPodsWithVersion(sts, version)
-	if err != nil {
-		return false, err
-	}
-
+func (r *ReconcilePravegaCluster) checkUpdatedPods(pods []*corev1.Pod, version string) (bool, error) {
 	for _, pod := range pods {
 		//TODO: find out a more reliable way to determine if a pod is having issues
 		if pod.Status.ContainerStatuses[0].RestartCount > 1 {
@@ -359,10 +386,9 @@ func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, vers
 		}
 
 		if !util.IsPodReady(pod) {
-			// At least one updated pod is still not ready
-			if pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
-				pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
-				return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+			// At least one updated pod is still not ready, check if it is faulty.
+			if faulty, err := util.IsPodFaulty(pod); faulty {
+				return false, err
 			}
 			return false, nil
 		}
@@ -397,7 +423,7 @@ func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, ver
 	return nil, nil
 }
 
-func (r *ReconcilePravegaCluster) getPodsWithVersion(sts *appsv1.StatefulSet, version string) ([]*corev1.Pod, error) {
+func (r *ReconcilePravegaCluster) getStsPodsWithVersion(sts *appsv1.StatefulSet, version string) ([]*corev1.Pod, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
 		MatchLabels: sts.Spec.Template.Labels,
 	})
@@ -405,12 +431,27 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(sts *appsv1.StatefulSet, ve
 		return nil, fmt.Errorf("failed to convert label selector: %v", err)
 	}
 
+	return r.getPodsWithVersion(selector, sts.Namespace, version)
+}
+
+func (r *ReconcilePravegaCluster) getDeployPodsWithVersion(deploy *appsv1.Deployment, version string) ([]*corev1.Pod, error) {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: deploy.Spec.Template.Labels,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert label selector: %v", err)
+	}
+
+	return r.getPodsWithVersion(selector, deploy.Namespace, version)
+}
+
+func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, namespace string, version string) ([]*corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	podlistOps := &client.ListOptions{
-		Namespace:     sts.Namespace,
+		Namespace:     namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), podlistOps, podList)
+	err := r.client.List(context.TODO(), podlistOps, podList)
 	if err != nil {
 		return nil, err
 	}
@@ -427,15 +468,18 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(sts *appsv1.StatefulSet, ve
 
 func checkUpgradeCondition(p *pravegav1alpha1.PravegaCluster, reason string, updatedReplicas int32) error {
 	_, lastCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
-	if lastCondition.Reason == reason && lastCondition.Message != string(updatedReplicas) {
-		// nothing changed, check if reaches timeout
+	if lastCondition.Reason == reason && lastCondition.Message == string(updatedReplicas) {
+		// if reason and message are the same as before, which means there is no progress since the last reconciling,
+		// then check if it reaches the timeout.
 		parsedTime, _ := time.Parse(time.RFC3339, lastCondition.LastUpdateTime)
 		if time.Now().After(parsedTime.Add(time.Duration(10 * time.Minute))) {
-			// timeout has passed
+			// timeout
 			return fmt.Errorf("progress deadline exceeded")
 		}
+		// it hasn't reached timeout
+		return nil
 	}
-	// update the status to the latest, this will also set the transition timestamp to now
+	// progress has been made, update the status to the latest. This will also set the transition timestamp to now
 	p.Status.SetUpgradingConditionTrue(reason, string(updatedReplicas))
 	return nil
 }

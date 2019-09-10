@@ -103,7 +103,8 @@ Segment Store instances need access to a persistent volume to store the cache. L
 
 Also, Segment Store pods need to be individually accessed by clients, so having a stable network identifier provided by the Statefulset and a headless service is very convenient.
 
-As opposed to BookKeeper, we don't currently need to perform verifications or actions during the upgrade process. The `RollingUpgrade` strategy will automatically upgrade a pod and wait until it becomes ready before upgrading the following one.
+Same as Bookkeeper, we use `OnDelete` strategy for Segment Store. The reason that we don't use `RollingUpdate` strategy here is that we found it convenient to manage the upgrade
+and rollback in the same fashion. Using `RollingUpdate` will introduce Kubernetes rollback mechanism which will cause trouble to our implementation. 
 
 ### Pravega Controller upgrade
 
