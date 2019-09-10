@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type componentSyncVersionFun struct {
@@ -162,6 +163,13 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 		// This will trigger the rolling upgrade process
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
 
+		configMap := pravega.MakeControllerConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
+
 		deploy.Spec.Template = pravega.MakeControllerPodTemplate(p)
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
@@ -205,6 +213,13 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 
+		configMap := pravega.MakeSegmentstoreConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
+
 		sts.Spec.Template = pravega.MakeSegmentStorePodTemplate(p)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
@@ -247,6 +262,14 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
+
+		configMap := pravega.MakeBookieConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
+
 		sts.Spec.Template = pravega.MakeBookiePodTemplate(p)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
