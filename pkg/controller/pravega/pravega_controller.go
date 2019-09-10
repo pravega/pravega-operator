@@ -24,6 +24,8 @@ import (
 )
 
 func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
+	zero := int32(0)
+	timeout := int32(600)
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -35,9 +37,10 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 			Labels:    util.LabelsForController(p),
 		},
 		Spec: appsv1.DeploymentSpec{
-			ProgressDeadlineSeconds: func(i int32) *int32 { return &i }(600),
+			ProgressDeadlineSeconds: &timeout,
 			Replicas:                &p.Spec.Pravega.ControllerReplicas,
-			Template:                MakeControllerPodTemplate(p),
+			RevisionHistoryLimit: &zero,
+			Template:             MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForController(p),
 			},
