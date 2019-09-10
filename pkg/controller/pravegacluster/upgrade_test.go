@@ -112,8 +112,8 @@ var _ = Describe("Pravega Cluster", func() {
 
 		Context("Upgrade to new version", func() {
 			var (
-				client    client.Client
-				err       error
+				client client.Client
+				err    error
 			)
 
 			BeforeEach(func() {
@@ -155,7 +155,7 @@ var _ = Describe("Pravega Cluster", func() {
 			Context("Upgrade Bookkeeper", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
-					sts *appsv1.StatefulSet
+					sts          *appsv1.StatefulSet
 				)
 				BeforeEach(func() {
 					sts = &appsv1.StatefulSet{}
@@ -180,7 +180,7 @@ var _ = Describe("Pravega Cluster", func() {
 			Context("Upgrade Segmentstore", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
-					sts *appsv1.StatefulSet
+					sts          *appsv1.StatefulSet
 				)
 				BeforeEach(func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
@@ -210,7 +210,7 @@ var _ = Describe("Pravega Cluster", func() {
 			Context("Upgrade Controller", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
-					sts *appsv1.StatefulSet
+					sts          *appsv1.StatefulSet
 				)
 				BeforeEach(func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
