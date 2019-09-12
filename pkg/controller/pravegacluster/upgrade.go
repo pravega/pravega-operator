@@ -380,11 +380,6 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 
 func (r *ReconcilePravegaCluster) checkUpdatedPods(pods []*corev1.Pod, version string) (bool, error) {
 	for _, pod := range pods {
-		//TODO: find out a more reliable way to determine if a pod is having issues
-		if pod.Status.ContainerStatuses[0].RestartCount > 1 {
-			return false, fmt.Errorf("pod %s is restarting", pod.Name)
-		}
-
 		if !util.IsPodReady(pod) {
 			// At least one updated pod is still not ready, check if it is faulty.
 			if faulty, err := util.IsPodFaulty(pod); faulty {
@@ -468,7 +463,7 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, n
 
 func checkUpgradeCondition(p *pravegav1alpha1.PravegaCluster, reason string, updatedReplicas int32) error {
 	_, lastCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
-	if lastCondition.Reason == reason && lastCondition.Message == string(updatedReplicas) {
+	if lastCondition.Reason == reason && lastCondition.Message == fmt.Sprint(updatedReplicas) {
 		// if reason and message are the same as before, which means there is no progress since the last reconciling,
 		// then check if it reaches the timeout.
 		parsedTime, _ := time.Parse(time.RFC3339, lastCondition.LastUpdateTime)
@@ -480,6 +475,6 @@ func checkUpgradeCondition(p *pravegav1alpha1.PravegaCluster, reason string, upd
 		return nil
 	}
 	// progress has been made, update the status to the latest. This will also set the transition timestamp to now
-	p.Status.SetUpgradingConditionTrue(reason, string(updatedReplicas))
+	p.Status.SetUpgradingConditionTrue(reason, fmt.Sprint(updatedReplicas))
 	return nil
 }

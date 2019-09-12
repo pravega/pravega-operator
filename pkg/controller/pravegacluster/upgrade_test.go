@@ -50,7 +50,6 @@ var _ = Describe("Pravega Cluster", func() {
 	Context("Upgrade", func() {
 		var (
 			req reconcile.Request
-			res reconcile.Result
 			p   *v1alpha1.PravegaCluster
 		)
 
@@ -80,7 +79,7 @@ var _ = Describe("Pravega Cluster", func() {
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				res, err = r.Reconcile(req)
+				_, err = r.Reconcile(req)
 			})
 
 			Context("First reconcile", func() {
@@ -94,7 +93,7 @@ var _ = Describe("Pravega Cluster", func() {
 					foundPravega *v1alpha1.PravegaCluster
 				)
 				BeforeEach(func() {
-					res, err = r.Reconcile(req)
+					_, err = r.Reconcile(req)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -113,7 +112,6 @@ var _ = Describe("Pravega Cluster", func() {
 		Context("Upgrade to new version", func() {
 			var (
 				client client.Client
-				err    error
 			)
 
 			BeforeEach(func() {
@@ -123,14 +121,14 @@ var _ = Describe("Pravega Cluster", func() {
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				res, err = r.Reconcile(req)
+				_, _ = r.Reconcile(req)
 				foundPravega := &v1alpha1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Version = "0.6.0"
 				// bypass the pods ready check in the upgrade logic
 				foundPravega.Status.SetPodsReadyConditionTrue()
 				client.Update(context.TODO(), foundPravega)
-				res, err = r.Reconcile(req)
+				_, _ = r.Reconcile(req)
 			})
 
 			Context("Condition", func() {
@@ -164,7 +162,7 @@ var _ = Describe("Pravega Cluster", func() {
 					sts.Status.ReadyReplicas = 1
 					r.client.Update(context.TODO(), sts)
 
-					res, err = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
@@ -194,7 +192,7 @@ var _ = Describe("Pravega Cluster", func() {
 					sts.Spec.Template.Spec.Containers[0].Image = targetImage
 					r.client.Update(context.TODO(), sts)
 
-					res, err = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
@@ -231,7 +229,7 @@ var _ = Describe("Pravega Cluster", func() {
 					sts.Spec.Template.Spec.Containers[0].Image = targetImage
 					r.client.Update(context.TODO(), sts)
 
-					res, err = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
