@@ -101,14 +101,19 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to get PravegaCluster: %v", err)
 		return reconcile.Result{}, err
 	}
+	log.Println("PRINTING CLUSTER AFTER GET:")
+	r.printCluster(pravegaCluster)
 
 	// Set default configuration for unspecified values
 	changed := pravegaCluster.WithDefaults()
 	if changed {
 		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
 		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
+			log.Printf("error updating defaults %v", err)
 			return reconcile.Result{}, err
 		}
+		log.Println("PRINTING CLUSTER POST DEFAULTS")
+		r.printCluster(pravegaCluster)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -119,6 +124,30 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
+}
+
+func (r *ReconcilePravegaCluster) printCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
+	log.Printf("Cluster Name: %s", p.Name)
+	log.Printf("Cluster Namespace: %s", p.Namespace)
+	log.Println("Printing Spec:")
+	log.Printf("zk uri: %s", p.Spec.ZookeeperUri)
+	log.Println()
+	log.Printf("external access enabled: %t", p.Spec.ExternalAccessEnabled)
+	log.Println()
+	log.Printf("PravegaSpec is nil? %t", p.Spec.Pravega == nil)
+	log.Println()
+	if p.Spec.Pravega != nil {
+		log.Printf("p.Spec.Pravega.Controller.Replicas: %v", p.Spec.Pravega.Controller.Replicas)
+		log.Println()
+		log.Printf("p.Spec.Pravega.Controller.ExternalAccess.Type: %s", p.Spec.Pravega.Controller.ExternalAccess.Type)
+		log.Println()
+		log.Printf("p.Spec.Pravega.SegmentStore.ExternalAccess.Type: %s", p.Spec.Pravega.SegmentStore.ExternalAccess.Type)
+		log.Println()
+		log.Printf("p.Spec.Pravega.SegmentStore.Replicas: %v", p.Spec.Pravega.SegmentStore.Replicas)
+		log.Println()
+	}
+
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
@@ -212,7 +241,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 		return err
 	}
 
-	if p.Spec.ExternalAccess.Enabled {
+	if p.Spec.ExternalAccessEnabled {
 		services := pravega.MakeSegmentStoreExternalServices(p)
 		for _, service := range services {
 			controllerutil.SetControllerReference(p, service, r.scheme)
@@ -335,8 +364,8 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
 
-	if *sts.Spec.Replicas != p.Spec.Pravega.SegmentStoreReplicas {
-		sts.Spec.Replicas = &(p.Spec.Pravega.SegmentStoreReplicas)
+	if *sts.Spec.Replicas != p.Spec.Pravega.SegmentStore.Replicas {
+		sts.Spec.Replicas = &(p.Spec.Pravega.SegmentStore.Replicas)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
@@ -358,8 +387,8 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 		return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 	}
 
-	if *deploy.Spec.Replicas != p.Spec.Pravega.ControllerReplicas {
-		deploy.Spec.Replicas = &(p.Spec.Pravega.ControllerReplicas)
+	if *deploy.Spec.Replicas != p.Spec.Pravega.Controller.Replicas {
+		deploy.Spec.Replicas = &(p.Spec.Pravega.Controller.Replicas)
 		err = r.client.Update(context.TODO(), deploy)
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)

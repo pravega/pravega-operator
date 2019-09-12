@@ -36,7 +36,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 			Labels:    util.LabelsForController(p),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas:             &p.Spec.Pravega.ControllerReplicas,
+			Replicas:             &p.Spec.Pravega.Controller.Replicas,
 			RevisionHistoryLimit: &zero,
 			Template:             MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
@@ -91,7 +91,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 						MountPath: heapDumpDir,
 					},
 				},
-				Resources: *p.Spec.Pravega.ControllerResources,
+				Resources: *p.Spec.Pravega.Controller.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -129,8 +129,8 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		},
 	}
 
-	if p.Spec.Pravega.ControllerServiceAccountName != "" {
-		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
+	if p.Spec.Pravega.Controller.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.Controller.ServiceAccountName
 	}
 
 	configureControllerTLSSecrets(podSpec, p)
@@ -189,7 +189,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	for name, value := range p.Spec.Pravega.Options {
+	for name, value := range p.Spec.Pravega.Controller.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
@@ -223,8 +223,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 
 func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
-	if p.Spec.ExternalAccess.Enabled {
-		serviceType = p.Spec.ExternalAccess.Type
+	if p.Spec.ExternalAccessEnabled {
+		serviceType = p.Spec.Pravega.Controller.ExternalAccess.Type
 	}
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{

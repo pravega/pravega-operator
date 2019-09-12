@@ -4,11 +4,7 @@
 
 version: 0.5.0
 zookeeperUri: zk-client:2181
-
-externalAccess:
-  enabled: false
-  type: LoadBalancer
-
+externalAccessEnabled: false
 serviceAccount:
   name: pravega-components
 
@@ -25,8 +21,15 @@ bookkeeper:
 pravega:
   image:
     repository: pravega/pravega
-  controllerReplicas: 1
-  segmentStoreReplicas: 1
-  debugLogging: false
-  cacheVolumeRequest: 20Gi
+  controller:
+    replicas: 1
+    debugLogging: false
+    externalAccess:
+      type: LoadBalancer
+  segmentstore:
+    replicas: 1
+    debugLogging: false
+    externalAccess:
+      type: LoadBalancer
+    cacheVolumeRequest: 20Gi
   tier2: pravega-tier2

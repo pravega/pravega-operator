@@ -160,7 +160,7 @@ func RemoveString(slice []string, str string) (result []string) {
 }
 
 func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
-	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+	return int(p.Spec.Pravega.Controller.Replicas + p.Spec.Pravega.SegmentStore.Replicas + p.Spec.Bookkeeper.Replicas)
 }
 
 func PravegaImage(p *v1alpha1.PravegaCluster) (image string) {

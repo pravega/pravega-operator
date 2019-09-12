@@ -5,11 +5,9 @@ metadata:
 spec:
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
-  externalAccess:
-    enabled: {{ .Values.externalAccess.enabled }}
-    type: {{ .Values.externalAccess.type }}
+  externalAccessEnabled: {{ .Values.externalAccessEnabled }}
   bookkeeper:
-    {{- if .Values.externalAccess.enabled }}
+    {{- if .Values.externalAccessEnabled }}
     serviceAccountName: {{ .Values.serviceAccount.name }}
     {{- end }}
     image:
@@ -43,35 +41,44 @@ spec:
             storage: {{ .Values.bookkeeper.storage.indexVolumeRequest }}
     autoRecovery: {{ .Values.bookkeeper.autoRecovery }}
   pravega:
-    {{- if .Values.externalAccess.enabled }}
-    controllerServiceAccountName: {{ .Values.serviceAccount.name }}
-    segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
-    {{- end }}
     image:
       repository: {{ .Values.pravega.image.repository }}
-    controllerReplicas: {{ .Values.pravega.controllerReplicas }}
-    controllerResources:
-      requests:
-        memory: "1Gi"
-        cpu: "1000m"
-      limits:
-        memory: "3Gi"
-        cpu: "2000m"
-    segmentStoreReplicas: {{ .Values.pravega.segmentStoreReplicas }}
-    segmentStoreResources:
-      requests:
-        memory: "3Gi"
-        cpu: "1000m"
-      limits:
-        memory: "5Gi"
-        cpu: "2000m"
-    debugLogging: {{ .Values.pravega.debugLogging }}
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
+    controller:
+      {{- if .Values.externalAccessEnabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      {{- end }}
+      replicas: {{ .Values.pravega.controller.replicas }}
+      debugLogging: {{ .Values.pravega.controller.debugLogging }}
+      externalAccess:
+        type: {{ .Values.pravega.controller.externalAccess.type }}
+      resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+          limits:
+            memory: "3Gi"
+            cpu: "2000m"
+    segmentstore:
+      {{- if .Values.externalAccessEnabled }}
+      serviceAccountName: {{ .Values.serviceAccount.name  }}
+      {{- end }}
+      replicas: {{ .Values.pravega.segmentstore.replicas }}
+      debugLogging: {{ .Values.pravega.segmentstore.debugLogging }}
+      externalAccess:
+        type: {{ .Values.pravega.segmentstore.externalAccess.type }}
       resources:
         requests:
-          storage: {{ .Values.pravega.cacheVolumeRequest }}
+          memory: "3Gi"
+          cpu: "1000m"
+        limits:
+          memory: "5Gi"
+          cpu: "2000m"
+      cacheVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: {{ .Values.pravega.segmentstore.cacheVolumeRequest }}
     tier2:
       filesystem:
         persistentVolumeClaim:

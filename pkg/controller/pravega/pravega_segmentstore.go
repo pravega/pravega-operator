@@ -41,7 +41,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
-			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
+			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStore.Replicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
@@ -105,7 +105,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						MountPath: heapDumpDir,
 					},
 				},
-				Resources: *p.Spec.Pravega.SegmentStoreResources,
+				Resources: *p.Spec.Pravega.SegmentStore.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -147,8 +147,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		},
 	}
 
-	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
-		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
+	if p.Spec.Pravega.SegmentStore.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStore.ServiceAccountName
 	}
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
@@ -177,7 +177,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	for name, value := range p.Spec.Pravega.Options {
+	for name, value := range p.Spec.Pravega.SegmentStore.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
@@ -202,11 +202,11 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 	configData["WAIT_FOR"] = strings.Join(waitFor, ",")
 
-	if p.Spec.ExternalAccess.Enabled {
+	if p.Spec.ExternalAccessEnabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
-	if p.Spec.Pravega.DebugLogging {
+	if p.Spec.Pravega.SegmentStore.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}
 
@@ -234,7 +234,7 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 			ObjectMeta: metav1.ObjectMeta{
 				Name: cacheVolumeName,
 			},
-			Spec: *pravegaSpec.CacheVolumeClaimTemplate,
+			Spec: *pravegaSpec.SegmentStore.CacheVolumeClaimTemplate,
 		},
 	}
 }
@@ -346,17 +346,18 @@ func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 }
 
 func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+	var ssSpec = pravegaCluster.Spec.Pravega.SegmentStore
 	var service *corev1.Service
 	var ssPodName string
 	var ssFQDN string
-	var annotationMap map[string]string
+	var annotationMap map[string]string = ssSpec.ExternalAccess.Annotations
 
-	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
+	services := make([]*corev1.Service, ssSpec.Replicas)
 
-	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
+	for i := int32(0); i < ssSpec.Replicas; i++ {
 		ssPodName = util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
-		if pravegaCluster.Spec.ExternalAccess.DomainName != "" {
-			domainName := strings.TrimSpace(pravegaCluster.Spec.ExternalAccess.DomainName)
+		if ssSpec.ExternalAccess.DomainName != "" {
+			domainName := strings.TrimSpace(ssSpec.ExternalAccess.DomainName)
 			if strings.HasSuffix(domainName, dot) {
 				ssFQDN = ssPodName + dot + domainName
 			} else {
@@ -378,7 +379,7 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				Annotations: annotationMap,
 			},
 			Spec: corev1.ServiceSpec{
-				Type: pravegaCluster.Spec.ExternalAccess.Type,
+				Type: pravegaCluster.Spec.Pravega.SegmentStore.ExternalAccess.Type,
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "server",
@@ -400,8 +401,9 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 
 func MakeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	var maxUnavailable intstr.IntOrString
+	var ssSpec = pravegaCluster.Spec.Pravega.SegmentStore
 
-	if pravegaCluster.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+	if ssSpec.Replicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
 		maxUnavailable = intstr.FromInt(1)

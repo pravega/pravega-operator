@@ -53,7 +53,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		})
 
 		It("should set external access", func() {
-			Ω(p.Spec.ExternalAccess).ShouldNot(BeNil())
+			Ω(p.Spec.ExternalAccessEnabled).ShouldNot(BeNil())
 		})
 
 		It("should set version to 0.4.0", func() {

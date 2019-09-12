@@ -11,6 +11,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -67,10 +69,9 @@ type ClusterSpec struct {
 	// available at: https://github.com/pravega/zookeeper-operator
 	ZookeeperUri string `json:"zookeeperUri"`
 
-	// ExternalAccess specifies whether or not to allow external access
-	// to clients and the service type to use to achieve it
+	// ExternalAccessEnabled boolean value specifies whether or not external access is enabled
 	// By default, external access is not enabled
-	ExternalAccess *ExternalAccess `json:"externalAccess"`
+	ExternalAccessEnabled bool `json:"externalAccessEnabled,omitempty"`
 
 	// TLS is the Pravega security configuration that is passed to the Pravega processes.
 	// See the following file for a complete list of options:
@@ -101,20 +102,23 @@ type ClusterSpec struct {
 
 func (s *ClusterSpec) withDefaults() (changed bool) {
 	if s.ZookeeperUri == "" {
+		fmt.Printf("Zookeeper URI is nil")
 		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
 	}
 
-	if s.ExternalAccess == nil {
-		changed = true
-		s.ExternalAccess = &ExternalAccess{}
-	}
+	/*
+		if s.ExternalAccess == nil {
+			changed = true
+			s.ExternalAccess = &ExternalAccess{}
+		}
 
-	if s.ExternalAccess.withDefaults() {
-		changed = true
-	}
-
+		if s.ExternalAccess.withDefaults() {
+			changed = true
+		}
+	*/
 	if s.TLS == nil {
+		fmt.Printf("TLS is nil")
 		changed = true
 		s.TLS = &TLSPolicy{
 			Static: &StaticTLS{},
@@ -148,36 +152,6 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	return changed
-}
-
-// ExternalAccess defines the configuration of the external access
-type ExternalAccess struct {
-	// Enabled specifies whether or not external access is enabled
-	// By default, external access is not enabled
-	Enabled bool `json:"enabled"`
-
-	// Type specifies the service type to achieve external access.
-	// Options are "LoadBalancer" and "NodePort".
-	// By default, if external access is enabled, it will use "LoadBalancer"
-	Type v1.ServiceType `json:"type,omitempty"`
-
-	// Domain Name to be used for External Access
-	// This value is ignored if External Access is disabled
-	DomainName string `json:"domainName,omitempty"`
-}
-
-func (e *ExternalAccess) withDefaults() (changed bool) {
-	if e.Enabled == false && (e.Type != "" || e.DomainName != "") {
-		changed = true
-		e.Type = ""
-		e.DomainName = ""
-	} else if e.Enabled == true {
-		if e.Type == "" {
-			changed = true
-			e.Type = DefaultServiceType
-		}
-	}
 	return changed
 }
 

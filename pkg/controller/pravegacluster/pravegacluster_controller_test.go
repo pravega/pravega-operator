@@ -98,7 +98,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(err).Should(BeNil())
 					Ω(foundPravega.Spec.Version).Should(Equal("0.4.0"))
 					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
-					Ω(foundPravega.Spec.ExternalAccess).ShouldNot(BeNil())
+					Ω(foundPravega.Spec.ExternalAccessEnabled).Should(Equal(false))
 					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
 					Ω(foundPravega.Spec.Bookkeeper).ShouldNot(BeNil())
 				})
@@ -255,10 +255,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 						},
 					},
 					Pravega: &v1alpha1.PravegaSpec{
-						ControllerReplicas:    2,
-						SegmentStoreReplicas:  4,
-						ControllerResources:   customReq,
-						SegmentStoreResources: customReq,
+						Controller: &v1alpha1.ControllerSpec{
+							Replicas:  2,
+							Resources: customReq,
+						},
+						SegmentStore: &v1alpha1.SegmentStoreSpec{
+							Replicas:  4,
+							Resources: customReq,
+						},
+
 						Image: &v1alpha1.PravegaImageSpec{
 							ImageSpec: v1alpha1.ImageSpec{
 								Repository: "bar/pravega",
