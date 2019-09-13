@@ -47,7 +47,7 @@ func testScaleCluster(t *testing.T) {
 
 	// Scale up Pravega cluster, increase bookies and segment store size by 1
 	pravega.Spec.Bookkeeper.Replicas = 4
-	pravega.Spec.Pravega.SegmentStoreReplicas = 2
+	pravega.Spec.Pravega.SegmentStore.Replicas = 2
 	podSize = 7
 
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
@@ -62,7 +62,7 @@ func testScaleCluster(t *testing.T) {
 
 	// Scale down Pravega cluster back to default
 	pravega.Spec.Bookkeeper.Replicas = 3
-	pravega.Spec.Pravega.SegmentStoreReplicas = 1
+	pravega.Spec.Pravega.SegmentStore.Replicas = 1
 	podSize = 5
 
 	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
