@@ -12,6 +12,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -111,4 +112,12 @@ func IsPodReady(pod *corev1.Pod) bool {
 		}
 	}
 	return false
+}
+
+func IsPodFaulty(pod *corev1.Pod) (bool, error) {
+	if pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
+		pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
+		return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+	}
+	return false, nil
 }

@@ -281,7 +281,7 @@ var _ = Describe("Admission webhook", func() {
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.5.0-001",
 				}
-				p.Status.SetUpgradingConditionTrue()
+				p.Status.SetUpgradingConditionTrue("", "")
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
 			})
