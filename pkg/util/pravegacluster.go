@@ -227,23 +227,40 @@ func NormalizeVersion(version string) (string, error) {
 	return matches[1], nil
 }
 
-func UpdateOneJVMOption(arg string, m map[string]string) {
+type OrderedMap struct {
+	m    map[string]string
+	keys []string
+}
+
+func UpdateOneJVMOption(arg string, om *OrderedMap) {
 	if strings.HasPrefix(arg, "-Xms") {
-		m["-Xms"] = string(arg[4:])
+		if _, ok := om.m["-Xms"]; !ok {
+			om.keys = append(om.keys, "-Xms")
+		}
+		om.m["-Xms"] = arg[4:]
 		return
 	}
 
 	if strings.HasPrefix(arg, "-XX:") {
 		if arg[4] == '+' || arg[4] == '-' {
-			m[arg[5:]] = string(arg[4])
+			if _, ok := om.m[arg[5:]]; !ok {
+				om.keys = append(om.keys, arg[5:])
+			}
+			om.m[arg[5:]] = string(arg[4])
 			return
 		}
 		s := strings.Split(arg[4:], "=")
-		m[s[0]] = s[1]
+		if _, ok := om.m[s[0]]; !ok {
+			om.keys = append(om.keys, s[0])
+		}
+		om.m[s[0]] = s[1]
 		return
 	}
 
-	m[arg] = ""
+	if _, ok := om.m[arg]; !ok {
+		om.keys = append(om.keys, arg)
+	}
+	om.m[arg] = ""
 	return
 }
 
@@ -268,18 +285,18 @@ func OverrideDefaultJVMOptions(defaultOpts []string, overrideOpts []string) []st
 		return defaultOpts
 	}
 
-	m := map[string]string{}
+	om := &OrderedMap{m: map[string]string{}, keys: []string{}}
 	for _, v := range defaultOpts {
-		UpdateOneJVMOption(v, m)
+		UpdateOneJVMOption(v, om)
 	}
 
 	for _, v := range overrideOpts {
-		UpdateOneJVMOption(v, m)
+		UpdateOneJVMOption(v, om)
 	}
-
 	jvmOpts := []string{}
-	for k, v := range m {
-		jvmOpts = append(jvmOpts, GenerateJVMOption(k, v))
+	for _, key := range om.keys {
+		fmt.Println("what happen")
+		jvmOpts = append(jvmOpts, GenerateJVMOption(key, om.m[key]))
 	}
 
 	return jvmOpts
