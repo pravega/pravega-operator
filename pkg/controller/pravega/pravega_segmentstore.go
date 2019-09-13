@@ -44,7 +44,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				Type: appsv1.RollingUpdateStatefulSetStrategyType,
+				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},
 			Template: MakeSegmentStorePodTemplate(pravegaCluster),
 			Selector: &metav1.LabelSelector{
