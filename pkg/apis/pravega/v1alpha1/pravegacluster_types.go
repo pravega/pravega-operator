@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -102,23 +100,11 @@ type ClusterSpec struct {
 
 func (s *ClusterSpec) withDefaults() (changed bool) {
 	if s.ZookeeperUri == "" {
-		fmt.Printf("Zookeeper URI is nil")
 		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
 	}
 
-	/*
-		if s.ExternalAccess == nil {
-			changed = true
-			s.ExternalAccess = &ExternalAccess{}
-		}
-
-		if s.ExternalAccess.withDefaults() {
-			changed = true
-		}
-	*/
 	if s.TLS == nil {
-		fmt.Printf("TLS is nil")
 		changed = true
 		s.TLS = &TLSPolicy{
 			Static: &StaticTLS{},

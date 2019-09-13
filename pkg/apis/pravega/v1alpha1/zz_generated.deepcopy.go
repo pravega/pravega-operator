@@ -216,6 +216,11 @@ func (in *ControllerSpec) DeepCopyInto(out *ControllerSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.JVMOptions != nil {
+		in, out := &in.JVMOptions, &out.JVMOptions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources
 		*out = new(v1.ResourceRequirements)
@@ -480,6 +485,11 @@ func (in *SegmentStoreSpec) DeepCopyInto(out *SegmentStoreSpec) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.JVMOptions != nil {
+		in, out := &in.JVMOptions, &out.JVMOptions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	if in.Resources != nil {
 		in, out := &in.Resources, &out.Resources

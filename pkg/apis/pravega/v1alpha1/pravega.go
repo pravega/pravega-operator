@@ -13,8 +13,6 @@ package v1alpha1
 import (
 	"fmt"
 
-	"strconv"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -80,8 +78,8 @@ type ExternalAccess struct {
 	// If empty no dns name is added for
 	DomainName string `json:"domainName,omitempty"`
 
-	// Annotations to be added to service
-	Annotations map[string]string `json:"annotations,omitempty"`
+	// Annotations to be added to the external service
+	Annotations map[string]string `json:"annotations"`
 }
 
 func (e *ExternalAccess) withDefaults() (changed bool) {
@@ -89,12 +87,12 @@ func (e *ExternalAccess) withDefaults() (changed bool) {
 		changed = true
 		e.Type = DefaultServiceType
 	}
+
 	if e.Annotations == nil {
 		changed = true
 		e.Annotations = map[string]string{}
 	}
-	fmt.Printf(" ExternalAccess.withDefaults: %s", strconv.FormatBool(changed))
-	fmt.Println()
+
 	return changed
 }
 
@@ -107,10 +105,17 @@ type ControllerSpec struct {
 	// Defaults to false.
 	DebugLogging bool `json:"debugLogging"`
 
-	// Options is the Pravega configuration that is passed to the Pravega processes
-	// as JAVA_OPTS. See the following file for a complete list of options:
+	// Pravega configuration options passed to the Pravega processes
+	// a '-D' is prefixed to the provided values to pass them as java system properties
+	// See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
 	Options map[string]string `json:"options"`
+
+	// JVM Options for tuning JVM of Controller process.
+	// These typically start with '-X' or '-XX'
+	// See the following link for a complete list of options
+	// https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html
+	JVMOptions []string `json:"jvmOptions"`
 
 	// ControllerServiceAccountName configures the service account used on controller instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
@@ -120,6 +125,7 @@ type ControllerSpec struct {
 	// ControllerResources includes CPU and memory resources
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 
+	// Configuration to be used when external access is enabled for this component
 	ExternalAccess *ExternalAccess `json:"externalAccess,omitempty"`
 }
 
@@ -137,6 +143,12 @@ type SegmentStoreSpec struct {
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
 	Options map[string]string `json:"options"`
 
+	// JVM Options for tuning JVM of Controller process.
+	// These typically start with '-X' or '-XX'
+	// See the following link for a complete list of options
+	// https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html
+	JVMOptions []string `json:"jvmOptions"`
+
 	// SegmentStoreServiceAccountName configures the service account used on segment store instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
@@ -145,7 +157,7 @@ type SegmentStoreSpec struct {
 	// SegmentStoreResources includes CPU and memory resources
 	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
 
-	// config for external access
+	// Configuration to be used when external access is enabled for this component
 	ExternalAccess *ExternalAccess `json:"externalAccess,omitempty"`
 
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
@@ -212,7 +224,6 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	fmt.Printf("PravegaSpec withDefaults %s", strconv.FormatBool(changed))
 	return changed
 }
 
@@ -221,10 +232,17 @@ func (ss *SegmentStoreSpec) withDefaults() (changed bool) {
 		changed = true
 		ss.Replicas = 1
 	}
+
 	if ss.Options == nil {
 		changed = true
 		ss.Options = map[string]string{}
 	}
+
+	if ss.JVMOptions == nil {
+		changed = true
+		ss.JVMOptions = make([]string, 0)
+	}
+
 	if ss.Resources == nil {
 		changed = true
 		ss.Resources = &v1.ResourceRequirements{
@@ -260,8 +278,7 @@ func (ss *SegmentStoreSpec) withDefaults() (changed bool) {
 			},
 		}
 	}
-	fmt.Printf("SegmentStore withDefaults %s", strconv.FormatBool(changed))
-	fmt.Println()
+
 	return changed
 }
 
@@ -274,6 +291,11 @@ func (cs *ControllerSpec) withDefaults() (changed bool) {
 	if cs.Options == nil {
 		changed = true
 		cs.Options = map[string]string{}
+	}
+
+	if cs.JVMOptions == nil {
+		changed = true
+		cs.JVMOptions = make([]string, 0)
 	}
 
 	if cs.Resources == nil {
@@ -300,8 +322,6 @@ func (cs *ControllerSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	fmt.Printf("Controller withDefaults %s", strconv.FormatBool(changed))
-	fmt.Println()
 	return changed
 }
 

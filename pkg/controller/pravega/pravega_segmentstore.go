@@ -345,28 +345,45 @@ func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 	}
 }
 
+func cloneMap(sourceMap map[string]string) (annotationMap map[string]string) {
+	if len(sourceMap) == 0 {
+		return map[string]string{}
+	}
+	annotationMap = make(map[string]string, len(sourceMap)+1)
+	for key, value := range sourceMap {
+		annotationMap[key] = value
+	}
+	return annotationMap
+}
+
+func generateDNSAnnotationForSvc(domainName string, podName string) (dnsAnnotationValue string) {
+	var ssFQDN string
+	if domainName != "" {
+		domain := strings.TrimSpace(domainName)
+		if strings.HasSuffix(domain, dot) {
+			ssFQDN = podName + dot + domain
+		} else {
+			ssFQDN = podName + dot + domain + dot
+		}
+	}
+	return ssFQDN
+}
+
 func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
 	var ssSpec = pravegaCluster.Spec.Pravega.SegmentStore
 	var service *corev1.Service
-	var ssPodName string
-	var ssFQDN string
-	var annotationMap map[string]string = ssSpec.ExternalAccess.Annotations
 
+	annotationMap := cloneMap(ssSpec.ExternalAccess.Annotations)
 	services := make([]*corev1.Service, ssSpec.Replicas)
 
 	for i := int32(0); i < ssSpec.Replicas; i++ {
-		ssPodName = util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
-		if ssSpec.ExternalAccess.DomainName != "" {
-			domainName := strings.TrimSpace(ssSpec.ExternalAccess.DomainName)
-			if strings.HasSuffix(domainName, dot) {
-				ssFQDN = ssPodName + dot + domainName
-			} else {
-				ssFQDN = ssPodName + dot + domainName + dot
-			}
-			annotationMap = map[string]string{externalDNSAnnotationKey: ssFQDN}
-		} else {
-			annotationMap = map[string]string{}
+
+		ssPodName := util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
+		annotationValue := generateDNSAnnotationForSvc(ssSpec.ExternalAccess.DomainName, ssPodName)
+		if annotationValue != "" {
+			annotationMap[externalDNSAnnotationKey] = annotationValue
 		}
+
 		service = &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",

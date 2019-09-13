@@ -48,7 +48,7 @@ func TestPravegaTemplate(t *testing.T) {
 
 	// Run "helm template" underlying and return the result as output
 	output := helm.RenderTemplate(t, options, helmChartPath, []string{"templates/pravega.yaml"})
-	//fmt.Println(output)
+
 	// Parse output
 	var p pravegav1alpha1.PravegaCluster
 	helm.UnmarshalK8SYaml(t, output, &p)

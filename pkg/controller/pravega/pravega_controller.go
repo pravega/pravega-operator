@@ -171,6 +171,7 @@ func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
 }
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
+
 	var javaOpts = []string{
 		"-Xms512m",
 		"-XX:+ExitOnOutOfMemoryError",
@@ -223,18 +224,24 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 
 func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
+	annotationMap := map[string]string{}
 	if p.Spec.ExternalAccessEnabled {
 		serviceType = p.Spec.Pravega.Controller.ExternalAccess.Type
+		for k, v := range p.Spec.Pravega.Controller.ExternalAccess.Annotations {
+			annotationMap[k] = v
+		}
 	}
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.ServiceNameForController(p.Name),
-			Namespace: p.Namespace,
-			Labels:    util.LabelsForController(p),
+			Name:        util.ServiceNameForController(p.Name),
+			Namespace:   p.Namespace,
+			Labels:      util.LabelsForController(p),
+			Annotations: annotationMap,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,

@@ -101,19 +101,15 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to get PravegaCluster: %v", err)
 		return reconcile.Result{}, err
 	}
-	log.Println("PRINTING CLUSTER AFTER GET:")
-	r.printCluster(pravegaCluster)
 
 	// Set default configuration for unspecified values
 	changed := pravegaCluster.WithDefaults()
 	if changed {
 		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
 		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
-			log.Printf("error updating defaults %v", err)
+			log.Printf("Error updating defaults to cluster spec %v", err)
 			return reconcile.Result{}, err
 		}
-		log.Println("PRINTING CLUSTER POST DEFAULTS")
-		r.printCluster(pravegaCluster)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
@@ -124,30 +120,6 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
-}
-
-func (r *ReconcilePravegaCluster) printCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
-	log.Printf("Cluster Name: %s", p.Name)
-	log.Printf("Cluster Namespace: %s", p.Namespace)
-	log.Println("Printing Spec:")
-	log.Printf("zk uri: %s", p.Spec.ZookeeperUri)
-	log.Println()
-	log.Printf("external access enabled: %t", p.Spec.ExternalAccessEnabled)
-	log.Println()
-	log.Printf("PravegaSpec is nil? %t", p.Spec.Pravega == nil)
-	log.Println()
-	if p.Spec.Pravega != nil {
-		log.Printf("p.Spec.Pravega.Controller.Replicas: %v", p.Spec.Pravega.Controller.Replicas)
-		log.Println()
-		log.Printf("p.Spec.Pravega.Controller.ExternalAccess.Type: %s", p.Spec.Pravega.Controller.ExternalAccess.Type)
-		log.Println()
-		log.Printf("p.Spec.Pravega.SegmentStore.ExternalAccess.Type: %s", p.Spec.Pravega.SegmentStore.ExternalAccess.Type)
-		log.Println()
-		log.Printf("p.Spec.Pravega.SegmentStore.Replicas: %v", p.Spec.Pravega.SegmentStore.Replicas)
-		log.Println()
-	}
-
-	return nil
 }
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
