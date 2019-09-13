@@ -295,7 +295,6 @@ func OverrideDefaultJVMOptions(defaultOpts []string, overrideOpts []string) []st
 	}
 	jvmOpts := []string{}
 	for _, key := range om.keys {
-		fmt.Println("what happen")
 		jvmOpts = append(jvmOpts, GenerateJVMOption(key, om.m[key]))
 	}
 
