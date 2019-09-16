@@ -254,7 +254,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 								Repository: "foo/bookkeeper",
 							},
 						},
-						JVM: &v1alpha1.BookkeeperJVMOptions{
+						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
 							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
 							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
 							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
@@ -270,10 +270,8 @@ var _ = Describe("PravegaCluster Controller", func() {
 								Repository: "bar/pravega",
 							},
 						},
-						JVM: &v1alpha1.PravegaJVMOptions{
-							Controller:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-							Segmentstore: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 					},
 					TLS: &v1alpha1.TLSPolicy{
 						Static: &v1alpha1.StaticTLS{

@@ -88,10 +88,15 @@ type PravegaSpec struct {
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
 	Options map[string]string `json:"options"`
 
-	// JVM is the JVM options for controller and segmentstore. It will be passed to the JVM
+	// ControllerJvmOptions is the JVM options for controller. It will be passed to the JVM
 	// for performance tuning. If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
-	JVM *PravegaJVMOptions `json:"jvm"`
+	ControllerJvmOptions []string `json:"controllerjvmOptions"`
+
+	// SegmentStoreJVMOptions is the JVM options for Segmentstore. It will be passed to the JVM
+	// for performance tuning. If this field is not specified, the operator will use a set of default
+	// options that is good enough for general deployment.
+	SegmentStoreJVMOptions []string `json:"segmentStoreJVMOptions"`
 
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
 	// This field is optional. If no PVC spec, stateful containers will use
@@ -144,11 +149,14 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.Options = map[string]string{}
 	}
 
-	if s.JVM == nil {
+	if s.ControllerJvmOptions == nil {
 		changed = true
-		s.JVM = &PravegaJVMOptions{}
-		s.JVM.Controller = []string{}
-		s.JVM.Segmentstore = []string{}
+		s.ControllerJvmOptions = []string{}
+	}
+
+	if s.SegmentStoreJVMOptions == nil {
+		changed = true
+		s.SegmentStoreJVMOptions = []string{}
 	}
 
 	if s.CacheVolumeClaimTemplate == nil {
@@ -273,9 +281,4 @@ type HDFSSpec struct {
 	Uri               string `json:"uri"`
 	Root              string `json:"root"`
 	ReplicationFactor int32  `json:"replicationFactor"`
-}
-
-type PravegaJVMOptions struct {
-	Controller   []string `json:"controller"`
-	Segmentstore []string `json:"segmentstore"`
 }

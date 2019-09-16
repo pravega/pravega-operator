@@ -193,7 +193,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.JVM.Controller)...)
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.ControllerJvmOptions)...)
 
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))

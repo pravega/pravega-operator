@@ -181,7 +181,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.JVM.Segmentstore)...)
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.SegmentStoreJVMOptions)...)
 
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
