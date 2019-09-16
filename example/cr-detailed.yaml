@@ -63,7 +63,7 @@ spec:
       codahaleStatsOutputFrequencySeconds: "30"
 
     # Pass the JVM options to Bookkeeper
-    jvm:
+    bookkeeperJVMOptions:
       memoryOpts: ["-Xms2g", "-XX:MaxDirectMemorySize=2g"]
       gcOpts: ["-XX:MaxGCPauseMillis=20"]
       gcLoggingOpts: ["-XX:NumberOfGCLogFiles=10"]
@@ -143,6 +143,5 @@ spec:
       pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
 
     # Pass the JVM options to controller and segmentstore
-    jvm:
-      controller: ["-XX:MaxDirectMemorySize=1g"]
-      segmentstore: ["-XX:MaxDirectMemorySize=1g"]
+    controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
+    segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
