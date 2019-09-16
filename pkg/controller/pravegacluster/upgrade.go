@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 type componentSyncVersionFun struct {
@@ -37,6 +39,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		r.client.Status().Update(context.TODO(), p)
 	}()
 
+	// we cannot upgrade if cluster is in UpgradeFailed or Rollback state
 	if p.Status.IsClusterInUpgradeFailedOrRollbackState() {
 		return nil
 	}
@@ -64,7 +67,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 			return r.clearUpgradeStatus(p)
 		}
 
-		syncCompleted, err := r.syncComponentsVersion(p, false)
+		syncCompleted, err := r.syncComponentsVersion(p)
 		if err != nil {
 			log.Printf("error syncing cluster version, upgrade failed. %v", err)
 			p.Status.SetErrorConditionTrue("UpgradeFailed", err.Error())
@@ -98,7 +101,8 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 	// Setting target version and condition.
 	// The upgrade process will start on the next reconciliation
 	p.Status.TargetVersion = p.Spec.Version
-	p.Status.SetUpgradingConditionTrue()
+	p.Status.SetUpgradingConditionTrue("", "")
+
 	return nil
 }
 
@@ -124,7 +128,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		// Add Rollback Condition to Cluster Status
 		log.Printf("Updating Target Version to  %v", version)
 		p.Status.TargetVersion = version
-		p.Status.SetRollbackConditionTrue()
+		p.Status.SetRollbackConditionTrue("", "")
 		updateErr := r.client.Status().Update(context.TODO(), p)
 		if updateErr != nil {
 			p.Status.SetRollbackConditionFalse()
@@ -133,7 +137,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		}
 	}
 
-	syncCompleted, err := r.syncComponentsVersion(p, true)
+	syncCompleted, err := r.syncComponentsVersion(p)
 	if err != nil {
 		// error rolling back, set appropriate status and ask for manual intervention
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
@@ -150,6 +154,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		r.clearRollbackStatus(p)
 		log.Printf("Rollback to version %v completed for all pravega components.", version)
 	}
+	r.client.Status().Update(context.TODO(), p)
 	return nil
 }
 
@@ -169,7 +174,7 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster, isRollback bool) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
 			name: "bookkeeper",
@@ -185,7 +190,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 		},
 	}
 
-	if isRollback {
+	if p.Status.IsClusterInRollbackState() {
 		startIndex := len(componentSyncFuncs) - 1
 		// update components in reverse order
 		for i := startIndex; i >= 0; i-- {
@@ -237,10 +242,17 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	}
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpdatedReplicasForComponent(name, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+		p.Status.UpdateProgress(pravegav1alpha1.UpdatingControllerReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
+
+		configMap := pravega.MakeControllerConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
 
 		deploy.Spec.Template = pravega.MakeControllerPodTemplate(p)
 		err = r.client.Update(context.TODO(), deploy)
@@ -258,26 +270,25 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	// Check whether the upgrade is in progress or has completed
 	if deploy.Status.UpdatedReplicas != deploy.Status.Replicas ||
 		deploy.Status.UpdatedReplicas != deploy.Status.ReadyReplicas {
-		// Upgrade still in progress
+		// Update still in progress, check if there is progress made within the timeout.
+		for _, v := range deploy.Status.Conditions {
+			if v.Type == appsv1.DeploymentProgressing &&
+				v.Status == corev1.ConditionFalse && v.Reason == "ProgressDeadlineExceeded" {
+				// upgrade fails
+				return false, fmt.Errorf("updating deployment (%s) failed due to %s", deploy.Name, v.Reason)
+			}
+		}
+		// Check if the updated pod has error. If so, return error and fail fast
 		pods, err := r.getDeployPodsWithVersion(deploy, p.Status.TargetVersion)
 		if err != nil {
 			return false, err
 		}
-
-		for _, pod := range pods {
-			//TODO: find out a more reliable way to determine if a pod is having issues
-			if pod.Status.ContainerStatuses[0].RestartCount > 1 {
-				return false, fmt.Errorf("pod %s is restarting", pod.Name)
-			}
-
-			if !util.IsPodReady(pod) {
-				// At least one updated pod is still not ready
-				if pod.Status.ContainerStatuses[0].State.Waiting != nil && pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" {
-					return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
-				}
-				return false, nil
-			}
+		_, err = r.checkUpdatedPods(pods, p.Status.TargetVersion)
+		if err != nil {
+			// Abort if there is any errors with the updated pods
+			return false, err
 		}
+		// Wait until next reconcile iteration
 		return false, nil
 	}
 
@@ -300,16 +311,24 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
+
+		configMap := pravega.MakeSegmentstoreConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
 
 		sts.Spec.Template = pravega.MakeSegmentStorePodTemplate(p)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
 		}
+
 		// Updated pod template. Upgrade process has been triggered
 		return false, nil
 	}
@@ -317,29 +336,25 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	// Pod template already updated
 	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
-
 	// Check whether the upgrade is in progress or has completed
 	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
 		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
 		// StatefulSet upgrade completed
-		// TODO: wait until there is no under replicated ledger
-		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
-		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return false, err
-		}
 		return true, nil
 	}
-
 	// Upgrade still in progress
+	// Check if segmentstore fail to have progress within a timeout
+	err = checkSyncTimeout(p, pravegav1alpha1.UpdatingSegmentstoreReason, sts.Status.UpdatedReplicas)
+	if err != nil {
+		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
+	}
+
 	// If all replicas are ready, upgrade an old pod
-	p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
-	err = r.client.Update(context.TODO(), sts)
+	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
 	if err != nil {
 		return false, err
 	}
-	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
 		return false, err
@@ -355,7 +370,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 			return false, fmt.Errorf("could not obtain outdated pod")
 		}
 
-		log.Infof("updating pod: %s", pod.Name)
+		log.Infof("upgrading pod: %s", pod.Name)
 
 		err = r.client.Delete(context.TODO(), pod)
 		if err != nil {
@@ -363,7 +378,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		}
 	}
 
-	// wait until the next reconcile iteration
+	// Wait until next reconcile iteration
 	return false, nil
 }
 
@@ -381,15 +396,25 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		//p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
+		p.Status.UpdateProgress(pravegav1alpha1.UpdatingBookkeeperReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
+
+		configMap := pravega.MakeBookieConfigMap(p)
+		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		err = r.client.Update(context.TODO(), configMap)
+		if err != nil {
+			return false, err
+		}
+
 		sts.Spec.Template = pravega.MakeBookiePodTemplate(p)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
 			return false, err
 		}
+
 		// Updated pod template
 		return false, nil
 	}
@@ -402,24 +427,23 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
 		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
 		// StatefulSet upgrade completed
-		// TODO: wait until there is no under replicated ledger
-		// https://bookkeeper.apache.org/docs/4.7.2/reference/cli/#listunderreplicated
-		p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return false, err
-		}
 		return true, nil
 	}
 
 	// Upgrade still in progress
+
+	// Check if bookkeeper fail to have progress
+	err = checkSyncTimeout(p, pravegav1alpha1.UpdatingBookkeeperReason, sts.Status.UpdatedReplicas)
+	if err != nil {
+		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
+	}
+
 	// If all replicas are ready, upgrade an old pod
-	p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
-	err = r.client.Update(context.TODO(), sts)
+	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
 	if err != nil {
 		return false, err
 	}
-	ready, err := r.checkUpdatedPods(sts, p.Status.TargetVersion)
+	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods
 		return false, err
@@ -446,19 +470,12 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	return false, nil
 }
 
-func (r *ReconcilePravegaCluster) checkUpdatedPods(sts *appsv1.StatefulSet, version string) (bool, error) {
-	pods, err := r.getStsPodsWithVersion(sts, version)
-	if err != nil {
-		return false, err
-	}
-
+func (r *ReconcilePravegaCluster) checkUpdatedPods(pods []*corev1.Pod, version string) (bool, error) {
 	for _, pod := range pods {
 		if !util.IsPodReady(pod) {
-			// At least one updated pod is still not ready
-			if pod.Status.ContainerStatuses[0].State.Waiting != nil {
-				if pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" || pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff" {
-					return false, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
-				}
+			// At least one updated pod is still not ready, check if it is faulty.
+			if faulty, err := util.IsPodFaulty(pod); faulty {
+				return false, err
 			}
 			return false, nil
 		}
@@ -534,4 +551,24 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, n
 		pods = append(pods, podItem.DeepCopy())
 	}
 	return pods, nil
+}
+
+func checkSyncTimeout(p *pravegav1alpha1.PravegaCluster, reason string, updatedReplicas int32) error {
+	lastCondition := p.Status.GetLastCondition()
+	if lastCondition == nil {
+		return nil
+	}
+	if lastCondition.Reason == reason && lastCondition.Message == fmt.Sprint(updatedReplicas) {
+		// if reason and message are the same as before, which means there is no progress since the last reconciling,
+		// then check if it reaches the timeout.
+		parsedTime, _ := time.Parse(time.RFC3339, lastCondition.LastUpdateTime)
+		if time.Now().After(parsedTime.Add(time.Duration(10 * time.Minute))) {
+			// timeout
+			return fmt.Errorf("progress deadline exceeded")
+		}
+		// it hasn't reached timeout
+		return nil
+	}
+	p.Status.UpdateProgress(reason, fmt.Sprint(updatedReplicas))
+	return nil
 }
