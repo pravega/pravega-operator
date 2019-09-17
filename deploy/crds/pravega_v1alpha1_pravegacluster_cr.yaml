@@ -51,9 +51,14 @@ spec:
 
     controller:
       replicas: 1
+      externalAccess:
+        type: LoadBalancer
 
     segmentstore:
       replicas: 3
+      externalAccess:
+        type: LoadBalancer
+        
       cacheVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "standard"
