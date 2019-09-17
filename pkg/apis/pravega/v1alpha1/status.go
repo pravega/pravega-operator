@@ -128,16 +128,6 @@ func (ps *ClusterStatus) SetUpgradingConditionFalse() {
 	ps.setClusterCondition(*c)
 }
 
-/*
-func (ps *ClusterStatus) SetUpdatedReplicasForComponent(componentName string, updatedReplicas int32, totalReplicas int32) {
-	_, upgradeCondition := ps.GetClusterCondition(ClusterConditionUpgrading)
-	if upgradeCondition != nil && upgradeCondition.Status == corev1.ConditionTrue {
-		reason := fmt.Sprintf("Updating component: %s. Updated Replicas: %v, Total Replicas: %v", componentName, updatedReplicas, totalReplicas)
-		c := newClusterCondition(ClusterConditionUpgrading, corev1.ConditionTrue, reason, message)
-		ps.setClusterCondition(*c)
-	}
-}
-*/
 func (ps *ClusterStatus) SetErrorConditionTrue(reason, message string) {
 	c := newClusterCondition(ClusterConditionError, corev1.ConditionTrue, reason, message)
 	ps.setClusterCondition(*c)

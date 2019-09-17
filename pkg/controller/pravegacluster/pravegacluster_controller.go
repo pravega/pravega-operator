@@ -158,7 +158,6 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 }
 
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
-
 	err = r.deployBookie(p)
 	if err != nil {
 		log.Printf("failed to deploy bookie: %v", err)

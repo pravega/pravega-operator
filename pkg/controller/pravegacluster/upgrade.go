@@ -140,7 +140,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 
 	syncCompleted, err := r.syncComponentsVersion(p)
 	if err != nil {
-		// error rolling back, set appropriate status and ask for manual intervention
+		// Error rolling back, set appropriate status and ask for manual intervention
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
 		r.clearRollbackStatus(p)
 		log.Printf("Error rolling back to cluster version %v. Reason: %v", version, err)
@@ -397,7 +397,6 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		//p.Status.SetUpdatedReplicasForComponent(name, sts.Status.UpdatedReplicas, sts.Status.Replicas)
 		p.Status.UpdateProgress(pravegav1alpha1.UpdatingBookkeeperReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
