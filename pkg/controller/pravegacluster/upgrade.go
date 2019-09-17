@@ -41,6 +41,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 
 	// we cannot upgrade if cluster is in UpgradeFailed or Rollback state
 	if p.Status.IsClusterInUpgradeFailedOrRollbackState() {
+		log.Println("Can't upgrade a Cluster in Upgrade Failed State. Please rollback first.")
 		return nil
 	}
 
@@ -135,6 +136,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 			log.Printf("Error updating cluster: %v", updateErr.Error())
 			return fmt.Errorf("Error updating cluster status. %v", updateErr)
 		}
+		return nil
 	}
 
 	syncCompleted, err := r.syncComponentsVersion(p)
