@@ -88,14 +88,3 @@ Message: <Details of exception/cause of failure>
 ```
 
 Manual intervention would be needed for resolving this.
-
-
-
-
-
-
-
-## Pending tasks
-
-
-## Prerequisites

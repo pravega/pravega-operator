@@ -12,7 +12,6 @@ package pravegacluster
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -348,20 +347,13 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
-				/*
-					It("should set Rollback condition status to be true", func() {
-						_, condition := foundPravega.Status.GetClusterCondition(v1alpha1.ClusterConditionRollback)
-						fmt.Println(condition)
-						Ω(condition.Status).To(Equal(corev1.ConditionTrue))
-					})
-				*/
-				It("should set target version to previous version", func() {
-					fmt.Printf("AFTER Cluster Version:%v", foundPravega.Status.TargetVersion)
-					fmt.Println()
-					_, errCondition := foundPravega.Status.GetClusterCondition(v1alpha1.ClusterConditionError)
 
-					fmt.Printf("Error condition :%v", errCondition)
-					fmt.Println()
+				It("should set Rollback condition status to be true", func() {
+					_, rollbackCondition := foundPravega.Status.GetClusterCondition(v1alpha1.ClusterConditionRollback)
+					Ω(rollbackCondition.Status).To(Equal(corev1.ConditionTrue))
+				})
+
+				It("should set target version to previous version", func() {
 					Ω(foundPravega.Status.TargetVersion).To(Equal(foundPravega.Spec.Version))
 				})
 			})
