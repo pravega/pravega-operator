@@ -11,8 +11,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -187,7 +185,6 @@ type PravegaSpec struct {
 func (s *PravegaSpec) withDefaults() (changed bool) {
 
 	if s.Controller == nil {
-		fmt.Println("Controller is nil")
 		changed = true
 		s.Controller = &ControllerSpec{}
 	}
@@ -197,7 +194,6 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	}
 
 	if s.SegmentStore == nil {
-		fmt.Println("SegmentStore is nil")
 		changed = true
 		s.SegmentStore = &SegmentStoreSpec{}
 	}
@@ -258,7 +254,6 @@ func (ss *SegmentStoreSpec) withDefaults() (changed bool) {
 	}
 
 	if ss.ExternalAccess == nil {
-		fmt.Println("SegmentStore.externalAccess is nil")
 		changed = true
 		ss.ExternalAccess = &ExternalAccess{}
 	}
@@ -313,7 +308,6 @@ func (cs *ControllerSpec) withDefaults() (changed bool) {
 	}
 
 	if cs.ExternalAccess == nil {
-		fmt.Println("controller.externalAccess is nil")
 		changed = true
 		cs.ExternalAccess = &ExternalAccess{}
 	}

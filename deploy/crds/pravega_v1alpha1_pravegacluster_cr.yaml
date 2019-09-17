@@ -16,10 +16,7 @@ metadata:
   name: "pravega"
 spec:
   zookeeperUri: zk-client:2181
-
-  externalAccess:
-    enabled: true
-    type: LoadBalancer
+  externalAccessEnabled: true
 
   bookkeeper:
     image:
@@ -47,20 +44,22 @@ spec:
     autoRecovery: true
 
   pravega:
-    controllerReplicas: 1
-    segmentStoreReplicas: 3
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-
     image:
       repository: pravega/pravega
       tag: latest
       pullPolicy: IfNotPresent
+
+    controller:
+      replicas: 1
+
+    segmentstore:
+      replicas: 3
+      cacheVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 20Gi
 
     tier2:
       filesystem:
