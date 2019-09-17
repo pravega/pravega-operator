@@ -52,9 +52,12 @@ jobs:
         - GOOGLE_SERVICE_ACCOUNT=pravega-travis-service-account@pravega-dev.iam.gserviceaccount.com
         - PROJECT_NAME=pravega-dev
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
-        - CLUSTER_ZONE=us-central1-c
+        - CLUSTER_ZONE=us-east-2
         - CLUSTER_SIZE=5
-        - CLUSTER_NODE_TYPE=n1-standard-2
+        - CLUSTER_NODE_TYPE=t3.small
+        - CLUSTER_NODE_GROUP=standard-workers
+        - AWS_ACCESS_KEY_ID=AKIA2KCTHWGEWNCPYCVH
+        - AWS_SECRET_ACCESS_KEY=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
       install:
         #- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; curl https://sdk.cloud.google.com | bash; fi
         #- source $HOME/google-cloud-sdk/path.bash.inc
@@ -73,6 +76,10 @@ jobs:
         #- gcloud --quiet config set container/use_application_default_credentials True
         #- gcloud --quiet container clusters create $CLUSTER_NAME --num-nodes=$CLUSTER_SIZE --zone=$CLUSTER_ZONE --machine-type=$CLUSTER_NODE_TYPE
         #- gcloud --quiet container clusters get-credentials $CLUSTER_NAME --zone=$CLUSTER_ZONE
+        - aws configure set default.region $CLUSTER_ZONE 
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY 
+        - eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE 
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide
@@ -93,7 +100,8 @@ jobs:
       script:
         - make test-e2e
       after_script:
-        - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
+       # - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
+       eksctl delete cluster --name $CLUSTER_NAME
 
     - stage: deploy
       name: Push Docker image
