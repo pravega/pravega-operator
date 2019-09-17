@@ -61,7 +61,7 @@ jobs:
         #- gcloud --quiet version
         #- gcloud --quiet components update
         - python --version
-        - pip3 install --upgrade --user awscli
+        - pip install --upgrade --user awscli
         - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
         - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
         - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
