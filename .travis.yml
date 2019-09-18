@@ -56,8 +56,6 @@ jobs:
         - CLUSTER_SIZE=5
         - CLUSTER_NODE_TYPE=t3.small
         - CLUSTER_NODE_GROUP=standard-workers
-        - AWS_ACCESS_KEY_ID=AKIA2KCTHWGEWNCPYCVH
-        - AWS_SECRET_ACCESS_KEY=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
       install:
         #- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; curl https://sdk.cloud.google.com | bash; fi
         #- source $HOME/google-cloud-sdk/path.bash.inc
