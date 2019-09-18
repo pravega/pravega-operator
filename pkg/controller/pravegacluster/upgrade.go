@@ -244,6 +244,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
 		p.Status.UpdateProgress(pravegav1alpha1.UpdatingControllerReason, "0")
+
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)

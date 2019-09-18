@@ -139,7 +139,7 @@ func (ps *ClusterStatus) SetErrorConditionFalse() {
 }
 
 func (ps *ClusterStatus) SetRollbackConditionTrue(reason, message string) {
-	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionTrue, "", "")
+	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionTrue, reason, message)
 	ps.setClusterCondition(*c)
 }
 func (ps *ClusterStatus) SetRollbackConditionFalse() {

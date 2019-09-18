@@ -158,7 +158,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				BeforeEach(func() {
 					sts = &appsv1.StatefulSet{}
 					name := util.StatefulSetNameForBookie(p.Name)
-					//_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					sts.Status.ReadyReplicas = 1
 					r.client.Update(context.TODO(), sts)
 
@@ -318,7 +318,6 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 
 			BeforeEach(func() {
-
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.6.0",
 				}
@@ -335,7 +334,6 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				foundPravega.Status.SetErrorConditionTrue("UpgradeFailed", "some error")
 				client.Update(context.TODO(), foundPravega)
 				_, _ = r.Reconcile(req)
-
 			})
 
 			Context("Rollback Triggered", func() {
@@ -343,7 +341,6 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1alpha1.PravegaCluster
 				)
 				BeforeEach(func() {
-
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -355,6 +352,88 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 				It("should set target version to previous version", func() {
 					Ω(foundPravega.Status.TargetVersion).To(Equal(foundPravega.Spec.Version))
+				})
+			})
+
+			Context("Rollback Controller", func() {
+				var (
+					foundPravega *v1alpha1.PravegaCluster
+				)
+				BeforeEach(func() {
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1alpha1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("should set rollback condition reason to UpdatingController and message to 0", func() {
+					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+					Ω(rollbackCondition.Reason).Should(Equal(pravegav1alpha1.UpdatingControllerReason))
+					Ω(rollbackCondition.Message).Should(Equal("0"))
+				})
+			})
+
+			Context("Rollback SegmentStore", func() {
+				var (
+					foundPravega *v1alpha1.PravegaCluster
+				)
+				BeforeEach(func() {
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1alpha1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("should set rollback condition reason to UpdatingSegmentStore and message to 0", func() {
+					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+					Ω(rollbackCondition.Reason).Should(Equal(pravegav1alpha1.UpdatingSegmentstoreReason))
+					Ω(rollbackCondition.Message).Should(Equal("0"))
+				})
+			})
+
+			Context("Rollback Bookkeeper", func() {
+				var (
+					foundPravega *v1alpha1.PravegaCluster
+				)
+				BeforeEach(func() {
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1alpha1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("should set rollback condition reason to UpdatingBookkeeper and message to 0", func() {
+					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+					Ω(rollbackCondition.Reason).Should(Equal(pravegav1alpha1.UpdatingBookkeeperReason))
+					Ω(rollbackCondition.Message).Should(Equal("0"))
+				})
+			})
+			Context("Rollback Completed", func() {
+				var (
+					foundPravega *v1alpha1.PravegaCluster
+				)
+				BeforeEach(func() {
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1alpha1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("should set currentversion equal to target version", func() {
+					Ω(foundPravega.Status.CurrentVersion).Should(Equal("0.5.0"))
+				})
+				It("should set TargetVersoin to empty", func() {
+					Ω(foundPravega.Status.TargetVersion).Should(Equal(""))
+				})
+				It("should set rollback condition to false", func() {
+					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+					Ω(rollbackCondition.Status).To(Equal(corev1.ConditionFalse))
+				})
+				It("should set error condition to false", func() {
+					_, errorCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionError)
+					Ω(errorCondition.Status).To(Equal(corev1.ConditionFalse))
 				})
 			})
 		})
