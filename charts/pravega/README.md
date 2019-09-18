@@ -40,8 +40,7 @@ The following table lists the configurable parameters of the Pravega chart and t
 | ----- | ----------- | ------ |
 | `version` | Version for Pravega cluster | `0.5.0` |
 | `zookeeperUri` | Zookeeper service address | `zk-client:2181` |
-| `externalAccess.enabled` | Enable Pravega external access | `false` |
-| `externalAccess.type` | Pravega external access type | `LoadBalancer` |
+| `externalAccessEnabled` | Enable Pravega external access | `false` |
 | `bookkeeper.image.repository` | Image repo for Bookkeeper image | `pravega/bookkeeper` |
 | `bookkeeper.replicas` | Replicas for Bookkeeper | `3` |
 | `bookkeeper.storage.ledgerVolumeRequest` | Request storage for ledgerVolume | `10Gi` |
@@ -49,8 +48,17 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `bookkeeper.storage.indexVolumeRequest` | Request storage for indexVolume | `10Gi` |
 | `bookkeeper.autoRecovery`| Enable Bookkeeper autoRecovery | `true` |
 | `pravega.image.repository` | Image repo for Pravega image | `pravega/pravega` |
-| `pravega.controllerReplicas` | Replicas for controller | `1` |
-| `pravega.segmentStoreReplicas` | Replicas for segmentStore | `1` |
-| `pravega.debugLogging` | Enable debug logging | `false` |
-| `pravega.cacheVolumeRequest` | Request storage for cacheVolume | `20Gi` |
+| `pravega.controller.replicas` | Replicas for controller | `1` |
+| `pravega.controller.resources` | Resources for controller | `requests.cpu="250m",requests.memory="512Mi",limits.cpu="500m",limits.memory="1Gi" ` |
+| `pravega.controller.debugLogging` | Enable debug logging on controller | `false` |
+| `pravega.controller.externalAccess.type` | Type of controller service when externalAccess is enabled | `LoadBalancer` |
+| `pravega.controller.options` | Pravega Controller Options|  |
+| `pravega.controller.jvmOptions` | Pravega Controller JVMOptions|  |
+| `pravega.segmentstore.replicas` | Replicas for segmentstore | `1` |
+| `pravega.segmentstore.resources` | Resources for controller | `requests.cpu="500m",requests.memory="1Gi",limits.cpu="1",limits.memory="2Gi"` |
+| `pravega.segmentstore.debugLogging` | Enable debug logging on segment store| `false` |
+| `pravega.segmentstore.externalAccess.type` | Type of segmentstore service | `LoadBalancer` |
+| `pravega.segmentstore.options` | Pravega segmentstore options |  |
+| `pravega.controller.jvmOptions` | Pravega Controller JVMOptions|  |
+| `pravega.segmentstore.cacheVolumeRequest` | Request storage for cacheVolume | `20Gi` |
 | `pravega.tier2` | Name of the PVC used for Tier 2 storage | `pravega-tier2` |

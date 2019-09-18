@@ -99,15 +99,15 @@ type ControllerSpec struct {
 	// Defaults to 1.
 	Replicas int32 `json:"replicas"`
 
-	// DebugLogging indicates whether or not debug level logging is enabled.
-	// Defaults to false.
-	DebugLogging bool `json:"debugLogging"`
-
 	// Pravega configuration options passed to the Pravega processes
 	// a '-D' is prefixed to the provided values to pass them as java system properties
 	// See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
 	Options map[string]string `json:"options"`
+
+	// DebugLogging indicates whether or not debug level logging is enabled.
+	// Defaults to false.
+	DebugLogging bool `json:"debugLogging"`
 
 	// JVM Options for tuning JVM of Controller process.
 	// These typically start with '-X' or '-XX'
