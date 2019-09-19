@@ -97,6 +97,9 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 			log.Print("cannot trigger upgrade if there are unready pods")
 			return nil
 		}
+	} else {
+		// We are upgrading after a rollback failure, reset Error Status
+		p.Status.SetErrorConditionFalse()
 	}
 
 	// Need to sync cluster versions
@@ -125,6 +128,9 @@ func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaC
 }
 
 func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.PravegaCluster, version string) (err error) {
+	defer func() {
+		r.client.Status().Update(context.TODO(), p)
+	}()
 	_, rollbackCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
 	if rollbackCondition == nil || rollbackCondition.Status != corev1.ConditionTrue {
 		// We're in the first iteration for Rollback
@@ -147,6 +153,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
 		r.clearRollbackStatus(p)
 		log.Printf("Error rolling back to cluster version %v. Reason: %v", version, err)
+		//r.client.Status().Update(context.TODO(), p)
 		return err
 	}
 
@@ -158,7 +165,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		r.clearRollbackStatus(p)
 		log.Printf("Rollback to version %v completed for all pravega components.", version)
 	}
-	r.client.Status().Update(context.TODO(), p)
+	//r.client.Status().Update(context.TODO(), p)
 	return nil
 }
 
