@@ -88,6 +88,16 @@ type PravegaSpec struct {
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
 	Options map[string]string `json:"options"`
 
+	// ControllerJvmOptions is the JVM options for controller. It will be passed to the JVM
+	// for performance tuning. If this field is not specified, the operator will use a set of default
+	// options that is good enough for general deployment.
+	ControllerJvmOptions []string `json:"controllerjvmOptions"`
+
+	// SegmentStoreJVMOptions is the JVM options for Segmentstore. It will be passed to the JVM
+	// for performance tuning. If this field is not specified, the operator will use a set of default
+	// options that is good enough for general deployment.
+	SegmentStoreJVMOptions []string `json:"segmentStoreJVMOptions"`
+
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
 	// This field is optional. If no PVC spec, stateful containers will use
 	// emptyDir as volume
@@ -137,6 +147,16 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if s.Options == nil {
 		changed = true
 		s.Options = map[string]string{}
+	}
+
+	if s.ControllerJvmOptions == nil {
+		changed = true
+		s.ControllerJvmOptions = []string{}
+	}
+
+	if s.SegmentStoreJVMOptions == nil {
+		changed = true
+		s.SegmentStoreJVMOptions = []string{}
 	}
 
 	if s.CacheVolumeClaimTemplate == nil {

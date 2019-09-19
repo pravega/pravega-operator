@@ -12,6 +12,7 @@ package pravegacluster
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -253,6 +254,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 								Repository: "foo/bookkeeper",
 							},
 						},
+						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
+							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
+							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
+							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
+						},
 					},
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:    2,
@@ -264,6 +270,8 @@ var _ = Describe("PravegaCluster Controller", func() {
 								Repository: "bar/pravega",
 							},
 						},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 					},
 					TLS: &v1alpha1.TLSPolicy{
 						Static: &v1alpha1.StaticTLS{
@@ -322,6 +330,27 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
 					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
 				})
+
+				It("shoud overide bookkeeper jvm options", func() {
+					foundCm := &corev1.ConfigMap{}
+					nn := types.NamespacedName{
+						Name:      util.ConfigMapNameForBookie(p.Name),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn, foundCm)
+					Ω(err).Should(BeNil())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms2g")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=2g")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=20")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:-UseG1GC")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=10")).Should(BeTrue())
+
+					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms1g")).Should(BeFalse())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeFalse())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=10")).Should(BeFalse())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:+UseG1GC")).Should(BeFalse())
+					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=5")).Should(BeFalse())
+				})
 			})
 
 			Context("Pravega Controller", func() {
@@ -362,6 +391,20 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[1].Name).Should(Equal("tls-secret"))
 					Ω(foundController.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath).Should(Equal("/etc/secret-volume"))
 				})
+
+				It("shoud overide pravega controller jvm options", func() {
+					foundCm := &corev1.ConfigMap{}
+					nn := types.NamespacedName{
+						Name:      util.ConfigMapNameForController(p.Name),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn, foundCm)
+					Ω(err).Should(BeNil())
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
+
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
+				})
 			})
 
 			Context("Pravega SegmentStore", func() {
@@ -401,6 +444,20 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundSS.Spec.Template.Spec.Volumes[1].VolumeSource.Secret.SecretName).Should(Equal("segmentstore-secret"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[2].Name).Should(Equal("tls-secret"))
 					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath).Should(Equal("/etc/secret-volume"))
+				})
+
+				It("shoud overide pravega segmentstore jvm options", func() {
+					foundCm := &corev1.ConfigMap{}
+					nn := types.NamespacedName{
+						Name:      util.ConfigMapNameForSegmentstore(p.Name),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn, foundCm)
+					Ω(err).Should(BeNil())
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
+
+					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
 				})
 			})
 		})

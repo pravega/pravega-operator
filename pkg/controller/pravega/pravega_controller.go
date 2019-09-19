@@ -173,7 +173,11 @@ func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
 }
 
 func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
-	var javaOpts = []string{
+	javaOpts := []string{
+		"-Dpravegaservice.clusterName=" + p.Name,
+	}
+
+	jvmOpts := []string{
 		"-Xms512m",
 		"-XX:+ExitOnOutOfMemoryError",
 		"-XX:+CrashOnOutOfMemoryError",
@@ -184,12 +188,14 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 
 	if match, _ := util.CompareVersions(p.Spec.Version, "0.4.0", ">="); match {
 		// Pravega < 0.4 uses a Java version that does not support the options below
-		javaOpts = append(javaOpts,
+		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
 			"-XX:+UseCGroupMemoryLimitForHeap",
 			"-XX:MaxRAMFraction=2",
 		)
 	}
+
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.ControllerJvmOptions)...)
 
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))

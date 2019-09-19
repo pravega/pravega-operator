@@ -82,6 +82,11 @@ type BookkeeperSpec struct {
 	// in bookkeeper. Some examples can be found here
 	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
 	Options map[string]string `json:"options"`
+
+	// JVM is the JVM options for bookkeeper. It will be passed to the JVM for performance tuning.
+	// If this field is not specified, the operator will use a set of default
+	// options that is good enough for general deployment.
+	BookkeeperJVMOptions *BookkeeperJVMOptions `json:"bookkeeperJVMOptions"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -130,6 +135,15 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		s.Options = map[string]string{}
 	}
 
+	if s.BookkeeperJVMOptions == nil {
+		changed = true
+		s.BookkeeperJVMOptions = &BookkeeperJVMOptions{}
+	}
+
+	if s.BookkeeperJVMOptions.withDefaults() {
+		changed = true
+	}
+
 	return changed
 }
 
@@ -149,6 +163,37 @@ func (s *BookkeeperImageSpec) withDefaults() (changed bool) {
 	if s.PullPolicy == "" {
 		changed = true
 		s.PullPolicy = DefaultBookkeeperImagePullPolicy
+	}
+
+	return changed
+}
+
+type BookkeeperJVMOptions struct {
+	MemoryOpts    []string `json:"memoryOpts"`
+	GcOpts        []string `json:"gcOpts"`
+	GcLoggingOpts []string `json:"gcLoggingOpts"`
+	ExtraOpts     []string `json:"extraOpts"`
+}
+
+func (s *BookkeeperJVMOptions) withDefaults() (changed bool) {
+	if s.MemoryOpts == nil {
+		changed = true
+		s.MemoryOpts = []string{}
+	}
+
+	if s.GcOpts == nil {
+		changed = true
+		s.GcOpts = []string{}
+	}
+
+	if s.GcLoggingOpts == nil {
+		changed = true
+		s.GcLoggingOpts = []string{}
+	}
+
+	if s.ExtraOpts == nil {
+		changed = true
+		s.ExtraOpts = []string{}
 	}
 
 	return changed

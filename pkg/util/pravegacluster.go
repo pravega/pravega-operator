@@ -226,3 +226,96 @@ func NormalizeVersion(version string) (string, error) {
 	}
 	return matches[1], nil
 }
+
+// OrderedMap is a map that has insertion order when iterating. The iteration of
+// map in GO is in random order by default.
+type OrderedMap struct {
+	m    map[string]string
+	keys []string
+}
+
+// This method will parse the JVM options into a key value pair and store it
+// in the OrderedMap
+func UpdateOneJVMOption(arg string, om *OrderedMap) {
+	// Parse "-Xms"
+	if strings.HasPrefix(arg, "-Xms") {
+		if _, ok := om.m["-Xms"]; !ok {
+			om.keys = append(om.keys, "-Xms")
+		}
+		om.m["-Xms"] = arg[4:]
+		return
+	}
+
+	// Parse option starting with "-XX"
+	if strings.HasPrefix(arg, "-XX:") {
+		if arg[4] == '+' || arg[4] == '-' {
+			if _, ok := om.m[arg[5:]]; !ok {
+				om.keys = append(om.keys, arg[5:])
+			}
+			om.m[arg[5:]] = string(arg[4])
+			return
+		}
+		s := strings.Split(arg[4:], "=")
+		if _, ok := om.m[s[0]]; !ok {
+			om.keys = append(om.keys, s[0])
+		}
+		om.m[s[0]] = s[1]
+		return
+	}
+
+	// Not in those formats, just keep the option as a key
+	if _, ok := om.m[arg]; !ok {
+		om.keys = append(om.keys, arg)
+	}
+	om.m[arg] = ""
+	return
+}
+
+// Concatenate the key value pair to be a JVM option string.
+func GenerateJVMOption(k, v string) string {
+	if v == "" {
+		return k
+	}
+
+	if k == "-Xms" {
+		return fmt.Sprintf("%v%v", k, v)
+	}
+
+	if v == "+" || v == "-" {
+		return fmt.Sprintf("-XX:%v%v", v, k)
+	}
+
+	return fmt.Sprintf("-XX:%v=%v", k, v)
+}
+
+// This method will override the default JVM options with user provided custom options
+func OverrideDefaultJVMOptions(defaultOpts []string, customOpts []string) []string {
+
+	// Nothing to be overriden, just return the default options
+	if customOpts == nil {
+		return defaultOpts
+	}
+
+	om := &OrderedMap{m: map[string]string{}, keys: []string{}}
+
+	// Firstly, store the default options in an ordered map. The ordered map is a
+	// map that has insertion order guarantee when iterating.
+	for _, option := range defaultOpts {
+		UpdateOneJVMOption(option, om)
+	}
+
+	// Secondly, update the ordered map with custom options. If the option has been
+	// found in the map, its value will be updated by the custom options. If not, the
+	// the map will just add a new key value pair.
+	for _, option := range customOpts {
+		UpdateOneJVMOption(option, om)
+	}
+
+	jvmOpts := []string{}
+	// Iterate the ordered map in its insertion order.
+	for _, key := range om.keys {
+		jvmOpts = append(jvmOpts, GenerateJVMOption(key, om.m[key]))
+	}
+
+	return jvmOpts
+}
