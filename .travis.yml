@@ -55,6 +55,7 @@ jobs:
       install:
         - python --version
         - echo $SOME_KEY
+        - echo $DOCKER_TEST_USER
         - pip install --upgrade --user awscli
         - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
         - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
