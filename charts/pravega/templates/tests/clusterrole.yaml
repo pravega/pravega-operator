@@ -8,16 +8,4 @@ rules:
   resources:
   - "*"
   verbs:
-  - "*"
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - "*"
-  verbs:
-  - '*'
