@@ -20,8 +20,6 @@ Check out [Pravega documentation](http://pravega.io/docs/latest/) for more infor
 
 ## Pending tasks
 
-- The rollback mechanism is on the roadmap but not implemented yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153).
-- Manual recovery from an upgrade is possible but it has not been defined yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/157).
 - There is no validation of the configured desired version. Check out [this issue](https://github.com/pravega/pravega-operator/issues/156)
 
 
@@ -34,6 +32,19 @@ $ kubectl get PravegaCluster
 NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 example   0.4.0     7                 7               11m
 ```
+
+## Upgrade Supported Versions Matrix
+
+| BASE VERSION | TARGET VERSION     |
+| ------------ | ----------------   |
+| 0.1.0        | 0.1.0              |
+| 0.2.0        | 0.2.0              |
+| 0.3.0        | 0.3.0, 0.3.1, 0.3.2|
+| 0.3.1        | 0.3.1, 0.3.2       |
+| 0.3.2        | 0.3.2              |
+| 0.4.0        | 0.4.0              |
+| 0.5.0        | 0.5.0, 0.6.0       |
+| 0.6.0        | 0.6.0              |
 
 ## Trigger an upgrade
 

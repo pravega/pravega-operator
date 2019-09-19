@@ -88,4 +88,7 @@ Reason: RollbackFailed
 Message: <Details of exception/cause of failure>
 ```
 
-Manual intervention would be needed for resolving this.
+When a rollback failure happens, manual intervention would be required to solve this.
+After checking and resolving the root cause of failure, a user can upgrade to :
+1. The version to which a user initially intended to upgrade.(which caused upgrade failure)
+2. To any other supported version based versions of all pods in the cluster.

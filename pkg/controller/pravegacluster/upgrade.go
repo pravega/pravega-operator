@@ -90,10 +90,13 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		return nil
 	}
 
-	if readyCondition == nil || readyCondition.Status != corev1.ConditionTrue {
-		r.clearUpgradeStatus(p)
-		log.Print("cannot trigger upgrade if there are unready pods")
-		return nil
+	if !p.Status.IsClusterInRollbackFailedState() {
+		// skip this check when cluster is in RollbackFailed state
+		if readyCondition == nil || readyCondition.Status != corev1.ConditionTrue {
+			r.clearUpgradeStatus(p)
+			log.Print("cannot trigger upgrade if there are unready pods")
+			return nil
+		}
 	}
 
 	// Need to sync cluster versions
