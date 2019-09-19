@@ -47,30 +47,24 @@ jobs:
         - OPERATOR_SDK_VERSION=v0.4.0
         - HELM_VERSION=v2.12.0
         - DEP_VERSION=v0.5.0
-        - CLOUDSDK_CORE_DISABLE_PROMPTS=1
-        - GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud-service-key.json"
-        - GOOGLE_SERVICE_ACCOUNT=pravega-travis-service-account@pravega-dev.iam.gserviceaccount.com
-        - PROJECT_NAME=pravega-dev
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
-        - CLUSTER_ZONE=us-central1-c
+        - CLUSTER_ZONE=us-east-2
         - CLUSTER_SIZE=5
-        - CLUSTER_NODE_TYPE=n1-standard-2
+        - CLUSTER_NODE_TYPE=t3.small
+        - CLUSTER_NODE_GROUP=standard-workers
       install:
-        - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; curl https://sdk.cloud.google.com | bash; fi
-        - source $HOME/google-cloud-sdk/path.bash.inc
-        - gcloud --quiet version
-        - gcloud --quiet components update
+        - python --version
+        - pip install --upgrade --user awscli
         - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
         - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
         - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
         - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
       before_script:
-        - echo $GCLOUD_SERVICE_KEY | base64 --decode -i > $HOME/gcloud-service-key.json
-        - gcloud auth activate-service-account --key-file $HOME/gcloud-service-key.json
-        - gcloud --quiet config set project $PROJECT_NAME
-        - gcloud --quiet config set container/use_application_default_credentials True
-        - gcloud --quiet container clusters create $CLUSTER_NAME --num-nodes=$CLUSTER_SIZE --zone=$CLUSTER_ZONE --machine-type=$CLUSTER_NODE_TYPE
-        - gcloud --quiet container clusters get-credentials $CLUSTER_NAME --zone=$CLUSTER_ZONE
+        - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+        - sudo mv /tmp/eksctl /usr/local/bin
+        - eksctl version
+        - aws configure set default.region $CLUSTER_ZONE
+        - eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide
@@ -91,7 +85,8 @@ jobs:
       script:
         - make test-e2e
       after_script:
-        - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
+       # - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
+       eksctl delete cluster --name $CLUSTER_NAME
 
     - stage: deploy
       name: Push Docker image
