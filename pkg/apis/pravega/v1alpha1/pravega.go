@@ -123,6 +123,22 @@ type PravegaSpec struct {
 	// SegmentStoreResources specifies the request and limit of resources that segmentStore can have.
 	// SegmentStoreResources includes CPU and memory resources
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
+
+	// Type specifies the service type to achieve external access.
+	// Options are "LoadBalancer" and "NodePort".
+	// By default, if external access is enabled, it will use "LoadBalancer"
+	ControllerExternalServiceType v1.ServiceType `json:"controllerExtServiceType,omitempty"`
+
+	// Annotations to be added to the external service
+	ControllerServiceAnnotations map[string]string `json:"controllerSvcAnnotations"`
+
+	// Type specifies the service type to achieve external access.
+	// Options are "LoadBalancer" and "NodePort".
+	// By default, if external access is enabled, it will use "LoadBalancer"
+	SegmentStoreExternalServiceType v1.ServiceType `json:"segmentStoreExtServiceType,omitempty"`
+
+	// Annotations to be added to the external service
+	SegmentStoreServiceAnnotations map[string]string `json:"segmentStoreSvcAnnotations"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -206,6 +222,16 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreLimitMemory),
 			},
 		}
+	}
+
+	if s.ControllerServiceAnnotations == nil {
+		changed = true
+		s.ControllerServiceAnnotations = map[string]string{}
+	}
+
+	if s.SegmentStoreServiceAnnotations == nil {
+		changed = true
+		s.SegmentStoreServiceAnnotations = map[string]string{}
 	}
 
 	return changed

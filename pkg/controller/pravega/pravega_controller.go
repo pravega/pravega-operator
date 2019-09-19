@@ -229,20 +229,36 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	return configMap
 }
 
+func getControllerServiceType(pravegaCluster *api.PravegaCluster) (serviceType corev1.ServiceType) {
+	if pravegaCluster.Spec.Pravega.ControllerExternalServiceType == "" {
+		if pravegaCluster.Spec.ExternalAccess.Type == "" {
+			return api.DefaultServiceType
+		}
+		return pravegaCluster.Spec.ExternalAccess.Type
+	}
+	return pravegaCluster.Spec.Pravega.ControllerExternalServiceType
+}
+
 func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
+	annotationMap := map[string]string{}
 	if p.Spec.ExternalAccess.Enabled {
-		serviceType = p.Spec.ExternalAccess.Type
+		serviceType = getControllerServiceType(p)
+		for k, v := range p.Spec.Pravega.ControllerServiceAnnotations {
+			annotationMap[k] = v
+		}
 	}
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.ServiceNameForController(p.Name),
-			Namespace: p.Namespace,
-			Labels:    util.LabelsForController(p),
+			Name:        util.ServiceNameForController(p.Name),
+			Namespace:   p.Namespace,
+			Labels:      util.LabelsForController(p),
+			Annotations: annotationMap,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,

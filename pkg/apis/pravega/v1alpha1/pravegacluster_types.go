@@ -172,11 +172,6 @@ func (e *ExternalAccess) withDefaults() (changed bool) {
 		changed = true
 		e.Type = ""
 		e.DomainName = ""
-	} else if e.Enabled == true {
-		if e.Type == "" {
-			changed = true
-			e.Type = DefaultServiceType
-		}
 	}
 	return changed
 }
