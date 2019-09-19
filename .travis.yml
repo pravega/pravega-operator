@@ -66,6 +66,7 @@ jobs:
         - aws configure set default.region $CLUSTER_ZONE
         - eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - kubectl config view
+        - echo $SOME_KEY
         - kubectl config current-context
         - kubectl get nodes -o wide
         - kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
