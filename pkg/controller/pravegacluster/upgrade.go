@@ -77,7 +77,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 
 		if syncCompleted {
 			// All component versions have been synced
-			p.Status.AddToVersionHistory(p.Status.CurrentVersion)
+			p.Status.AddToVersionHistory(p.Status.TargetVersion)
 			p.Status.CurrentVersion = p.Status.TargetVersion
 			log.Printf("Upgrade completed for all pravega components.")
 		}

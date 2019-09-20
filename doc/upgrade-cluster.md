@@ -33,7 +33,7 @@ NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 example   0.4.0     7                 7               11m
 ```
 
-## Upgrade Supported Versions Matrix
+## Upgrade Path Matrix
 
 | BASE VERSION | TARGET VERSION     |
 | ------------ | ----------------   |
@@ -141,7 +141,7 @@ NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 example   0.5.0     8                 8               1h
 ```
 
-To see progress of Upgrade, you can do a `kubectl describe`
+The command `kubectl describe` can be used to track progress of the upgrade.
 ```
 $ kubectl describe PravegaCluster example
 ...
@@ -164,7 +164,7 @@ Status:
 ```
 The `Reason` field in Upgrading Condition shows the component currently being upgraded and `Message` field reflects number of successfully upgraded replicas in this component.
 
-If your upgrade has failed, you can describe the status section of your Pravega cluster to discover why.
+If upgrade has failed, please check the `Status` section to understand the reason for failure.
 
 ```
 $ kubectl describe PravegaCluster example
