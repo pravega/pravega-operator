@@ -11,6 +11,7 @@
 package v1alpha1
 
 import (
+	"log"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -21,12 +22,13 @@ type ClusterConditionType string
 const (
 	ClusterConditionPodsReady ClusterConditionType = "PodsReady"
 	ClusterConditionUpgrading                      = "Upgrading"
+	ClusterConditionRollback                       = "RollbackInProgress"
 	ClusterConditionError                          = "Error"
 
 	// Reasons for cluster upgrading condition
-	UpgradingControllerReason   = "UpgradingController"
-	UpgradingSegmentstoreReason = "UpgradingSegmentstore"
-	UpgradingBookkeeperReason   = "UpgradingBookkeeper"
+	UpdatingControllerReason   = "Updating Controller"
+	UpdatingSegmentstoreReason = "Updating Segmentstore"
+	UpdatingBookkeeperReason   = "Updating Bookkeeper"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
@@ -40,6 +42,8 @@ type ClusterStatus struct {
 	// TargetVersion is the version the cluster upgrading to.
 	// If the cluster is not upgrading, TargetVersion is empty.
 	TargetVersion string `json:"targetVersion,omitempty"`
+
+	VersionHistory []string `json:"versionHistory,omitempty"`
 
 	// Replicas is the number of desired replicas in the cluster
 	Replicas int32 `json:"replicas"`
@@ -83,7 +87,8 @@ type ClusterCondition struct {
 	LastTransitionTime string `json:"lastTransitionTime,omitempty"`
 }
 
-func (ps *ClusterStatus) InitConditions() {
+func (ps *ClusterStatus) Init() {
+	// Initialise conditions
 	conditionTypes := []ClusterConditionType{
 		ClusterConditionPodsReady,
 		ClusterConditionUpgrading,
@@ -94,6 +99,12 @@ func (ps *ClusterStatus) InitConditions() {
 			c := newClusterCondition(conditionType, corev1.ConditionFalse, "", "")
 			ps.setClusterCondition(*c)
 		}
+	}
+
+	// Set current cluster version in version history,
+	// so if the first upgrade fails we can rollback to this version
+	if ps.VersionHistory == nil && ps.CurrentVersion != "" {
+		ps.VersionHistory = []string{ps.CurrentVersion}
 	}
 }
 
@@ -124,6 +135,15 @@ func (ps *ClusterStatus) SetErrorConditionTrue(reason, message string) {
 
 func (ps *ClusterStatus) SetErrorConditionFalse() {
 	c := newClusterCondition(ClusterConditionError, corev1.ConditionFalse, "", "")
+	ps.setClusterCondition(*c)
+}
+
+func (ps *ClusterStatus) SetRollbackConditionTrue(reason, message string) {
+	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionTrue, reason, message)
+	ps.setClusterCondition(*c)
+}
+func (ps *ClusterStatus) SetRollbackConditionFalse() {
+	c := newClusterCondition(ClusterConditionRollback, corev1.ConditionFalse, "", "")
 	ps.setClusterCondition(*c)
 }
 
@@ -169,4 +189,89 @@ func (ps *ClusterStatus) setClusterCondition(newCondition ClusterCondition) {
 	}
 
 	ps.Conditions[position] = *existingCondition
+}
+
+func (ps *ClusterStatus) AddToVersionHistory(version string) {
+	lastIndex := len(ps.VersionHistory) - 1
+	if version != "" && ps.VersionHistory[lastIndex] != version {
+		ps.VersionHistory = append(ps.VersionHistory, version)
+		log.Printf("Updating version history adding version %v", version)
+	}
+}
+
+func (ps *ClusterStatus) GetLastVersion() (previousVersion string) {
+	len := len(ps.VersionHistory)
+	return ps.VersionHistory[len-1]
+}
+
+func (ps *ClusterStatus) IsClusterInUpgradeFailedState() bool {
+	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
+	if errorCondition == nil {
+		return false
+	}
+	if errorCondition.Status == corev1.ConditionTrue && errorCondition.Reason == "UpgradeFailed" {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInUpgradeFailedOrRollbackState() bool {
+	if ps.IsClusterInUpgradeFailedState() || ps.IsClusterInRollbackState() {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInRollbackState() bool {
+	_, rollbackCondition := ps.GetClusterCondition(ClusterConditionRollback)
+	if rollbackCondition == nil {
+		return false
+	}
+	if rollbackCondition.Status == corev1.ConditionTrue {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInUpgradingState() bool {
+	_, upgradeCondition := ps.GetClusterCondition(ClusterConditionUpgrading)
+	if upgradeCondition == nil {
+		return false
+	}
+	if upgradeCondition.Status == corev1.ConditionTrue {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) IsClusterInRollbackFailedState() bool {
+	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
+	if errorCondition == nil {
+		return false
+	}
+	if errorCondition.Status == corev1.ConditionTrue && errorCondition.Reason == "RollbackFailed" {
+		return true
+	}
+	return false
+}
+
+func (ps *ClusterStatus) UpdateProgress(reason, updatedReplicas string) {
+	if ps.IsClusterInUpgradingState() {
+		// Set the upgrade condition reason to be UpgradingBookkeeperReason, message to be 0
+		ps.SetUpgradingConditionTrue(reason, updatedReplicas)
+	} else {
+		ps.SetRollbackConditionTrue(reason, updatedReplicas)
+	}
+}
+
+func (ps *ClusterStatus) GetLastCondition() (lastCondition *ClusterCondition) {
+	if ps.IsClusterInUpgradingState() {
+		_, lastCondition := ps.GetClusterCondition(ClusterConditionUpgrading)
+		return lastCondition
+	} else if ps.IsClusterInRollbackState() {
+		_, lastCondition := ps.GetClusterCondition(ClusterConditionRollback)
+		return lastCondition
+	}
+	// nothing to do if we are neither upgrading nor rolling back,
+	return nil
 }
