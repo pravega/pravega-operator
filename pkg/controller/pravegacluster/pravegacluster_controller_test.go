@@ -100,6 +100,9 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundPravega.Spec.Version).Should(Equal("0.4.0"))
 					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
 					Ω(foundPravega.Spec.ExternalAccess).ShouldNot(BeNil())
+					Ω(foundPravega.Spec.ExternalAccess.Enabled).Should(Equal(false))
+					Ω(foundPravega.Spec.ExternalAccess.DomainName).Should(Equal(""))
+					//Ω(foundPravega.Spec.ExternalAccess.Type).Should()
 					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
 					Ω(foundPravega.Spec.Bookkeeper).ShouldNot(BeNil())
 				})
@@ -446,7 +449,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundSS.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath).Should(Equal("/etc/secret-volume"))
 				})
 
-				It("shoud overide pravega segmentstore jvm options", func() {
+				It("should overide pravega segmentstore jvm options", func() {
 					foundCm := &corev1.ConfigMap{}
 					nn := types.NamespacedName{
 						Name:      util.ConfigMapNameForSegmentstore(p.Name),
@@ -458,6 +461,144 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
 
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
+				})
+			})
+		})
+
+		Context("Custom spec with ExternalAccess", func() {
+			var (
+				client     client.Client
+				err        error
+				domainName string
+			)
+
+			BeforeEach(func() {
+				annotationsMap := map[string]string{
+					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+				}
+				domainName = "pravega.com."
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.3.2-rc2",
+					ExternalAccess: &v1alpha1.ExternalAccess{
+						Enabled:    true,
+						Type:       corev1.ServiceTypeClusterIP,
+						DomainName: domainName,
+					},
+					Pravega: &v1alpha1.PravegaSpec{
+						ControllerReplicas:              2,
+						SegmentStoreReplicas:            3,
+						ControllerExternalServiceType:   corev1.ServiceTypeLoadBalancer,
+						SegmentStoreExternalServiceType: corev1.ServiceTypeNodePort,
+						ControllerServiceAnnotations:    annotationsMap,
+						SegmentStoreServiceAnnotations:  annotationsMap,
+					},
+				}
+				p.WithDefaults()
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				res, err = r.Reconcile(req)
+			})
+
+			It("shouldn't error", func() {
+				Ω(err).Should(BeNil())
+			})
+
+			It("should requeue after ReconfileTime delay", func() {
+				Ω(res.RequeueAfter).To(Equal(ReconcileTime))
+			})
+
+			Context("Cluster", func() {
+				It("should have a custom version", func() {
+					Ω(p.Spec.Version).Should(Equal("0.3.2-rc2"))
+				})
+			})
+
+			Context("Pravega Controller External Access", func() {
+				var foundControllerSvc *corev1.Service
+
+				BeforeEach(func() {
+					foundControllerSvc = &corev1.Service{}
+					nn := types.NamespacedName{
+						Name:      util.ServiceNameForController(p.Name),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn, foundControllerSvc)
+				})
+
+				It("should create a controller service", func() {
+					Ω(err).Should(BeNil())
+				})
+
+				It("should set external access service type to LoadBalancer", func() {
+					Ω(foundControllerSvc.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
+				})
+
+				It("should set provided annotations", func() {
+					Expect(foundControllerSvc.GetAnnotations()).To(HaveKeyWithValue(
+						"service.beta.kubernetes.io/aws-load-balancer-type",
+						"nlb"))
+				})
+			})
+
+			Context("Pravega SegmentStore External Access", func() {
+				var foundSegmentStoreSvc1 *corev1.Service
+
+				var foundSegmentStoreSvc2 *corev1.Service
+				var foundSegmentStoreSvc3 *corev1.Service
+
+				BeforeEach(func() {
+					foundSegmentStoreSvc1 = &corev1.Service{}
+					nn1 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
+
+					foundSegmentStoreSvc2 = &corev1.Service{}
+					nn2 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
+
+					foundSegmentStoreSvc3 = &corev1.Service{}
+					nn3 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
+
+				})
+
+				It("should create all segmentstore services", func() {
+					Ω(err).Should(BeNil())
+				})
+
+				It("should set external access service type to NodePort for each service", func() {
+					Ω(p.Spec.Pravega.SegmentStoreExternalServiceType).Should(Equal(corev1.ServiceTypeNodePort))
+					Ω(foundSegmentStoreSvc1.Spec.Type).Should(Equal(corev1.ServiceTypeNodePort))
+					Ω(foundSegmentStoreSvc2.Spec.Type).Should(Equal(corev1.ServiceTypeNodePort))
+					Ω(foundSegmentStoreSvc3.Spec.Type).Should(Equal(corev1.ServiceTypeNodePort))
+				})
+
+				It("should set provided annotations and DNS annotation", func() {
+					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
+					Ω(mapLength).To(Equal(2))
+					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
+						"service.beta.kubernetes.io/aws-load-balancer-type",
+						"nlb"))
+					svcName1 := util.ServiceNameForSegmentStore(p.Name, 0) + "." + domainName
+					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName1))
+
+					svcName2 := util.ServiceNameForSegmentStore(p.Name, 1) + "." + domainName
+					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName2))
+
+					svcName3 := util.ServiceNameForSegmentStore(p.Name, 2) + "." + domainName
+					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName3))
+
 				})
 			})
 		})

@@ -388,13 +388,16 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 	var service *corev1.Service
 
 	serviceType := getSSServiceType(pravegaCluster)
-	annotationMap := cloneMap(pravegaCluster.Spec.Pravega.SegmentStoreServiceAnnotations)
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
+	var annotationMap map[string]string
 
 	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
+		annotationMap = map[string]string{}
 		ssPodName := util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
 		annotationValue := generateDNSAnnotationForSvc(pravegaCluster.Spec.ExternalAccess.DomainName, ssPodName)
+
 		if annotationValue != "" {
+			annotationMap = cloneMap(pravegaCluster.Spec.Pravega.SegmentStoreServiceAnnotations)
 			annotationMap[externalDNSAnnotationKey] = annotationValue
 		}
 
