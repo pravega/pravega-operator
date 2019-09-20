@@ -12,6 +12,7 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
     * [Install the Operator](#install-the-operator)
+    * [Upgrade the Operator](#upgrade-the-operator)
     * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
     * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
     * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
@@ -58,6 +59,14 @@ $ kubectl get deploy
 NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
+
+### Upgrade the Operator
+Pravega operator can be upgraded by modifying the image tag using
+```
+$ kubectl edit <operator deployment name>
+```
+Currently, the minor version upgrade is supported, e.g. 0.4.0 -> 0.4.1. However, the major version upgrade
+has not been supported yet, e.g. 0.4.0 -> 0.5.0.
 
 ### Install a sample Pravega cluster
 
