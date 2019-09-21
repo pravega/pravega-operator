@@ -86,7 +86,7 @@ jobs:
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
-        - travis_wait 60 make test-e2e
+        - make test-e2e
       after_script:
        # - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
        eksctl delete cluster --name $CLUSTER_NAME
