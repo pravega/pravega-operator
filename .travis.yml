@@ -49,7 +49,7 @@ jobs:
         - DEP_VERSION=v0.5.0
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
         - CLUSTER_ZONE=us-west-2
-        - CLUSTER_SIZE=5
+        - CLUSTER_SIZE=3
         - CLUSTER_NODE_TYPE=t3.small
         - CLUSTER_NODE_GROUP=standard-workers
       install:
@@ -86,7 +86,7 @@ jobs:
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
-        - make test-e2e
+        -  travis_wait 25 make test-e2e
       after_script:
        # - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
        eksctl delete cluster --name $CLUSTER_NAME
