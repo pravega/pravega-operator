@@ -50,7 +50,7 @@ jobs:
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
         - CLUSTER_ZONE=us-west-2
         - CLUSTER_SIZE=3
-        - CLUSTER_NODE_TYPE=t3.small
+        - CLUSTER_NODE_TYPE=m5.xlarge
         - CLUSTER_NODE_GROUP=standard-workers
       install:
         - python --version
