@@ -68,7 +68,6 @@ jobs:
         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
         - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - kubectl config view
-        - echo $SOME_KEY
         - kubectl config current-context
         - kubectl get nodes -o wide
         - kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
@@ -86,7 +85,8 @@ jobs:
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
-        -  travis_wait 35 make test-e2e
+        - while sleep 5m; do kubectl get pods; done &
+        - make test-e2e
       after_script:
        # - gcloud --quiet container clusters delete $CLUSTER_NAME --zone $CLUSTER_ZONE
        eksctl delete cluster --name $CLUSTER_NAME
