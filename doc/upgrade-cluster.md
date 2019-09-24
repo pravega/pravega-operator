@@ -20,8 +20,6 @@ Check out [Pravega documentation](http://pravega.io/docs/latest/) for more infor
 
 ## Pending tasks
 
-- The rollback mechanism is on the roadmap but not implemented yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/153).
-- Manual recovery from an upgrade is possible but it has not been defined yet. Check out [this issue](https://github.com/pravega/pravega-operator/issues/157).
 - There is no validation of the configured desired version. Check out [this issue](https://github.com/pravega/pravega-operator/issues/156)
 
 
@@ -34,6 +32,19 @@ $ kubectl get PravegaCluster
 NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 example   0.4.0     7                 7               11m
 ```
+
+## Upgrade Path Matrix
+
+| BASE VERSION | TARGET VERSION     |
+| ------------ | ----------------   |
+| 0.1.0        | 0.1.0              |
+| 0.2.0        | 0.2.0              |
+| 0.3.0        | 0.3.0, 0.3.1, 0.3.2|
+| 0.3.1        | 0.3.1, 0.3.2       |
+| 0.3.2        | 0.3.2              |
+| 0.4.0        | 0.4.0              |
+| 0.5.0        | 0.5.0, 0.6.0       |
+| 0.6.0        | 0.6.0              |
 
 ## Trigger an upgrade
 
@@ -103,8 +114,7 @@ Segment Store instances need access to a persistent volume to store the cache. L
 
 Also, Segment Store pods need to be individually accessed by clients, so having a stable network identifier provided by the Statefulset and a headless service is very convenient.
 
-Same as Bookkeeper, we use `OnDelete` strategy for Segment Store. The reason that we don't use `RollingUpdate` strategy here is that we found it convenient to manage the upgrade
-and rollback in the same fashion. Using `RollingUpdate` will introduce Kubernetes rollback mechanism which will cause trouble to our implementation. 
+Same as Bookkeeper, we use `OnDelete` strategy for Segment Store. The reason that we don't use `RollingUpdate` strategy here is that we found it convenient to manage the upgrade and rollback in the same fashion. Using `RollingUpdate` will introduce Kubernetes rollback mechanism which will cause trouble to our implementation.
 
 ### Pravega Controller upgrade
 
@@ -131,7 +141,30 @@ NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 example   0.5.0     8                 8               1h
 ```
 
-If your upgrade has failed, you can describe the status section of your Pravega cluster to discover why.
+The command `kubectl describe` can be used to track progress of the upgrade.
+```
+$ kubectl describe PravegaCluster example
+...
+Status:
+  Conditions:
+    Status:                True
+    Type:                  Upgrading
+    Reason:                Updating BookKeeper
+    Message:               1
+    Last Transition Time:  2019-04-01T19:42:37+02:00
+    Last Update Time:      2019-04-01T19:42:37+02:00
+    Status:                False
+    Type:                  PodsReady
+    Last Transition Time:  2019-04-01T19:43:08+02:00
+    Last Update Time:      2019-04-01T19:43:08+02:00
+    Status:                False
+    Type:                  Error
+...  
+
+```
+The `Reason` field in Upgrading Condition shows the component currently being upgraded and `Message` field reflects number of successfully upgraded replicas in this component.
+
+If upgrade has failed, please check the `Status` section to understand the reason for failure.
 
 ```
 $ kubectl describe PravegaCluster example
@@ -181,10 +214,10 @@ INFO[5899] Reconciling PravegaCluster default/example
 INFO[5900] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
 INFO[5929] Reconciling PravegaCluster default/example
 INFO[5930] statefulset (example-bookie) status: 1 updated, 2 ready, 3 target
-INFO[5930] error syncing cluster version, need manual intervention. failed to sync bookkeeper version. pod example-bookie-0 is restarting
+INFO[5930] error syncing cluster version, upgrade failed. failed to sync bookkeeper version. pod example-bookie-0 is restarting
 ...
 ```
 
 ### Recovering from a failed upgrade
 
-Not defined yet. Check [this issue](https://github.com/pravega/pravega-operator/issues/157) for tracking.
+See [Rollback](rollback-cluster.md)
