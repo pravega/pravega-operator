@@ -486,6 +486,20 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 		*out = new(v1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ControllerServiceAnnotations != nil {
+		in, out := &in.ControllerServiceAnnotations, &out.ControllerServiceAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.SegmentStoreServiceAnnotations != nil {
+		in, out := &in.SegmentStoreServiceAnnotations, &out.SegmentStoreServiceAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

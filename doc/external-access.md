@@ -170,3 +170,71 @@ metadata:
 . . .
 
 ```
+
+3. Overriding Service Type for Controller and SegmentStore external services.
+When External Access is enabled, if ServiceType for Controller and SegmentStore is same, it can be specified under `externalAccess` > `type` as shown earlier.
+However, if we need to specify different service types for Controller and SegmentStore services, this can be done by adding `controllerExtServiceType` or `segmentStoreExtServiceType` field for Controller and SegmentStore respectively, under the PravegaSpec.
+When specified, these values will override the value against `externalAccess`, `type` field, if present.
+
+For example when:
+```
+externalAccess:
+    enabled: true
+    type: LoadBalancer
+     . . .
+
+pravega:
+    controllerExtServiceType: ClusterIP
+    segmentStoreExtServiceType: NodePort
+
+```
+The ServiceType for Controller would be `ClusterIP` and that for SegmentStore would be `NodePort`.
+
+4. Adding annotations to Controller and SegmentStore services
+
+To add annotations to Controller and SegmentStore Services the `controllerSvcAnnotations` and `segmentStoreSvcAnnotations` feilds can be specified under PravegaSpec.
+
+Example:
+```
+pravega:
+    . . .
+    controllerSvcAnnotations:
+      service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+
+    segmentStoreSvcAnnotations:
+      service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: "abc"
+```
+
+Post deployment, these annotations would get added on Controller and SegmentStore services:
+```
+$> kubectl describe svc pravega-pravega-controller
+Name:                     pravega-pravega-controller
+Namespace:                default
+Labels:                   app=pravega-cluster
+                          component=pravega-controller
+                          pravega_cluster=pravega
+Annotations:              ncp/internal_ip_for_policy: 100.64.192.5
+                          service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: true
+Selector:                 app=pravega-cluster,component=pravega-controller,pravega_cluster=pravega
+Type:                     LoadBalancer
+IP:                       10.100.200.76
+LoadBalancer Ingress:     10.247.108.102
+. . .
+```
+
+```
+$> k describe svc pravega-pravega-segmentstore-1
+Name:                     pravega-pravega-segmentstore-1
+Namespace:                default
+Labels:                   app=pravega-cluster
+                          component=pravega-segmentstore
+                          pravega_cluster=pravega
+Annotations:              external-dns.alpha.kubernetes.io/hostname: pravega-pravega-segmentstore-1.example.com.
+                          ncp/internal_ip_for_policy: 100.64.192.5
+                          service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix: abc
+Selector:                 statefulset.kubernetes.io/pod-name=pravega-pravega-segmentstore-1
+Type:                     LoadBalancer
+IP:                       10.100.200.183
+LoadBalancer Ingress:     10.247.108.104
+. . .
+```
