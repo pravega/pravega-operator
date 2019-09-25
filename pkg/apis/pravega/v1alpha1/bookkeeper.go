@@ -204,12 +204,12 @@ type BookkeeperStorageSpec struct {
 	// LedgerVolumeClaimTemplate is the spec to describe PVC for the BookKeeper ledger
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
-	LedgerVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"ledgerVolumeClaimTemplate"`
+	LedgerVolumeClaimTemplates []*v1.PersistentVolumeClaimSpec `json:"ledgerVolumeClaimTemplate"`
 
 	// JournalVolumeClaimTemplate is the spec to describe PVC for the BookKeeper journal
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
-	JournalVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"journalVolumeClaimTemplate"`
+	JournalVolumeClaimTemplates []*v1.PersistentVolumeClaimSpec `json:"journalVolumeClaimTemplate"`
 
 	// IndexVolumeClaimTemplate is the spec to describe PVC for the BookKeeper index
 	// This field is optional. If no PVC spec and there is no default storage class,
@@ -218,9 +218,10 @@ type BookkeeperStorageSpec struct {
 }
 
 func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
-	if s.LedgerVolumeClaimTemplate == nil {
+	if s.LedgerVolumeClaimTemplates == nil {
 		changed = true
-		s.LedgerVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
+		s.LedgerVolumeClaimTemplates = []*v1.PersistentVolumeClaimSpec{}
+		defaultLedgerVolumeClaimTemplate := &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 			Resources: v1.ResourceRequirements{
 				Requests: v1.ResourceList{
@@ -228,11 +229,13 @@ func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
 				},
 			},
 		}
+		s.LedgerVolumeClaimTemplates = append(s.LedgerVolumeClaimTemplates, defaultLedgerVolumeClaimTemplate)
 	}
 
-	if s.JournalVolumeClaimTemplate == nil {
+	if s.JournalVolumeClaimTemplates == nil {
 		changed = true
-		s.JournalVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
+		s.JournalVolumeClaimTemplates = []*v1.PersistentVolumeClaimSpec{}
+		defaultJournalVolumeClaimTemplate := &v1.PersistentVolumeClaimSpec{
 			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 			Resources: v1.ResourceRequirements{
 				Requests: v1.ResourceList{
@@ -240,6 +243,7 @@ func (s *BookkeeperStorageSpec) withDefaults() (changed bool) {
 				},
 			},
 		}
+		s.JournalVolumeClaimTemplates = append(s.JournalVolumeClaimTemplates, defaultJournalVolumeClaimTemplate)
 	}
 
 	if s.IndexVolumeClaimTemplate == nil {

@@ -112,25 +112,8 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 						},
 					},
 				},
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      LedgerDiskName,
-						MountPath: "/bk/ledgers",
-					},
-					{
-						Name:      JournalDiskName,
-						MountPath: "/bk/journal",
-					},
-					{
-						Name:      IndexDiskName,
-						MountPath: "/bk/index",
-					},
-					{
-						Name:      heapDumpName,
-						MountPath: heapDumpDir,
-					},
-				},
-				Resources: *p.Spec.Bookkeeper.Resources,
+				VolumeMounts: makeBookieVolumeMount(p.Spec.Bookkeeper),
+				Resources:    *p.Spec.Bookkeeper.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -177,19 +160,7 @@ func makeBookiePodSpec(p *v1alpha1.PravegaCluster) *corev1.PodSpec {
 }
 
 func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.PersistentVolumeClaim {
-	return []corev1.PersistentVolumeClaim{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: JournalDiskName,
-			},
-			Spec: *spec.Storage.JournalVolumeClaimTemplate,
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: LedgerDiskName,
-			},
-			Spec: *spec.Storage.LedgerVolumeClaimTemplate,
-		},
+	pvcList := []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: IndexDiskName,
@@ -197,6 +168,27 @@ func makeBookieVolumeClaimTemplates(spec *v1alpha1.BookkeeperSpec) []corev1.Pers
 			Spec: *spec.Storage.IndexVolumeClaimTemplate,
 		},
 	}
+
+	for i, v := range spec.Storage.JournalVolumeClaimTemplates {
+		pvc := corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("%v%v", JournalDiskName, i),
+			},
+			Spec: *v,
+		}
+		pvcList = append(pvcList, pvc)
+	}
+
+	for i, v := range spec.Storage.LedgerVolumeClaimTemplates {
+		pvc := corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("%v%v", LedgerDiskName, i),
+			},
+			Spec: *v,
+		}
+		pvcList = append(pvcList, pvc)
+	}
+	return pvcList
 }
 
 func MakeBookieConfigMap(pravegaCluster *v1alpha1.PravegaCluster) *corev1.ConfigMap {
@@ -308,4 +300,34 @@ func MakeBookiePodDisruptionBudget(pravegaCluster *v1alpha1.PravegaCluster) *pol
 			},
 		},
 	}
+}
+
+func makeBookieVolumeMount(spec *v1alpha1.BookkeeperSpec) []corev1.VolumeMount {
+	vmList := []corev1.VolumeMount{
+		{
+			Name:      IndexDiskName,
+			MountPath: "/bk/index",
+		},
+		{
+			Name:      heapDumpName,
+			MountPath: heapDumpDir,
+		},
+	}
+
+	for i := range spec.Storage.JournalVolumeClaimTemplates {
+		vm := corev1.VolumeMount{
+			Name:      fmt.Sprintf("%v%v", JournalDiskName, i),
+			MountPath: fmt.Sprintf("%v%v", "/bk/journal", i),
+		}
+		vmList = append(vmList, vm)
+	}
+
+	for i := range spec.Storage.JournalVolumeClaimTemplates {
+		vm := corev1.VolumeMount{
+			Name:      fmt.Sprintf("%v%v", LedgerDiskName, i),
+			MountPath: fmt.Sprintf("%v%v", "/bk/ledgers", i),
+		}
+		vmList = append(vmList, vm)
+	}
+	return vmList
 }
