@@ -27,6 +27,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type SymptomID string
+
+const (
+	CriticalEvent SymptomID = "PRAVEGA-OPERATOR-ASSISTANCE-REQUIRED-1001"
+
+	SRSEvent = "srs-event"
+
+	Appname = "pravega-operator"
+)
+
+const (
+        // KAHMCustomLabel is a consistent marker for events we create/modify
+        KAHMCustomLabel = "kahm/enabled"
+
+        // SymptomIDLabel is the key to use for adding the SymptomID to the labels
+        SymptomIDLabel = "SymptomID"
+
+        // trueString is a const string created to satisfy lint (goconst)
+        trueString = "true"
+)
+
 func DownwardAPIEnv() []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
@@ -147,3 +168,41 @@ func NewEvent(name string, p *v1alpha1.PravegaCluster, reason string, message st
 	}
 	return &event
 }
+
+func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message string, eventType string) *corev1.Event {
+	var labels = make(map[string]string)
+	labels[KAHMCustomLabel] = trueString
+	labels[SymptomIDLabel] = string(CriticalEvent)
+	labels[SRSEvent] = trueString
+	event := corev1.Event{
+		Count: 1,
+		InvolvedObject: v1.ObjectReference{
+			APIVersion: "apps/v1",
+			Kind:       "Application",
+			Name:       name,
+			Namespace:  p.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Event",
+		},
+		Message: message,
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: nil,
+			Labels:      labels,
+			Namespace:    p.Namespace,
+		},
+		Reason: reason,
+		Related: &v1.ObjectReference{
+			APIVersion: "apps/v1",
+			Kind:       "Application",
+			Name:       name,
+			Namespace:  p.Namespace,
+		},
+		Source: v1.EventSource{
+			Component: AppName,
+		},
+		Type: eventType,
+        }
+	return &event
+}
+

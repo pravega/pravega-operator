@@ -39,6 +39,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		r.client.Status().Update(context.TODO(), p)
 	}()
 
+	log.Printf("POD_NAMESPACE: %s", util.EnvPodNamespaceName())
 	// we cannot upgrade if cluster is in UpgradeFailed or Rollback state
 	if p.Status.IsClusterInUpgradeFailedOrRollbackState() {
 		return nil
@@ -78,6 +79,11 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 			pubErr := r.client.Create(context.TODO(), event)
 			if pubErr != nil {
 				log.Printf("Error publishing Upgrade Failure event to k8s. %v", pubErr)
+			}
+			event = util.NewK8sEvent("UPGRADE_ERROR", p, reason, message, "Warning")
+			pubErr = r.client.Create(context.TODO(), event)
+			if pubErr != nil {
+				log.Printf("Error publishing Upgrade Failure native event. %v", pubErr)
 			}
 			r.clearUpgradeStatus(p)
 			return err
@@ -166,6 +172,11 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		pubErr := r.client.Create(context.TODO(), event)
 		if pubErr != nil {
 			log.Printf("Error publishing ROLLBACK_ERROR event to k8s. %v", pubErr)
+		}
+		event = util.NewK8sEvent("ROLLBACK_ERROR", p, reason, message, "Warning")
+		pubErr = r.client.Create(context.TODO(), event)
+		if pubErr != nil {
+			log.Printf("Error publishing ROLLBACK_ERROR native event. %v", pubErr)
 		}
 		r.clearRollbackStatus(p)
 		log.Printf("Error rolling back to cluster version %v. Reason: %v", version, err)
