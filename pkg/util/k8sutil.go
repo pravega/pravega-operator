@@ -176,7 +176,7 @@ func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message
 	labels[SRSEvent] = trueString
 	event := corev1.Event{
 		Count: 1,
-		InvolvedObject: v1.ObjectReference{
+		InvolvedObject: corev1.ObjectReference{
 			APIVersion: "apps/v1",
 			Kind:       "Application",
 			Name:       name,
@@ -192,13 +192,13 @@ func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message
 			Namespace:   p.Namespace,
 		},
 		Reason: reason,
-		Related: &v1.ObjectReference{
+		Related: &corev1.ObjectReference{
 			APIVersion: "apps/v1",
 			Kind:       "Application",
 			Name:       name,
 			Namespace:  p.Namespace,
 		},
-		Source: v1.EventSource{
+		Source: corev1.EventSource{
 			Component: AppName,
 		},
 		Type: eventType,
