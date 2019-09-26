@@ -199,7 +199,7 @@ func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message
 			Namespace:  p.Namespace,
 		},
 		Source: corev1.EventSource{
-			Component: AppName,
+			Component: Appname,
 		},
 		Type: eventType,
 	}
