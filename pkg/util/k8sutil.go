@@ -38,14 +38,14 @@ const (
 )
 
 const (
-        // KAHMCustomLabel is a consistent marker for events we create/modify
-        KAHMCustomLabel = "kahm/enabled"
+	// KAHMCustomLabel is a consistent marker for events we create/modify
+	KAHMCustomLabel = "kahm/enabled"
 
-        // SymptomIDLabel is the key to use for adding the SymptomID to the labels
-        SymptomIDLabel = "SymptomID"
+	// SymptomIDLabel is the key to use for adding the SymptomID to the labels
+	SymptomIDLabel = "SymptomID"
 
-        // trueString is a const string created to satisfy lint (goconst)
-        trueString = "true"
+	// trueString is a const string created to satisfy lint (goconst)
+	trueString = "true"
 )
 
 func DownwardAPIEnv() []corev1.EnvVar {
@@ -189,7 +189,7 @@ func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: nil,
 			Labels:      labels,
-			Namespace:    p.Namespace,
+			Namespace:   p.Namespace,
 		},
 		Reason: reason,
 		Related: &v1.ObjectReference{
@@ -202,7 +202,6 @@ func NewK8sEvent(name string, p *v1alpha1.PravegaCluster, reason string, message
 			Component: AppName,
 		},
 		Type: eventType,
-        }
+	}
 	return &event
 }
-
