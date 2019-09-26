@@ -39,7 +39,6 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		r.client.Status().Update(context.TODO(), p)
 	}()
 
-	log.Printf("POD_NAMESPACE: %s", util.EnvPodNamespaceName())
 	// we cannot upgrade if cluster is in UpgradeFailed or Rollback state
 	if p.Status.IsClusterInUpgradeFailedOrRollbackState() {
 		return nil
