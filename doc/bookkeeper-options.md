@@ -17,3 +17,22 @@ spec:
       codahaleStatsOutputFrequencySeconds: "30"
 ...
 ```
+### Bookkeeper JVM Options
+
+It is also possible to tune the Bookkeeper JVM by passing customized JVM options, the format is as follows
+```
+...
+spec:
+  bookkeeper:
+    bookkeeperJVMOptions:
+      memoryOpts: ["-Xms2g", "-XX:MaxDirectMemorySize=2g"]
+      gcOpts: ["-XX:MaxGCPauseMillis=20"]
+      gcLoggingOpts: ["-XX:NumberOfGCLogFiles=10"]
+      extraOpts: []
+...
+```
+The reason that we are using such detailed names like `memoryOpts` is because the Bookkeeper official [scripts](https://github.com/apache/bookkeeper/blob/master/bin/common.sh#L118) are using those and we need to override it using the same name.
+
+There are a bunch of default options in the Pravega operator code that is good for general deployment. It is possible to override those default values by
+just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
+the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.

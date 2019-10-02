@@ -14,3 +14,17 @@ spec:
       metrics.statsdPort: "8125"
 ...
 ```
+### Pravega JVM Options
+
+It is also possible to tune the JVM options for Pravega Controller and Segmentstore. Here is an example,
+```
+...
+spec:
+  pravega:
+    controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
+    segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
+...
+```
+There are a bunch of default options in the Pravega operator code that is good for general deployment. It is possible to override those default values by
+just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
+the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.
