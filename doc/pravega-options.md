@@ -27,6 +27,35 @@ spec:
     segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
 ...
 ```
-There are a bunch of default options in the Pravega operator code that is good for general deployment, please check [here](https://github.com/pravega/pravega-operator/blob/master/pkg/controller/pravega/pravega_controller.go#L175) for controller and [here](https://github.com/pravega/pravega-operator/blob/master/pkg/controller/pravega/pravega_segmentstore.go#L161) for segmentstore. It is possible to override those default values by
-just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
-the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists. Check [here](https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html) for more JVM options.
+There are a bunch of default options in the Pravega operator code that is good for general deployment,  It is possible to override those default values by just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
+the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.
+
+Default Controller JVM Options
+```
+"-Xms512m",
+"-XX:+ExitOnOutOfMemoryError",
+"-XX:+CrashOnOutOfMemoryError",
+"-XX:+HeapDumpOnOutOfMemoryError",
+"-XX:HeapDumpPath=" + heapDumpDir,
+```
+if Pravega version is greater or equal 0.4, then the followings are also added to the default Controller JVM Options
+```
+"-XX:+UnlockExperimentalVMOptions",
+"-XX:+UseCGroupMemoryLimitForHeap",
+"-XX:MaxRAMFraction=2"
+```
+
+Default Segmenstore JVM Options
+```
+"-Xms1g",
+"-XX:+ExitOnOutOfMemoryError",
+"-XX:+CrashOnOutOfMemoryError",
+"-XX:+HeapDumpOnOutOfMemoryError",
+"-XX:HeapDumpPath=" + heapDumpDir,
+```
+if Pravega version is greater or equal to 0.4, then the followings are also added to the default Segmenstore JVM Options
+```
+"-XX:+UnlockExperimentalVMOptions",
+"-XX:+UseCGroupMemoryLimitForHeap",
+"-XX:MaxRAMFraction=2"
+```
