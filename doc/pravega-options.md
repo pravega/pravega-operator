@@ -16,7 +16,9 @@ spec:
 ```
 ### Pravega JVM Options
 
-It is also possible to tune the JVM options for Pravega Controller and Segmentstore. Here is an example,
+It is also possible to tune the JVM options for Pravega Controller and Segmentstore. Pravega JVM options are for configuring Controller&Segmenstore JVM process whereas Pravega options are for configuring Pravega software.
+
+Here is an example,
 ```
 ...
 spec:
@@ -25,6 +27,6 @@ spec:
     segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
 ...
 ```
-There are a bunch of default options in the Pravega operator code that is good for general deployment. It is possible to override those default values by
+There are a bunch of default options in the Pravega operator code that is good for general deployment, please check [here](https://github.com/pravega/pravega-operator/blob/master/pkg/controller/pravega/pravega_controller.go#L175) for controller and [here](https://github.com/pravega/pravega-operator/blob/master/pkg/controller/pravega/pravega_segmentstore.go#L161) for segmentstore. It is possible to override those default values by
 just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
-the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.
+the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists. Check [here](https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html) for more JVM options.
