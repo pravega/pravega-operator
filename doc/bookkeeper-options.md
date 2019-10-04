@@ -41,4 +41,4 @@ spec:
 The reason that we are using such detailed names like `memoryOpts` is because the Bookkeeper official [scripts](https://github.com/apache/bookkeeper/blob/master/bin/common.sh#L118) are using those and we need to override it using the same name.
 
 There are a bunch of default options in the Pravega operator code that is good for general deployment, please check [here](https://github.com/pravega/pravega-operator/blob/master/pkg/controller/pravega/bookie.go#L202). It is possible to override those default values by just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
-the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.
+the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists. Check [here](https://www.oracle.com/technetwork/java/javase/tech/vmoptions-jsp-140102.html) for more JVM options.
