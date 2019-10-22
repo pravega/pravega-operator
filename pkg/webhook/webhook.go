@@ -168,6 +168,14 @@ func (pwh *pravegaWebhookHandler) clusterIsAvailable(ctx context.Context, p *pra
 		}
 	}
 
+	_, rollback := found.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+	if rollback != nil && rollback.Status == corev1.ConditionTrue {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version {
+			return fmt.Errorf("failed to process the request, cluster is upgrading")
+		}
+	}
+
 	// Add other conditions here
 	return nil
 }
