@@ -271,6 +271,7 @@ var _ = Describe("Admission webhook", func() {
 				})
 			})
 		})
+
 		Context("Reject request when upgrading", func() {
 			var (
 				client client.Client
@@ -295,7 +296,33 @@ var _ = Describe("Admission webhook", func() {
 					Ω(err).ShouldNot(BeNil())
 				})
 			})
-
 		})
+
+		Context("Reject request when rolling back", func() {
+			var (
+				client client.Client
+				err    error
+			)
+
+			BeforeEach(func() {
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.5.0-001",
+				}
+				p.Status.SetRollbackConditionTrue("", "")
+				client = fake.NewFakeClient(p)
+				pwh = &pravegaWebhookHandler{client: client}
+			})
+
+			Context("Sending request when rolling back", func() {
+				It("should not pass", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-002",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).ShouldNot(BeNil())
+				})
+			})
+		})
+
 	})
 })
