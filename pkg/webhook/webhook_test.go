@@ -319,7 +319,7 @@ var _ = Describe("Admission webhook", func() {
 						Version: "0.5.0-002",
 					}
 					err = pwh.clusterIsAvailable(context.TODO(), p)
-					Ω(err).ShouldNot(BeNil())
+					Ω(err).Should(MatchError("failed to process the request, cluster is in rollback"))
 				})
 			})
 		})
