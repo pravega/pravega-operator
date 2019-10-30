@@ -168,6 +168,13 @@ func (pwh *pravegaWebhookHandler) clusterIsAvailable(ctx context.Context, p *pra
 		}
 	}
 
+	if found.Status.IsClusterInRollbackState() {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version {
+			return fmt.Errorf("failed to process the request, cluster is in rollback")
+		}
+	}
+
 	// Add other conditions here
 	return nil
 }
