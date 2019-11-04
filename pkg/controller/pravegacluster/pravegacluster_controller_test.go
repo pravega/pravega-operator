@@ -804,5 +804,96 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 			})
 		})
+
+		Context("Custom spec with ExternalAccess with domain name and without other annotations", func() {
+			var (
+				client     client.Client
+				err        error
+				domainName string
+			)
+
+			BeforeEach(func() {
+				domainName = "pravega.com."
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.3.2-rc2",
+					ExternalAccess: &v1alpha1.ExternalAccess{
+						Enabled:    true,
+						Type:       corev1.ServiceTypeClusterIP,
+						DomainName: domainName,
+					},
+					Pravega: &v1alpha1.PravegaSpec{
+						SegmentStoreReplicas:            3,
+						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
+					},
+				}
+				p.WithDefaults()
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				res, err = r.Reconcile(req)
+			})
+
+			It("shouldn't error", func() {
+				Ω(err).Should(BeNil())
+			})
+
+			Context("Pravega SegmentStore External Access", func() {
+				var foundSegmentStoreSvc1 *corev1.Service
+				var foundSegmentStoreSvc2 *corev1.Service
+				var foundSegmentStoreSvc3 *corev1.Service
+
+				BeforeEach(func() {
+					foundSegmentStoreSvc1 = &corev1.Service{}
+					nn1 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
+
+					foundSegmentStoreSvc2 = &corev1.Service{}
+					nn2 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
+
+					foundSegmentStoreSvc3 = &corev1.Service{}
+					nn3 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
+
+				})
+
+				It("should create all segmentstore services", func() {
+					Ω(err).Should(BeNil())
+				})
+
+				It("should set external access service type to LoadBalancer for each service", func() {
+					Ω(p.Spec.Pravega.SegmentStoreExternalServiceType).Should(Equal(corev1.ServiceTypeLoadBalancer))
+					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
+					Ω(foundSegmentStoreSvc1.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
+					Ω(foundSegmentStoreSvc2.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
+					Ω(foundSegmentStoreSvc3.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
+				})
+
+				It("should set provided domain name as annotation", func() {
+					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
+					Ω(mapLength).To(Equal(1))
+					svcName1 := util.ServiceNameForSegmentStore(p.Name, 0) + "." + domainName
+					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName1))
+
+					svcName2 := util.ServiceNameForSegmentStore(p.Name, 1) + "." + domainName
+					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName2))
+
+					svcName3 := util.ServiceNameForSegmentStore(p.Name, 2) + "." + domainName
+					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName3))
+				})
+			})
+		})
+
 	})
 })
