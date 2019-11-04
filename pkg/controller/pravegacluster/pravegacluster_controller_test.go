@@ -728,14 +728,12 @@ var _ = Describe("PravegaCluster Controller", func() {
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.3.2-rc2",
 					ExternalAccess: &v1alpha1.ExternalAccess{
-						Enabled:    true,
-						Type:       corev1.ServiceTypeClusterIP,
-						DomainName: "",
+						Enabled: true,
+						Type:    corev1.ServiceTypeClusterIP,
 					},
 					Pravega: &v1alpha1.PravegaSpec{
-						SegmentStoreReplicas:            3,
-						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
-						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStoreReplicas:           3,
+						SegmentStoreServiceAnnotations: annotationsMap,
 					},
 				}
 				p.WithDefaults()
@@ -779,14 +777,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 				It("should create all segmentstore services", func() {
 					Ω(err).Should(BeNil())
-				})
-
-				It("should set external access service type to LoadBalancer for each service", func() {
-					Ω(p.Spec.Pravega.SegmentStoreExternalServiceType).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
-					Ω(foundSegmentStoreSvc1.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(foundSegmentStoreSvc2.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(foundSegmentStoreSvc3.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
 				})
 
 				It("should set provided annotations", func() {
@@ -822,8 +812,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 						DomainName: domainName,
 					},
 					Pravega: &v1alpha1.PravegaSpec{
-						SegmentStoreReplicas:            3,
-						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
+						SegmentStoreReplicas: 3,
 					},
 				}
 				p.WithDefaults()
@@ -867,14 +856,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 				It("should create all segmentstore services", func() {
 					Ω(err).Should(BeNil())
-				})
-
-				It("should set external access service type to LoadBalancer for each service", func() {
-					Ω(p.Spec.Pravega.SegmentStoreExternalServiceType).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
-					Ω(foundSegmentStoreSvc1.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(foundSegmentStoreSvc2.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(foundSegmentStoreSvc3.Spec.Type).Should(Equal(corev1.ServiceTypeLoadBalancer))
 				})
 
 				It("should set provided domain name as annotation", func() {
