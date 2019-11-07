@@ -131,11 +131,15 @@ func NewEvent(name string, p *v1alpha1.PravegaCluster, reason string, message st
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: p.Namespace,
+			Labels:    LabelsForPravegaCluster(p),
 		},
 		InvolvedObject: corev1.ObjectReference{
-			Kind:      "pravegacluster",
-			Name:      p.GetName(),
-			Namespace: p.GetNamespace(),
+			APIVersion:      "pravega.pravega.io/v1alpha1",
+			Kind:            "pravegacluster",
+			Name:            p.GetName(),
+			Namespace:       p.GetNamespace(),
+			ResourceVersion: p.GetResourceVersion(),
+			UID:             p.GetUID(),
 		},
 		Reason:              reason,
 		Message:             message,
