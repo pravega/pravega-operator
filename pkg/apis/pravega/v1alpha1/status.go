@@ -29,6 +29,8 @@ const (
 	UpdatingControllerReason   = "Updating Controller"
 	UpdatingSegmentstoreReason = "Updating Segmentstore"
 	UpdatingBookkeeperReason   = "Updating Bookkeeper"
+	UpgradeErrorReason         = "Upgrade Error"
+	RollbackErrorReason        = "Rollback Error"
 )
 
 // ClusterStatus defines the observed state of PravegaCluster
