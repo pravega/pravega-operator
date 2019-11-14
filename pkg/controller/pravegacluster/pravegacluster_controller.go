@@ -158,12 +158,6 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 }
 
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.deployBookie(p)
-	if err != nil {
-		log.Printf("failed to deploy bookie: %v", err)
-		return err
-	}
-
 	err = r.deployController(p)
 	if err != nil {
 		log.Printf("failed to deploy controller: %v", err)
@@ -259,6 +253,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
+/*
 func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster) (err error) {
 
 	headlessService := pravega.MakeBookieHeadlessService(p)
@@ -294,13 +289,8 @@ func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster
 
 	return nil
 }
-
+*/
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.syncBookieSize(p)
-	if err != nil {
-		return err
-	}
-
 	err = r.syncSegmentStoreSize(p)
 	if err != nil {
 		return err
@@ -314,6 +304,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 	return nil
 }
 
+/*
 func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaCluster) (err error) {
 	sts := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForBookie(p.Name)
@@ -329,6 +320,7 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
 
+
 		err = r.syncStatefulSetPvc(sts)
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
@@ -336,7 +328,7 @@ func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaClust
 	}
 	return nil
 }
-
+*/
 func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.PravegaCluster) (err error) {
 	sts := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForSegmentstore(p.Name)

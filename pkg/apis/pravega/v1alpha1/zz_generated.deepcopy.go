@@ -207,11 +207,6 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(AuthenticationParameters)
 		**out = **in
 	}
-	if in.Bookkeeper != nil {
-		in, out := &in.Bookkeeper, &out.Bookkeeper
-		*out = new(BookkeeperSpec)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Pravega != nil {
 		in, out := &in.Pravega, &out.Pravega
 		*out = new(PravegaSpec)
@@ -236,6 +231,11 @@ func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]ClusterCondition, len(*in))
+		copy(*out, *in)
+	}
+	if in.VersionHistory != nil {
+		in, out := &in.VersionHistory, &out.VersionHistory
+		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
 	in.Members.DeepCopyInto(&out.Members)

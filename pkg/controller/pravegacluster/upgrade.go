@@ -187,10 +187,12 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 
 func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	componentSyncFuncs := []componentSyncVersionFun{
-		componentSyncVersionFun{
-			name: "bookkeeper",
-			fun:  r.syncBookkeeperVersion,
-		},
+		/*
+			componentSyncVersionFun{
+				name: "bookkeeper",
+				fun:  r.syncBookkeeperVersion,
+			},
+		*/
 		componentSyncVersionFun{
 			name: "segmentstore",
 			fun:  r.syncSegmentStoreVersion,
@@ -394,6 +396,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	return false, nil
 }
 
+/*
 func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	sts := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForBookie(p.Name)
@@ -480,6 +483,7 @@ func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.Prave
 	// wait until the next reconcile iteration
 	return false, nil
 }
+*/
 
 func (r *ReconcilePravegaCluster) checkUpdatedPods(pods []*corev1.Pod, version string) (bool, error) {
 	for _, pod := range pods {
