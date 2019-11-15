@@ -71,6 +71,13 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		if err != nil {
 			log.Printf("error syncing cluster version, upgrade failed. %v", err)
 			p.Status.SetErrorConditionTrue("UpgradeFailed", err.Error())
+			// emit an event for Upgrade Failure
+			message := fmt.Sprintf("Error Upgrading from version %v to %v. %v", p.Status.CurrentVersion, p.Status.TargetVersion, err.Error())
+			event := util.NewEvent("UPGRADE_ERROR", p, pravegav1alpha1.UpgradeErrorReason, message, "Error")
+			pubErr := r.client.Create(context.TODO(), event)
+			if pubErr != nil {
+				log.Printf("Error publishing Upgrade Failure event to k8s. %v", pubErr)
+			}
 			r.clearUpgradeStatus(p)
 			return err
 		}
@@ -151,6 +158,13 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 	if err != nil {
 		// Error rolling back, set appropriate status and ask for manual intervention
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
+		// emit an event for Rollback Failure
+		message := fmt.Sprintf("Error Rollingback from version %v to %v. %v", p.Status.CurrentVersion, p.Status.TargetVersion, err.Error())
+		event := util.NewEvent("ROLLBACK_ERROR", p, pravegav1alpha1.RollbackErrorReason, message, "Error")
+		pubErr := r.client.Create(context.TODO(), event)
+		if pubErr != nil {
+			log.Printf("Error publishing ROLLBACK_ERROR event to k8s. %v", pubErr)
+		}
 		r.clearRollbackStatus(p)
 		log.Printf("Error rolling back to cluster version %v. Reason: %v", version, err)
 		//r.client.Status().Update(context.TODO(), p)

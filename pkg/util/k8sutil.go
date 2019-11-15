@@ -13,6 +13,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -20,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -120,4 +122,32 @@ func IsPodFaulty(pod *corev1.Pod) (bool, error) {
 		return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
 	}
 	return false, nil
+}
+
+func NewEvent(name string, p *v1alpha1.PravegaCluster, reason string, message string, eventType string) *corev1.Event {
+	now := metav1.Now()
+	operatorName, _ := k8s.GetOperatorName()
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: p.Namespace,
+			Labels:    LabelsForPravegaCluster(p),
+		},
+		InvolvedObject: corev1.ObjectReference{
+			APIVersion:      "pravega.pravega.io/v1alpha1",
+			Kind:            "PravegaCluster",
+			Name:            p.GetName(),
+			Namespace:       p.GetNamespace(),
+			ResourceVersion: p.GetResourceVersion(),
+			UID:             p.GetUID(),
+		},
+		Reason:              reason,
+		Message:             message,
+		FirstTimestamp:      now,
+		LastTimestamp:       now,
+		Type:                eventType,
+		ReportingController: operatorName,
+		ReportingInstance:   os.Getenv("POD_NAME"),
+	}
+	return &event
 }
