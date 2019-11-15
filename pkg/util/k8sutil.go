@@ -135,7 +135,7 @@ func NewEvent(name string, p *v1alpha1.PravegaCluster, reason string, message st
 		},
 		InvolvedObject: corev1.ObjectReference{
 			APIVersion:      "pravega.pravega.io/v1alpha1",
-			Kind:            "pravegacluster",
+			Kind:            "PravegaCluster",
 			Name:            p.GetName(),
 			Namespace:       p.GetNamespace(),
 			ResourceVersion: p.GetResourceVersion(),

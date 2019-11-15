@@ -2,6 +2,8 @@ apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
 metadata:
   name: {{ template "pravega.fullname" . }}
+  labels: 
+    app.kubernetes.io/name: "pravega-cluster"
 spec:
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
