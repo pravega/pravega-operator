@@ -876,5 +876,79 @@ var _ = Describe("PravegaCluster Controller", func() {
 			})
 		})
 
+		Context("Custom spec with ExternalAccess with Segmentstore Scaledown", func() {
+			var (
+				req    reconcile.Request
+				client client.Client
+				err    error
+			)
+
+			BeforeEach(func() {
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.5.0",
+					ExternalAccess: &v1alpha1.ExternalAccess{
+						Enabled: true,
+						Type:    corev1.ServiceTypeClusterIP,
+					},
+					Pravega: &v1alpha1.PravegaSpec{
+						SegmentStoreReplicas: 3,
+					},
+				}
+				p.WithDefaults()
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				res, _ = r.Reconcile(req)
+				foundPravega := &v1alpha1.PravegaCluster{}
+				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				foundPravega.Spec.Pravega.SegmentStoreReplicas = 1
+				client.Update(context.TODO(), foundPravega)
+				_, _ = r.Reconcile(req)
+			})
+
+			Context("Scaledown Segmentstore Services", func() {
+				var (
+					foundSegmentStoreSvc1 *corev1.Service
+					foundSegmentStoreSvc2 *corev1.Service
+					foundSegmentStoreSvc3 *corev1.Service
+				)
+
+				It("should not error", func() {
+					foundSegmentStoreSvc1 = &corev1.Service{}
+
+					nn1 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Namespace: Namespace,
+					}
+
+					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
+					Ω(err).Should(BeNil())
+				})
+
+				It("should not be found", func() {
+					foundSegmentStoreSvc2 = &corev1.Service{}
+
+					nn2 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
+					Ω(err).ShouldNot(BeNil())
+				})
+
+				It("should not be found", func() {
+					foundSegmentStoreSvc3 = &corev1.Service{}
+
+					nn3 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 3),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
+					Ω(err).ShouldNot(BeNil())
+				})
+
+			})
+
+		})
+
 	})
 })

@@ -110,13 +110,13 @@ func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string
 	}
 }
 
-func PvcIsOrphan(stsPvcName string, replicas int32) bool {
-	index := strings.LastIndexAny(stsPvcName, "-")
+func IsOrphan(k8sObjectName string, replicas int32) bool {
+	index := strings.LastIndexAny(k8sObjectName, "-")
 	if index == -1 {
 		return false
 	}
 
-	ordinal, err := strconv.Atoi(stsPvcName[index+1:])
+	ordinal, err := strconv.Atoi(k8sObjectName[index+1:])
 	if err != nil {
 		return false
 	}

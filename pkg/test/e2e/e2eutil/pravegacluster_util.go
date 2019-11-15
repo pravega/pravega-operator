@@ -288,7 +288,7 @@ func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
-		if util.PvcIsOrphan(pvc.Name, p.Spec.Bookkeeper.Replicas) {
+		if util.IsOrphan(pvc.Name, p.Spec.Bookkeeper.Replicas) {
 			return fmt.Errorf("bookie pvc is illegal")
 		}
 
@@ -306,7 +306,7 @@ func CheckPvcSanity(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 		if pvc.Status.Phase != corev1.ClaimBound {
 			continue
 		}
-		if util.PvcIsOrphan(pvc.Name, p.Spec.Pravega.SegmentStoreReplicas) {
+		if util.IsOrphan(pvc.Name, p.Spec.Pravega.SegmentStoreReplicas) {
 			return fmt.Errorf("segment store pvc is illegal")
 		}
 

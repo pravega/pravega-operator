@@ -346,6 +346,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 	}
 
 	if *sts.Spec.Replicas != p.Spec.Pravega.SegmentStoreReplicas {
+		scaleDown := int32(0)
+		if p.Spec.Pravega.SegmentStoreReplicas < *sts.Spec.Replicas {
+			scaleDown = *sts.Spec.Replicas - p.Spec.Pravega.SegmentStoreReplicas
+		}
 		sts.Spec.Replicas = &(p.Spec.Pravega.SegmentStoreReplicas)
 		err = r.client.Update(context.TODO(), sts)
 		if err != nil {
@@ -355,6 +359,13 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		err = r.syncStatefulSetPvc(sts)
 		if err != nil {
 			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+		}
+
+		if p.Spec.ExternalAccess.Enabled && scaleDown > 0 {
+			err = r.syncStatefulSetExternalServices(sts)
+			if err != nil {
+				return fmt.Errorf("failed to sync external svcs of stateful-set (%s): %v", sts.Name, err)
+			}
 		}
 	}
 	return nil
@@ -430,7 +441,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 	}
 
 	for _, pvcItem := range pvcList.Items {
-		if util.PvcIsOrphan(pvcItem.Name, *sts.Spec.Replicas) {
+		if util.IsOrphan(pvcItem.Name, *sts.Spec.Replicas) {
 			pvcDelete := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pvcItem.Name,
@@ -441,6 +452,42 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 			err = r.client.Delete(context.TODO(), pvcDelete)
 			if err != nil {
 				return fmt.Errorf("failed to delete pvc: %v", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) syncStatefulSetExternalServices(sts *appsv1.StatefulSet) error {
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: sts.Spec.Template.Labels,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to convert label selector: %v", err)
+	}
+
+	serviceList := &corev1.ServiceList{}
+	servicelistOps := &client.ListOptions{
+		Namespace:     sts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), servicelistOps, serviceList)
+	if err != nil {
+		return err
+	}
+
+	for _, svcItem := range serviceList.Items {
+		if util.IsOrphan(svcItem.Name, *sts.Spec.Replicas) {
+			svcDelete := &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      svcItem.Name,
+					Namespace: svcItem.Namespace,
+				},
+			}
+
+			err = r.client.Delete(context.TODO(), svcDelete)
+			if err != nil {
+				return fmt.Errorf("failed to delete svc: %v", err)
 			}
 		}
 	}
