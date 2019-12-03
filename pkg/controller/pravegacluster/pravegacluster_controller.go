@@ -419,6 +419,7 @@ func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.Praveg
 	if err = util.DeleteAllZnodes(p); err != nil {
 		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
 	}
+	fmt.Println("zookeeper metadata deleted")
 	return nil
 }
 

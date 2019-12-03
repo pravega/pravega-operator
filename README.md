@@ -183,10 +183,13 @@ $ kubectl delete -f ./example/pvc-tier2.yaml
 
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
-If you want to delete Pravega clusters, make sure to do it before uninstalling the operator.
-
 ```
 $ helm delete foo --purge
+```
+
+If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator. Also, once the Pravega cluster has been deleted, make sure to check that the zookeeper metadata has been cleaned up before proceeding with the deletion of the operator. This can be confirmed with the presence of the following log message in the operator logs.
+```
+zookeeper metadata deleted
 ```
 
 ### Manual installation
