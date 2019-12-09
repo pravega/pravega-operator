@@ -257,6 +257,14 @@ func (ps *ClusterStatus) IsClusterInRollbackFailedState() bool {
 	return false
 }
 
+func (ps *ClusterStatus) IsClusterInReadyState() bool {
+	_, readyCondition := ps.GetClusterCondition(ClusterConditionPodsReady)
+	if readyCondition != nil && readyCondition.Status == corev1.ConditionTrue {
+		return true
+	}
+	return false
+}
+
 func (ps *ClusterStatus) UpdateProgress(reason, updatedReplicas string) {
 	if ps.IsClusterInUpgradingState() {
 		// Set the upgrade condition reason to be UpgradingBookkeeperReason, message to be 0
