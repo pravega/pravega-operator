@@ -389,7 +389,7 @@ var _ = Describe("Admission webhook", func() {
 			})
 
 			Context("Sending request when cluster in error state", func() {
-				It("should not pass if cluster in error state", func() {
+				It("should not pass if cluster is in error state", func() {
 					p.Spec = v1alpha1.ClusterSpec{
 						Version: "0.5.0-033",
 					}

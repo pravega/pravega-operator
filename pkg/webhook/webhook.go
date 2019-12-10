@@ -106,7 +106,7 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 
 	if p.Status.IsClusterInUpgradeFailedState() {
 		if requestVersion != p.Status.GetLastVersion() {
-			return fmt.Errorf("Rollback to version %s not supported. Only rollback to previous stable version is supported.", requestVersion)
+			return fmt.Errorf("Rollback to version %s not supported. Only rollback to previous stable version %s is supported.", requestVersion, p.Status.GetLastVersion())
 		}
 	}
 
