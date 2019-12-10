@@ -103,8 +103,9 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 	}
 
 	requestVersion := p.Spec.Version
+
 	if p.Status.IsClusterInReadyState() {
-		// Allow upgrade only of Cluster is in Ready State
+		// Allow upgrade only if Cluster is in Ready State
 		// Check if the request has a valid Pravega version
 		normRequestVersion, err := util.NormalizeVersion(requestVersion)
 		if err != nil {
@@ -150,7 +151,6 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 		if requestVersion != p.Status.GetLastVersion() {
 			return fmt.Errorf("unsupported rollback from version %s to %s", p.Status.CurrentVersion, requestVersion)
 		}
-		return nil
 	}
 	return nil
 }
@@ -169,25 +169,25 @@ func (pwh *pravegaWebhookHandler) clusterIsAvailable(ctx context.Context, p *pra
 		return fmt.Errorf("failed to obtain PravegaCluster resource: %v", err)
 	}
 
-	// Its fine to modify cluster version in ready or upgrade failed state
-	if found.Status.IsClusterInReadyState() || found.Status.IsClusterInUpgradeFailedState() {
-		return nil
-	} else {
-		if found.Status.IsClusterInUpgradingState() {
-			// Reject the request if the requested version is new.
-			if p.Spec.Version != found.Spec.Version && p.Spec.Version != found.Status.CurrentVersion {
-				return fmt.Errorf("failed to process the request, cluster is upgrading")
-			}
+	if found.Status.IsClusterInUpgradingState() {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version && p.Spec.Version != found.Status.CurrentVersion {
+			return fmt.Errorf("failed to process the request, cluster is upgrading")
 		}
-
-		if found.Status.IsClusterInRollbackState() {
-			// Reject the request if the requested version is new.
-			if p.Spec.Version != found.Spec.Version {
-				return fmt.Errorf("failed to process the request, cluster is in rollback")
-			}
-		}
-		return fmt.Errorf("Cannot update cluster version when cluster is in Error State")
 	}
+
+	if found.Status.IsClusterInRollbackState() {
+		// Reject the request if the requested version is new.
+		if p.Spec.Version != found.Spec.Version {
+			return fmt.Errorf("failed to process the request, cluster is in rollback")
+		}
+	}
+
+	if p.Status.IsClusterInErrorState() && !p.Status.IsClusterInUpgradeFailedState() {
+		return fmt.Errorf("failed to process the request, cluster is in error state.")
+	}
+
+	return nil
 }
 
 // pravegaWebhookHandler implements inject.Client.

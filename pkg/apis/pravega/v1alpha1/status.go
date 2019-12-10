@@ -206,6 +206,14 @@ func (ps *ClusterStatus) GetLastVersion() (previousVersion string) {
 	return ps.VersionHistory[len-1]
 }
 
+func (ps *ClusterStatus) IsClusterInErrorState() bool {
+	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
+	if errorCondition != nil && errorCondition.Status == corev1.ConditionTrue {
+		return true
+	}
+	return false
+}
+
 func (ps *ClusterStatus) IsClusterInUpgradeFailedState() bool {
 	_, errorCondition := ps.GetClusterCondition(ClusterConditionError)
 	if errorCondition == nil {

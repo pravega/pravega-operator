@@ -356,6 +356,46 @@ var _ = Describe("Admission webhook", func() {
 					err = pwh.mutatePravegaManifest(context.TODO(), p)
 					Ω(err).Should(MatchError("unsupported rollback from version 0.5.0-001 to 0.5.0-003"))
 				})
+
+				It("should pass if version is same as previous stable version", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-001",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).Should(BeNil())
+					err = pwh.mutatePravegaManifest(context.TODO(), p)
+					Ω(err).Should(BeNil())
+				})
+			})
+		})
+
+		Context("Version edit when cluster in Error state ", func() {
+			var (
+				client client.Client
+				err    error
+			)
+
+			BeforeEach(func() {
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.5.0-002",
+				}
+				p.Status.CurrentVersion = "0.5.0-001"
+				p.Status.Init()
+				p.Status.SetPodsReadyConditionFalse()
+				p.Status.SetErrorConditionTrue("Some strange reason", "some error message")
+
+				client = fake.NewFakeClient(p)
+				pwh = &pravegaWebhookHandler{client: client}
+			})
+
+			Context("Sending request when cluster in error state", func() {
+				It("should not pass if cluster in error state", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-033",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).Should(MatchError("failed to process the request, cluster is in error state."))
+				})
 			})
 		})
 	})
