@@ -354,7 +354,7 @@ var _ = Describe("Admission webhook", func() {
 					err = pwh.clusterIsAvailable(context.TODO(), p)
 					Ω(err).Should(BeNil())
 					err = pwh.mutatePravegaManifest(context.TODO(), p)
-					Ω(err).Should(MatchError("Rollback to version 0.5.0-003 not supported. Only rollback to previous stable version is supported."))
+					Ω(err).Should(MatchError("Rollback to version 0.5.0-003 not supported. Only rollback version 0.5.0-001 is supported."))
 				})
 
 				It("should pass if version is same as previous stable version", func() {
