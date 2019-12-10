@@ -106,54 +106,52 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 
 	if p.Status.IsClusterInUpgradeFailedState() {
 		if requestVersion != p.Status.GetLastVersion() {
-			return fmt.Errorf("Rollback to version %s not supported. Only rollback version %s is supported.", requestVersion, p.Status.GetLastVersion())
+			return fmt.Errorf("Rollback to version %s not supported. Only rollback to version %s is supported.", requestVersion, p.Status.GetLastVersion())
 		}
+		return nil
 	}
 
-	if p.Status.IsClusterInReadyState() {
-		// Allow upgrade only if Cluster is in Ready State
-		// Check if the request has a valid Pravega version
-		normRequestVersion, err := util.NormalizeVersion(requestVersion)
-		if err != nil {
-			return fmt.Errorf("request version is not in valid format: %v", err)
-		}
-		if _, ok := supportedVersions[normRequestVersion]; !ok {
-			return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
-		}
-
-		// Check if the request is an upgrade
-		found := &pravegav1alpha1.PravegaCluster{}
-		nn := types.NamespacedName{
-			Namespace: p.Namespace,
-			Name:      p.Name,
-		}
-		err = pwh.client.Get(context.TODO(), nn, found)
-		if err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to obtain PravegarequestVersionCluster resource: %v", err)
-		}
-
-		foundVersion := found.Spec.Version
-		// This is not an upgrade if "found" is empty or the requested version is equal to the running version
-		if errors.IsNotFound(err) || foundVersion == requestVersion {
-			return nil
-		}
-
-		// This is an upgrade, check if this requested version is in the upgrade path
-		normFoundVersion, err := util.NormalizeVersion(foundVersion)
-		if err != nil {
-			// It should never happen
-			return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
-		}
-		upgradeList, ok := supportedVersions[normFoundVersion]
-		if !ok {
-			// It should never happen
-			return fmt.Errorf("failed to find current cluster version in the supported versions")
-		}
-		if !util.ContainsVersion(upgradeList, normRequestVersion) {
-			return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
-		}
+	// Allow upgrade only if Cluster is in Ready State
+	// Check if the request has a valid Pravega version
+	normRequestVersion, err := util.NormalizeVersion(requestVersion)
+	if err != nil {
+		return fmt.Errorf("request version is not in valid format: %v", err)
+	}
+	if _, ok := supportedVersions[normRequestVersion]; !ok {
+		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
+	// Check if the request is an upgrade
+	found := &pravegav1alpha1.PravegaCluster{}
+	nn := types.NamespacedName{
+		Namespace: p.Namespace,
+		Name:      p.Name,
+	}
+	err = pwh.client.Get(context.TODO(), nn, found)
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to obtain PravegarequestVersionCluster resource: %v", err)
+	}
+
+	foundVersion := found.Spec.Version
+	// This is not an upgrade if "found" is empty or the requested version is equal to the running version
+	if errors.IsNotFound(err) || foundVersion == requestVersion {
+		return nil
+	}
+
+	// This is an upgrade, check if this requested version is in the upgrade path
+	normFoundVersion, err := util.NormalizeVersion(foundVersion)
+	if err != nil {
+		// It should never happen
+		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
+	}
+	upgradeList, ok := supportedVersions[normFoundVersion]
+	if !ok {
+		// It should never happen
+		return fmt.Errorf("failed to find current cluster version in the supported versions")
+	}
+	if !util.ContainsVersion(upgradeList, normRequestVersion) {
+		return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
+	}
 	return nil
 }
 

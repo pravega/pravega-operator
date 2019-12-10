@@ -52,8 +52,6 @@ var _ = Describe("Admission webhook", func() {
 					Namespace: Namespace,
 				},
 			}
-			p.Status.Init()
-			p.Status.SetPodsReadyConditionTrue()
 			s.AddKnownTypes(v1alpha1.SchemeGroupVersion, p)
 		})
 
@@ -283,7 +281,6 @@ var _ = Describe("Admission webhook", func() {
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.5.0-001",
 				}
-				p.Status.SetPodsReadyConditionFalse()
 				p.Status.SetUpgradingConditionTrue("", "")
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
@@ -339,7 +336,6 @@ var _ = Describe("Admission webhook", func() {
 				}
 				p.Status.CurrentVersion = "0.5.0-001"
 				p.Status.Init()
-				p.Status.SetPodsReadyConditionFalse()
 				p.Status.SetErrorConditionTrue("UpgradeFailed", "some error message")
 
 				client = fake.NewFakeClient(p)
@@ -354,7 +350,7 @@ var _ = Describe("Admission webhook", func() {
 					err = pwh.clusterIsAvailable(context.TODO(), p)
 					Ω(err).Should(BeNil())
 					err = pwh.mutatePravegaManifest(context.TODO(), p)
-					Ω(err).Should(MatchError("Rollback to version 0.5.0-003 not supported. Only rollback version 0.5.0-001 is supported."))
+					Ω(err).Should(MatchError("Rollback to version 0.5.0-003 not supported. Only rollback to version 0.5.0-001 is supported."))
 				})
 
 				It("should pass if version is same as previous stable version", func() {
@@ -381,7 +377,6 @@ var _ = Describe("Admission webhook", func() {
 				}
 				p.Status.CurrentVersion = "0.5.0-001"
 				p.Status.Init()
-				p.Status.SetPodsReadyConditionFalse()
 				p.Status.SetErrorConditionTrue("Some strange reason", "some error message")
 
 				client = fake.NewFakeClient(p)
