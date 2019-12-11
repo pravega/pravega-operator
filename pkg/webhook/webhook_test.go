@@ -78,7 +78,6 @@ var _ = Describe("Admission webhook", func() {
 				It("should use version to 0.3.2-rc3", func() {
 					Ω(p.Spec.Version).Should(Equal("0.3.2-rc3"))
 				})
-
 			})
 
 			Context("Version only in .spec.Pravega.Image.Tag", func() {
@@ -308,6 +307,7 @@ var _ = Describe("Admission webhook", func() {
 				p.Spec = v1alpha1.ClusterSpec{
 					Version: "0.5.0-001",
 				}
+				p.Status.SetPodsReadyConditionFalse()
 				p.Status.SetRollbackConditionTrue("", "")
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
@@ -324,5 +324,74 @@ var _ = Describe("Admission webhook", func() {
 			})
 		})
 
+		Context("Rollback version", func() {
+			var (
+				client client.Client
+				err    error
+			)
+
+			BeforeEach(func() {
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.5.0-002",
+				}
+				p.Status.CurrentVersion = "0.5.0-001"
+				p.Status.Init()
+				p.Status.SetErrorConditionTrue("UpgradeFailed", "some error message")
+
+				client = fake.NewFakeClient(p)
+				pwh = &pravegaWebhookHandler{client: client}
+			})
+
+			Context("Sending request when upgrade failed", func() {
+				It("should not pass if version is different from previous stable version", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-003",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).Should(BeNil())
+					err = pwh.mutatePravegaManifest(context.TODO(), p)
+					Ω(err).Should(MatchError("Rollback to version 0.5.0-003 not supported. Only rollback to version 0.5.0-001 is supported."))
+				})
+
+				It("should pass if version is same as previous stable version", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-001",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).Should(BeNil())
+					err = pwh.mutatePravegaManifest(context.TODO(), p)
+					Ω(err).Should(BeNil())
+				})
+			})
+		})
+
+		Context("Version edit when cluster in Error state ", func() {
+			var (
+				client client.Client
+				err    error
+			)
+
+			BeforeEach(func() {
+				p.Spec = v1alpha1.ClusterSpec{
+					Version: "0.5.0-002",
+				}
+				p.Status.CurrentVersion = "0.5.0-001"
+				p.Status.Init()
+				p.Status.SetErrorConditionTrue("Some strange reason", "some error message")
+
+				client = fake.NewFakeClient(p)
+				pwh = &pravegaWebhookHandler{client: client}
+			})
+
+			Context("Sending request when cluster in error state", func() {
+				It("should not pass if cluster is in error state", func() {
+					p.Spec = v1alpha1.ClusterSpec{
+						Version: "0.5.0-033",
+					}
+					err = pwh.clusterIsAvailable(context.TODO(), p)
+					Ω(err).Should(MatchError("failed to process the request, cluster is in error state."))
+				})
+			})
+		})
 	})
 })
