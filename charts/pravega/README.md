@@ -44,6 +44,7 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `externalAccess.type` | Pravega external access type | `LoadBalancer` |
 | `bookkeeper.image.repository` | Image repo for Bookkeeper image | `pravega/bookkeeper` |
 | `bookkeeper.replicas` | Replicas for Bookkeeper | `3` |
+| `bookkeeper.storage.className` | Storage class for Bookkeeper volumes | `standard` |
 | `bookkeeper.storage.ledgerVolumeRequest` | Request storage for ledgerVolume | `10Gi` |
 | `bookkeeper.storage.journalVolumeRequest` | Request storage for journalVolume | `10Gi` |
 | `bookkeeper.storage.indexVolumeRequest` | Request storage for indexVolume | `10Gi` |
@@ -53,4 +54,5 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `pravega.segmentStoreReplicas` | Replicas for segmentStore | `1` |
 | `pravega.debugLogging` | Enable debug logging | `false` |
 | `pravega.cacheVolumeRequest` | Request storage for cacheVolume | `20Gi` |
+| `pravega.storage.className` | Storage class for Pravega volume | `standard` |
 | `pravega.tier2` | Name of the PVC used for Tier 2 storage | `pravega-tier2` |
