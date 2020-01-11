@@ -27,19 +27,19 @@ spec:
     storage:
       ledgerVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
+        storageClassName: {{ .Values.bookkeeper.storage.className }}
         resources:
           requests:
             storage: {{ .Values.bookkeeper.storage.ledgerVolumeRequest }}
       journalVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
+        storageClassName: {{ .Values.bookkeeper.storage.className }}
         resources:
           requests:
             storage: {{ .Values.bookkeeper.storage.journalVolumeRequest }}
       indexVolumeClaimTemplate:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
+        storageClassName: {{ .Values.bookkeeper.storage.className }}
         resources:
           requests:
             storage: {{ .Values.bookkeeper.storage.indexVolumeRequest }}
@@ -70,7 +70,7 @@ spec:
     debugLogging: {{ .Values.pravega.debugLogging }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
+      storageClassName: {{ .Values.pravega.storage.className }}
       resources:
         requests:
           storage: {{ .Values.pravega.cacheVolumeRequest }}

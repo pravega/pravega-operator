@@ -17,6 +17,7 @@ bookkeeper:
     repository: pravega/bookkeeper
   replicas: 3
   storage:
+    className: standard
     ledgerVolumeRequest: 10Gi
     journalVolumeRequest: 10Gi
     indexVolumeRequest: 10Gi
@@ -29,4 +30,6 @@ pravega:
   segmentStoreReplicas: 1
   debugLogging: false
   cacheVolumeRequest: 20Gi
+  storage:
+    className: standard
   tier2: pravega-tier2
