@@ -27,7 +27,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.4.0"
+	DefaultPravegaVersion = "0.6.1"
 )
 
 func init() {
@@ -101,7 +101,7 @@ type ClusterSpec struct {
 	//pravega-bookie-0.pravega-bookie-headless.default:3181,
 	//pravega-bookie-1.pravega-bookie-headless.default:3181,
 	//pravega-bookie-2.pravega-bookie-headless.default:3181
-	BookkeeperUri string `json:"bookeeperUri"`
+	BookkeeperUri string `json:"bookkeeperUri"`
 
 	// Pravega configuration
 	Pravega *PravegaSpec `json:"pravega"`

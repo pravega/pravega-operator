@@ -150,50 +150,17 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				})
 			})
 
-			Context("Upgrade Bookkeeper", func() {
-				var (
-					foundPravega *v1alpha1.PravegaCluster
-					sts          *appsv1.StatefulSet
-				)
-				BeforeEach(func() {
-					sts = &appsv1.StatefulSet{}
-					name := util.StatefulSetNameForBookie(p.Name)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-					sts.Status.ReadyReplicas = 1
-					r.client.Update(context.TODO(), sts)
-
-					_, _ = r.Reconcile(req)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-					foundPravega = &v1alpha1.PravegaCluster{}
-					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
-				})
-
-				It("should set upgrade condition reason to UpgradingBookkeeperReason and message to 0", func() {
-					_, upgradeCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
-					Ω(upgradeCondition.Reason).Should(Equal(pravegav1alpha1.UpdatingBookkeeperReason))
-					Ω(upgradeCondition.Message).Should(Equal("0"))
-				})
-			})
-
 			Context("Upgrade Segmentstore", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
-					sts          *appsv1.StatefulSet
+					//sts          *appsv1.StatefulSet
 				)
 				BeforeEach(func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
-					// Bookkeeper
-					sts = &appsv1.StatefulSet{}
-					name := util.StatefulSetNameForBookie(p.Name)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-					targetImage, _ := util.BookkeeperTargetImage(foundPravega)
-					sts.Spec.Template.Spec.Containers[0].Image = targetImage
-					r.client.Update(context.TODO(), sts)
-
 					_, _ = r.Reconcile(req)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+					//_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -214,23 +181,17 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
-					// Bookkeeper
-					sts = &appsv1.StatefulSet{}
-					name := util.StatefulSetNameForBookie(p.Name)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-					targetImage, _ := util.BookkeeperTargetImage(foundPravega)
-					sts.Spec.Template.Spec.Containers[0].Image = targetImage
-					r.client.Update(context.TODO(), sts)
-
 					// Segmentstore
-					name = util.StatefulSetNameForSegmentstore(p.Name)
+					sts = &appsv1.StatefulSet{}
+					name := util.StatefulSetNameForSegmentstore(p.Name)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-					targetImage, _ = util.PravegaTargetImage(foundPravega)
+					targetImage, _ := util.PravegaTargetImage(foundPravega)
 					sts.Spec.Template.Spec.Containers[0].Image = targetImage
 					r.client.Update(context.TODO(), sts)
 
 					_, _ = r.Reconcile(req)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -390,24 +351,6 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				})
 			})
 
-			Context("Rollback Bookkeeper", func() {
-				var (
-					foundPravega *v1alpha1.PravegaCluster
-				)
-				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					foundPravega = &v1alpha1.PravegaCluster{}
-					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
-				})
-
-				It("should set rollback condition reason to UpdatingBookkeeper and message to 0", func() {
-					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
-					Ω(rollbackCondition.Reason).Should(Equal(pravegav1alpha1.UpdatingBookkeeperReason))
-					Ω(rollbackCondition.Message).Should(Equal("0"))
-				})
-			})
 			Context("Rollback Completed", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
