@@ -46,11 +46,6 @@ func testUpgradeCluster(t *testing.T) {
 			Repository: "adrianmo/pravega",
 		},
 	}
-	cluster.Spec.Bookkeeper.Image = &api.BookkeeperImageSpec{
-		ImageSpec: api.ImageSpec{
-			Repository: "adrianmo/bookkeeper",
-		},
-	}
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)
 	g.Expect(err).NotTo(HaveOccurred())

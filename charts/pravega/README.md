@@ -42,13 +42,7 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `zookeeperUri` | Zookeeper service address | `zk-client:2181` |
 | `externalAccess.enabled` | Enable Pravega external access | `false` |
 | `externalAccess.type` | Pravega external access type | `LoadBalancer` |
-| `bookkeeper.image.repository` | Image repo for Bookkeeper image | `pravega/bookkeeper` |
-| `bookkeeper.replicas` | Replicas for Bookkeeper | `3` |
-| `bookkeeper.storage.className` | Storage class for Bookkeeper volumes | `standard` |
-| `bookkeeper.storage.ledgerVolumeRequest` | Request storage for ledgerVolume | `10Gi` |
-| `bookkeeper.storage.journalVolumeRequest` | Request storage for journalVolume | `10Gi` |
-| `bookkeeper.storage.indexVolumeRequest` | Request storage for indexVolume | `10Gi` |
-| `bookkeeper.autoRecovery`| Enable Bookkeeper autoRecovery | `true` |
+| `bookkeeperUri` | URL for Bookkeeper Servers | `bookkeeper-client:3181` |
 | `pravega.image.repository` | Image repo for Pravega image | `pravega/pravega` |
 | `pravega.controllerReplicas` | Replicas for controller | `1` |
 | `pravega.segmentStoreReplicas` | Replicas for segmentStore | `1` |

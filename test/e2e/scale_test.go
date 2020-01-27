@@ -46,7 +46,6 @@ func testScaleCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Scale up Pravega cluster, increase bookies and segment store size by 1
-	pravega.Spec.Bookkeeper.Replicas = 4
 	pravega.Spec.Pravega.SegmentStoreReplicas = 2
 	podSize = 7
 
@@ -61,7 +60,6 @@ func testScaleCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Scale down Pravega cluster back to default
-	pravega.Spec.Bookkeeper.Replicas = 3
 	pravega.Spec.Pravega.SegmentStoreReplicas = 1
 	podSize = 5
 
@@ -69,9 +67,6 @@ func testScaleCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.CheckPvcSanity(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Delete cluster
