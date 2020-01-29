@@ -1,0 +1,155 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: bookkeeperclusters.bookkeeper.pravega.io
+spec:
+  group: bookkeeper.pravega.io
+  names:
+    kind: BookkeeperCluster
+    listKind: BookkeeperClusterList
+    plural: bookkeeperclusters
+    singular: bookkeepercluster
+    shortNames:
+      - bk
+  additionalPrinterColumns:
+  - name: Version
+    type: string
+    description: The current bookkeeper version
+    JSONPath: .status.currentVersion
+  - name: Desired Version
+    type: string
+    description: The desired bookkeeper version
+    JSONPath: .status.TargetVersion
+  - name: Desired Members
+    type: integer
+    description: The number of desired bookkeeper members
+    JSONPath: .status.replicas
+  - name: Ready Members
+    type: integer
+    description: The number bookkeeper members ready
+    JSONPath: .status.readyReplicas
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  scope: Namespaced
+  version: v1alpha1
+  subresources:
+    status: {}
+
+---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookkeeper-operator
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: bookkeeper-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - "*"
+  verbs:
+  - '*'
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: bookkeeper-operator
+subjects:
+- kind: ServiceAccount
+  name: bookkeeper-operator
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: bookkeeper-operator
+  apiGroup: rbac.authorization.k8s.io
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookkeeper-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: bookkeeper-operator
+  template:
+    metadata:
+      labels:
+        name: bookkeeper-operator
+        component: bookkeeper-operator
+    spec:
+      serviceAccountName: bookkeeper-operator
+      containers:
+        - name: bookkeeper-operator
+          image: pravega/bookkeeper-operator:latest
+          ports:
+          - containerPort: 61000
+            name: metrics
+          command:
+          - bookkeeper-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "bookkeeper-operator"
+
+
+---
+
+apiVersion: "bookkeeper.pravega.io/v1alpha1"
+kind: "BookkeeperCluster"
+metadata:
+  name: "pravega-bk"
+spec:
+  zookeeperUri: zk-client:2181
+
+  image:
+      repository: pravega/bookkeeper
+      tag: 0.6.1
+      pullPolicy: IfNotPresent
+
+  replicas: 3
+
+  storage:
+      ledgerVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+      journalVolumeClaimTemplate:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "standard"
+        resources:
+          requests:
+            storage: 10Gi
+
+  autoRecovery: true
+  version: 0.6.1
