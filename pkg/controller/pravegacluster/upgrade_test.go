@@ -153,14 +153,12 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			Context("Upgrade Segmentstore", func() {
 				var (
 					foundPravega *v1alpha1.PravegaCluster
-					//sts          *appsv1.StatefulSet
 				)
 				BeforeEach(func() {
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
 					_, _ = r.Reconcile(req)
-					//_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					foundPravega = &v1alpha1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})

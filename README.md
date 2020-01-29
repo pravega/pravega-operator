@@ -12,12 +12,12 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
     * [Install the Operator](#install-the-operator)
-    * [Upgrade the Operator](#upgrade-the-operator)
     * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
     * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
     * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
     * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
     * [Uninstall the Operator](#uninstall-the-operator)
+    * [Upgrade the Operator](#upgrade-the-operator)
     * [Manual installation](#manual-installation)
  * [Configuration](#configuration)
  * [Development](#development)
@@ -39,6 +39,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 - Kubernetes 1.9+
 - Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- An existing Apache Bookkeeper 4.7.3 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Quickstart
 
