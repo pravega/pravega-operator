@@ -77,14 +77,14 @@ jobs:
         # Install NFS provisioner
         - helm install stable/nfs-server-provisioner
         - kubectl -n default create -f test/e2e/resources/tier2.yaml
-        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
+        - travis_wait 20 JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
         # Install ZooKeeper
         - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
         - #JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
-        - JSONPATH1='{.status.replicas}';JSONPATH2='{.status.readyReplicas}';replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2);echo "REPLICAS=$replicas, READY=$ready"; until [ "$replicas" == "$ready" ] do sleep 1; done
+        - travis_wait 20 JSONPATH1='{.spec.replicas}';JSONPATH2='{.status.readyReplicas}';replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2);echo "REPLICAS=$replicas, READY=$ready"; until [ "$replicas" == "$ready" ] do sleep 1; done
         # Install Bookkeeper
-        - #kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
-        - #JSONP='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l component=bookie -o jsonpath="$JSONP" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+        - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
+        - travis_wait 20 JSONPATH1='{.spec.replicas}';JSONPATH2='{.status.readyReplicas}';replicas=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH1);ready=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH2);echo "REPLICAS=$replicas, READY=$ready"; until [ "$replicas" == "$ready" ] do sleep 1; done
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
