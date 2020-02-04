@@ -39,7 +39,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 - Kubernetes 1.9+
 - Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
-- An existing Apache Bookkeeper 4.7.3 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
+- An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Quickstart
 
@@ -124,25 +124,20 @@ bar-pravega  0.4.0     7                 7               2m
 ```
 $ kubectl get all -l pravega_cluster=bar-pravega
 NAME                                              READY   STATUS    RESTARTS   AGE
-pod/bar-bookie-0                              1/1     Running   0          2m
-pod/bar-bookie-1                              1/1     Running   0          2m
-pod/bar-bookie-2                              1/1     Running   0          2m
 pod/bar-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
 pod/bar-pravega-segmentstore-0                1/1     Running   0          2m
 pod/bar-pravega-segmentstore-1                1/1     Running   0          1m
 pod/bar-pravega-segmentstore-2                1/1     Running   0          30s
 
-NAME                                            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
-service/bar-bookie-headless                 ClusterIP   None          <none>        3181/TCP             2m
+NAME                                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
 service/bar-pravega-controller              ClusterIP   10.23.244.3   <none>        10080/TCP,9090/TCP   2m
 service/bar-pravega-segmentstore-headless   ClusterIP   None          <none>        12345/TCP            2m
 
 NAME                                                    DESIRED   CURRENT   READY   AGE
-replicaset.apps/bar-pravega-controller-64ff87fc49   1         1         1       2m
+replicaset.apps/bar-pravega-controller-64ff87fc49       1         1         1       2m
 
 NAME                                            DESIRED   CURRENT   AGE
-statefulset.apps/bar-bookie                 3         3         2m
-statefulset.apps/bar-pravega-segmentstore   3         3         2m
+statefulset.apps/bar-pravega-segmentstore       3         3         2m
 ```
 
 By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:

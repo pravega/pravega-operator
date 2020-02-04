@@ -74,16 +74,16 @@ jobs:
         - kubectl create serviceaccount --namespace kube-system tiller
         - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
         - helm init --service-account tiller --wait
+        # Install NFS provisioner
+        - helm install stable/nfs-server-provisioner
+        - kubectl -n default create -f test/e2e/resources/tier2.yaml
+        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
         # Install ZooKeeper
         - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
         - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get zookeepercluster example -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster example -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 1; done
         # Install Bookkeeper
         - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
         - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH1);ready=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 1; done
-        # Install NFS provisioner
-        - helm install stable/nfs-server-provisioner
-        - kubectl -n default create -f test/e2e/resources/tier2.yaml
-        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
