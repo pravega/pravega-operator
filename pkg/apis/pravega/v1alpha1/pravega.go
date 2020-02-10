@@ -297,7 +297,7 @@ type FileSystemSpec struct {
 type ECSSpec struct {
 	Uri         string `json:"uri"`
 	Bucket      string `json:"bucket"`
-	Root        string `json:"root"`
+	Prefix      string `json:"prefix"`
 	Namespace   string `json:"namespace"`
 	Credentials string `json:"credentials"`
 }
