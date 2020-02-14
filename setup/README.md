@@ -18,7 +18,7 @@ Create separate sub-directories for [zookeeper-operator](https://github.com/prav
 To install the Pravega Cluster along with all the required dependencies, run the following command:
 
 ```
-$ ./install.sh 1
+$ ./pravegacluster.sh install
 ```
 
 ## Uninstalling the Pravega Cluster
@@ -26,5 +26,5 @@ $ ./install.sh 1
 To uninstall the Pravega Cluster along with all its dependencies, run the following command:
 
 ```
-$ ./install.sh 2
+$ ./pravegacluster.sh delete
 ```
