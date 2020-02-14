@@ -258,7 +258,7 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 			"TIER2_STORAGE":        "EXTENDEDS3",
 			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
 			"EXTENDEDS3_URI":       pravegaSpec.Tier2.Ecs.Uri,
-			"EXTENDEDS3_ROOT":      pravegaSpec.Tier2.Ecs.Root,
+			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
 			"EXTENDEDS3_NAMESPACE": pravegaSpec.Tier2.Ecs.Namespace,
 		}
 	}
