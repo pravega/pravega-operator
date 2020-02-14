@@ -15,17 +15,14 @@ bk_name=br
 pr_opr_name=foo
 pr_name=bar
 
-if [ $1 == "install" ]; then
-
+install_cluster () {
   zk_chart=$(cat ../charts/zookeeper/Chart.yaml | grep name:)
   arr=(`echo ${zk_chart}`)
   zk_chart_name=${arr[1]}
-  echo $zk_chart_name
 
   bk_chart=$(cat ../charts/bookkeeper/Chart.yaml | grep name:)
   arr=(`echo ${bk_chart}`)
   bk_chart_name=${arr[1]}
-  echo $bk_chart_name
 
 	helm install ../charts/zookeeper-operator --name $zk_opr_name
 	kubectl rollout status deploy/$zk_opr_name-zookeeper-operator
@@ -75,14 +72,23 @@ if [ $1 == "install" ]; then
 	kubectl rollout status deploy/$pr_opr_name-pravega-operator
 
 	helm install ../charts/pravega --name $pr_name --set zookeeperUri=$zk_svc:$zk_port --set bookkeeperUri=$bk_svc:$bk_port
+}
 
-elif [ $1 == "delete" ]; then
-	helm del $pr_name --purge
+delete_cluster() {
+  helm del $pr_name --purge
 	helm del $bk_name --purge
 	helm del $zk_name --purge
 	helm del $pr_opr_name --purge
 	helm del $bk_opr_name --purge
 	helm del $zk_opr_name --purge
+}
+
+if [ $1 == "install" ]; then
+  install_cluster
+
+elif [ $1 == "delete" ]; then
+	delete_cluster
+
 else
 	echo "Error: Invalid argument"
   echo "Use [install] to install the cluster or [delete] to remove the existing setup"

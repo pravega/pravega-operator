@@ -9,9 +9,19 @@ The purpose of this script is to sequentially install all the dependencies (i.e.
   - [Tier 2 Setup](https://github.com/pravega/pravega-operator#set-up-tier-2-storage)
   - Copy the necessary charts to the right location
 
-To copy the charts from [Zookeeper Operator](https://github.com/pravega/zookeeper-operator/tree/master/charts) and [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts) repositories inside the charts directory of this repository.
+First clone the [Zookeeper Operator](https://github.com/pravega/zookeeper-operator) and [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator) repositories locally using :
+```
+git clone https://github.com/pravega/zookeeper-operator
+git clone https://github.com/pravega/bookkeeper-operator
+```
 
-Create separate sub-directories for [zookeeper-operator](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper-operator), [zookeeper](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper), [bookkeeper-operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega-operator) and [bookkeeper](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega) charts alongside the directories for [pravega-operator](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator) and [pravega](https://github.com/pravega/pravega-operator/tree/master/charts/pravega) charts inside the [charts](https://github.com/pravega/pravega-operator/tree/master/charts) directory.
+Next, copy the contents of the charts directory from both these repositories inside the charts directory of this repository.
+```
+cp -r <path-to-zookeeper-operator-repo>/charts/ <path-to-pravega-operator-repo>/charts/.
+cp -r <path-to-bookkeeper-operator-repo>/charts/ <path-to-pravega-operator-repo>/charts/.
+```
+
+This will result in separate sub-directories for [zookeeper-operator](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper-operator), [zookeeper](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper), [bookkeeper-operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega-operator) and [bookkeeper](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega) charts alongside the directories for [pravega-operator](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator) and [pravega](https://github.com/pravega/pravega-operator/tree/master/charts/pravega) charts inside the [charts](https://github.com/pravega/pravega-operator/tree/master/charts) directory.
 
 ## Installing the Pravega Cluster
 
