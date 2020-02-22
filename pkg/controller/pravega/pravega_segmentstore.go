@@ -13,6 +13,7 @@ package pravega
 import (
 	"fmt"
 	"strings"
+	"net/url"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -75,8 +76,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 	}
-
-	environment = configureTier2Secrets(environment, p.Spec.Pravega)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
@@ -253,13 +252,11 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 	}
 
 	if pravegaSpec.Tier2.Ecs != nil {
-		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
+			"EXTENDEDS3_CONFIGURI": updateECSConfigUri(pravegaSpec),
 			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
-			"EXTENDEDS3_URI":       pravegaSpec.Tier2.Ecs.Uri,
 			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
-			"EXTENDEDS3_NAMESPACE": pravegaSpec.Tier2.Ecs.Namespace,
 		}
 	}
 
@@ -272,6 +269,36 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 	}
 
 	return make(map[string]string)
+}
+
+func updateECSConfigUri(pravegaSpec *api.PravegaSpec) string {
+
+	environment := []corev1.EnvFromSource{
+		{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: util.ConfigMapNameForSegmentstore(p.Name),
+				},
+			},
+		},
+	}
+	environment = configureTier2Secrets(environment, pravegaSpec)
+
+    u, _ := url.Parse(pravegaSpec.Tier2.Ecs.ConfigUri)
+    parameters, _ := url.ParseQuery(u.RawQuery)
+    ecsCredential := retrieveECSCredential()
+
+    _, identityExists := parameters["identity"]
+    if !identityExists {
+        parameters.Add("identity", environment["EXTENDEDS3_ACCESS_KEY_ID"])
+    }
+    _, secretExists := parameters["secretKey"]
+    if !secretExists {
+        parameters.Add("secretKey", environment["EXTENDEDS3_SECRET_KEY"])
+    }
+
+    u.RawQuery = parameters.Encode()
+    return u.Scheme + "://" + u.Host + "?" + u.RawQuery
 }
 
 func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {

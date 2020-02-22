@@ -107,10 +107,9 @@ spec:
           claimName: pravega-tier2
 
 #      ecs:
-#        uri: http://10.247.10.52:9020
+#        configUri: http://10.247.10.52:9020?namespace=pravega
 #        bucket: shared
 #        prefix: "pravega/example"
-#        namespace: pravega
 #        credentials: ecs-credentials
 
 #      hdfs:

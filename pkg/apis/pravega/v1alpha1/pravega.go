@@ -295,10 +295,9 @@ type FileSystemSpec struct {
 
 // ECSSpec contains the connection details to a Dell EMC ECS system
 type ECSSpec struct {
-	Uri         string `json:"uri"`
+	ConfigUri   string `json:"configUri"`
 	Bucket      string `json:"bucket"`
 	Prefix      string `json:"prefix"`
-	Namespace   string `json:"namespace"`
 	Credentials string `json:"credentials"`
 }
 
