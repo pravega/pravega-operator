@@ -13,6 +13,7 @@ ARG ALPINE_VERSION=3.10
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
 
 ARG PROJECT_NAME=pravega-operator
+ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
 
 # Build version and commit SHA should be passed in when performing docker build
 ARG VERSION=0.0.0-localdev
