@@ -3,7 +3,7 @@ sudo: required
 language: go
 go_import_path: github.com/pravega/pravega-operator
 go:
-  - '1.11'
+  - '1.13'
 
 env:
   global:

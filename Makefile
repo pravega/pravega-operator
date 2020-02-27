@@ -16,14 +16,11 @@ TEST_IMAGE=$(REPO)-testimages:$(VERSION)
 GOOS=linux
 GOARCH=amd64
 
-.PHONY: all dep build check clean test
+.PHONY: all  build check clean test
 
-all: check test build
+all: check build 
 
-dep:
-	dep ensure -v
-
-build: dep build-go build-image
+build: build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
@@ -36,10 +33,10 @@ build-image:
 
 test: test-unit test-e2e
 
-test-unit: dep
+test-unit:
 	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
-test-e2e: dep test-e2e-remote
+test-e2e: test-e2e-remote
 
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
