@@ -138,7 +138,7 @@ Follow the [instructions to deploy Pravega manually](manual-installation.md#inst
 spec:
   tier2:
     ecs:
-      uri: http://10.247.10.52:9020?namespace=pravega
+      configUri: http://10.247.10.52:9020?namespace=pravega
       bucket: "shared"
       prefix: "pravega/example"
       credentials: ecs-credentials

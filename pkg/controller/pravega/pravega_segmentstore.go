@@ -273,20 +273,19 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 
 func updateECSConfigUri(pravegaSpec *api.PravegaSpec) string {
 
-	environment := []corev1.EnvFromSource{
-		{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: util.ConfigMapNameForSegmentstore(p.Name),
-				},
-			},
-		},
-	}
+    environment := []corev1.EnvFromSource{
+        {
+            ConfigMapRef: &corev1.ConfigMapEnvSource{
+                LocalObjectReference: corev1.LocalObjectReference{
+                    Name: util.ConfigMapNameForSegmentstore(p.Name),
+                },
+            },
+        },
+    }
 	environment = configureTier2Secrets(environment, pravegaSpec)
 
     u, _ := url.Parse(pravegaSpec.Tier2.Ecs.ConfigUri)
     parameters, _ := url.ParseQuery(u.RawQuery)
-    ecsCredential := retrieveECSCredential()
 
     _, identityExists := parameters["identity"]
     if !identityExists {
