@@ -67,7 +67,6 @@ After the `version` field is updated, the operator will detect the version chang
 When upgrading the Pravega Cluster from any version below 0.7 to version 0.7 or above, there are a few configuration changes that must be made to Pravega manifest either with the upgrade request or prior to starting the upgrade.
 
 1. Ensure that sufficient resources are allocated to segmentstore pods when moving to Pravega version 0.7 or later.
-
 ```
 segmentStoreResources:
   requests:
