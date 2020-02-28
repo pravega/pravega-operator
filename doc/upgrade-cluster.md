@@ -62,40 +62,34 @@ After the `version` field is updated, the operator will detect the version chang
 
 > Note: To trigger an upgrade please edit only the fields mentioned in this upgrade guide. We do not recommend clubbing other edits (for performance or scaling or anything else) along with the upgrade trigger. Those can be done either prior to triggering the upgrade or after the upgrade has completed successfully.
 
-#### Upgrades till Pravega 0.6
-
-When upgrading the Pravega Cluster to any version till 0.6, we need to ensure that we do not modify any field other than the `version` field while triggering the upgrade.
-
 #### Upgrade to Pravega 0.7 or above
 
 When upgrading the Pravega Cluster from any version below 0.7 to version 0.7 or above, there are a few configuration changes that must be made to Pravega manifest either with the upgrade request or prior to starting the upgrade.
 
-Refer to the following snippet from the pravega manifest file to understand the fields that need to be modified.
+1. Ensure that sufficient resources are allocated to segmentstore pods when moving to Pravega version 0.7 or later.
 
 ```
-pravega:
-
-  segmentStoreResources:
-    requests:
-      memory: "4Gi"
-      cpu: "2000m"
-    limits:
-      memory: "16Gi"
-      cpu: "8000m"
-
-  options:
-    pravegaservice.cacheMaxSize: "11811160064"
-
-  segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
+segmentStoreResources:
+  requests:
+    memory: "4Gi"
+    cpu: "2000m"
+  limits:
+    memory: "16Gi"
+    cpu: "8000m"
 ```
 
-1. Ensure that the **memory limits** field within **segmentStoreResources** is set to an appropriate value (let's call it the POD_MEM_LIMIT).
-
-2. Distribute the pod's memory (M) between JVM Heap and Direct Memory. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM and the rest for Direct Memory (12GB) i.e. POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (12GB).
+2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM and the rest for Direct Memory (12GB) i.e. POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (12GB).
 We need to ensure that the sum of JVM Heap and Direct Memory is not higher than the pod memory limit. In general, we can keep the JVM Heap fixed to 4GB and make the Direct Memory as the variable part.
-These two options can be configured through `segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]`.
+These two options can be configured through the following field of the manifest file
+```
+segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
+```
 
-3. The cache should be configured atleast 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty). This value is configured in the Segment Store options via the flag `pravegaservice.cacheMaxSize: "11811160064"` (which is 11GB, that is 12GB-1GB (for other uses)).
+3. The cache should be configured at least 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty). This value is configured in the pravega options part of the manifest file
+```
+options:
+  pravegaservice.cacheMaxSize: "11811160064"
+```
 
 To summarize the way in which the segmentstore pod memory is distributed:
 
