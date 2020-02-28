@@ -221,6 +221,32 @@ INFO[5930] error syncing cluster version, upgrade failed. failed to sync bookkee
 ...
 ```
 
+### Handling Upgrade from one version to another
+
+When upgrading from version X to version Y (where both X and Y < 0.7), we need to ensure that we do not modify any field other than the version field while triggering the upgrade. Altering of any other parameter can be handled either before triggering the upgrade or after the upgrade has successfully completed. Same holds true even when the both X and Y >= 0.7.
+
+However, when a user wants to upgrade Pravega from a version < 0.7 to a version >= 0.7, there are configuration changes that must be made to Pravega manifest. This is because from version 0.7 onwards, we no longer use Rocks DB for the Pravega Segmenstore. These changes need to be made either with the upgrade request or prior to starting the upgrade. These configuration changes are needed to make sure we have setup memory and other pravega parameters appropriately for segment store streaming cache to work as expected after moving to version 0.7.
+
+The changes that need to be made to the Pravega manifest while upgrading from a version < 0.7 to a version >= 0.7 are the following
+
+1. Ensure that the **memory limits** field within Segmentstore Resources is set to an appropriate value (let's call it the POD_MEM_LIMIT). The Segment Store cannot consume an amount of memory higher than this, otherwise we will get an Out Of Memory Killed error and the pod will be evicted.
+
+2. We need to distribute the pod's memory (M) between JVM Heap and Direct Memory. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM and the rest for Direct Memory (12GB) i.e. POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (12GB).
+We need to ensure that the sum of JVM Heap and Direct Memory is not higher than the pod memory limit. In general, we can get JVM Heap fixed to 4GB and make the Direct Memory as the variable part.
+These two options can be configured through `segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]`.
+
+3. From Pravega 0.7 onwards the memory is completely in memory, and it uses the Direct Memory part of it. But there are other things that use Direct Memory as well (like Netty). So the configuration of the cache should be 1GB or 2GB below the Direct Memory value provided. Otherwise, it will lead to problems.
+This value is configured in the Segment Store options via the flag `pravegaservice.cacheMaxSize: "11811160064"` (which is 11GB, that is 12GB-1GB (for other uses)).
+
+To summarize the way in which the segmentstore pod memory is distributed:
+
+```
+POD_MEM_LIMIT = JVM Heap + Direct Memory
+Direct Memory = pravegaservice.cacheMaxSize + 1GB/2GB (other uses)
+```
+
+> Note: No value other than the ones mentioned here should be changed while triggering the upgrade. They can be made either before triggering the upgrade or after the upgrade has completed successfully.
+
 ### Recovering from a failed upgrade
 
 See [Rollback](rollback-cluster.md)
