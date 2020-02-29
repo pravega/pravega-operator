@@ -140,7 +140,7 @@ spec:
     ecs:
       configUri: http://10.247.10.52:9020?namespace=pravega
       bucket: "shared"
-      prefix: "pravega/example"
+      prefix: "example"
       credentials: ecs-credentials
 ```
 
