@@ -19,3 +19,6 @@ serviceAccount:
 # Whether to create custom resource
 crd:
   create: true
+
+# whether to enable test mode
+testmode: false
