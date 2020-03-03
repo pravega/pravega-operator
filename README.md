@@ -12,7 +12,7 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
     * [Install the Operator](#install-the-operator)
-       * [Deploying in Test Mode](#test-mode)
+       * [Deploying in Test Mode](#deploying-in-test-mode)
     * [Upgrade the Operator](#upgrade-the-operator)
     * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
     * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
