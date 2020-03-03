@@ -30,7 +30,10 @@ Install the operator.
 $ kubectl create -f deploy/operator.yaml
 ```
 
-> Note:  We can enable testmode on operator by passing an argument `-test` in `operator.yaml` file.This will be useful if we want to run pravega on minikube or cluster with limited resources. In test mode, operator will allow us to run pravega with single bookkeeper instance.
+#### Deploying in Test Mode
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components.We do not want to encourage users to use "test mode" as it is supposed to be used only in extreme cases where we have severe resource constraints in the environment where Pravega is being deployed.
+>Note: Pravega with a single BK, controller and SSS is not recommended and has not been tested extensively. Its just a bare minimum toy setup for Pravega.
+
 ```
 containers:
   - name: pravega-operator

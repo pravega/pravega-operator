@@ -60,7 +60,7 @@ NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
 
-> Note:  We can run operator in testmode by passing `testmode: true` in `values.yaml` file. This will be useful if we want to run pravega on minikube or cluster with limited resources. In test mode, operator will allow us to run pravega with single bookkeeper instance.
+> Note:  The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `vlaues.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 ### Upgrade the Operator
 Pravega operator can be upgraded by modifying the image tag using
 ```
