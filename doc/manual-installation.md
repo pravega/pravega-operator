@@ -31,7 +31,8 @@ $ kubectl create -f deploy/operator.yaml
 ```
 
 ### Deploying in Test Mode
- We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file. Check out [test mode](../README.md#test-mode)
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file.
+ Check out [test mode](../README.md#deploying-in-test-mode)
 
 ```
 containers:
