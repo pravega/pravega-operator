@@ -30,6 +30,22 @@ Install the operator.
 $ kubectl create -f deploy/operator.yaml
 ```
 
+### Deploying in Test Mode
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file.
+ Check out [test mode](../README.md#deploying-in-test-mode)
+
+```
+containers:
+  - name: pravega-operator
+    image: pravega/pravega-operator:0.4.3-rc1
+    ports:
+    - containerPort: 60000
+      name: metrics
+    command:
+    - pravega-operator
+    imagePullPolicy: Always
+    args: [-test]
+```
 ### Set up Tier 2 Storage
 
 Pravega requires a long term storage provider known as Tier 2 storage.

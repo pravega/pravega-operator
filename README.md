@@ -12,6 +12,7 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
     * [Install the Operator](#install-the-operator)
+       * [Deploying in Test Mode](#deploying-in-test-mode)
     * [Upgrade the Operator](#upgrade-the-operator)
     * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
     * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
@@ -59,6 +60,9 @@ $ kubectl get deploy
 NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
+
+#### Deploying in Test Mode
+ The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
 Pravega operator can be upgraded by modifying the image tag using
