@@ -256,10 +256,9 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
+			"EXTENDEDS3_CONFIGURI": pravegaSpec.Tier2.Ecs.ConfigUri,
 			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
-			"EXTENDEDS3_URI":       pravegaSpec.Tier2.Ecs.Uri,
 			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
-			"EXTENDEDS3_NAMESPACE": pravegaSpec.Tier2.Ecs.Namespace,
 		}
 	}
 
