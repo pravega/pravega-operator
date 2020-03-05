@@ -124,6 +124,10 @@ type PravegaSpec struct {
 	// SegmentStoreResources includes CPU and memory resources
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 
+	// Provides the name of the configmap created by the user to provide additional key-value pairs
+	// that need to be configured into the ss pod as environmental variables
+	SegmentStoreConfigMap string `json:"segmentStoreConfigMap,omitempty"`
+
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"

@@ -31,6 +31,11 @@ func TestSegmentStore(t *testing.T) {
 
 var _ = Describe("PravegaSegmentstore", func() {
 
+	const (
+		Name      = "example"
+		Namespace = "default"
+	)
+
 	var _ = Describe("SegmentStore Test", func() {
 		var (
 			p *v1alpha1.PravegaCluster
@@ -39,7 +44,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 		BeforeEach(func() {
 			p = &v1alpha1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
+					Name:      Name,
+					Namespace: Namespace,
 				},
 			}
 		})
@@ -47,10 +53,28 @@ var _ = Describe("PravegaSegmentstore", func() {
 		Context("With one SegmentStore replica", func() {
 			var (
 				customReq *corev1.ResourceRequirements
+				cmName    string
+				cm        *corev1.ConfigMap
 				err       error
 			)
 
 			BeforeEach(func() {
+				cmName = "ss-config-map"
+				cm = &corev1.ConfigMap{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ConfigMap",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      cmName,
+						Namespace: Namespace,
+					},
+					Data: map[string]string{
+						"SVM_NAME_FILTER_PREFIX": "prefix",
+						"VCENTER_IP":             "1.0.0.1",
+					},
+				}
+
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				}
@@ -92,6 +116,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreServiceAccountName: "pravega-components",
 						ControllerResources:            customReq,
 						SegmentStoreResources:          customReq,
+						SegmentStoreConfigMap:          cmName,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						Image: &v1alpha1.PravegaImageSpec{
@@ -147,7 +172,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					_ = pravega.MakeSegmentstoreConfigMap(p, cm)
 					Ω(err).Should(BeNil())
 				})
 
@@ -167,10 +192,28 @@ var _ = Describe("PravegaSegmentstore", func() {
 		Context("With more than one SegmentStore replica", func() {
 			var (
 				customReq *corev1.ResourceRequirements
+				cmName    string
+				cm        *corev1.ConfigMap
 				err       error
 			)
 
 			BeforeEach(func() {
+				cmName = "ss-config-map"
+				cm = &corev1.ConfigMap{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ConfigMap",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      cmName,
+						Namespace: Namespace,
+					},
+					Data: map[string]string{
+						"SVM_NAME_FILTER_PREFIX": "prefix",
+						"VCENTER_IP":             "1.0.0.1",
+					},
+				}
+
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				}
@@ -212,6 +255,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreServiceAccountName:  "pravega-components",
 						ControllerResources:             customReq,
 						SegmentStoreResources:           customReq,
+						SegmentStoreConfigMap:           cmName,
 						ControllerServiceAnnotations:    annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
@@ -267,7 +311,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					_ = pravega.MakeSegmentstoreConfigMap(p, cm)
 					Ω(err).Should(BeNil())
 				})
 
@@ -287,10 +331,28 @@ var _ = Describe("PravegaSegmentstore", func() {
 		Context("With HDFS as Tier2", func() {
 			var (
 				customReq *corev1.ResourceRequirements
+				cmName    string
+				cm        *corev1.ConfigMap
 				err       error
 			)
 
 			BeforeEach(func() {
+				cmName = "ss-config-map"
+				cm = &corev1.ConfigMap{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ConfigMap",
+						APIVersion: "v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      cmName,
+						Namespace: Namespace,
+					},
+					Data: map[string]string{
+						"SVM_NAME_FILTER_PREFIX": "prefix",
+						"VCENTER_IP":             "1.0.0.1",
+					},
+				}
+
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				}
@@ -332,6 +394,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreServiceAccountName: "pravega-components",
 						ControllerResources:            customReq,
 						SegmentStoreResources:          customReq,
+						SegmentStoreConfigMap:          cmName,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						Image: &v1alpha1.PravegaImageSpec{
@@ -385,7 +448,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					_ = pravega.MakeSegmentstoreConfigMap(p, cm)
 					Ω(err).Should(BeNil())
 				})
 

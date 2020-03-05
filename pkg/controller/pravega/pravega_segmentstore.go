@@ -158,7 +158,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	return podSpec
 }
 
-func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
+func MakeSegmentstoreConfigMap(p *api.PravegaCluster, cm *corev1.ConfigMap) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
@@ -217,6 +217,14 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 
 	for k, v := range getTier2StorageOptions(p.Spec.Pravega) {
 		configData[k] = v
+	}
+
+	data := cm.Data
+	for k, v := range data {
+		_, ok := configData[k]
+		if !ok {
+			configData[k] = v
+		}
 	}
 
 	return &corev1.ConfigMap{

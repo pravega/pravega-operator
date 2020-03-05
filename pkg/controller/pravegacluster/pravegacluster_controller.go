@@ -239,7 +239,13 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 		return err
 	}
 
-	configMap := pravega.MakeSegmentstoreConfigMap(p)
+	cm := &corev1.ConfigMap{}
+	name := p.Spec.Pravega.SegmentStoreConfigMap
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, cm)
+	if err != nil {
+		log.Println("Config Map not found")
+	}
+	configMap := pravega.MakeSegmentstoreConfigMap(p, cm)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Create(context.TODO(), configMap)
 	if err != nil && !errors.IsAlreadyExists(err) {
