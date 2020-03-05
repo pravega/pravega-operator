@@ -240,17 +240,19 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 	}
 
 	cm := &corev1.ConfigMap{}
-	name := p.Spec.Pravega.SegmentStoreConfigMap
+	name := p.Spec.Pravega.SegmentStoreEnvVars
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, cm)
-	if err != nil {
-		log.Println("Config Map not found")
-	}
-	configMap := pravega.MakeSegmentstoreConfigMap(p, cm)
+	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Create(context.TODO(), configMap)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
+	flag := r.compareKeys(cm, configMap)
+	if !flag {
+		log.Println("Rejecting the environment variables provided")
+	}
+	util.SetConfigMapNameForSSEnvVars(name, flag)
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
@@ -564,4 +566,16 @@ func (r *ReconcilePravegaCluster) isRollbackTriggered(p *pravegav1alpha1.Pravega
 		return true
 	}
 	return false
+}
+
+func (r *ReconcilePravegaCluster) compareKeys(cm1 *corev1.ConfigMap, cm2 *corev1.ConfigMap) bool {
+	data1 := cm1.Data
+	data2 := cm2.Data
+	for k, _ := range data1 {
+		_, ok := data2[k]
+		if ok {
+			return false
+		}
+	}
+	return true
 }

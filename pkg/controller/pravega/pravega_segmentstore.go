@@ -66,6 +66,7 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
+	configMapName := util.GetConfigMapNameForSSEnvVars()
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -74,6 +75,16 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
+	}
+	if len(configMapName) > 0 {
+		env := corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+			},
+		}
+		environment = append(environment, env)
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
@@ -158,7 +169,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	return podSpec
 }
 
-func MakeSegmentstoreConfigMap(p *api.PravegaCluster, cm *corev1.ConfigMap) *corev1.ConfigMap {
+func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
@@ -217,14 +228,6 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster, cm *corev1.ConfigMap) *cor
 
 	for k, v := range getTier2StorageOptions(p.Spec.Pravega) {
 		configData[k] = v
-	}
-
-	data := cm.Data
-	for k, v := range data {
-		_, ok := configData[k]
-		if !ok {
-			configData[k] = v
-		}
 	}
 
 	return &corev1.ConfigMap{

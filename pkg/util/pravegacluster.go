@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	ssEnvVars     string
 	versionRegexp *regexp.Regexp
 )
 
@@ -79,6 +80,18 @@ func PdbNameForSegmentstore(clusterName string) string {
 
 func ConfigMapNameForSegmentstore(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
+}
+
+func SetConfigMapNameForSSEnvVars(name string, flag bool) {
+	if flag {
+		ssEnvVars = name
+	} else {
+		ssEnvVars = ""
+	}
+}
+
+func GetConfigMapNameForSSEnvVars() string {
+	return ssEnvVars
 }
 
 func StatefulSetNameForSegmentstore(clusterName string) string {

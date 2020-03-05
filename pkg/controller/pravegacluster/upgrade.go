@@ -342,13 +342,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 
-		cm := &corev1.ConfigMap{}
-		name := p.Spec.Pravega.SegmentStoreConfigMap
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, cm)
-		if err != nil {
-			log.Println("Config Map not found")
-		}
-		configMap := pravega.MakeSegmentstoreConfigMap(p, cm)
+		configMap := pravega.MakeSegmentstoreConfigMap(p)
 		controllerutil.SetControllerReference(p, configMap, r.scheme)
 		err = r.client.Update(context.TODO(), configMap)
 		if err != nil {
