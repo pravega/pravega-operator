@@ -1,0 +1,9 @@
+=== RUN   TestGetTestNameFromStatusLine
+=== PAUSE TestGetTestNameFromStatusLine
+=== CONT  TestGetTestNameFromStatusLine
+--- PASS: TestGetTestNameFromStatusLine (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/BaseCase (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/Indented (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/SpecialChars (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/WhenPaused (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/WhenCont (0.00s)

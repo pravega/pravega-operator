@@ -1,0 +1,6 @@
+=== RUN   TestIsPanicLine
+=== PAUSE TestIsPanicLine
+=== CONT  TestIsPanicLine
+--- PASS: TestIsPanicLine (0.00s)
+    --- PASS: TestIsPanicLine/BaseCase (0.00s)
+    --- PASS: TestIsPanicLine/NotPanic (0.00s)

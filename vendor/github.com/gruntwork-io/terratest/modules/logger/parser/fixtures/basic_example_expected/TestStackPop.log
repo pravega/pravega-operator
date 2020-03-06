@@ -1,0 +1,4 @@
+=== RUN   TestStackPop
+=== PAUSE TestStackPop
+=== CONT  TestStackPop
+--- PASS: TestStackPop (0.00s)

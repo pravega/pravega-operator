@@ -1,0 +1,5 @@
+=== RUN   TestEnsureDirectoryExistsCreatesDirectory
+=== PAUSE TestEnsureDirectoryExistsCreatesDirectory
+=== CONT  TestEnsureDirectoryExistsCreatesDirectory
+TestEnsureDirectoryExistsCreatesDirectory INFO 2018-10-20T13:15:09-07:00 Creating directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory357603033/tmpdir
+--- PASS: TestEnsureDirectoryExistsCreatesDirectory (0.00s)

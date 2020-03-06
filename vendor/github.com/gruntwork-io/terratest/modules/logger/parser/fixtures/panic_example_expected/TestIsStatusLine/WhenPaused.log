@@ -1,0 +1,2 @@
+=== RUN   TestIsStatusLine/WhenPaused
+    --- PASS: TestIsStatusLine/WhenPaused (0.00s)

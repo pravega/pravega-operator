@@ -1,0 +1,2 @@
+=== RUN   TestIsPanicLine/NotPanic
+    --- PASS: TestIsPanicLine/NotPanic (0.00s)

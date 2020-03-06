@@ -1,0 +1,2 @@
+=== RUN   TestGetTestNameFromStatusLine/WhenPaused
+    --- PASS: TestGetTestNameFromStatusLine/WhenPaused (0.00s)

@@ -1,0 +1,4 @@
+=== RUN   TestGetOrCreateChannelReturnsExistingChannel
+=== PAUSE TestGetOrCreateChannelReturnsExistingChannel
+=== CONT  TestGetOrCreateChannelReturnsExistingChannel
+--- PASS: TestGetOrCreateChannelReturnsExistingChannel (0.00s)

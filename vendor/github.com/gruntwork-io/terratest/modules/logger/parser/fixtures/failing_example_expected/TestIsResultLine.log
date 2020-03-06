@@ -1,0 +1,4 @@
+=== RUN   TestIsResultLine
+=== PAUSE TestIsResultLine
+=== CONT  TestIsResultLine
+--- PASS: TestIsResultLine (0.00s)

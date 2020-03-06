@@ -1,0 +1,12 @@
+name: pravega
+version: 0.5.0
+appVersion: 0.5.0
+description: pravega Helm chart for Kubernetes
+keywords:
+- pravega
+- storage
+home: https://github.com/pravega/pravega
+icon: https://avatars3.githubusercontent.com/u/25698199
+sources:
+- https://github.com/pravega/pravega
+engine: gotpl

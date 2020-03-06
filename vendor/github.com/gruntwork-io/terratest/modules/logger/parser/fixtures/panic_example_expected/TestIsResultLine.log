@@ -1,0 +1,9 @@
+=== RUN   TestIsResultLine
+=== PAUSE TestIsResultLine
+=== CONT  TestIsResultLine
+--- PASS: TestIsResultLine (0.00s)
+    --- PASS: TestIsResultLine/BaseCase (0.00s)
+    --- PASS: TestIsResultLine/Indented (0.00s)
+    --- PASS: TestIsResultLine/SpecialChars (0.00s)
+    --- PASS: TestIsResultLine/WhenFailed (0.00s)
+    --- PASS: TestIsResultLine/NonResultLine (0.00s)
