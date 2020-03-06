@@ -18,6 +18,7 @@ import (
 
 	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"k8s.io/api/core/v1"
 )
 

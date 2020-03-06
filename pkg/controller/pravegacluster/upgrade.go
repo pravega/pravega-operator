@@ -203,7 +203,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
 			name: "segmentstore",
-			fun:  r.syncSegmentStoreVersion,
+			fun:  r.syncStoreVersion,
 		},
 		componentSyncVersionFun{
 			name: "controller",
@@ -318,6 +318,83 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	return true, nil
 }
 
+func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+	//this is to check if the target image is above 07 and the current image is below 07
+	if util.IsVersionBelow07(p.Spec.Version) == false && util.IsVersionBelow07(p.Status.CurrentVersion) == true {
+		return r.syncSegmentStoreVersion2(p)
+	}
+	return r.syncSegmentStoreVersion(p)
+}
+
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersion2(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+	sts := &appsv1.StatefulSet{}
+	name := p.Name + "-pravega-segmentstore"
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+	if err != nil {
+		return false, err
+	}
+
+	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
+	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	newSSReplicas := *statefulSet.Spec.Replicas
+
+	if *sts.Spec.Replicas == newSSReplicas {
+		newSSReplicas = 2
+		*statefulSet.Spec.Replicas = 2
+		err = r.client.Create(context.TODO(), statefulSet)
+		if err != nil {
+			return false, err
+		}
+		*sts.Spec.Replicas = *sts.Spec.Replicas - 2
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if *sts.Spec.Replicas > 1 {
+		log.Printf("anisha value of newReplicas = " + fmt.Sprint(newSSReplicas))
+		*statefulSet.Spec.Replicas = newSSReplicas + 2
+		err = r.client.Update(context.TODO(), statefulSet)
+		if err != nil {
+			return false, err
+		}
+		*sts.Spec.Replicas = *sts.Spec.Replicas - 2
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return false, nil
+		}
+
+	}
+
+	if *sts.Spec.Replicas == 1 {
+		log.Printf("anisha value of newReplicas of 1 if = " + fmt.Sprint(newSSReplicas))
+		*statefulSet.Spec.Replicas = newSSReplicas + 1
+		err = r.client.Update(context.TODO(), statefulSet)
+		if err != nil {
+			return false, err
+		}
+		*sts.Spec.Replicas = 0
+		err = r.client.Update(context.TODO(), sts)
+		if err != nil {
+			return false, err
+		}
+		err = r.syncStatefulSetPvc(sts)
+		if err != nil {
+			return false, nil
+		}
+	}
+
+	if *sts.Spec.Replicas == 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 
 	sts := &appsv1.StatefulSet{}
