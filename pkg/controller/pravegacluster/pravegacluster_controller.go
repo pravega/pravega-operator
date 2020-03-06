@@ -170,12 +170,15 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 		return err
 	}
 
-	err = r.deploySegmentStore(p)
-	if err != nil {
-		log.Printf("failed to deploy segment store: %v", err)
-		return err
+	/*this check is to avoid creation of a new segmentstore when the CurrentVersionis 06 and target version is 07
+	  as we are doing it in the upgrade path*/
+	if (util.IsVersionBelow07(p.Spec.Version) == false && util.IsVersionBelow07(p.Status.CurrentVersion) == true) == false {
+		err = r.deploySegmentStore(p)
+		if err != nil {
+			log.Printf("failed to deploy segment store: %v", err)
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -248,8 +251,10 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
-	for i := range statefulSet.Spec.VolumeClaimTemplates {
-		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	if statefulSet.Spec.VolumeClaimTemplates != nil {
+		for i := range statefulSet.Spec.VolumeClaimTemplates {
+			controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+		}
 	}
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
@@ -301,9 +306,13 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 		return err
 	}
 
-	err = r.syncSegmentStoreSize(p)
-	if err != nil {
-		return err
+	/*this check is to avoid creation of a new segmentstore when the CurrentVersionis 06 and target version is 07
+	as we are doing it in the upgrade path*/
+	if (util.IsVersionBelow07(p.Spec.Version) == false && util.IsVersionBelow07(p.Status.CurrentVersion) == true) == false {
+		err = r.syncSegmentStoreSize(p)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = r.syncControllerSize(p)
