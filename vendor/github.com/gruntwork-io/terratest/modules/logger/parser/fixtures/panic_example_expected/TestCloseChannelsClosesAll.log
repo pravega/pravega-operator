@@ -1,0 +1,5 @@
+=== RUN   TestCloseChannelsClosesAll
+=== PAUSE TestCloseChannelsClosesAll
+=== CONT  TestCloseChannelsClosesAll
+TestCloseChannelsClosesAll INFO 2018-10-20T13:03:19-07:00 Closing all the channels in log writer
+--- PASS: TestCloseChannelsClosesAll (0.00s)

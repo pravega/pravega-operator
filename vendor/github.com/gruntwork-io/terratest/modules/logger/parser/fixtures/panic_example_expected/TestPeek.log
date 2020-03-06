@@ -1,0 +1,4 @@
+=== RUN   TestPeek
+=== PAUSE TestPeek
+=== CONT  TestPeek
+--- PASS: TestPeek (0.00s)

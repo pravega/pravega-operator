@@ -1,0 +1,4 @@
+=== RUN   TestStackPush
+=== PAUSE TestStackPush
+=== CONT  TestStackPush
+--- PASS: TestStackPush (0.00s)

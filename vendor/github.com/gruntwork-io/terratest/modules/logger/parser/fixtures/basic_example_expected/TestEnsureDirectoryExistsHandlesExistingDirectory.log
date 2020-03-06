@@ -1,0 +1,5 @@
+=== RUN   TestEnsureDirectoryExistsHandlesExistingDirectory
+=== PAUSE TestEnsureDirectoryExistsHandlesExistingDirectory
+=== CONT  TestEnsureDirectoryExistsHandlesExistingDirectory
+TestEnsureDirectoryExistsHandlesExistingDirectory INFO 2018-10-20T13:03:33-07:00 Directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory503195489 already exists
+--- PASS: TestEnsureDirectoryExistsHandlesExistingDirectory (0.00s)

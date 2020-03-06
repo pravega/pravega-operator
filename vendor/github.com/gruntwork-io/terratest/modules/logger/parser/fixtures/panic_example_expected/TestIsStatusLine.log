@@ -1,0 +1,10 @@
+=== RUN   TestIsStatusLine
+=== PAUSE TestIsStatusLine
+=== CONT  TestIsStatusLine
+--- PASS: TestIsStatusLine (0.00s)
+    --- PASS: TestIsStatusLine/BaseCase (0.00s)
+    --- PASS: TestIsStatusLine/Indented (0.00s)
+    --- PASS: TestIsStatusLine/SpecialChars (0.00s)
+    --- PASS: TestIsStatusLine/WhenPaused (0.00s)
+    --- PASS: TestIsStatusLine/WhenCont (0.00s)
+    --- PASS: TestIsStatusLine/NonStatusLine (0.00s)

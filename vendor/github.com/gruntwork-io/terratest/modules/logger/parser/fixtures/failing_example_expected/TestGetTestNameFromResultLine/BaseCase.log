@@ -1,0 +1,2 @@
+=== RUN   TestGetTestNameFromResultLine/BaseCase
+    --- PASS: TestGetTestNameFromResultLine/BaseCase (0.00s)

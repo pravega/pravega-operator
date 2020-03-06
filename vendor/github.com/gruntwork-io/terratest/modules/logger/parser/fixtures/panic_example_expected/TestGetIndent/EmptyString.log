@@ -1,0 +1,2 @@
+=== RUN   TestGetIndent/EmptyString
+    --- PASS: TestGetIndent/EmptyString (0.00s)

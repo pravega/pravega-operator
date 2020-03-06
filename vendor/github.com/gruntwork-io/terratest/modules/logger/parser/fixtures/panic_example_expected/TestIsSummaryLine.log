@@ -1,0 +1,6 @@
+=== RUN   TestIsSummaryLine
+=== PAUSE TestIsSummaryLine
+=== CONT  TestIsSummaryLine
+--- PASS: TestIsSummaryLine (0.00s)
+    --- PASS: TestIsSummaryLine/BaseCase (0.00s)
+    --- PASS: TestIsSummaryLine/NotSummary (0.00s)

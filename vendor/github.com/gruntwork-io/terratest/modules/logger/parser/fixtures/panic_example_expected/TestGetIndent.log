@@ -1,0 +1,9 @@
+=== RUN   TestGetIndent
+=== PAUSE TestGetIndent
+=== CONT  TestGetIndent
+--- PASS: TestGetIndent (0.00s)
+    --- PASS: TestGetIndent/BaseCase (0.00s)
+    --- PASS: TestGetIndent/NoIndent (0.00s)
+    --- PASS: TestGetIndent/EmptyString (0.00s)
+    --- PASS: TestGetIndent/Tabs (0.00s)
+    --- PASS: TestGetIndent/MixTabSpace (0.00s)

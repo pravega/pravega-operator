@@ -1,0 +1,4 @@
+=== RUN   TestLogCollectorCreatesAndWritesToFile
+=== PAUSE TestLogCollectorCreatesAndWritesToFile
+=== CONT  TestLogCollectorCreatesAndWritesToFile
+TestLogCollectorCreatesAndWritesToFile INFO 2018-10-20T13:03:19-07:00 Spawned log writer for test TestLogCollectorCreatesAndWritesToFile

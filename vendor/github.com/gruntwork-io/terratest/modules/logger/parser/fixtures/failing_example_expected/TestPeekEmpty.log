@@ -1,0 +1,4 @@
+=== RUN   TestPeekEmpty
+=== PAUSE TestPeekEmpty
+=== CONT  TestPeekEmpty
+--- PASS: TestPeekEmpty (0.00s)

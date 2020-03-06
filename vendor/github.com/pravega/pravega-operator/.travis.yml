@@ -1,0 +1,107 @@
+sudo: required
+
+language: go
+go_import_path: github.com/pravega/pravega-operator
+go:
+  - '1.11'
+
+env:
+  global:
+    - secure: "X4zdixrmuh/D4WwJ6btu0fJROq7fTPO5n4/jeyoxTQvrpwikycwf3ZpXS94u43rHx1ovc8vweVIc4Kur7MFAJDmFpPz5adjD7cCjqaRHo+Sw4a/gdNKizFEmZEBFlelynJ+cYekfF3rIFRws+u/8yWUQnSPl4495Qq1NKjrDTqoB6ZrQDxYdIPPpLAit+Aj9a2zQ4xPHyOv02SmfgL22wQhOx8SF78VNmqVah6klC8j3tAemHJQSBmUQ2fPVBpqAy3YsI7mpF9aSdBOzr7Dk1/cajOx4M5WrAxDPZ7+fSKD97SjICKqtM6MuX63O6Tg86zzdoEdvTWvwBwjWpbI3iCytJOCD8vT1QBPd9bLwZI7K5dElrW990HGrBBS4GmKTFykEE6PCNvxDHu1pG4N0vmLhZ3Hh4evZxA8xSnHRyYTLOaDkSe/vurlmsRJiW0GOEa6Fyz+xrD5y4l5MDkPVvaEPzWFZQf8v+l3OvvDvmHmqup4ADXE/XBYbVraTn8wPcQnvk5ueCvJWBOd/E4keGFsGbqDxQpvQRG/8aHWv32lj2HHK6/qbihXvTfJfRbrWli2BV0LMBL/OBIiuL1JeXycYZG3AtbnwgJVXPzs8kpwrmxkRYvbb3Kc9HXu9x+ajeWDYb978Rq6/0DfXhKFIiLrgUOxR2SK6eHDTcfUY+us="
+
+stages:
+  - check
+  - unit
+  - e2e
+  - deploy
+
+jobs:
+  include:
+    - stage: check
+      name: Gofmt and License checks
+      script:
+        - make check
+
+    - stage: unit
+      name: Unit tests
+      env:
+        - HELM_VERSION=v2.12.0
+        - DEP_VERSION=v0.5.0
+      install:
+        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
+        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+      before_script:
+        - helm init --client-only
+      script:
+        - make test-unit
+      after_success:
+      - bash <(curl -s https://codecov.io/bash)
+
+    - stage: e2e
+      name: End-to-end tests
+      if: type = pull_request OR branch = master OR tag IS present
+      services:
+        - docker
+      env:
+        - KUBECTL_VERSION=v1.12.0
+        - OPERATOR_SDK_VERSION=v0.4.0
+        - HELM_VERSION=v2.12.0
+        - DEP_VERSION=v0.5.0
+        - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
+        - CLUSTER_ZONE=us-west-2
+        - CLUSTER_SIZE=3
+        - CLUSTER_NODE_TYPE=m5.xlarge
+        - CLUSTER_NODE_GROUP=standard-workers
+      install:
+        - pip install --upgrade --user awscli
+        - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
+        - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
+        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
+      before_script:
+        - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+        - sudo mv /tmp/eksctl /usr/local/bin
+        - eksctl version
+        - aws configure set default.region $CLUSTER_ZONE
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
+        - kubectl config view
+        - kubectl config current-context
+        - kubectl get nodes -o wide
+        - kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
+        # Install Helm Tiller
+        - kubectl create serviceaccount --namespace kube-system tiller
+        - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+        - helm init --service-account tiller --wait
+        # Install NFS provisioner
+        - helm install stable/nfs-server-provisioner
+        - kubectl -n default create -f test/e2e/resources/tier2.yaml
+        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
+        # Install ZooKeeper
+        - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
+        - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+        # Show Pravega dependencies
+        - kubectl -n default get pod,pvc,svc -o wide
+      script:
+        # ping stdout every 5 minutes or Travis kills build
+        # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
+        - while sleep 5m; do kubectl get pods; done &
+        - make test-e2e
+        # kill background echo loop
+        - echo "killing while sleep loop" && kill %1
+      after_script:
+        - eksctl delete cluster --name $CLUSTER_NAME
+
+    - stage: deploy
+      name: Push Docker image
+      if: type != pull_request AND tag IS present
+      services:
+        - docker
+      script:
+        - make push
+
+notifications:
+  slack:
+    rooms:
+      secure: Gv0RJx1Sa/y5fmvLNwY+2ivfWZYCM0ekrr6UAHqsegnid6P/DFZrSrfSpwvcVh2OVNH8DHLV0BoiuDJ7amtl1eMDMXz5/lLz8tFWFKaHv4yDSadm8ILY/KnYUoP4IRuM3NyKQmBrmZB9Or5KFXboG6ex6UkgbuYy0Zyl6syEe168Iw8hlCRx26Jei7/y+8eE2MIGFh09TLRZ/944YbULum9H3KQLYv8nFdPc7GmR5AK461fnwZ7iYjb7MXkCctE5Vml3p9+2Qliv1ZJqNsQeKmSFW6IhiP6pNZ1V8VJEWMQmX/nBr9745l/N+CoLQz9ajLonlxn9xHdWms4TEu1ynFk6uxEJjlcpXcvcEaKhqAKcTMl0GMMRab2m+/Vt3S/VutJnVXQmnhZGT9glLFQHwcdHNqM/LEbXtyisB7zmGImUQpF2InCwO25IXug5gv64IfOHGMzL56yNIhbRgBY9Ud4Tux+pmkV5ZxJiBkul7/FiHQX7tQLUrzQosD0oyCOmaWD7kmbt15A0TOkLgup4HE+sSS1ASwisa7J2+HsbI3Upy3rNVKuIJP0L4KSTn4HSlDlMLLcWM+nz/YCEfuwSRXJTIstotNYHdsLUZAZSYAX7ejpeiuBRed4a4AlCROeKbKKwCcSvqCOjmCaPTpwJAGeJByOXLL2hfQzpDMKCIKM=

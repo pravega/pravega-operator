@@ -1,0 +1,2 @@
+=== RUN   TestGetTestNameFromResultLine/SpecialChars
+    --- PASS: TestGetTestNameFromResultLine/SpecialChars (0.00s)

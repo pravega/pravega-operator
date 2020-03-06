@@ -331,6 +331,15 @@
   version = "v1.2.0"
 
 [[projects]]
+<<<<<<< HEAD
+=======
+  name = "github.com/pravega/pravega-operator"
+  packages = ["pkg/apis","pkg/apis/pravega/v1alpha1","pkg/controller","pkg/controller/config","pkg/controller/pravega","pkg/controller/pravegacluster","pkg/test/e2e/e2eutil","pkg/util","pkg/version","pkg/webhook"]
+  revision = "8b2cd476831860bce872e6833a233f04f7e8cbf3"
+  version = "v0.4.3"
+
+[[projects]]
+>>>>>>> util functions for checking version and getting new stateful set name added
   name = "github.com/prometheus/client_golang"
   packages = ["prometheus","prometheus/internal","prometheus/promhttp"]
   revision = "505eaef017263e299324067d40ca2c48f6a2cf50"
@@ -556,6 +565,10 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
+<<<<<<< HEAD
   inputs-digest = "683ff6d27d5ee43d5cd27d4eab653ac70810cc2bfd85e801ddaef0b198f7bb57"
+=======
+  inputs-digest = "4aef0c6ea7a30773c1dbc305d709837a5455b1c0a722ca01ffdfa5247078ef8f"
+>>>>>>> util functions for checking version and getting new stateful set name added
   solver-name = "gps-cdcl"
   solver-version = 1

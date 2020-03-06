@@ -1,0 +1,8 @@
+=== RUN   TestGetTestNameFromResultLine
+=== PAUSE TestGetTestNameFromResultLine
+=== CONT  TestGetTestNameFromResultLine
+--- PASS: TestGetTestNameFromResultLine (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/BaseCase (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/Indented (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/SpecialChars (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/WhenFailed (0.00s)

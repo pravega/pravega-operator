@@ -1,0 +1,180 @@
+=== RUN   TestStackPush
+=== PAUSE TestStackPush
+=== RUN   TestStackPop
+=== PAUSE TestStackPop
+=== RUN   TestStackPopEmpty
+=== PAUSE TestStackPopEmpty
+=== RUN   TestPeek
+=== PAUSE TestPeek
+=== RUN   TestPeekEmpty
+=== PAUSE TestPeekEmpty
+=== RUN   TestIsEmpty
+=== PAUSE TestIsEmpty
+=== RUN   TestRemoveDedentedTestResultMarkers
+--- PASS: TestRemoveDedentedTestResultMarkers (0.00s)
+=== RUN   TestRemoveDedentedTestResultMarkersEmpty
+--- PASS: TestRemoveDedentedTestResultMarkersEmpty (0.00s)
+=== RUN   TestRemoveDedentedTestResultMarkersAll
+--- PASS: TestRemoveDedentedTestResultMarkersAll (0.00s)
+=== RUN   TestBasicExample
+--- FAIL: TestBasicExample (0.00s)
+    integration_test.go:10: 
+        	Error Trace:	integration_test.go:10
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestBasicExample
+=== RUN   TestPanicExample
+--- FAIL: TestPanicExample (0.00s)
+    integration_test.go:14: 
+        	Error Trace:	integration_test.go:14
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestPanicExample
+=== RUN   TestRealWorldExample
+--- FAIL: TestRealWorldExample (0.00s)
+    integration_test.go:18: 
+        	Error Trace:	integration_test.go:18
+        	Error:      	Expected value not to be nil.
+        	Test:       	TestRealWorldExample
+=== RUN   TestGetIndent
+=== PAUSE TestGetIndent
+=== RUN   TestGetTestNameFromResultLine
+=== PAUSE TestGetTestNameFromResultLine
+=== RUN   TestIsResultLine
+=== PAUSE TestIsResultLine
+=== RUN   TestGetTestNameFromStatusLine
+=== PAUSE TestGetTestNameFromStatusLine
+=== RUN   TestIsStatusLine
+=== PAUSE TestIsStatusLine
+=== RUN   TestIsSummaryLine
+=== PAUSE TestIsSummaryLine
+=== RUN   TestIsPanicLine
+=== PAUSE TestIsPanicLine
+=== RUN   TestEnsureDirectoryExistsCreatesDirectory
+=== PAUSE TestEnsureDirectoryExistsCreatesDirectory
+=== RUN   TestEnsureDirectoryExistsHandlesExistingDirectory
+=== PAUSE TestEnsureDirectoryExistsHandlesExistingDirectory
+=== RUN   TestGetOrCreateChannelCreatesNewChannel
+=== PAUSE TestGetOrCreateChannelCreatesNewChannel
+=== RUN   TestGetOrCreateChannelReturnsExistingChannel
+=== PAUSE TestGetOrCreateChannelReturnsExistingChannel
+=== RUN   TestLogCollectorCreatesAndWritesToFile
+=== PAUSE TestLogCollectorCreatesAndWritesToFile
+=== RUN   TestGetOrCreateChannelSpawnsLogCollectorOnCreate
+=== PAUSE TestGetOrCreateChannelSpawnsLogCollectorOnCreate
+=== RUN   TestCloseChannelsClosesAll
+=== PAUSE TestCloseChannelsClosesAll
+=== CONT  TestStackPush
+=== CONT  TestIsSummaryLine
+--- PASS: TestStackPush (0.00s)
+=== CONT  TestIsStatusLine
+=== RUN   TestIsStatusLine/BaseCase
+=== CONT  TestGetTestNameFromStatusLine
+=== RUN   TestGetTestNameFromStatusLine/BaseCase
+=== CONT  TestIsResultLine
+=== RUN   TestIsResultLine/BaseCase
+=== RUN   TestIsSummaryLine/BaseCase
+=== RUN   TestGetTestNameFromStatusLine/Indented
+=== RUN   TestIsResultLine/Indented
+=== RUN   TestIsStatusLine/Indented
+=== RUN   TestGetTestNameFromStatusLine/SpecialChars
+=== RUN   TestIsResultLine/SpecialChars
+=== RUN   TestIsStatusLine/SpecialChars
+=== RUN   TestGetTestNameFromStatusLine/WhenPaused
+=== RUN   TestIsResultLine/WhenFailed
+=== RUN   TestIsStatusLine/WhenPaused
+=== RUN   TestGetTestNameFromStatusLine/WhenCont
+=== RUN   TestIsStatusLine/WhenCont
+=== RUN   TestIsResultLine/NonResultLine
+--- PASS: TestGetTestNameFromStatusLine (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/BaseCase (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/Indented (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/SpecialChars (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/WhenPaused (0.00s)
+    --- PASS: TestGetTestNameFromStatusLine/WhenCont (0.00s)
+=== RUN   TestIsStatusLine/NonStatusLine
+=== CONT  TestGetTestNameFromResultLine
+=== RUN   TestGetTestNameFromResultLine/BaseCase
+=== CONT  TestGetIndent
+--- PASS: TestIsStatusLine (0.00s)
+    --- PASS: TestIsStatusLine/BaseCase (0.00s)
+    --- PASS: TestIsStatusLine/Indented (0.00s)
+    --- PASS: TestIsStatusLine/SpecialChars (0.00s)
+    --- PASS: TestIsStatusLine/WhenPaused (0.00s)
+    --- PASS: TestIsStatusLine/WhenCont (0.00s)
+    --- PASS: TestIsStatusLine/NonStatusLine (0.00s)
+=== RUN   TestGetIndent/BaseCase
+=== RUN   TestGetTestNameFromResultLine/Indented
+=== CONT  TestIsEmpty
+--- PASS: TestIsEmpty (0.00s)
+=== RUN   TestGetTestNameFromResultLine/SpecialChars
+=== CONT  TestPeekEmpty
+--- PASS: TestPeekEmpty (0.00s)
+=== CONT  TestPeek
+=== RUN   TestGetTestNameFromResultLine/WhenFailed
+=== RUN   TestGetIndent/NoIndent
+--- PASS: TestPeek (0.00s)
+=== CONT  TestStackPop
+=== RUN   TestGetIndent/EmptyString
+--- PASS: TestGetTestNameFromResultLine (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/BaseCase (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/Indented (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/SpecialChars (0.00s)
+    --- PASS: TestGetTestNameFromResultLine/WhenFailed (0.00s)
+=== CONT  TestGetOrCreateChannelReturnsExistingChannel
+=== CONT  TestStackPopEmpty
+--- PASS: TestStackPopEmpty (0.00s)
+=== RUN   TestGetIndent/Tabs
+=== CONT  TestCloseChannelsClosesAll
+=== RUN   TestGetIndent/MixTabSpace
+--- PASS: TestGetIndent (0.00s)
+    --- PASS: TestGetIndent/BaseCase (0.00s)
+    --- PASS: TestGetIndent/NoIndent (0.00s)
+    --- PASS: TestGetIndent/EmptyString (0.00s)
+    --- PASS: TestGetIndent/Tabs (0.00s)
+    --- PASS: TestGetIndent/MixTabSpace (0.00s)
+=== CONT  TestGetOrCreateChannelSpawnsLogCollectorOnCreate
+--- PASS: TestGetOrCreateChannelReturnsExistingChannel (0.00s)
+=== CONT  TestLogCollectorCreatesAndWritesToFile
+TestCloseChannelsClosesAll INFO 2018-10-20T13:15:09-07:00 Closing all the channels in log writer
+--- PASS: TestStackPop (0.00s)
+TestGetOrCreateChannelSpawnsLogCollectorOnCreate INFO 2018-10-20T13:15:09-07:00 Spawned log writer for test TestGetOrCreateChannelSpawnsLogCollectorOnCreate
+TestGetOrCreateChannelSpawnsLogCollectorOnCreate INFO 2018-10-20T13:15:09-07:00 Storing logs for test TestGetOrCreateChannelSpawnsLogCollectorOnCreate to /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory945346773/TestGetOrCreateChannelSpawnsLogCollectorOnCreate.log
+TestLogCollectorCreatesAndWritesToFile INFO 2018-10-20T13:15:09-07:00 Spawned log writer for test TestLogCollectorCreatesAndWritesToFile
+TestGetOrCreateChannelSpawnsLogCollectorOnCreate INFO 2018-10-20T13:15:09-07:00 Directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory945346773 already exists
+TestLogCollectorCreatesAndWritesToFile INFO 2018-10-20T13:15:09-07:00 Storing logs for test TestLogCollectorCreatesAndWritesToFile to /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestLogCollectorCreatesAndWritesToFile262063152/TestLogCollectorCreatesAndWritesToFile.log
+--- PASS: TestCloseChannelsClosesAll (0.00s)
+TestLogCollectorCreatesAndWritesToFile INFO 2018-10-20T13:15:09-07:00 Directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestLogCollectorCreatesAndWritesToFile262063152 already exists
+=== CONT  TestEnsureDirectoryExistsHandlesExistingDirectory
+=== RUN   TestIsSummaryLine/NotSummary
+--- PASS: TestIsSummaryLine (0.00s)
+    --- PASS: TestIsSummaryLine/BaseCase (0.00s)
+    --- PASS: TestIsSummaryLine/NotSummary (0.00s)
+=== CONT  TestGetOrCreateChannelCreatesNewChannel
+TestEnsureDirectoryExistsHandlesExistingDirectory INFO 2018-10-20T13:15:09-07:00 Directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory292537295 already exists
+TestLogCollectorCreatesAndWritesToFile INFO 2018-10-20T13:15:09-07:00 Channel closed for log writer of test TestLogCollectorCreatesAndWritesToFile
+TestGetOrCreateChannelSpawnsLogCollectorOnCreate INFO 2018-10-20T13:15:09-07:00 Channel closed for log writer of test TestGetOrCreateChannelSpawnsLogCollectorOnCreate
+--- PASS: TestGetOrCreateChannelCreatesNewChannel (0.00s)
+=== CONT  TestEnsureDirectoryExistsCreatesDirectory
+--- PASS: TestIsResultLine (0.00s)
+TestGetOrCreateChannelCreatesNewChannel INFO 2018-10-20T13:15:09-07:00 Spawned log writer for test TestGetOrCreateChannelCreatesNewChannel
+    --- PASS: TestIsResultLine/BaseCase (0.00s)
+    --- PASS: TestIsResultLine/Indented (0.00s)
+    --- PASS: TestIsResultLine/SpecialChars (0.00s)
+    --- PASS: TestIsResultLine/WhenFailed (0.00s)
+    --- PASS: TestIsResultLine/NonResultLine (0.00s)
+TestGetOrCreateChannelCreatesNewChannel INFO 2018-10-20T13:15:09-07:00 Storing logs for test TestGetOrCreateChannelCreatesNewChannel to /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory867148002/TestGetOrCreateChannelCreatesNewChannel.log
+--- PASS: TestEnsureDirectoryExistsHandlesExistingDirectory (0.00s)
+=== CONT  TestIsPanicLine
+TestGetOrCreateChannelCreatesNewChannel INFO 2018-10-20T13:15:09-07:00 Creating directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory867148002
+=== RUN   TestIsPanicLine/BaseCase
+=== RUN   TestIsPanicLine/NotPanic
+--- PASS: TestIsPanicLine (0.00s)
+    --- PASS: TestIsPanicLine/BaseCase (0.00s)
+    --- PASS: TestIsPanicLine/NotPanic (0.00s)
+TestEnsureDirectoryExistsCreatesDirectory INFO 2018-10-20T13:15:09-07:00 Creating directory /var/folders/n2/pljz6dq52bd1ksmw23qyr3sr0000gn/T/TestEnsureDirectoryCreatesDirectory357603033/tmpdir
+TestGetOrCreateChannelCreatesNewChannel INFO 2018-10-20T13:15:09-07:00 Channel closed for log writer of test TestGetOrCreateChannelCreatesNewChannel
+--- PASS: TestEnsureDirectoryExistsCreatesDirectory (0.00s)
+--- PASS: TestLogCollectorCreatesAndWritesToFile (1.01s)
+--- PASS: TestGetOrCreateChannelSpawnsLogCollectorOnCreate (1.01s)
+FAIL
+exit status 1
+FAIL	github.com/gruntwork-io/terratest/modules/logger/parser	1.020s
