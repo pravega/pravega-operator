@@ -23,7 +23,7 @@ all: check test build
 dep:
 	dep ensure -v
 
-build: build-go build-image
+build: dep build-go build-image
 
 build-go:
 	CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build \
