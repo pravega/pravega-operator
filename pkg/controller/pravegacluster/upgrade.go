@@ -324,81 +324,70 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 
 func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	//this is to check if the target image is above 07 and the current image is below 07
-	if util.IsVersionBelow07(p.Spec.Version) == false && util.IsVersionBelow07(p.Status.CurrentVersion) == true {
-		return r.syncSegmentStoreVersion2(p)
+	if !util.IsVersionBelow07(p.Spec.Version) && util.IsVersionBelow07(p.Status.CurrentVersion) {
+		return r.syncSegmentStoreVersionFrom6To7(p)
 	}
 	return r.syncSegmentStoreVersion(p)
 }
 
-func (r *ReconcilePravegaCluster) syncSegmentStoreVersion2(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	sts := &appsv1.StatefulSet{}
-	name := p.Name + "-pravega-segmentstore"
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersionFrom6To7(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+
+	newsts := pravega.MakeSegmentStoreStatefulSet(p)
+	controllerutil.SetControllerReference(p, newsts, r.scheme)
+	newSSReplicas := *newsts.Spec.Replicas
+
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
 	if err != nil {
-		return false, err
-	}
-
-	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
-	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
-	newSSReplicas := *statefulSet.Spec.Replicas
-
-	if *sts.Spec.Replicas == newSSReplicas {
-		newSSReplicas = 2
-		*statefulSet.Spec.Replicas = 2
-		err = r.client.Create(context.TODO(), statefulSet)
-		if err != nil {
-			return false, err
-		}
-		*sts.Spec.Replicas = *sts.Spec.Replicas - 2
-		err = r.client.Update(context.TODO(), sts)
+		*newsts.Spec.Replicas = 0
+		err = r.client.Create(context.TODO(), newsts)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	if *sts.Spec.Replicas > 1 {
-		log.Printf("anisha value of newReplicas = " + fmt.Sprint(newSSReplicas))
-		*statefulSet.Spec.Replicas = newSSReplicas + 2
-		err = r.client.Update(context.TODO(), statefulSet)
+	oldsts := &appsv1.StatefulSet{}
+	name := p.Name + "-pravega-segmentstore"
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, oldsts)
+	if err != nil {
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
 		if err != nil {
 			return false, err
 		}
-		*sts.Spec.Replicas = *sts.Spec.Replicas - 2
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return false, err
-		}
-		err = r.syncStatefulSetPvc(sts)
-		if err != nil {
-			return false, nil
-		}
-
-	}
-
-	if *sts.Spec.Replicas == 1 {
-		log.Printf("anisha value of newReplicas of 1 if = " + fmt.Sprint(newSSReplicas))
-		*statefulSet.Spec.Replicas = newSSReplicas + 1
-		err = r.client.Update(context.TODO(), statefulSet)
-		if err != nil {
-			return false, err
-		}
-		*sts.Spec.Replicas = 0
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return false, err
-		}
-		err = r.syncStatefulSetPvc(sts)
-		if err != nil {
-			return false, nil
-		}
-	}
-
-	if *sts.Spec.Replicas == 0 {
 		return true, nil
 	}
 
+	if *oldsts.Spec.Replicas > 0 {
+		*newsts.Spec.Replicas = newSSReplicas + 2
+		if *oldsts.Spec.Replicas == 1 {
+			*newsts.Spec.Replicas = newSSReplicas - 1
+		}
+		err = r.client.Update(context.TODO(), newsts)
+		if err != nil {
+			return false, err
+		}
+		*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
+		if *oldsts.Spec.Replicas < 0 {
+			*oldsts.Spec.Replicas = 0
+		}
+		err = r.client.Update(context.TODO(), oldsts)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if *oldsts.Spec.Replicas == 0 {
+		err = r.syncStatefulSetPvc(oldsts)
+		if err != nil {
+			return false, err
+		}
+		err = r.client.Delete(context.TODO(), oldsts)
+		if err != nil {
+			return false, err
+		}
+	}
 	return false, nil
 }
+
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 
 	sts := &appsv1.StatefulSet{}
