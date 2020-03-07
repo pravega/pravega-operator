@@ -1,4 +1,0 @@
-=== RUN   TestStackPopEmpty
-=== PAUSE TestStackPopEmpty
-=== CONT  TestStackPopEmpty
---- PASS: TestStackPopEmpty (0.00s)
