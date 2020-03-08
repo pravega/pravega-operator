@@ -94,7 +94,7 @@ func IsVersionBelow07(ver string) bool {
 //to return name of segmentstore based on the version
 func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
 	//if version is below 0.7 this name will be assigned
-	if IsVersionBelow07(p.Spec.Version) == true {
+	if p.Spec.Version == "" || IsVersionBelow07(p.Spec.Version) {
 		return fmt.Sprintf("%s-pravega-segmentstore", p.Name)
 	}
 	//if version is above or equals to 0.7 this name will be assigned
