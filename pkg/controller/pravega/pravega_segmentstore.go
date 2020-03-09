@@ -155,7 +155,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 }
 
 func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
-	log.Printf("prabhu value outside of volume mount = " + p.Spec.Version)
 	if util.IsVersionBelow07(p.Spec.Version) {
 		return []corev1.VolumeMount{
 			{
