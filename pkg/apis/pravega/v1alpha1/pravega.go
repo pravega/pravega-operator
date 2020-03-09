@@ -128,6 +128,10 @@ type PravegaSpec struct {
 	// that need to be configured into the ss pod as environmental variables
 	SegmentStoreEnvVars string `json:"segmentStoreConfigMap,omitempty"`
 
+	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
+	// either as an environment variable or by mounting it to a volume
+	SegmentStoreSecret *SegmentStoreSecret `json:"segmentStoreSecret"`
+
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
@@ -228,6 +232,15 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
+	if s.SegmentStoreSecret == nil {
+		changed = true
+		s.SegmentStoreSecret = &SegmentStoreSecret{}
+	}
+
+	if s.SegmentStoreSecret.withDefaults() {
+		changed = true
+	}
+
 	if s.ControllerServiceAnnotations == nil {
 		changed = true
 		s.ControllerServiceAnnotations = map[string]string{}
@@ -236,6 +249,43 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if s.SegmentStoreServiceAnnotations == nil {
 		changed = true
 		s.SegmentStoreServiceAnnotations = map[string]string{}
+	}
+
+	return changed
+}
+
+// SegmentStoreSecret defines the configuration of the secret for the Segment Store
+type SegmentStoreSecret struct {
+	// Secret specifies the name of Secret which needs to be configured
+	Secret string `json:"secret"`
+
+	// MountToVolume specifies whether the secret should be mounted to a Volume
+	// or whether it should be exposed as an Environment Variable
+	// By default, mounting the secret to a volume is not enabled
+	MountToVolume bool `json:"mountToVolume"`
+
+	// Name of the volume where the secret will be mounted
+	// This value is considered only when the secret is provided
+	// and mountToVolume is enabled
+	VolumeName string `json:"volumeName"`
+
+	// Path to the volume where the secret will be mounted
+	// This value is considered only when the secret is provided
+	// and mountToVolume is enabled
+	VolumeMountPath string `json:"volumeMountPath"`
+}
+
+func (s *SegmentStoreSecret) withDefaults() (changed bool) {
+	if s.Secret == "" {
+		changed = true
+		s.MountToVolume = false
+		s.VolumeName = ""
+		s.VolumeMountPath = ""
+	}
+	if s.MountToVolume == false && (s.VolumeName != "" || s.VolumeMountPath != "") {
+		changed = true
+		s.VolumeName = ""
+		s.VolumeMountPath = ""
 	}
 
 	return changed
