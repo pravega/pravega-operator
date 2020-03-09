@@ -809,6 +809,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 			Context("Scaledown Segmentstore Services", func() {
 				var (
 					foundSegmentStoreSvc1 *corev1.Service
+					foundSegmentStoreSvc2 *corev1.Service
 					foundSegmentStoreSvc3 *corev1.Service
 				)
 
@@ -822,6 +823,17 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 					Ω(err).Should(BeNil())
+				})
+
+				It("should not be found", func() {
+					foundSegmentStoreSvc2 = &corev1.Service{}
+
+					nn2 := types.NamespacedName{
+						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
+					Ω(err).ShouldNot(BeNil())
 				})
 
 				It("should not be found", func() {
