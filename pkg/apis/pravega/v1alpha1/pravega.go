@@ -277,13 +277,11 @@ type SegmentStoreSecret struct {
 
 func (s *SegmentStoreSecret) withDefaults() (changed bool) {
 	if s.Secret == "" {
-		changed = true
 		s.MountToVolume = false
 		s.VolumeName = ""
 		s.VolumeMountPath = ""
 	}
 	if s.MountToVolume == false && (s.VolumeName != "" || s.VolumeMountPath != "") {
-		changed = true
 		s.VolumeName = ""
 		s.VolumeMountPath = ""
 	}
