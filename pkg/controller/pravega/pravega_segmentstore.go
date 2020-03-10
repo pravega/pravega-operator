@@ -66,6 +66,8 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
+	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
+	secret := p.Spec.Pravega.SegmentStoreSecret
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -74,6 +76,24 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
+	}
+	if configMapName != "" {
+		environment = append(environment, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+			},
+		})
+	}
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) == "" {
+		environment = append(environment, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: strings.TrimSpace(secret.Secret),
+				},
+			},
+		})
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
@@ -150,6 +170,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
+
+	configureSegmentstoreSecret(&podSpec, p)
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
@@ -301,6 +323,26 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
 			},
+		})
+	}
+}
+
+func configureSegmentstoreSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	secret := p.Spec.Pravega.SegmentStoreSecret
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) != "" {
+		vol := corev1.Volume{
+			Name: ssSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: strings.TrimSpace(secret.Secret),
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssSecretVolumeName,
+			MountPath: strings.TrimSpace(secret.MountPath),
 		})
 	}
 }
