@@ -34,9 +34,9 @@ build-image:
 test: test-unit test-e2e
 
 test-unit:
-	build go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
+	 go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
-test-e2e: build test-e2e-remote
+test-e2e: test-e2e-remote
 
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
