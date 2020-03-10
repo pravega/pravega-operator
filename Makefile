@@ -18,7 +18,7 @@ GOARCH=amd64
 
 .PHONY: all  build check clean test
 
-all: check build 
+all: check test build
 
 build: build-go build-image
 

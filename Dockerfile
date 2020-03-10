@@ -7,8 +7,8 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-ARG GO_VERSION=1.13.4
-ARG ALPINE_VERSION=3.10
+ARG GO_VERSION=1.13.8
+ARG ALPINE_VERSION=3.11
 
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
 
@@ -24,9 +24,6 @@ WORKDIR /src
 COPY pkg ./pkg
 COPY cmd ./cmd
 COPY go.mod ./
-
-# Download all dependencies.
-RUN go mod download
 
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /src/${PROJECT_NAME} \
     -ldflags "-X ${REPO_PATH}/pkg/version.Version=${VERSION} -X ${REPO_PATH}/pkg/version.GitSHA=${GIT_SHA}" \
