@@ -31,11 +31,6 @@ func TestSegmentStore(t *testing.T) {
 
 var _ = Describe("PravegaSegmentstore", func() {
 
-	const (
-		Name      = "example"
-		Namespace = "default"
-	)
-
 	var _ = Describe("SegmentStore Test", func() {
 		var (
 			p *v1alpha1.PravegaCluster
@@ -44,8 +39,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 		BeforeEach(func() {
 			p = &v1alpha1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      Name,
-					Namespace: Namespace,
+					Name: "default",
 				},
 			}
 		})
