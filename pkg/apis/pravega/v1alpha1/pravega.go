@@ -126,7 +126,7 @@ type PravegaSpec struct {
 
 	// Provides the name of the configmap created by the user to provide additional key-value pairs
 	// that need to be configured into the ss pod as environmental variables
-	SegmentStoreEnvVars string `json:"segmentStoreConfigMap,omitempty"`
+	SegmentStoreEnvVars string `json:"segmentStoreEnvVars,omitempty"`
 
 	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
 	// either as an environment variable or by mounting it to a volume
@@ -259,31 +259,16 @@ type SegmentStoreSecret struct {
 	// Secret specifies the name of Secret which needs to be configured
 	Secret string `json:"secret"`
 
-	// MountToVolume specifies whether the secret should be mounted to a Volume
-	// or whether it should be exposed as an Environment Variable
-	// By default, mounting the secret to a volume is not enabled
-	MountToVolume bool `json:"mountToVolume"`
-
-	// Name of the volume where the secret will be mounted
-	// This value is considered only when the secret is provided
-	// and mountToVolume is enabled
-	VolumeName string `json:"volumeName"`
-
 	// Path to the volume where the secret will be mounted
 	// This value is considered only when the secret is provided
-	// and mountToVolume is enabled
-	VolumeMountPath string `json:"volumeMountPath"`
+	// If this value is provided, the secret is mounted to a Volume
+	// else the secret is exposed as an Environment Variable
+	MountPath string `json:"mountPath"`
 }
 
 func (s *SegmentStoreSecret) withDefaults() (changed bool) {
 	if s.Secret == "" {
-		s.MountToVolume = false
-		s.VolumeName = ""
-		s.VolumeMountPath = ""
-	}
-	if s.MountToVolume == false && (s.VolumeName != "" || s.VolumeMountPath != "") {
-		s.VolumeName = ""
-		s.VolumeMountPath = ""
+		s.MountPath = ""
 	}
 
 	return changed

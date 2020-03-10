@@ -66,8 +66,8 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
-	configMapName := util.GetConfigMapNameForSSEnvVars()
-	secretName := p.Spec.Pravega.SegmentStoreSecret.Secret
+	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
+	secret := p.Spec.Pravega.SegmentStoreSecret
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -77,7 +77,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 	}
-	if len(configMapName) > 0 {
+	if configMapName != "" {
 		environment = append(environment, corev1.EnvFromSource{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -86,11 +86,11 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		})
 	}
-	if len(secretName) > 0 && !p.Spec.Pravega.SegmentStoreSecret.MountToVolume {
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) == "" {
 		environment = append(environment, corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secretName,
+					Name: strings.TrimSpace(secret.Secret),
 				},
 			},
 		})
@@ -328,21 +328,21 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 }
 
 func configureSegmentstoreSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
-	secretName := p.Spec.Pravega.SegmentStoreSecret.Secret
-	if len(secretName) > 0 && p.Spec.Pravega.SegmentStoreSecret.MountToVolume {
+	secret := p.Spec.Pravega.SegmentStoreSecret
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) != "" {
 		vol := corev1.Volume{
-			Name: p.Spec.Pravega.SegmentStoreSecret.VolumeName,
+			Name: ssSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: secretName,
+					SecretName: strings.TrimSpace(secret.Secret),
 				},
 			},
 		}
 		podSpec.Volumes = append(podSpec.Volumes, vol)
 
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      p.Spec.Pravega.SegmentStoreSecret.VolumeName,
-			MountPath: p.Spec.Pravega.SegmentStoreSecret.VolumeMountPath,
+			Name:      ssSecretVolumeName,
+			MountPath: strings.TrimSpace(secret.MountPath),
 		})
 	}
 }
