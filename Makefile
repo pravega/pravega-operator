@@ -18,7 +18,7 @@ GOARCH=amd64
 
 .PHONY: all  build check clean test
 
-all: check test build
+all: check build test
 
 build: build-go build-image
 
@@ -34,9 +34,9 @@ build-image:
 test: test-unit test-e2e
 
 test-unit:
-	go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
+	build go test $$(go list ./... | grep -v /vendor/ | grep -v /test/e2e ) -race -coverprofile=coverage.txt -covermode=atomic
 
-test-e2e: test-e2e-remote
+test-e2e: build test-e2e-remote
 
 test-e2e-remote: login
 	operator-sdk build $(TEST_IMAGE) --enable-tests
