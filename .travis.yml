@@ -65,7 +65,7 @@ jobs:
         - aws configure set default.region $CLUSTER_ZONE
         - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        - eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
+        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide

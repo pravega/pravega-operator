@@ -25,6 +25,9 @@ COPY pkg ./pkg
 COPY cmd ./cmd
 COPY go.mod ./
 
+# Download all dependencies.
+RUN go mod download
+
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /src/${PROJECT_NAME} \
     -ldflags "-X ${REPO_PATH}/pkg/version.Version=${VERSION} -X ${REPO_PATH}/pkg/version.GitSHA=${GIT_SHA}" \
     /src/cmd/manager
