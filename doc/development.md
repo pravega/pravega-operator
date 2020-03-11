@@ -27,8 +27,8 @@ Install a new go version:
 ```
 gvm install go1.4 -B
 gvm use go1.4
-gvm install go1.11 --binary
-gvm use go1.11 --default
+gvm install go1.13.8 --binary
+gvm use go1.13.8 --default
 ```
 Your GOPATH should be be set by now, check using
 ```
