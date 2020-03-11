@@ -39,7 +39,7 @@ should display something like `/home/<userdir>/.gvm/pkgsets/go1.11/global`
 Clone operator repo:
 ```
 cd $GOPATH
-go get github.com:pravega/pravega-operator
+go get github.com/pravega/pravega-operator
 ```
 This should clone operator code under `$GOPATH/src/github.com/pravega/pravega-operator`
 

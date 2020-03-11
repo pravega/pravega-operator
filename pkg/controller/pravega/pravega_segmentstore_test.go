@@ -93,10 +93,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						},
 						Tier2: &v1alpha1.Tier2Spec{
 							Ecs: &v1alpha1.ECSSpec{
-								Uri:         "uri",
+								ConfigUri:   "configUri",
 								Bucket:      "bucket",
-								Root:        "root",
-								Namespace:   "namespace",
+								Prefix:      "prefix",
 								Credentials: "credentials",
 							},
 						},

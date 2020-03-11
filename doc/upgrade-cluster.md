@@ -58,6 +58,45 @@ To initiate an upgrade process, a user has to update the `spec.version` field on
 
 After the `version` field is updated, the operator will detect the version change and it will trigger the upgrade process.
 
+### Upgrade guide
+
+> Note: To trigger an upgrade please edit only the fields mentioned in this upgrade guide. We do not recommend clubbing other edits (for performance or scaling or anything else) along with the upgrade trigger. Those can be done either prior to triggering the upgrade or after the upgrade has completed successfully.
+
+#### Upgrade to Pravega 0.7 or above
+
+When upgrading the Pravega Cluster from any version below 0.7 to version 0.7 or above, there are a few configuration changes that must be made to Pravega manifest either with the upgrade request or prior to starting the upgrade.
+
+1. Ensure that sufficient resources are allocated to segmentstore pods when moving to Pravega version 0.7 or later.
+```
+segmentStoreResources:
+  requests:
+    memory: "4Gi"
+    cpu: "2000m"
+  limits:
+    memory: "16Gi"
+    cpu: "8000m"
+```
+
+2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM and the rest for Direct Memory (12GB) i.e. POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (12GB).
+We need to ensure that the sum of JVM Heap and Direct Memory is not higher than the pod memory limit. In general, we can keep the JVM Heap fixed to 4GB and make the Direct Memory as the variable part.
+These two options can be configured through the following field of the manifest file
+```
+segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
+```
+
+3. The cache should be configured at least 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty). This value is configured in the pravega options part of the manifest file
+```
+options:
+  pravegaservice.cacheMaxSize: "11811160064"
+```
+
+To summarize the way in which the segmentstore pod memory is distributed:
+
+```
+POD_MEM_LIMIT = JVM Heap + Direct Memory
+Direct Memory = pravegaservice.cacheMaxSize + 1GB/2GB (other uses)
+```
+
 ## Upgrade process
 
 ![pravega operator component update](https://user-images.githubusercontent.com/3786750/51993862-f3d1cb00-24af-11e9-857d-281eceb7fd90.png)

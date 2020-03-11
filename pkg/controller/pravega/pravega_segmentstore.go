@@ -66,6 +66,8 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
+	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
+	secret := p.Spec.Pravega.SegmentStoreSecret
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -74,6 +76,24 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
+	}
+	if configMapName != "" {
+		environment = append(environment, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+			},
+		})
+	}
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) == "" {
+		environment = append(environment, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: strings.TrimSpace(secret.Secret),
+				},
+			},
+		})
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
@@ -150,6 +170,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
+
+	configureSegmentstoreSecret(&podSpec, p)
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
@@ -247,10 +269,9 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
+			"EXTENDEDS3_CONFIGURI": pravegaSpec.Tier2.Ecs.ConfigUri,
 			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
-			"EXTENDEDS3_URI":       pravegaSpec.Tier2.Ecs.Uri,
-			"EXTENDEDS3_ROOT":      pravegaSpec.Tier2.Ecs.Root,
-			"EXTENDEDS3_NAMESPACE": pravegaSpec.Tier2.Ecs.Namespace,
+			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
 		}
 	}
 
@@ -293,6 +314,26 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
 			},
+		})
+	}
+}
+
+func configureSegmentstoreSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	secret := p.Spec.Pravega.SegmentStoreSecret
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) != "" {
+		vol := corev1.Volume{
+			Name: ssSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: strings.TrimSpace(secret.Secret),
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssSecretVolumeName,
+			MountPath: strings.TrimSpace(secret.MountPath),
 		})
 	}
 }
