@@ -91,6 +91,15 @@ func IsVersionBelow07(ver string) bool {
 	return false
 }
 
+func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
+	/*this check is to avoid creation of a new segmentstore when the CurrentVersionis 06 and target version is 07
+	  as we are doing it in the upgrade path*/
+	if !IsVersionBelow07(p.Spec.Version) && IsVersionBelow07(p.Status.CurrentVersion) {
+		return true
+	}
+	return false
+}
+
 //to return name of segmentstore based on the version
 func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
 	//if version is below 0.7 this name will be assigned

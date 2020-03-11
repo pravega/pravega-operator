@@ -170,10 +170,9 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 		return err
 	}
 
-	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
 	/*this check is to avoid creation of a new segmentstore when the CurrentVersionis 06 and target version is 07
 	  as we are doing it in the upgrade path*/
-	if upgradeCondition == nil {
+	if !util.IsClusterUpgradingTo07(p) {
 		err = r.deploySegmentStore(p)
 		if err != nil {
 			log.Printf("failed to deploy segment store: %v", err)
@@ -310,7 +309,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 
 	/*this condition is to stop syncSegmentstore version from running when we are updating the segment store version as in case of
 	updapting the ss from version below 06 to version above 07 get() call in syncSegmentstore will result in error */
-	if p.Status.CurrentVersion == p.Spec.Version {
+	if !util.IsClusterUpgradingTo07(p) {
 		err = r.syncSegmentStoreSize(p)
 		if err != nil {
 			return err
@@ -368,7 +367,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		}
 
 		// this check is to avoid calling syncStatefulSetPvc() over ss with version above 07
-		if util.IsVersionBelow07(p.Spec.Version) {
+		if !util.IsClusterUpgradingTo07(p) {
 			err = r.syncStatefulSetPvc(sts)
 			if err != nil {
 				return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
