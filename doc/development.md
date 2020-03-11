@@ -1,7 +1,7 @@
 ## Development
 
 Requirements:
-  - Go 1.10+
+  - Go 1.11+
 
 ### Install Go
 
@@ -46,6 +46,10 @@ This should clone operator code under `$GOPATH/src/github.com/pravega/pravega-op
 Set the following system property to use go modules when the version of go is below 1.13 and the operator code is cloned inside the GOPATH
 
 `GO111MODULE=on`
+
+For pulling the dependencies we are using go modules for more details on go modules refer the link below:-
+
+https://blog.golang.org/using-go-modules
 ### Build the operator image
 
 Use the `make` command to build the Pravega operator image, it will also automatically get all the dependencies by using the go.mod file.
