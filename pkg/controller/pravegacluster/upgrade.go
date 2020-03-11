@@ -375,6 +375,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 			}
 		} else {
 			//this check is to remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
+			*newsts.Spec.Replicas = p.Spec.Pravega.SegmentStoreReplicas
 			err = r.client.Update(context.TODO(), newsts)
 			if err != nil {
 				return false, err
