@@ -1,7 +1,7 @@
 ## Development
 
 Requirements:
-  - Go 1.11+
+  - Go 1.13+
 
 ### Install Go
 
@@ -47,7 +47,7 @@ Set the following system property to use go modules when the version of go is be
 
 `GO111MODULE=on`
 
-For pulling the dependencies we are using go modules for more details on go modules refer the link below:-
+For pulling the dependencies we are using go modules for more details on go modules refer to the link below:-
 
 https://blog.golang.org/using-go-modules
 ### Build the operator image
