@@ -156,3 +156,5 @@ spec:
   replicas: 1
   persistence:
     reclaimPolicy: Delete
+    persistentVolumeClaimSpec:
+       storageClassName: "nfs"
