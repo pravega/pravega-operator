@@ -320,13 +320,13 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 
 func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	//this is to check if the target image is above 07 and the current image is below 07
-	if p.Status.TargetVersion != "" && !util.IsVersionBelow07(p.Status.TargetVersion) && util.IsVersionBelow07(p.Status.CurrentVersion) {
-		return r.syncSegmentStoreVersionFrom06To07(p)
+	if util.IsClusterUpgradingTo07(p) {
+		return r.syncSegmentStoreVersionTo07(p)
 	}
 	return r.syncSegmentStoreVersion(p)
 }
 
-func (r *ReconcilePravegaCluster) syncSegmentStoreVersionFrom06To07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	newsts := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, newsts, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
@@ -338,7 +338,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionFrom06To07(p *pravegav1
 			return false, err
 		}
 	}
-
 	oldsts := &appsv1.StatefulSet{}
 	name := p.Name + "-pravega-segmentstore"
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, oldsts)
@@ -349,38 +348,42 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionFrom06To07(p *pravegav1
 		if err != nil {
 			return false, err
 		}
-		return true, nil
+		//this is the condition that means upgrade is completed
+		if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+			return true, nil
+		}
 	}
 
-	//this check is run till the value of old sts replicas is greater than 0 and will increase two replicas of the new sts and delete 2 replicas of the old sts
-	if *oldsts.Spec.Replicas > 0 {
-		*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
-		if *oldsts.Spec.Replicas == 1 {
-			*newsts.Spec.Replicas = *newsts.Spec.Replicas - 1
-		}
-		err = r.client.Update(context.TODO(), newsts)
-		if err != nil {
-			return false, err
-		}
-		*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
-		if *oldsts.Spec.Replicas < 0 {
+	p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
+	//this check to ensure that the oldsts always decrease by 2 as well as newsts pods increase by 2 only then the next increment or decrement happen
+	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+		//this check is run till the value of old sts replicas is greater than 0 and will increase two replicas of the new sts and delete 2 replicas of the old sts
+		if *oldsts.Spec.Replicas > 2 {
+			*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
+			err = r.client.Update(context.TODO(), newsts)
+			if err != nil {
+				return false, err
+			}
+			*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
+			err = r.client.Update(context.TODO(), oldsts)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			//this check is to remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
+			err = r.client.Update(context.TODO(), newsts)
+			if err != nil {
+				return false, err
+			}
 			*oldsts.Spec.Replicas = 0
-		}
-		err = r.client.Update(context.TODO(), oldsts)
-		if err != nil {
-			return false, err
-		}
-	}
-
-	//this check is to remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
-	if *oldsts.Spec.Replicas == 0 {
-		err = r.syncStatefulSetPvc(oldsts)
-		if err != nil {
-			return false, err
-		}
-		err = r.client.Delete(context.TODO(), oldsts)
-		if err != nil {
-			return false, err
+			err = r.syncStatefulSetPvc(oldsts)
+			if err != nil {
+				return false, err
+			}
+			err = r.client.Delete(context.TODO(), oldsts)
+			if err != nil {
+				return false, err
+			}
 		}
 	}
 	return false, nil

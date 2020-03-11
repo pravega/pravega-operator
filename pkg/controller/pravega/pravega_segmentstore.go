@@ -189,7 +189,12 @@ func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
 			},
 		}
 	}
-	return nil
+	return []corev1.VolumeMount{
+		{
+			Name:      heapDumpName,
+			MountPath: heapDumpDir,
+		},
+	}
 }
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
