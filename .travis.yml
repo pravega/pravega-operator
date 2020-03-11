@@ -80,10 +80,12 @@ jobs:
         - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
         # Install ZooKeeper
         - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
-        - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get zookeepercluster example -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster example -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 1; done
+        - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 1; done
         # Install Bookkeeper
         - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
-        - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH1);ready=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 1; done
+          sleep 1m
+        - kubectl -n default create -f test/e2e/resources/bk-cluster.yaml
+        - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega-bk -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; done
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:

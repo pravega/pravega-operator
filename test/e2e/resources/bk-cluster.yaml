@@ -1,0 +1,15 @@
+apiVersion: "bookkeeper.pravega.io/v1alpha1"
+kind: "BookkeeperCluster"
+metadata:
+  name: "pravega-bk"
+spec:
+  zookeeperUri: zk-client:2181
+
+  image:
+      repository: pravega/bookkeeper
+      pullPolicy: IfNotPresent
+
+  replicas: 3
+
+  autoRecovery: true
+  version: 0.6.1
