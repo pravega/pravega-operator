@@ -30,7 +30,7 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 			APIVersion: "pravega.pravega.io/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test",
+			Name:      "pravega",
 			Namespace: namespace,
 		},
 	}
