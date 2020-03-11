@@ -20,7 +20,7 @@ const (
 	DefaultZookeeperUri = "zk-client:2181"
 
 	// DefaultBookkeeperUri is the default ZooKeeper URI in the form of "hostname:port"
-	DefaultBookkeeperUri = "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
+	DefaultBookkeeperUri = "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
