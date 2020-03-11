@@ -101,9 +101,6 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 	if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
 		p.Spec.Pravega.Image.Tag = ""
 	}
-	if p.Spec.Bookkeeper != nil && p.Spec.Bookkeeper.Image != nil && p.Spec.Bookkeeper.Image.Tag != "" {
-		p.Spec.Bookkeeper.Image.Tag = ""
-	}
 
 	requestVersion := p.Spec.Version
 

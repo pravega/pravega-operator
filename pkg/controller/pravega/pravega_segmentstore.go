@@ -218,16 +218,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 
 	// Wait for at least 3 Bookies to come up
-	var waitFor []string
-	for i := int32(0); i < util.Min(3, p.Spec.Bookkeeper.Replicas); i++ {
-		waitFor = append(waitFor,
-			fmt.Sprintf("%s-%d.%s.%s:3181",
-				util.StatefulSetNameForBookie(p.Name),
-				i,
-				util.HeadlessServiceNameForBookie(p.Name),
-				p.Namespace))
-	}
-	configData["WAIT_FOR"] = strings.Join(waitFor, ",")
+	configData["WAIT_FOR"] = p.Spec.BookkeeperUri
 
 	if p.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"

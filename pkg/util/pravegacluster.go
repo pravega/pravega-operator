@@ -160,15 +160,11 @@ func RemoveString(slice []string, str string) (result []string) {
 }
 
 func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
-	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas)
 }
 
 func PravegaImage(p *v1alpha1.PravegaCluster) (image string) {
 	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Spec.Version)
-}
-
-func BookkeeperImage(p *v1alpha1.PravegaCluster) (image string) {
-	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Spec.Version)
 }
 
 func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
@@ -176,13 +172,6 @@ func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
 		return "", fmt.Errorf("target version is not set")
 	}
 	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Status.TargetVersion), nil
-}
-
-func BookkeeperTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
-	if p.Status.TargetVersion == "" {
-		return "", fmt.Errorf("target version is not set")
-	}
-	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Status.TargetVersion), nil
 }
 
 func GetPodVersion(pod *v1.Pod) string {

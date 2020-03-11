@@ -97,14 +97,13 @@ var _ = Describe("PravegaCluster Controller", func() {
 					foundPravega := &v1alpha1.PravegaCluster{}
 					err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 					Ω(err).Should(BeNil())
-					Ω(foundPravega.Spec.Version).Should(Equal("0.4.0"))
+					Ω(foundPravega.Spec.Version).Should(Equal("0.6.1"))
 					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
 					Ω(foundPravega.Spec.ExternalAccess).ShouldNot(BeNil())
 					Ω(foundPravega.Spec.ExternalAccess.Enabled).Should(Equal(false))
 					Ω(foundPravega.Spec.ExternalAccess.DomainName).Should(Equal(""))
-					//Ω(foundPravega.Spec.ExternalAccess.Type).Should()
 					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
-					Ω(foundPravega.Spec.Bookkeeper).ShouldNot(BeNil())
+					Ω(foundPravega.Spec.BookkeeperUri).ShouldNot(BeNil())
 				})
 			})
 
@@ -117,38 +116,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 				It("should requeue after ReconfileTime delay", func() {
 					Ω(res.RequeueAfter).To(Equal(ReconcileTime))
-				})
-
-				Context("Bookkeeper", func() {
-					It("should create a statefulset", func() {
-						foundBk := &appsv1.StatefulSet{}
-						nn := types.NamespacedName{
-							Name:      util.StatefulSetNameForBookie(p.Name),
-							Namespace: Namespace,
-						}
-						err = client.Get(context.TODO(), nn, foundBk)
-						Ω(err).Should(BeNil())
-					})
-
-					It("should create a config-map", func() {
-						foundCm := &corev1.ConfigMap{}
-						nn := types.NamespacedName{
-							Name:      util.ConfigMapNameForBookie(p.Name),
-							Namespace: Namespace,
-						}
-						err = client.Get(context.TODO(), nn, foundCm)
-						Ω(err).Should(BeNil())
-					})
-
-					It("should create a headless-service", func() {
-						foundSvc := &corev1.Service{}
-						nn := types.NamespacedName{
-							Name:      util.HeadlessServiceNameForBookie(p.Name),
-							Namespace: Namespace,
-						}
-						err = client.Get(context.TODO(), nn, foundSvc)
-						Ω(err).Should(BeNil())
-					})
 				})
 
 				Context("Controller", func() {
@@ -248,21 +215,8 @@ var _ = Describe("PravegaCluster Controller", func() {
 					},
 				}
 				p.Spec = v1alpha1.ClusterSpec{
-					Version: "0.3.2-rc2",
-					Bookkeeper: &v1alpha1.BookkeeperSpec{
-						Replicas:  5,
-						Resources: customReq,
-						Image: &v1alpha1.BookkeeperImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "foo/bookkeeper",
-							},
-						},
-						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
-							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
-							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
-							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
-						},
-					},
+					Version:       "0.3.2-rc2",
+					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:    2,
 						SegmentStoreReplicas:  4,
@@ -300,59 +254,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 			Context("Cluster", func() {
 				It("should have a custom version", func() {
 					Ω(p.Spec.Version).Should(Equal("0.3.2-rc2"))
-				})
-			})
-
-			Context("Bookkeeper", func() {
-				var foundBk *appsv1.StatefulSet
-
-				BeforeEach(func() {
-					foundBk = &appsv1.StatefulSet{}
-					nn := types.NamespacedName{
-						Name:      util.StatefulSetNameForBookie(p.Name),
-						Namespace: Namespace,
-					}
-					err = client.Get(context.TODO(), nn, foundBk)
-				})
-
-				It("should create a bookie statefulset", func() {
-					Ω(err).Should(BeNil())
-				})
-
-				It("should set number of replicas", func() {
-					Ω(*foundBk.Spec.Replicas).Should(BeEquivalentTo(5))
-				})
-
-				It("should set container image", func() {
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Image).Should(Equal("foo/bookkeeper:0.3.2-rc2"))
-				})
-
-				It("should set pod resource requests and limits", func() {
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu().String()).Should(Equal("2"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Requests.Memory().String()).Should(Equal("4Gi"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu().String()).Should(Equal("4"))
-					Ω(foundBk.Spec.Template.Spec.Containers[0].Resources.Limits.Memory().String()).Should(Equal("6Gi"))
-				})
-
-				It("shoud overide bookkeeper jvm options", func() {
-					foundCm := &corev1.ConfigMap{}
-					nn := types.NamespacedName{
-						Name:      util.ConfigMapNameForBookie(p.Name),
-						Namespace: Namespace,
-					}
-					err = client.Get(context.TODO(), nn, foundCm)
-					Ω(err).Should(BeNil())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms2g")).Should(BeTrue())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=2g")).Should(BeTrue())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=20")).Should(BeTrue())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:-UseG1GC")).Should(BeTrue())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=10")).Should(BeTrue())
-
-					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-Xms1g")).Should(BeFalse())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_MEM_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeFalse())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:MaxGCPauseMillis=10")).Should(BeFalse())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_OPTS"], "-XX:+UseG1GC")).Should(BeFalse())
-					Ω(strings.Contains(foundCm.Data["BOOKIE_GC_LOGGING_OPTS"], "-XX:NumberOfGCLogFiles=5")).Should(BeFalse())
 				})
 			})
 

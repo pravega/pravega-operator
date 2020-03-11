@@ -202,10 +202,6 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
-			name: "bookkeeper",
-			fun:  r.syncBookkeeperVersion,
-		},
-		componentSyncVersionFun{
 			name: "segmentstore",
 			fun:  r.syncSegmentStoreVersion,
 		},
@@ -405,93 +401,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 
 	// Wait until next reconcile iteration
-	return false, nil
-}
-
-func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForBookie(p.Name)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-	if err != nil {
-		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
-	}
-
-	targetImage, err := util.BookkeeperTargetImage(p)
-	if err != nil {
-		return false, err
-	}
-
-	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.UpdateProgress(pravegav1alpha1.UpdatingBookkeeperReason, "0")
-		// Need to update pod template
-		// This will trigger the rolling upgrade process
-		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
-
-		configMap := pravega.MakeBookieConfigMap(p)
-		controllerutil.SetControllerReference(p, configMap, r.scheme)
-		err = r.client.Update(context.TODO(), configMap)
-		if err != nil {
-			return false, err
-		}
-
-		sts.Spec.Template = pravega.MakeBookiePodTemplate(p)
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return false, err
-		}
-
-		// Updated pod template
-		return false, nil
-	}
-
-	// Pod template already updated
-	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
-		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
-
-	// Check whether the upgrade is in progress or has completed
-	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
-		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
-		// StatefulSet upgrade completed
-		return true, nil
-	}
-
-	// Upgrade still in progress
-
-	// Check if bookkeeper fail to have progress
-	err = checkSyncTimeout(p, pravegav1alpha1.UpdatingBookkeeperReason, sts.Status.UpdatedReplicas)
-	if err != nil {
-		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
-	}
-
-	// If all replicas are ready, upgrade an old pod
-	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
-	if err != nil {
-		return false, err
-	}
-	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
-	if err != nil {
-		// Abort if there is any errors with the updated pods
-		return false, err
-	}
-
-	if ready {
-		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
-		if err != nil {
-			return false, err
-		}
-
-		if pod == nil {
-			return false, fmt.Errorf("could not obtain outdated pod")
-		}
-
-		log.Infof("updating pod: %s", pod.Name)
-
-		err = r.client.Delete(context.TODO(), pod)
-		if err != nil {
-			return false, err
-		}
-	}
-	// wait until the next reconcile iteration
 	return false, nil
 }
 

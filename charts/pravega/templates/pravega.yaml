@@ -2,7 +2,7 @@ apiVersion: "pravega.pravega.io/v1alpha1"
 kind: "PravegaCluster"
 metadata:
   name: {{ template "pravega.fullname" . }}
-  labels: 
+  labels:
     app.kubernetes.io/name: "pravega-cluster"
 spec:
   version: {{ .Values.version }}
@@ -10,40 +10,7 @@ spec:
   externalAccess:
     enabled: {{ .Values.externalAccess.enabled }}
     type: {{ .Values.externalAccess.type }}
-  bookkeeper:
-    {{- if .Values.externalAccess.enabled }}
-    serviceAccountName: {{ .Values.serviceAccount.name }}
-    {{- end }}
-    image:
-      repository: {{ .Values.bookkeeper.image.repository }}
-    replicas: {{ .Values.bookkeeper.replicas }}
-    resources:
-      requests:
-        memory: "3Gi"
-        cpu: "1000m"
-      limits:
-        memory: "5Gi"
-        cpu: "2000m"
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: {{ .Values.bookkeeper.storage.className }}
-        resources:
-          requests:
-            storage: {{ .Values.bookkeeper.storage.ledgerVolumeRequest }}
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: {{ .Values.bookkeeper.storage.className }}
-        resources:
-          requests:
-            storage: {{ .Values.bookkeeper.storage.journalVolumeRequest }}
-      indexVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: {{ .Values.bookkeeper.storage.className }}
-        resources:
-          requests:
-            storage: {{ .Values.bookkeeper.storage.indexVolumeRequest }}
-    autoRecovery: {{ .Values.bookkeeper.autoRecovery }}
+  bookkeeperUri: {{ .Values.bookkeeperUri }}
   pravega:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
