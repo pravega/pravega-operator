@@ -43,10 +43,6 @@ go get github.com/pravega/pravega-operator
 ```
 This should clone operator code under `$GOPATH/src/github.com/pravega/pravega-operator`
 
-Set the following system property to use go modules when the version of go is below 1.13 and the operator code is cloned inside the GOPATH
-
-`GO111MODULE=on`
-
 For pulling the dependencies we are using go modules for more details on go modules refer to the link below:-
 
 https://blog.golang.org/using-go-modules
