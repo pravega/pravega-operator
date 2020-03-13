@@ -2,8 +2,6 @@
 
 This document shows how to upgrade a Pravega cluster managed by the operator to a desired version while preserving the cluster's state and data whenever possible.
 
-> **Warning:** The upgrade feature is still considered experimental, so its use is discouraged if you care about your data.
-
 ## Overview
 
 The activity diagram below shows the overall upgrade process started by an end-user and performed by the operator.
@@ -35,19 +33,22 @@ example   0.4.0     7                 7               11m
 
 ## Upgrade Path Matrix
 
-| BASE VERSION | TARGET VERSION                   |
-| ------------ | ----------------                 |
-| 0.1.0        | 0.1.0                            |
-| 0.2.0        | 0.2.0                            |
-| 0.3.0        | 0.3.0, 0.3.1, 0.3.2              |
-| 0.3.1        | 0.3.1, 0.3.2                     |
-| 0.3.2        | 0.3.2                            |
-| 0.4.0        | 0.4.0                            |
-| 0.5.0        | 0.5.0, 0.5.1, 0.6.0, 0.6.1, 0.7.0|
-| 0.5.1        | 0.5.1, 0.6.0, 0.6.1, 0.7.0       |
-| 0.6.0        | 0.6.0, 0.6.1, 0.7.0              |
-| 0.6.1        | 0.6.1, 0.7.0                     |
-| 0.7.0        | 0.7.0                            |
+| BASE VERSION | TARGET VERSION                                        |
+| ------------ | ----------------                                      |
+| 0.1.0        | 0.1.0                                                 |
+| 0.2.0        | 0.2.0                                                 |
+| 0.3.0        | 0.3.0, 0.3.1, 0.3.2                                   |
+| 0.3.1        | 0.3.1, 0.3.2                                          |
+| 0.3.2        | 0.3.2                                                 |
+| 0.4.0        | 0.4.0                                                 |
+| 0.5.0        | 0.5.0, 0.5.1, 0.6.0, 0.6.1, 0.6.2, 0.6.3, 0.7.0, 0.8.0|
+| 0.5.1        | 0.5.1, 0.6.0, 0.6.1, 0.6.2, 0.6.3, 0.7.0, 0.8.0       |
+| 0.6.0        | 0.6.0, 0.6.1, 0.6.2, 0.6.3, 0.7.0, 0.8.0              |
+| 0.6.1        | 0.6.1, 0.6.2, 0.6.3, 0.7.0, 0.8.0                     |
+| 0.6.2        | 0.6.2, 0.6.3, 0.7.0, 0.8.0                            |
+| 0.6.3        | 0.6.3, 0.7.0, 0.8.0                                   |
+| 0.7.0        | 0.7.0, 0.8.0                                          |
+| 0.8.0        | 0.8.0                                                 |
 
 ## Trigger an upgrade
 
