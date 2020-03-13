@@ -100,14 +100,22 @@ func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
 	return false
 }
 
+//if version is below 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreAbove07(name string) string {
+	return fmt.Sprintf("%s-pravega-above-version-07-segmentstore", name)
+}
+
+//if version is above or equals to 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreBelow07(name string) string {
+	return fmt.Sprintf("%s-pravega-segmentstore", name)
+}
+
 //to return name of segmentstore based on the version
 func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
-	//if version is below 0.7 this name will be assigned
 	if p.Spec.Version == "" || IsVersionBelow07(p.Spec.Version) {
-		return fmt.Sprintf("%s-pravega-segmentstore", p.Name)
+		StatefulSetNameForSegmentstoreBelow07(p.Name)
 	}
-	//if version is above or equals to 0.7 this name will be assigned
-	return fmt.Sprintf("%s-pravega-above-version-07-segmentstore", p.Name)
+	return StatefulSetNameForSegmentstoreAbove07(p.Name)
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
