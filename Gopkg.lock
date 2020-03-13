@@ -597,19 +597,7 @@
   version = "v1.2.0"
 
 [[projects]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  name = "github.com/pravega/pravega-operator"
-  packages = ["pkg/apis","pkg/apis/pravega/v1alpha1","pkg/controller","pkg/controller/config","pkg/controller/pravega","pkg/controller/pravegacluster","pkg/test/e2e/e2eutil","pkg/util","pkg/version","pkg/webhook"]
-  revision = "8b2cd476831860bce872e6833a233f04f7e8cbf3"
-  version = "v0.4.3"
-
-[[projects]]
->>>>>>> util functions for checking version and getting new stateful set name added
-=======
   digest = "1:ec2a29e3bd141038ae5c3d3a4f57db0c341fcc1d98055a607aedd683aed124ee"
->>>>>>> removed vendor folder
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
@@ -1246,13 +1234,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-<<<<<<< HEAD
-<<<<<<< HEAD
-  inputs-digest = "683ff6d27d5ee43d5cd27d4eab653ac70810cc2bfd85e801ddaef0b198f7bb57"
-=======
-  inputs-digest = "4aef0c6ea7a30773c1dbc305d709837a5455b1c0a722ca01ffdfa5247078ef8f"
->>>>>>> util functions for checking version and getting new stateful set name added
-=======
   input-imports = [
     "github.com/gruntwork-io/terratest/modules/helm",
     "github.com/hashicorp/go-version",
@@ -1308,6 +1289,5 @@
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types",
   ]
->>>>>>> removed vendor folder
   solver-name = "gps-cdcl"
   solver-version = 1

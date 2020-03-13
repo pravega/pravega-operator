@@ -255,15 +255,6 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 }
 
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaCluster) (err error) {
-<<<<<<< HEAD
-	err = r.syncSegmentStoreSize(p)
-	if err != nil {
-		return err
-=======
-	err = r.syncBookieSize(p)
-	if err != nil {
-		return err
-	}
 
 	/*this condition is to stop syncSegmentstore version from running when we are updating the segment store version as in case of
 	updapting the ss from version below 07 to version above 07 get() call in syncSegmentstore will result in error */
@@ -272,9 +263,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 		if err != nil {
 			return err
 		}
->>>>>>> all changes for upgrade added
 	}
-
 	err = r.syncControllerSize(p)
 	if err != nil {
 		return err
