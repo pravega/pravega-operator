@@ -172,7 +172,7 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 
 	/*this check is to avoid creation of a new segmentstore when the CurrentVersionis 06 and target version is 07
 	  as we are doing it in the upgrade path*/
-	if !util.IsClusterUpgradingTo07(p) {
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
 		err = r.deploySegmentStore(p)
 		if err != nil {
 			log.Printf("failed to deploy segment store: %v", err)
@@ -309,7 +309,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 
 	/*this condition is to stop syncSegmentstore version from running when we are updating the segment store version as in case of
 	updapting the ss from version below 06 to version above 07 get() call in syncSegmentstore will result in error */
-	if !util.IsClusterUpgradingTo07(p) {
+	if !util.IsClusterUpgradingTo07(p) && !r.isRollbackTriggered(p) {
 		err = r.syncSegmentStoreSize(p)
 		if err != nil {
 			return err
