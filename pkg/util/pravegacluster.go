@@ -100,12 +100,12 @@ func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
 	return false
 }
 
-//if version is below 0.7 this name will be assigned
+//if version is above or equals to 0.7 this name will be assigned
 func StatefulSetNameForSegmentstoreAbove07(name string) string {
 	return fmt.Sprintf("%s-pravega-above-version-07-segmentstore", name)
 }
 
-//if version is above or equals to 0.7 this name will be assigned
+//if version is below 0.7 this name will be assigned
 func StatefulSetNameForSegmentstoreBelow07(name string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", name)
 }
