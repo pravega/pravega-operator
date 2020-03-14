@@ -427,6 +427,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 				return false, fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
 			}
 			*oldsts.Spec.Replicas = 0
+			err = r.client.Update(context.TODO(), oldsts)
+			if err != nil {
+				return false, fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
+			}
 			if util.IsClusterUpgradingTo07(p) {
 				err = r.syncStatefulSetPvc(oldsts)
 				if err != nil {
