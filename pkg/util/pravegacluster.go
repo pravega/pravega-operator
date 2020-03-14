@@ -113,7 +113,7 @@ func StatefulSetNameForSegmentstoreBelow07(name string) string {
 //to return name of segmentstore based on the version
 func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
 	if p.Spec.Version == "" || IsVersionBelow07(p.Spec.Version) {
-		StatefulSetNameForSegmentstoreBelow07(p.Name)
+		return StatefulSetNameForSegmentstoreBelow07(p.Name)
 	}
 	return StatefulSetNameForSegmentstoreAbove07(p.Name)
 }
