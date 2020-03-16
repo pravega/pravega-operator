@@ -84,6 +84,9 @@ func ConfigMapNameForSegmentstore(clusterName string) string {
 
 //function to check if the version is below 0.7 or not
 func IsVersionBelow07(ver string) bool {
+	if ver == "" {
+		return true
+	}
 	first3 := strings.Trim(ver, "\t \n")[0:3]
 	if first3 == "0.6" || first3 == "0.5" || first3 == "0.4" || first3 == "0.3" || first3 == "0.2" || first3 == "0.1" {
 		return true
@@ -111,7 +114,7 @@ func StatefulSetNameForSegmentstoreBelow07(name string) string {
 
 //to return name of segmentstore based on the version
 func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
-	if p.Spec.Version == "" || IsVersionBelow07(p.Spec.Version) {
+	if IsVersionBelow07(p.Spec.Version) {
 		return StatefulSetNameForSegmentstoreBelow07(p.Name)
 	}
 	return StatefulSetNameForSegmentstoreAbove07(p.Name)
