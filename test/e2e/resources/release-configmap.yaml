@@ -1,8 +1,7 @@
-{{- if eq .Values.production false }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: release-map
+  name: version-map
 data:
   0.1.0: "0.1.0"
   0.2.0: "0.2.0"
@@ -18,4 +17,3 @@ data:
   0.6.3: "0.6.3,0.7.0,0.8.0"
   0.7.0: "0.7.0,0.8.0"
   0.8.0: "0.8.0"
-{{- end }}

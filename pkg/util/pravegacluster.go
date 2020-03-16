@@ -33,10 +33,6 @@ func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
 }
 
-func ConfigMapNameForOperatorVersions() string {
-	return fmt.Sprintf("release-map")
-}
-
 func PdbNameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }

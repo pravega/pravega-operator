@@ -11,6 +11,7 @@ spec:
     enabled: {{ .Values.externalAccess.enabled }}
     type: {{ .Values.externalAccess.type }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}
+  versionMap : {{ template "versionmap.fullname" . }}
   pravega:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}

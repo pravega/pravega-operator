@@ -71,13 +71,13 @@ func (pwh *pravegaWebhookHandler) mutatePravegaManifest(ctx context.Context, p *
 
 func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	configMap := &corev1.ConfigMap{}
-	err := pwh.client.Get(ctx, types.NamespacedName{Name: util.ConfigMapNameForOperatorVersions(), Namespace: p.Namespace}, configMap)
+	err := pwh.client.Get(ctx, types.NamespacedName{Name: p.Spec.VersionMap, Namespace: p.Namespace}, configMap)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	versionMap := configMap.Data
+	supportedVersions := configMap.Data
 
 	// Identify the request Pravega version
 	// Mutate the version if it is empty
@@ -108,7 +108,7 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 	if err != nil {
 		return fmt.Errorf("request version is not in valid format: %v", err)
 	}
-	if _, ok := versionMap[normRequestVersion]; !ok {
+	if _, ok := supportedVersions[normRequestVersion]; !ok {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
@@ -135,7 +135,7 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 		// It should never happen
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
-	upgradeString, ok := versionMap[normFoundVersion]
+	upgradeString, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")

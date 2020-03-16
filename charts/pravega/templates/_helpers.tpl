@@ -19,3 +19,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{- printf "%s-%s-%s" .Release.Name $name .Values.serviceAccount.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "versionmap.fullname" -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- printf "version-map" -}}
+{{- end -}}

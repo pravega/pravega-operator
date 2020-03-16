@@ -25,6 +25,10 @@ const (
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
 
+	// DefaultVersionMap is the default configMap which contains the list of
+	// supported versions for the pravega cluster
+	DefaultVersionMap = "version-map"
+
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
 	DefaultPravegaVersion = "0.6.1"
@@ -103,6 +107,10 @@ type ClusterSpec struct {
 	//pravega-bookie-2.pravega-bookie-headless.default:3181
 	BookkeeperUri string `json:"bookkeeperUri"`
 
+	// VersionMap is the name of the configMap which contains the list of
+	// supported versions for the pravega cluster
+	VersionMap string `json:"versionMap"`
+
 	// Pravega configuration
 	Pravega *PravegaSpec `json:"pravega"`
 }
@@ -141,6 +149,11 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 
 	if s.BookkeeperUri == "" {
 		s.BookkeeperUri = DefaultBookkeeperUri
+		changed = true
+	}
+
+	if s.VersionMap == "" {
+		s.VersionMap = DefaultVersionMap
 		changed = true
 	}
 
