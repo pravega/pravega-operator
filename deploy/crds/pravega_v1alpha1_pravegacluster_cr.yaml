@@ -21,30 +21,7 @@ spec:
     enabled: true
     type: LoadBalancer
 
-  bookkeeper:
-    image:
-      repository: pravega/bookkeeper
-      tag: latest
-      pullPolicy: IfNotPresent
-
-    replicas: 3
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-    autoRecovery: true
+  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
   pravega:
     controllerReplicas: 1
