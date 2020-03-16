@@ -115,7 +115,6 @@ The upgrade workflow is as follows:
 
 Pravega Segment Store is the first component to be upgraded. The Segment Store is deployed as a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) due to its requirements on:
 
-- Persistent storage: each segmentstore need access to a persistent volume to store the cache. Losing the data on the cache would not be critical because the Segment Store would be able to recover based on the data in BookKeeper, but it would have a performance impact that we want to avoid when migrating, recreating, or upgrading Segment Store pods.
 - Stable network names: the `StatefulSet` provides pods with a predictable name and a [Headless service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services) creates DNS records for pods to be reachable by clients. If a pod is recreated or migrated to a different node, clients will continue to be able to reach the pod despite changing its IP address. As Segment Store pods need to be individually accessed by clients, so having a stable network identifier provided by the Statefulset and a headless service is very convenient.
 
 Statefulset [upgrade strategy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies) is configured in the `updateStrategy` field. It supports two type of strategies.
