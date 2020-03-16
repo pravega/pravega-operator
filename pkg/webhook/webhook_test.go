@@ -80,7 +80,7 @@ var _ = Describe("Admission webhook", func() {
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "release-map",
+					Name:      "version-map",
 					Namespace: Namespace,
 				},
 				Data: configData,

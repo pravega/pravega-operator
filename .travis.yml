@@ -87,7 +87,7 @@ jobs:
         - kubectl -n default create -f test/e2e/resources/bk-cluster.yaml
         - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done
         # Install the ConfigMap for version dependency
-        - kubectl -n default create -f test/e2e/resources/release-configmap.yaml
+        - kubectl -n default create -f test/e2e/resources/version-configmap.yaml
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:

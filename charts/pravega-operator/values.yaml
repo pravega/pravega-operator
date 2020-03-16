@@ -22,6 +22,3 @@ crd:
 
 # whether to enable test mode
 testmode: false
-
-# whether to run in production environment
-production: true

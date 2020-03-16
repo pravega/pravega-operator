@@ -24,3 +24,5 @@ pravega:
   storage:
     className: standard
   tier2: pravega-tier2
+
+production: true
