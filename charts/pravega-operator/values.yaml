@@ -4,7 +4,7 @@
 
 image:
   repository: pravega/pravega-operator
-  tag: 0.4.0
+  tag: latest
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
@@ -22,3 +22,6 @@ crd:
 
 # whether to enable test mode
 testmode: false
+
+# whether to run in production environment
+production: true
