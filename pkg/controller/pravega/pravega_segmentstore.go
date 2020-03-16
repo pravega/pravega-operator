@@ -177,24 +177,21 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 }
 
 func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
-	if util.IsVersionBelow07(p.Spec.Version) {
-		return []corev1.VolumeMount{
-			{
-				Name:      cacheVolumeName,
-				MountPath: cacheVolumeMountPoint,
-			},
-			{
-				Name:      heapDumpName,
-				MountPath: heapDumpDir,
-			},
-		}
-	}
-	return []corev1.VolumeMount{
+	volumeMount := []corev1.VolumeMount{
 		{
 			Name:      heapDumpName,
 			MountPath: heapDumpDir,
 		},
 	}
+
+	if util.IsVersionBelow07(p.Spec.Version) {
+		volumeMount = append(volumeMount, corev1.VolumeMount{
+			Name:      cacheVolumeName,
+			MountPath: cacheVolumeMountPoint,
+		})
+	}
+	return volumeMount
+
 }
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
