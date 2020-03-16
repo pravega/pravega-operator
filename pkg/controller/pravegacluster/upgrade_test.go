@@ -181,7 +181,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 					// Segmentstore
 					sts = &appsv1.StatefulSet{}
-					name := util.StatefulSetNameForSegmentstore(p.Name)
+					name :=  util.StatefulSetNameForSegmentstore(p)
 					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					targetImage, _ := util.PravegaTargetImage(foundPravega)
 					sts.Spec.Template.Spec.Containers[0].Image = targetImage
