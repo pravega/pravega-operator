@@ -33,6 +33,9 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 			Name:      "pravega",
 			Namespace: namespace,
 		},
+		Spec: api.ClusterSpec{
+			SupportedVersionsMap: "version-map",
+		},
 	}
 }
 

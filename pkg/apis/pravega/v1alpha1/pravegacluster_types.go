@@ -25,9 +25,9 @@ const (
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
 
-	// DefaultVersionMap is the default configMap which contains the list of
+	// SupportedVersionsMap is the default configMap which contains the list of
 	// supported versions for the pravega cluster
-	DefaultVersionMap = "version-map"
+	DefaultSupportedVersionsMap = "version-map"
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
@@ -109,7 +109,7 @@ type ClusterSpec struct {
 
 	// VersionMap is the name of the configMap which contains the list of
 	// supported versions for the pravega cluster
-	VersionMap string `json:"versionMap"`
+	SupportedVersionsMap string `json:"supportedVersionsMap"`
 
 	// Pravega configuration
 	Pravega *PravegaSpec `json:"pravega"`
@@ -152,8 +152,8 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	if s.VersionMap == "" {
-		s.VersionMap = DefaultVersionMap
+	if s.SupportedVersionsMap == "" {
+		s.SupportedVersionsMap = DefaultSupportedVersionsMap
 		changed = true
 	}
 

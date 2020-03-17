@@ -1,4 +1,4 @@
-{{- if .Values.production }}
+{{- if eq .Values.testmode false }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
