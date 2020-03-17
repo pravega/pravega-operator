@@ -20,7 +20,7 @@ spec:
     enabled: true
     type: LoadBalancer
   bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
-  supportedVersionsMap: version-map
+  supportedUpgradePaths: version-map
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3

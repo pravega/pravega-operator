@@ -71,7 +71,7 @@ func (pwh *pravegaWebhookHandler) mutatePravegaManifest(ctx context.Context, p *
 
 func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	configMap := &corev1.ConfigMap{}
-	err := pwh.client.Get(ctx, types.NamespacedName{Name: p.Spec.SupportedVersionsMap, Namespace: p.Namespace}, configMap)
+	err := pwh.client.Get(ctx, types.NamespacedName{Name: p.Spec.SupportedUpgradePaths, Namespace: p.Namespace}, configMap)
 	if err != nil {
 		log.Println(err)
 		return err
