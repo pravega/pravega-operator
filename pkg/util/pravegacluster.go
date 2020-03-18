@@ -133,21 +133,8 @@ func LabelsForController(pravegaCluster *v1alpha1.PravegaCluster) map[string]str
 }
 
 func LabelsForSegmentStore(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	if IsVersionBelow07(pravegaCluster.Spec.Version) {
-		return LabelsForSegmentStoreBelow07(pravegaCluster)
-	}
-	return LabelsForSegmentStoreAbove07(pravegaCluster)
-}
-
-func LabelsForSegmentStoreBelow07(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
 	labels := LabelsForPravegaCluster(pravegaCluster)
 	labels["component"] = "pravega-segmentstore"
-	return labels
-}
-
-func LabelsForSegmentStoreAbove07(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	labels := LabelsForPravegaCluster(pravegaCluster)
-	labels["component"] = "pravega-segment-store"
 	return labels
 }
 
