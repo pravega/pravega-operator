@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -56,14 +57,12 @@ var _ = Describe("Admission webhook", func() {
 				"0.3.1": "0.3.1,0.3.2",
 				"0.3.2": "0.3.2",
 				"0.4.0": "0.4.0",
-				"0.5.0": "0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.6.3,0.7.0,0.8.0",
-				"0.5.1": "0.5.1,0.6.0,0.6.1,0.6.2,0.6.3,0.7.0,0.8.0",
-				"0.6.0": "0.6.0,0.6.1,0.6.2,0.6.3,0.7.0,0.8.0",
-				"0.6.1": "0.6.1,0.6.2,0.6.3,0.7.0,0.8.0",
-				"0.6.2": "0.6.2,0.6.3,0.7.0,0.8.0",
-				"0.6.3": "0.6.3,0.7.0,0.8.0",
-				"0.7.0": "0.7.0,0.8.0",
-				"0.8.0": "0.8.0",
+				"0.5.0": "0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.5.1": "0.5.1,0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.6.0": "0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.6.1": "0.6.1,0.6.2,0.7.0",
+				"0.6.2": "0.6.2,0.7.0",
+				"0.7.0": "0.7.0",
 			}
 
 			p = &v1alpha1.PravegaCluster{
@@ -80,7 +79,7 @@ var _ = Describe("Admission webhook", func() {
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "version-map",
+					Name:      util.ConfigMapNameForPravega(p.Name),
 					Namespace: Namespace,
 				},
 				Data: configData,

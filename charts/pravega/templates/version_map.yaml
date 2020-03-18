@@ -1,8 +1,7 @@
-# create this configmap if the operator is to be deployed in a production environment
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: version-map
+  name: {{ template "versionmap.fullname" . }}
 data:
   0.1.0: "0.1.0"
   0.2.0: "0.2.0"

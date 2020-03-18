@@ -55,7 +55,6 @@ func TestPravegaTemplate(t *testing.T) {
 	g.Expect(p.Spec.ExternalAccess.Enabled).To(BeTrue())
 	g.Expect(p.Spec.ExternalAccess.Type).To(Equal(corev1.ServiceTypeNodePort))
 	g.Expect(p.Spec.BookkeeperUri).To(Equal("bookkeeper-service:3181"))
-	g.Expect(p.Spec.SupportedUpgradePaths).To(Equal("version-map"))
 	g.Expect(p.Spec.Pravega.Image.Repository).To(Equal("tristan1900/pravega"))
 	g.Expect(p.Spec.Pravega.ControllerReplicas).To(BeEquivalentTo(2))
 	g.Expect(p.Spec.Pravega.SegmentStoreReplicas).To(BeEquivalentTo(7))

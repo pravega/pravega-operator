@@ -22,5 +22,5 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "versionmap.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "version-map" -}}
+{{- printf "%s-%s-supported-upgrade-paths" .Release.Name $name -}}
 {{- end -}}
