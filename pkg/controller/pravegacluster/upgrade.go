@@ -502,13 +502,13 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	if r.rollbackConditionFor07(p, newsts) || r.upgradeConditionFor07(p, newsts, oldsts) {
 		//this check is run till the value of old sts replicas is greater than 0 and will increase two replicas of the new sts and delete 2 replicas of the old sts
 		if *oldsts.Spec.Replicas > 2 {
-			err = r.incrementWhenReplicasMoreThan2(p, newsts, oldsts)
+			err = r.scaleSegmentStoreSTS(p, newsts, oldsts)
 			if err != nil {
 				return false, err
 			}
 		} else {
 			//here we remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
-			err = r.incrementWhenReplicasLessThan2(p, newsts, oldsts)
+			err = r.transitionToNewSTS(p, newsts, oldsts)
 			if err != nil {
 				return false, err
 			}
@@ -535,7 +535,7 @@ func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1alpha1.Prave
 }
 
 //this function will increase two replicas of the new sts and delete 2 replicas of the old sts everytime it's called
-func (r *ReconcilePravegaCluster) incrementWhenReplicasMoreThan2(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
 	err := r.client.Update(context.TODO(), newsts)
 	if err != nil {
@@ -550,7 +550,7 @@ func (r *ReconcilePravegaCluster) incrementWhenReplicasMoreThan2(p *pravegav1alp
 }
 
 //This function will remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
-func (r *ReconcilePravegaCluster) incrementWhenReplicasLessThan2(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = p.Spec.Pravega.SegmentStoreReplicas
 	err := r.client.Update(context.TODO(), newsts)
 	if err != nil {
