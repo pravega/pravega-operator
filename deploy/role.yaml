@@ -57,6 +57,7 @@ rules:
   - services
   - pods
   - configmaps
+  - persistentvolumeclaims
   verbs:
   - get
   - watch
