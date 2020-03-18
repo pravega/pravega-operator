@@ -438,14 +438,11 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 		log.Printf("failed to get PravegaCluster: %v", err)
 		return false
 	}
-	//true will be return if both sts are present
 	return true
 }
 
-//this function calls the syncstoreversion for upgrade and rollback operation
+//To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
 func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	//in case of a upgrade from a version below 07 to a version above 07 syncSegmentStoreVersionTo07() is called and the util.IsClusterUpgradingTo07(p)  is true in this case
-	//in case of a rollback when upgrade fails from a version below 07 to a version above 07 syncSegmentStoreVersionTo07() is called and the r.IsClusterRollbackingFrom07(p) is true in this case
 	if util.IsClusterUpgradingTo07(p) || r.IsClusterRollbackingFrom07(p) {
 		return r.syncSegmentStoreVersionTo07(p)
 	}
