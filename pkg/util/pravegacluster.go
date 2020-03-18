@@ -87,9 +87,8 @@ func IsVersionBelow07(ver string) bool {
 	if ver == "" {
 		return true
 	}
-	normVer, _ := NormalizeVersion(ver)
-	trimNormVer := normVer[0:3]
-	if trimNormVer == "0.6" || trimNormVer == "0.5" || trimNormVer == "0.4" || trimNormVer == "0.3" || trimNormVer == "0.2" || trimNormVer == "0.1" {
+	result, _ := CompareVersions(ver, "0.7.0", "<")
+	if result {
 		return true
 	}
 	return false
@@ -134,8 +133,21 @@ func LabelsForController(pravegaCluster *v1alpha1.PravegaCluster) map[string]str
 }
 
 func LabelsForSegmentStore(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
+	if IsVersionBelow07(pravegaCluster.Spec.Version) {
+		return LabelsForSegmentStoreBelow07(pravegaCluster)
+	}
+	return LabelsForSegmentStoreAbove07(pravegaCluster)
+}
+
+func LabelsForSegmentStoreBelow07(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
 	labels := LabelsForPravegaCluster(pravegaCluster)
 	labels["component"] = "pravega-segmentstore"
+	return labels
+}
+
+func LabelsForSegmentStoreAbove07(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
+	labels := LabelsForPravegaCluster(pravegaCluster)
+	labels["component"] = "pravega-segment-store"
 	return labels
 }
 

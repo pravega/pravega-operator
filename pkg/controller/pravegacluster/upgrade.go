@@ -410,6 +410,7 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 	if !r.isRollbackTriggered(p) {
 		return false
 	}
+
 	//checking if sts above07 exsists
 	stsAbove07 := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForSegmentstoreAbove07(p.Name)
@@ -427,13 +428,17 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 	name = util.StatefulSetNameForSegmentstoreBelow07(p.Name)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, stsBelow07)
 	if err != nil {
+		//this is to handle a special condition when the newsts is there and oldsts is not there and we are doing rollback from a version above 07 to a version below 07
+		if errors.IsNotFound(err) && util.IsVersionBelow07(p.Spec.Version) {
+			return true
+		}
 		if errors.IsNotFound(err) {
 			return false
 		}
 		log.Printf("failed to get PravegaCluster: %v", err)
 		return false
 	}
-	//true will only be return if both sts are present
+	//true will be return if both sts are present
 	return true
 }
 
