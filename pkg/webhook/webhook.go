@@ -73,6 +73,9 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 	configMap := &corev1.ConfigMap{}
 	err := pwh.client.Get(ctx, types.NamespacedName{Name: util.ConfigMapNameForPravega(p.Name), Namespace: p.Namespace}, configMap)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("config map %s not found. Please create this config map first and then retry", util.ConfigMapNameForPravega(p.Name))
+		}
 		return err
 	}
 
