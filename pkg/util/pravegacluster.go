@@ -87,14 +87,15 @@ func IsVersionBelow07(ver string) bool {
 	if ver == "" {
 		return true
 	}
-	first3 := strings.Trim(ver, "\t \n")[0:3]
-	if first3 == "0.6" || first3 == "0.5" || first3 == "0.4" || first3 == "0.3" || first3 == "0.2" || first3 == "0.1" {
+	normVer, _ := NormalizeVersion(ver)
+	trimNormVer := normVer[0:3]
+	if trimNormVer == "0.6" || trimNormVer == "0.5" || trimNormVer == "0.4" || trimNormVer == "0.3" || trimNormVer == "0.2" || trimNormVer == "0.1" {
 		return true
 	}
 	return false
 }
 
-//this function will return true only in case of upgrading from a version below 0.7 to a version above 0.7
+//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
 func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
 	if !IsVersionBelow07(p.Spec.Version) && IsVersionBelow07(p.Status.CurrentVersion) {
 		return true
@@ -104,7 +105,7 @@ func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
 
 //if version is above or equals to 0.7 this name will be assigned
 func StatefulSetNameForSegmentstoreAbove07(name string) string {
-	return fmt.Sprintf("%s-pravega-above-version-07-segmentstore", name)
+	return fmt.Sprintf("%s-pravega-segment-store", name)
 }
 
 //if version is below 0.7 this name will be assigned

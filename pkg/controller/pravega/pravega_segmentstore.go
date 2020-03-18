@@ -12,7 +12,6 @@ package pravega
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
@@ -54,7 +53,6 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 		},
 	}
 	if util.IsVersionBelow07(pravegaCluster.Spec.Version) {
-		log.Printf("creating volume claim ")
 		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega)
 	}
 	return statefulSet
