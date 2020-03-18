@@ -54,10 +54,13 @@ rules:
   - ""
   resources:
   - nodes
-  - services
   - pods
-  - configmaps
+  - services
+  - endpoints
   - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
   verbs:
   - get
   - watch
