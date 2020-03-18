@@ -481,8 +481,8 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 		}
 	}
 
-	//TO detect upgade/rolback faiure
-	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas != p.Spec.Pravega.SegmentStoreReplicas {
+	//To detect upgade/rollback faiure
+	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas < p.Spec.Pravega.SegmentStoreReplicas {
 		//this will get all the pods created with this target version till now
 		pods, err := r.getStsPodsWithVersion(newsts, p.Status.TargetVersion)
 		if err != nil {
