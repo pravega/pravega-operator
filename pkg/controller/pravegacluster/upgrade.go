@@ -407,9 +407,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 
 //this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
 func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.PravegaCluster) bool {
-	if !r.isRollbackTriggered(p) {
-		return false
-	}
 	if util.IsVersionBelow07(p.Spec.Version) && r.IsAbove07STSPresent(p) {
 		return true
 	}
