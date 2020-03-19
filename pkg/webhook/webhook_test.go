@@ -12,12 +12,15 @@ package webhook
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,11 +44,27 @@ var _ = Describe("Admission webhook", func() {
 
 	Context("Version", func() {
 		var (
+			cm  *corev1.ConfigMap
 			p   *v1alpha1.PravegaCluster
 			pwh *pravegaWebhookHandler
 		)
 
 		BeforeEach(func() {
+			configData := map[string]string{
+				"0.1.0": "0.1.0",
+				"0.2.0": "0.2.0",
+				"0.3.0": "0.3.0,0.3.1,0.3.2",
+				"0.3.1": "0.3.1,0.3.2",
+				"0.3.2": "0.3.2",
+				"0.4.0": "0.4.0",
+				"0.5.0": "0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.5.1": "0.5.1,0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.6.0": "0.6.0,0.6.1,0.6.2,0.7.0",
+				"0.6.1": "0.6.1,0.6.2,0.7.0",
+				"0.6.2": "0.6.2,0.7.0",
+				"0.7.0": "0.7.0",
+			}
+
 			p = &v1alpha1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      Name,
@@ -53,6 +72,18 @@ var _ = Describe("Admission webhook", func() {
 				},
 			}
 			s.AddKnownTypes(v1alpha1.SchemeGroupVersion, p)
+
+			cm = &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      util.ConfigMapNameForPravega(p.Name),
+					Namespace: Namespace,
+				},
+				Data: configData,
+			}
 		})
 
 		Context("Mutate version", func() {
@@ -64,6 +95,10 @@ var _ = Describe("Admission webhook", func() {
 			BeforeEach(func() {
 				client = fake.NewFakeClient()
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 			Context("Version only in .spec", func() {
 				BeforeEach(func() {
@@ -140,6 +175,10 @@ var _ = Describe("Admission webhook", func() {
 			BeforeEach(func() {
 				client = fake.NewFakeClient()
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Standard version", func() {
@@ -199,6 +238,10 @@ var _ = Describe("Admission webhook", func() {
 			BeforeEach(func() {
 				client = fake.NewFakeClient()
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Version not compatible", func() {
@@ -236,6 +279,10 @@ var _ = Describe("Admission webhook", func() {
 				}
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Supported and in upgrade path", func() {
@@ -284,6 +331,10 @@ var _ = Describe("Admission webhook", func() {
 				p.Status.SetUpgradingConditionTrue("", "")
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Sending request when upgrading", func() {
@@ -311,6 +362,10 @@ var _ = Describe("Admission webhook", func() {
 				p.Status.SetRollbackConditionTrue("", "")
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Sending request when rolling back", func() {
@@ -340,6 +395,10 @@ var _ = Describe("Admission webhook", func() {
 
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Sending request when upgrade failed", func() {
@@ -381,6 +440,10 @@ var _ = Describe("Admission webhook", func() {
 
 				client = fake.NewFakeClient(p)
 				pwh = &pravegaWebhookHandler{client: client}
+				err = pwh.client.Create(context.TODO(), cm)
+				if err != nil {
+					log.Println(err)
+				}
 			})
 
 			Context("Sending request when cluster in error state", func() {
