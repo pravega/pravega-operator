@@ -447,11 +447,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 			*newsts.Spec.Replicas = 0
 			err2 := r.client.Create(context.TODO(), newsts)
 			if err2 != nil {
-				log.Printf("failed to create StatefulSet: %v", err)
-				return false, err
+				log.Printf("failed to create StatefulSet: %v", err2)
+				return false, err2
 			}
-		}
-		if !errors.IsNotFound(err) {
+		} else {
 			log.Printf("failed to get StatefulSet: %v", err)
 			return false, err
 		}
