@@ -410,8 +410,14 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 	if !r.isRollbackTriggered(p) {
 		return false
 	}
+	if util.IsVersionBelow07(p.Spec.Version) && r.IsAbove07STSPresent(p) {
+		return true
+	}
+	return false
+}
 
-	//checking if sts above07 exsists
+//This function checks if stsabove07 exsists
+func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1alpha1.PravegaCluster) bool {
 	stsAbove07 := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForSegmentstoreAbove07(p.Name)
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, stsAbove07)
@@ -419,48 +425,37 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 		if errors.IsNotFound(err) {
 			return false
 		}
-		log.Printf("failed to get PravegaCluster: %v", err)
-		return false
-	}
-
-	//checking if sts below07 exsists
-	stsBelow07 := &appsv1.StatefulSet{}
-	name = util.StatefulSetNameForSegmentstoreBelow07(p.Name)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, stsBelow07)
-	if err != nil {
-		//this is to handle a special condition when the newsts is there and oldsts is not there and we are doing rollback from a version above 07 to a version below 07
-		if errors.IsNotFound(err) && util.IsVersionBelow07(p.Spec.Version) {
-			return true
-		}
-		if errors.IsNotFound(err) {
-			return false
-		}
-		log.Printf("failed to get PravegaCluster: %v", err)
+		log.Printf("failed to get StatefulSet: %v", err)
 		return false
 	}
 	return true
 }
 
-//To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
 func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	if util.IsClusterUpgradingTo07(p) || r.IsClusterRollbackingFrom07(p) {
 		return r.syncSegmentStoreVersionTo07(p)
 	}
-	//for all other cases of upgrades and rollback this function is called
 	return r.syncSegmentStoreVersion(p)
 }
 
-//this fuction is called when we want to upgrade ss from a version below 07 to a version above 07  as well as when the such upgrades fail then for doing rollback also it's called
+//To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
 	newsts := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, newsts, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
 	//this check is to see if the newsts is present or not if it's not present it will be created here
-	if err != nil && errors.IsNotFound(err) {
-		*newsts.Spec.Replicas = 0
-		err = r.client.Create(context.TODO(), newsts)
-		if err != nil {
+	if err != nil {
+		if errors.IsNotFound(err) {
+			*newsts.Spec.Replicas = 0
+			err2 := r.client.Create(context.TODO(), newsts)
+			if err2 != nil {
+				log.Printf("failed to create StatefulSet: %v", err)
+				return false, err
+			}
+		}
+		if !errors.IsNotFound(err) {
+			log.Printf("failed to get StatefulSet: %v", err)
 			return false, err
 		}
 	}
@@ -476,11 +471,15 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oldstsName, Namespace: p.Namespace}, oldsts)
 	//this check is to see if the old sts is present or not
-	if err != nil && errors.IsNotFound(err) {
-		//this is the condition where we are checking if the new ready ss pods are equal to the ss replicas thus meaning upgrade is completed
-		if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
-			return true, nil
+	if err != nil {
+		if errors.IsNotFound(err) {
+			//this is the condition where we are checking if the new ready ss pods are equal to the ss replicas thus meaning upgrade is completed
+			if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+				return true, nil
+			}
 		}
+		log.Printf("failed to get StatefulSet: %v", err)
+		return false, err
 	}
 
 	//To detect upgrade/rollback faiure
@@ -499,8 +498,6 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	}
 
 	//this check to ensure that the oldsts always decrease by 2 as well as newsts pods increase by 2 only then the next increment or decrement happen
-	//first condition is true and used in the case of rollbackCondition
-	//second condition is true and used in case of Upgrade
 	if r.rollbackConditionFor07(p, newsts) || r.upgradeConditionFor07(p, newsts, oldsts) {
 		//this check is run till the value of old sts replicas is greater than 0 and will increase two replicas of the new sts and delete 2 replicas of the old sts
 		if *oldsts.Spec.Replicas > 2 {
@@ -520,7 +517,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	return false, nil
 }
 
-//this function will check if furter increment or decrement in pods needed in case of rollback from version0.7
+//this function will check if furter increment or decrement in pods needed in case of rollback from version 0.7
 func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1alpha1.PravegaCluster, sts *appsv1.StatefulSet) bool {
 	if r.IsClusterRollbackingFrom07(p) && sts.Status.ReadyReplicas == *sts.Spec.Replicas {
 		return true
@@ -528,7 +525,7 @@ func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1alpha1.Prav
 	return false
 }
 
-//this function will check if furter increment or decrement in pods needed in case of upgrade to version0.7 or above
+//this function will check if furter increment or decrement in pods needed in case of upgrade to version 0.7 or above
 func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) bool {
 	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas && newsts.Status.ReadyReplicas == *newsts.Spec.Replicas {
 		return true

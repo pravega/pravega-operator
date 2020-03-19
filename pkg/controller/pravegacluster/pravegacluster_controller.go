@@ -254,7 +254,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaCluster) (err error) {
 	/*We skip calling syncSegmentStoreSize() during upgrade/rollback from version 07*/
-	if !util.IsClusterUpgradingTo07(p) && !r.isRollbackTriggered(p) {
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
 		err = r.syncSegmentStoreSize(p)
 		if err != nil {
 			return err
@@ -289,7 +289,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 		}
 
 		/*We skip calling syncStatefulSetPvc() during upgrade/rollback from version 07*/
-		if !util.IsClusterUpgradingTo07(p) && !r.isRollbackTriggered(p) {
+		if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
 			err = r.syncStatefulSetPvc(sts)
 			if err != nil {
 				return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
