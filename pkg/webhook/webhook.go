@@ -14,9 +14,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,26 +29,6 @@ import (
 	admissiontypes "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 
 	log "github.com/sirupsen/logrus"
-)
-
-var (
-	// The key is the supported versions, the value is a list of versions that can upgrade to.
-	supportedVersions = map[string][]string{
-		"0.1.0": []string{"0.1.0"},
-		"0.2.0": []string{"0.2.0"},
-		"0.3.0": []string{"0.3.0", "0.3.1", "0.3.2"},
-		"0.3.1": []string{"0.3.1", "0.3.2"},
-		"0.3.2": []string{"0.3.2"},
-		"0.4.0": []string{"0.4.0"},
-		"0.5.0": []string{"0.5.0", "0.5.1", "0.6.0", "0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.8.0"},
-		"0.5.1": []string{"0.5.1", "0.6.0", "0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.8.0"},
-		"0.6.0": []string{"0.6.0", "0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.8.0"},
-		"0.6.1": []string{"0.6.1", "0.6.2", "0.6.3", "0.7.0", "0.8.0"},
-		"0.6.2": []string{"0.6.2", "0.6.3", "0.7.0", "0.8.0"},
-		"0.6.3": []string{"0.6.3", "0.7.0", "0.8.0"},
-		"0.7.0": []string{"0.7.0", "0.8.0"},
-		"0.8.0": []string{"0.8.0"},
-	}
 )
 
 type pravegaWebhookHandler struct {
@@ -88,6 +70,17 @@ func (pwh *pravegaWebhookHandler) mutatePravegaManifest(ctx context.Context, p *
 }
 
 func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
+	configMap := &corev1.ConfigMap{}
+	err := pwh.client.Get(ctx, types.NamespacedName{Name: util.ConfigMapNameForPravega(p.Name), Namespace: p.Namespace}, configMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("config map %s not found. Please create this config map first and then retry", util.ConfigMapNameForPravega(p.Name))
+		}
+		return err
+	}
+
+	supportedVersions := configMap.Data
+
 	// Identify the request Pravega version
 	// Mutate the version if it is empty
 	if p.Spec.Version == "" {
@@ -144,11 +137,12 @@ func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *p
 		// It should never happen
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
-	upgradeList, ok := supportedVersions[normFoundVersion]
+	upgradeString, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")
 	}
+	upgradeList := strings.Split(upgradeString, ",")
 	if !util.ContainsVersion(upgradeList, normRequestVersion) {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
 	}
