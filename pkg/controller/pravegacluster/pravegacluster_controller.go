@@ -159,10 +159,14 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 		return err
 	}
 
-	err = r.deploySegmentStore(p)
-	if err != nil {
-		log.Printf("failed to deploy segment store: %v", err)
-		return err
+	/*this check is to avoid creation of a new segmentstore when the CurrentVersion is below 07 and target version is above 07
+	  as we are doing it in the upgrade path*/
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+		err = r.deploySegmentStore(p)
+		if err != nil {
+			log.Printf("failed to deploy segment store: %v", err)
+			return err
+		}
 	}
 
 	return nil
@@ -249,9 +253,12 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 }
 
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.syncSegmentStoreSize(p)
-	if err != nil {
-		return err
+	/*We skip calling syncSegmentStoreSize() during upgrade/rollback from version 07*/
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+		err = r.syncSegmentStoreSize(p)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = r.syncControllerSize(p)
@@ -264,7 +271,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 
 func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.PravegaCluster) (err error) {
 	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForSegmentstore(p.Name)
+	name := util.StatefulSetNameForSegmentstore(p)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 	if err != nil {
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
@@ -281,9 +288,12 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
 
-		err = r.syncStatefulSetPvc(sts)
-		if err != nil {
-			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+		/*We skip calling syncStatefulSetPvc() during upgrade/rollback from version 07*/
+		if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+			err = r.syncStatefulSetPvc(sts)
+			if err != nil {
+				return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+			}
 		}
 
 		if p.Spec.ExternalAccess.Enabled && scaleDown > 0 {

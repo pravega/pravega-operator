@@ -154,7 +154,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					It("should create a statefulset", func() {
 						foundSS := &appsv1.StatefulSet{}
 						nn := types.NamespacedName{
-							Name:      util.StatefulSetNameForSegmentstore(p.Name),
+							Name:      util.StatefulSetNameForSegmentstore(p),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSS)
@@ -317,7 +317,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundSS = &appsv1.StatefulSet{}
 					nn := types.NamespacedName{
-						Name:      util.StatefulSetNameForSegmentstore(p.Name),
+						Name:      util.StatefulSetNameForSegmentstore(p),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundSS)
