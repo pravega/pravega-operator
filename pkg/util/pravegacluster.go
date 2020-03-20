@@ -18,6 +18,7 @@ import (
 
 	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"k8s.io/api/core/v1"
 )
 
@@ -81,8 +82,42 @@ func ConfigMapNameForSegmentstore(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
 }
 
-func StatefulSetNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
+//function to check if the version is below 0.7 or not
+func IsVersionBelow07(ver string) bool {
+	if ver == "" {
+		return true
+	}
+	result, _ := CompareVersions(ver, "0.7.0", "<")
+	if result {
+		return true
+	}
+	return false
+}
+
+//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
+func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
+	if !IsVersionBelow07(p.Spec.Version) && IsVersionBelow07(p.Status.CurrentVersion) {
+		return true
+	}
+	return false
+}
+
+//if version is above or equals to 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreAbove07(name string) string {
+	return fmt.Sprintf("%s-pravega-segment-store", name)
+}
+
+//if version is below 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreBelow07(name string) string {
+	return fmt.Sprintf("%s-pravega-segmentstore", name)
+}
+
+//to return name of segmentstore based on the version
+func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
+	if IsVersionBelow07(p.Spec.Version) {
+		return StatefulSetNameForSegmentstoreBelow07(p.Name)
+	}
+	return StatefulSetNameForSegmentstoreAbove07(p.Name)
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
