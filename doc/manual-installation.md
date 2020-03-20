@@ -30,6 +30,28 @@ Install the operator.
 $ kubectl create -f deploy/operator.yaml
 ```
 
+Finally create a ConfigMap which contains the list of supported upgrade paths for the pravega cluster.
+
+```
+$ kubectl create -f deploy/version_map.yaml
+```
+
+### Deploying in Test Mode
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file.
+ Check out [test mode](../README.md#deploying-in-test-mode)
+
+```
+containers:
+  - name: pravega-operator
+    image: pravega/pravega-operator:0.4.3-rc1
+    ports:
+    - containerPort: 60000
+      name: metrics
+    command:
+    - pravega-operator
+    imagePullPolicy: Always
+    args: [-test]
+```
 ### Set up Tier 2 Storage
 
 Pravega requires a long term storage provider known as Tier 2 storage.
@@ -51,11 +73,7 @@ spec:
   version: 0.4.0
   zookeeperUri: [ZOOKEEPER_HOST]:2181
 
-  bookkeeper:
-    replicas: 3
-    image:
-      repository: pravega/bookkeeper
-    autoRecovery: true
+  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
   pravega:
     controllerReplicas: 1

@@ -54,13 +54,42 @@ rules:
   - ""
   resources:
   - nodes
+  - pods
+  - services
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
   verbs:
   - get
   - watch
   - list
+  - create
 - apiGroups:
   - admissionregistration.k8s.io
   resources:
   - "*"
   verbs:
   - '*'
+- apiGroups:
+  - pravega.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - "*"
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - "*"

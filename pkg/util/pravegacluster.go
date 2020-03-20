@@ -18,6 +18,7 @@ import (
 
 	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"k8s.io/api/core/v1"
 )
 
@@ -31,6 +32,10 @@ const (
 
 func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
+}
+
+func ConfigMapNameForPravega(clusterName string) string {
+	return fmt.Sprintf("%s-supported-upgrade-paths", clusterName)
 }
 
 func PdbNameForBookie(clusterName string) string {
@@ -81,8 +86,42 @@ func ConfigMapNameForSegmentstore(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
 }
 
-func StatefulSetNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
+//function to check if the version is below 0.7 or not
+func IsVersionBelow07(ver string) bool {
+	if ver == "" {
+		return true
+	}
+	result, _ := CompareVersions(ver, "0.7.0", "<")
+	if result {
+		return true
+	}
+	return false
+}
+
+//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
+func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
+	if !IsVersionBelow07(p.Spec.Version) && IsVersionBelow07(p.Status.CurrentVersion) {
+		return true
+	}
+	return false
+}
+
+//if version is above or equals to 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreAbove07(name string) string {
+	return fmt.Sprintf("%s-pravega-segment-store", name)
+}
+
+//if version is below 0.7 this name will be assigned
+func StatefulSetNameForSegmentstoreBelow07(name string) string {
+	return fmt.Sprintf("%s-pravega-segmentstore", name)
+}
+
+//to return name of segmentstore based on the version
+func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
+	if IsVersionBelow07(p.Spec.Version) {
+		return StatefulSetNameForSegmentstoreBelow07(p.Name)
+	}
+	return StatefulSetNameForSegmentstoreAbove07(p.Name)
 }
 
 func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
@@ -160,15 +199,11 @@ func RemoveString(slice []string, str string) (result []string) {
 }
 
 func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
-	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas + p.Spec.Bookkeeper.Replicas)
+	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas)
 }
 
 func PravegaImage(p *v1alpha1.PravegaCluster) (image string) {
 	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Spec.Version)
-}
-
-func BookkeeperImage(p *v1alpha1.PravegaCluster) (image string) {
-	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Spec.Version)
 }
 
 func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
@@ -176,13 +211,6 @@ func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
 		return "", fmt.Errorf("target version is not set")
 	}
 	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Status.TargetVersion), nil
-}
-
-func BookkeeperTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
-	if p.Status.TargetVersion == "" {
-		return "", fmt.Errorf("target version is not set")
-	}
-	return fmt.Sprintf("%s:%s", p.Spec.Bookkeeper.Image.Repository, p.Status.TargetVersion), nil
 }
 
 func GetPodVersion(pod *v1.Pod) string {

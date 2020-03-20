@@ -45,7 +45,7 @@ func testWebhook(t *testing.T) {
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	podSize := 5
+	podSize := 2
 	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 

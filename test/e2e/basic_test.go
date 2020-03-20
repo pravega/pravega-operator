@@ -39,8 +39,8 @@ func testCreateRecreateCluster(t *testing.T) {
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// A default Pravega cluster should have 5 pods: 3 bookies, 1 controller, 1 segment store
-	podSize := 5
+	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+	podSize := 2
 	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 

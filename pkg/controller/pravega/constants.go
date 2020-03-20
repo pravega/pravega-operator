@@ -16,6 +16,7 @@ const (
 	tier2FileMountPoint    = "/mnt/tier2"
 	tier2VolumeName        = "tier2"
 	segmentStoreKind       = "pravega-segmentstore"
+	ssSecretVolumeName     = "ss-secret"
 	tlsVolumeName          = "tls-secret"
 	tlsMountDir            = "/etc/secret-volume"
 	heapDumpName           = "heap-dump"

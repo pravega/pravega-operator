@@ -56,16 +56,16 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.ExternalAccess).ShouldNot(BeNil())
 		})
 
-		It("should set version to 0.4.0", func() {
-			Ω(p.Spec.Version).Should(Equal("0.4.0"))
+		It("should set version to 0.6.1", func() {
+			Ω(p.Spec.Version).Should(Equal("0.6.1"))
 		})
 
 		It("should set pravega spec", func() {
 			Ω(p.Spec.Pravega).ShouldNot(BeNil())
 		})
 
-		It("should set bookkeeper spec", func() {
-			Ω(p.Spec.Bookkeeper).ShouldNot(BeNil())
+		It("should set bookkeeper uri", func() {
+			Ω(p.Spec.BookkeeperUri).ShouldNot(BeNil())
 		})
 	})
 })

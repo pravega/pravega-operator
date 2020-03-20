@@ -11,18 +11,20 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Overview](#overview)
  * [Requirements](#requirements)
  * [Quickstart](#quickstart)    
-    * [Install the Operator](#install-the-operator)
-    * [Upgrade the Operator](#upgrade-the-operator)
-    * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
-    * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
-    * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
-    * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
-    * [Uninstall the Operator](#uninstall-the-operator)
-    * [Manual installation](#manual-installation)
+ * [Install the Operator](#install-the-operator)
+ * [Deploying in Test Mode](#deploying-in-test-mode)
+ * [Upgrade the Operator](#upgrade-the-operator)
+ * [Install a sample Pravega Cluster](#install-a-sample-pravega-cluster)
+ * [Scale a Pravega Cluster](#scale-a-pravega-cluster)
+ * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
+ * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
+ * [Uninstall the Operator](#uninstall-the-operator)
+ * [Upgrade the Operator](#upgrade-the-operator)
+ * [Manual installation](#manual-installation)
  * [Configuration](#configuration)
  * [Development](#development)
-* [Releases](#releases)
-* [Troubleshooting](#troubleshooting)
+ * [Releases](#releases)
+ * [Troubleshooting](#troubleshooting)
 
 ## Overview
 
@@ -39,6 +41,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 - Kubernetes 1.9+
 - Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Quickstart
 
@@ -59,6 +62,9 @@ $ kubectl get deploy
 NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 foo-pravega-operator     1         1         1            1           17s
 ```
+
+#### Deploying in Test Mode
+ The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
 Pravega operator can be upgraded by modifying the image tag using
@@ -123,25 +129,20 @@ bar-pravega  0.4.0     7                 7               2m
 ```
 $ kubectl get all -l pravega_cluster=bar-pravega
 NAME                                              READY   STATUS    RESTARTS   AGE
-pod/bar-bookie-0                              1/1     Running   0          2m
-pod/bar-bookie-1                              1/1     Running   0          2m
-pod/bar-bookie-2                              1/1     Running   0          2m
 pod/bar-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
 pod/bar-pravega-segmentstore-0                1/1     Running   0          2m
 pod/bar-pravega-segmentstore-1                1/1     Running   0          1m
 pod/bar-pravega-segmentstore-2                1/1     Running   0          30s
 
-NAME                                            TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
-service/bar-bookie-headless                 ClusterIP   None          <none>        3181/TCP             2m
+NAME                                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
 service/bar-pravega-controller              ClusterIP   10.23.244.3   <none>        10080/TCP,9090/TCP   2m
 service/bar-pravega-segmentstore-headless   ClusterIP   None          <none>        12345/TCP            2m
 
 NAME                                                    DESIRED   CURRENT   READY   AGE
-replicaset.apps/bar-pravega-controller-64ff87fc49   1         1         1       2m
+replicaset.apps/bar-pravega-controller-64ff87fc49       1         1         1       2m
 
 NAME                                            DESIRED   CURRENT   AGE
-statefulset.apps/bar-bookie                 3         3         2m
-statefulset.apps/bar-pravega-segmentstore   3         3         2m
+statefulset.apps/bar-pravega-segmentstore       3         3         2m
 ```
 
 By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:

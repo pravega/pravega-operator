@@ -23,11 +23,12 @@ spec:
           name: metrics
         command:
         - pravega-operator
+        {{- if .Values.testmode }}
+        args: [-test]
+        {{- end }}
         env:
         - name: WATCH_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
+          value: "{{ .Values.watchNamespace }}"
         - name: POD_NAME
           valueFrom:
             fieldRef:

@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-version: 0.5.0
+version: 0.7.0
 zookeeperUri: zk-client:2181
 
 externalAccess:
@@ -12,16 +12,7 @@ externalAccess:
 serviceAccount:
   name: pravega-components
 
-bookkeeper:
-  image:
-    repository: pravega/bookkeeper
-  replicas: 3
-  storage:
-    className: standard
-    ledgerVolumeRequest: 10Gi
-    journalVolumeRequest: 10Gi
-    indexVolumeRequest: 10Gi
-  autoRecovery: true
+bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
 pravega:
   image:

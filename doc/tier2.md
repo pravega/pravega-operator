@@ -118,17 +118,17 @@ Create a file with the secret definition containing your access and secret keys.
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ecs-secret
+  name: ecs-credentials
 type: Opaque
 stringData:
   ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
   SECRET_KEY: 0123456789
 ```
 
-Assuming that the file is named `ecs-secret.yaml`.
+Assuming that the file is named `ecs-credentials.yaml`.
 
 ```
-$ kubectl create -f ecs-secret.yaml
+$ kubectl create -f ecs-credentials.yaml
 ```
 
 Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
@@ -138,11 +138,10 @@ Follow the [instructions to deploy Pravega manually](manual-installation.md#inst
 spec:
   tier2:
     ecs:
-      uri: http://10.247.10.52:9020
-      bucket: shared
-      prefix: "pravega/example"
-      namespace: pravega
-      credentials: ecs-secret
+      configUri: http://10.247.10.52:9020?namespace=pravega
+      bucket: "shared"
+      prefix: "example"
+      credentials: ecs-credentials
 ```
 
 ### Use HDFS as Tier 2

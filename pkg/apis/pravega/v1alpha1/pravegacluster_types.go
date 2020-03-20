@@ -19,12 +19,15 @@ const (
 	// DefaultZookeeperUri is the default ZooKeeper URI in the form of "hostname:port"
 	DefaultZookeeperUri = "zk-client:2181"
 
+	// DefaultBookkeeperUri is the default ZooKeeper URI in the form of "hostname:port"
+	DefaultBookkeeperUri = "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.4.0"
+	DefaultPravegaVersion = "0.6.1"
 )
 
 func init() {
@@ -92,8 +95,13 @@ type ClusterSpec struct {
 	// If version is not set, default is "0.4.0".
 	Version string `json:"version"`
 
-	// Bookkeeper configuration
-	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`
+	// BookkeeperUri specifies the hostname/IP address and port in the format
+	// "hostname:port".
+	// comma delimited list of BK server URLs
+	//pravega-bookie-0.pravega-bookie-headless.default:3181,
+	//pravega-bookie-1.pravega-bookie-headless.default:3181,
+	//pravega-bookie-2.pravega-bookie-headless.default:3181
+	BookkeeperUri string `json:"bookkeeperUri"`
 
 	// Pravega configuration
 	Pravega *PravegaSpec `json:"pravega"`
@@ -131,11 +139,8 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	if s.Bookkeeper == nil {
-		changed = true
-		s.Bookkeeper = &BookkeeperSpec{}
-	}
-	if s.Bookkeeper.withDefaults() {
+	if s.BookkeeperUri == "" {
+		s.BookkeeperUri = DefaultBookkeeperUri
 		changed = true
 	}
 

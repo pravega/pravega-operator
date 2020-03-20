@@ -29,13 +29,13 @@ const (
 )
 
 func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
+	statefulSet := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster.Name),
+			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster),
 			Namespace: pravegaCluster.Namespace,
 			Labels:    util.LabelsForSegmentStore(pravegaCluster),
 		},
@@ -50,9 +50,12 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 			Selector: &metav1.LabelSelector{
 				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
 			},
-			VolumeClaimTemplates: makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega),
 		},
 	}
+	if util.IsVersionBelow07(pravegaCluster.Spec.Version) {
+		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega)
+	}
+	return statefulSet
 }
 
 func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
@@ -66,6 +69,8 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
+	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
+	secret := p.Spec.Pravega.SegmentStoreSecret
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -74,6 +79,24 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
+	}
+	if configMapName != "" {
+		environment = append(environment, corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+			},
+		})
+	}
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) == "" {
+		environment = append(environment, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: strings.TrimSpace(secret.Secret),
+				},
+			},
+		})
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
@@ -93,19 +116,10 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						ContainerPort: 12345,
 					},
 				},
-				EnvFrom: environment,
-				Env:     util.DownwardAPIEnv(),
-				VolumeMounts: []corev1.VolumeMount{
-					{
-						Name:      cacheVolumeName,
-						MountPath: cacheVolumeMountPoint,
-					},
-					{
-						Name:      heapDumpName,
-						MountPath: heapDumpDir,
-					},
-				},
-				Resources: *p.Spec.Pravega.SegmentStoreResources,
+				EnvFrom:      environment,
+				Env:          util.DownwardAPIEnv(),
+				VolumeMounts: MakeSegmentStoreVolumeMount(p),
+				Resources:    *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -151,11 +165,29 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
+	configureSegmentstoreSecret(&podSpec, p)
+
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
+}
+
+func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
+	volumeMount := []corev1.VolumeMount{
+		{
+			Name:      heapDumpName,
+			MountPath: heapDumpDir,
+		},
+	}
+	if util.IsVersionBelow07(p.Spec.Version) {
+		volumeMount = append(volumeMount, corev1.VolumeMount{
+			Name:      cacheVolumeName,
+			MountPath: cacheVolumeMountPoint,
+		})
+	}
+	return volumeMount
 }
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
@@ -196,16 +228,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 
 	// Wait for at least 3 Bookies to come up
-	var waitFor []string
-	for i := int32(0); i < util.Min(3, p.Spec.Bookkeeper.Replicas); i++ {
-		waitFor = append(waitFor,
-			fmt.Sprintf("%s-%d.%s.%s:3181",
-				util.StatefulSetNameForBookie(p.Name),
-				i,
-				util.HeadlessServiceNameForBookie(p.Name),
-				p.Namespace))
-	}
-	configData["WAIT_FOR"] = strings.Join(waitFor, ",")
+	configData["WAIT_FOR"] = p.Spec.BookkeeperUri
 
 	if p.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
@@ -256,10 +279,9 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
+			"EXTENDEDS3_CONFIGURI": pravegaSpec.Tier2.Ecs.ConfigUri,
 			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
-			"EXTENDEDS3_URI":       pravegaSpec.Tier2.Ecs.Uri,
 			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
-			"EXTENDEDS3_NAMESPACE": pravegaSpec.Tier2.Ecs.Namespace,
 		}
 	}
 
@@ -302,6 +324,26 @@ func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaS
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
 			},
+		})
+	}
+}
+
+func configureSegmentstoreSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	secret := p.Spec.Pravega.SegmentStoreSecret
+	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) != "" {
+		vol := corev1.Volume{
+			Name: ssSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: strings.TrimSpace(secret.Secret),
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssSecretVolumeName,
+			MountPath: strings.TrimSpace(secret.MountPath),
 		})
 	}
 }
@@ -423,7 +465,7 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				},
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Selector: map[string]string{
-					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", util.StatefulSetNameForSegmentstore(pravegaCluster.Name), i),
+					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", util.StatefulSetNameForSegmentstore(pravegaCluster), i),
 				},
 			},
 		}

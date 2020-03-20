@@ -122,11 +122,6 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 }
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err error) {
-	// Clean up zookeeper metadata
-	err = r.reconcileFinalizers(p)
-	if err != nil {
-		return fmt.Errorf("failed to clean up zookeeper: %v", err)
-	}
 
 	err = r.deployCluster(p)
 	if err != nil {
@@ -158,22 +153,20 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 }
 
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.deployBookie(p)
-	if err != nil {
-		log.Printf("failed to deploy bookie: %v", err)
-		return err
-	}
-
 	err = r.deployController(p)
 	if err != nil {
 		log.Printf("failed to deploy controller: %v", err)
 		return err
 	}
 
-	err = r.deploySegmentStore(p)
-	if err != nil {
-		log.Printf("failed to deploy segment store: %v", err)
-		return err
+	/*this check is to avoid creation of a new segmentstore when the CurrentVersion is below 07 and target version is above 07
+	  as we are doing it in the upgrade path*/
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+		err = r.deploySegmentStore(p)
+		if err != nil {
+			log.Printf("failed to deploy segment store: %v", err)
+			return err
+		}
 	}
 
 	return nil
@@ -259,51 +252,13 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deployBookie(p *pravegav1alpha1.PravegaCluster) (err error) {
-
-	headlessService := pravega.MakeBookieHeadlessService(p)
-	controllerutil.SetControllerReference(p, headlessService, r.scheme)
-	err = r.client.Create(context.TODO(), headlessService)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	pdb := pravega.MakeBookiePodDisruptionBudget(p)
-	controllerutil.SetControllerReference(p, pdb, r.scheme)
-	err = r.client.Create(context.TODO(), pdb)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	configMap := pravega.MakeBookieConfigMap(p)
-	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Create(context.TODO(), configMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	statefulSet := pravega.MakeBookieStatefulSet(p)
-	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
-	for i := range statefulSet.Spec.VolumeClaimTemplates {
-		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
-	}
-	err = r.client.Create(context.TODO(), statefulSet)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
-	return nil
-}
-
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.syncBookieSize(p)
-	if err != nil {
-		return err
-	}
-
-	err = r.syncSegmentStoreSize(p)
-	if err != nil {
-		return err
+	/*We skip calling syncSegmentStoreSize() during upgrade/rollback from version 07*/
+	if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+		err = r.syncSegmentStoreSize(p)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = r.syncControllerSize(p)
@@ -314,32 +269,9 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1alpha1.PravegaClus
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncBookieSize(p *pravegav1alpha1.PravegaCluster) (err error) {
-	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForBookie(p.Name)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
-	if err != nil {
-		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
-	}
-
-	if *sts.Spec.Replicas != p.Spec.Bookkeeper.Replicas {
-		sts.Spec.Replicas = &(p.Spec.Bookkeeper.Replicas)
-		err = r.client.Update(context.TODO(), sts)
-		if err != nil {
-			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
-		}
-
-		err = r.syncStatefulSetPvc(sts)
-		if err != nil {
-			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
-		}
-	}
-	return nil
-}
-
 func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.PravegaCluster) (err error) {
 	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForSegmentstore(p.Name)
+	name := util.StatefulSetNameForSegmentstore(p)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 	if err != nil {
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
@@ -356,9 +288,12 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1alpha1.Praveg
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
 
-		err = r.syncStatefulSetPvc(sts)
-		if err != nil {
-			return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+		/*We skip calling syncStatefulSetPvc() during upgrade/rollback from version 07*/
+		if !util.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+			err = r.syncStatefulSetPvc(sts)
+			if err != nil {
+				return fmt.Errorf("failed to sync pvcs of stateful-set (%s): %v", sts.Name, err)
+			}
 		}
 
 		if p.Spec.ExternalAccess.Enabled && scaleDown > 0 {
@@ -386,40 +321,6 @@ func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1alpha1.PravegaC
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
 		}
 	}
-	return nil
-}
-
-func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1alpha1.PravegaCluster) (err error) {
-	if p.DeletionTimestamp.IsZero() {
-		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
-			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
-			if err = r.client.Update(context.TODO(), p); err != nil {
-				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
-			}
-		}
-	} else {
-		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
-			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
-			if err = r.client.Update(context.TODO(), p); err != nil {
-				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
-			}
-			if err = r.cleanUpZookeeperMeta(p); err != nil {
-				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
-			}
-		}
-	}
-	return nil
-}
-
-func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1alpha1.PravegaCluster) (err error) {
-	if err = util.WaitForClusterToTerminate(r.client, p); err != nil {
-		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
-	}
-
-	if err = util.DeleteAllZnodes(p); err != nil {
-		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
-	}
-	fmt.Println("zookeeper metadata deleted")
 	return nil
 }
 

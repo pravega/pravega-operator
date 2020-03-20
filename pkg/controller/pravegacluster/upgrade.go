@@ -21,6 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -202,12 +203,8 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
-			name: "bookkeeper",
-			fun:  r.syncBookkeeperVersion,
-		},
-		componentSyncVersionFun{
 			name: "segmentstore",
-			fun:  r.syncSegmentStoreVersion,
+			fun:  r.syncStoreVersion,
 		},
 		componentSyncVersionFun{
 			name: "controller",
@@ -325,7 +322,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 
 	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForSegmentstore(p.Name)
+	name := util.StatefulSetNameForSegmentstore(p)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 	if err != nil {
 		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
@@ -408,91 +405,171 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	return false, nil
 }
 
-func (r *ReconcilePravegaCluster) syncBookkeeperVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForBookie(p.Name)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+//this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
+func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.PravegaCluster) bool {
+	if util.IsVersionBelow07(p.Spec.Version) && r.IsAbove07STSPresent(p) {
+		return true
+	}
+	return false
+}
+
+//This function checks if stsabove07 exsists
+func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1alpha1.PravegaCluster) bool {
+	stsAbove07 := &appsv1.StatefulSet{}
+	name := util.StatefulSetNameForSegmentstoreAbove07(p.Name)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, stsAbove07)
 	if err != nil {
-		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
+		if errors.IsNotFound(err) {
+			return false
+		}
+		log.Printf("failed to get StatefulSet: %v", err)
+		return false
+	}
+	return true
+}
+
+func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+	if util.IsClusterUpgradingTo07(p) || r.IsClusterRollbackingFrom07(p) {
+		return r.syncSegmentStoreVersionTo07(p)
+	}
+	return r.syncSegmentStoreVersion(p)
+}
+
+//To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+	p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
+	newsts := pravega.MakeSegmentStoreStatefulSet(p)
+	controllerutil.SetControllerReference(p, newsts, r.scheme)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
+	//this check is to see if the newsts is present or not if it's not present it will be created here
+	if err != nil {
+		if errors.IsNotFound(err) {
+			*newsts.Spec.Replicas = 0
+			err2 := r.client.Create(context.TODO(), newsts)
+			if err2 != nil {
+				log.Printf("failed to create StatefulSet: %v", err2)
+				return false, err2
+			}
+		} else {
+			log.Printf("failed to get StatefulSet: %v", err)
+			return false, err
+		}
 	}
 
-	targetImage, err := util.BookkeeperTargetImage(p)
+	//here we are getting the name of the oldsts based on either we are upgrading or doing rollback
+	var oldstsName string = ""
+	oldsts := &appsv1.StatefulSet{}
+	if util.IsClusterUpgradingTo07(p) {
+		oldstsName = util.StatefulSetNameForSegmentstoreBelow07(p.Name)
+	} else {
+		oldstsName = util.StatefulSetNameForSegmentstoreAbove07(p.Name)
+	}
+
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oldstsName, Namespace: p.Namespace}, oldsts)
+	//this check is to see if the old sts is present or not
 	if err != nil {
+		if errors.IsNotFound(err) {
+			//this is the condition where we are checking if the new ready ss pods are equal to the ss replicas thus meaning upgrade is completed
+			if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+				return true, nil
+			}
+		}
+		log.Printf("failed to get StatefulSet: %v", err)
 		return false, err
 	}
 
-	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.UpdateProgress(pravegav1alpha1.UpdatingBookkeeperReason, "0")
-		// Need to update pod template
-		// This will trigger the rolling upgrade process
-		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
-
-		configMap := pravega.MakeBookieConfigMap(p)
-		controllerutil.SetControllerReference(p, configMap, r.scheme)
-		err = r.client.Update(context.TODO(), configMap)
+	//To detect upgrade/rollback faiure
+	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas < p.Spec.Pravega.SegmentStoreReplicas {
+		//this will get all the pods created with this target version till now
+		pods, err := r.getStsPodsWithVersion(newsts, p.Status.TargetVersion)
 		if err != nil {
 			return false, err
 		}
-
-		sts.Spec.Template = pravega.MakeBookiePodTemplate(p)
-		err = r.client.Update(context.TODO(), sts)
+		//checking if any of above pods have gone into error sate
+		_, err = r.checkUpdatedPods(pods, p.Status.TargetVersion)
 		if err != nil {
-			return false, err
-		}
-
-		// Updated pod template
-		return false, nil
-	}
-
-	// Pod template already updated
-	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
-		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
-
-	// Check whether the upgrade is in progress or has completed
-	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
-		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
-		// StatefulSet upgrade completed
-		return true, nil
-	}
-
-	// Upgrade still in progress
-
-	// Check if bookkeeper fail to have progress
-	err = checkSyncTimeout(p, pravegav1alpha1.UpdatingBookkeeperReason, sts.Status.UpdatedReplicas)
-	if err != nil {
-		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
-	}
-
-	// If all replicas are ready, upgrade an old pod
-	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
-	if err != nil {
-		return false, err
-	}
-	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
-	if err != nil {
-		// Abort if there is any errors with the updated pods
-		return false, err
-	}
-
-	if ready {
-		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
-		if err != nil {
-			return false, err
-		}
-
-		if pod == nil {
-			return false, fmt.Errorf("could not obtain outdated pod")
-		}
-
-		log.Infof("updating pod: %s", pod.Name)
-
-		err = r.client.Delete(context.TODO(), pod)
-		if err != nil {
-			return false, err
+			// Abort if there is any errors with the updated pods
+			return false, fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
 		}
 	}
-	// wait until the next reconcile iteration
+
+	//this check to ensure that the oldsts always decrease by 2 as well as newsts pods increase by 2 only then the next increment or decrement happen
+	if r.rollbackConditionFor07(p, newsts) || r.upgradeConditionFor07(p, newsts, oldsts) {
+		//this check is run till the value of old sts replicas is greater than 0 and will increase two replicas of the new sts and delete 2 replicas of the old sts
+		if *oldsts.Spec.Replicas > 2 {
+			err = r.scaleSegmentStoreSTS(p, newsts, oldsts)
+			if err != nil {
+				return false, err
+			}
+		} else {
+			//here we remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
+			err = r.transitionToNewSTS(p, newsts, oldsts)
+			if err != nil {
+				return false, err
+			}
+		}
+	}
+	//upgrade is still in process
 	return false, nil
+}
+
+//this function will check if furter increment or decrement in pods needed in case of rollback from version 0.7
+func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1alpha1.PravegaCluster, sts *appsv1.StatefulSet) bool {
+	if r.IsClusterRollbackingFrom07(p) && sts.Status.ReadyReplicas == *sts.Spec.Replicas {
+		return true
+	}
+	return false
+}
+
+//this function will check if furter increment or decrement in pods needed in case of upgrade to version 0.7 or above
+func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) bool {
+	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas && newsts.Status.ReadyReplicas == *newsts.Spec.Replicas {
+		return true
+	}
+	return false
+}
+
+//this function will increase two replicas of the new sts and delete 2 replicas of the old sts everytime it's called
+func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+	*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
+	err := r.client.Update(context.TODO(), newsts)
+	if err != nil {
+		return fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
+	}
+	*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
+	err = r.client.Update(context.TODO(), oldsts)
+	if err != nil {
+		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
+	}
+	return nil
+}
+
+//This function will remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
+func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+	*newsts.Spec.Replicas = p.Spec.Pravega.SegmentStoreReplicas
+	err := r.client.Update(context.TODO(), newsts)
+	if err != nil {
+		return fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
+	}
+	*oldsts.Spec.Replicas = 0
+	err = r.client.Update(context.TODO(), oldsts)
+	if err != nil {
+		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
+	}
+	if util.IsClusterUpgradingTo07(p) {
+		err = r.syncStatefulSetPvc(oldsts)
+		if err != nil {
+			return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
+		}
+	}
+	//this is to check if all the new ss pods have comeup before deleteing the old sts
+	if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+		err = r.client.Delete(context.TODO(), oldsts)
+	}
+	if err != nil {
+		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
+	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) checkUpdatedPods(pods []*corev1.Pod, version string) (bool, error) {

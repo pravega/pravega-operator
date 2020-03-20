@@ -59,3 +59,18 @@ if Pravega version is greater or equal to 0.4, then the followings are also adde
 "-XX:+UseCGroupMemoryLimitForHeap",
 "-XX:MaxRAMFraction=2"
 ```
+
+### SegmentStore Custom Configuration
+
+It is possible to add additional parameters into the SegmentStore container by allowing users to create a custom ConfigMap or a Secret and specifying their name within the Pravega manifest. However, the user needs to ensure that the following keys which are present in SegmentStore ConfigMap which is created by the Pravega Operator should not be a part of the custom ConfigMap.
+
+```
+- AUTHORIZATION_ENABLED
+- CLUSTER_NAME
+- ZK_URL
+- JAVA_OPTS
+- CONTROLLER_URL
+- WAIT_FOR
+- K8_EXTERNAL_ACCESS
+- log.level
+```

@@ -71,20 +71,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					Bookkeeper: &v1alpha1.BookkeeperSpec{
-						Replicas:  5,
-						Resources: customReq,
-						Image: &v1alpha1.BookkeeperImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "foo/bookkeeper",
-							},
-						},
-						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
-							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
-							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
-							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
-						},
-					},
+					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           1,
@@ -106,10 +93,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						},
 						Tier2: &v1alpha1.Tier2Spec{
 							Ecs: &v1alpha1.ECSSpec{
-								Uri:         "uri",
+								ConfigUri:   "configUri",
 								Bucket:      "bucket",
 								Prefix:      "prefix",
-								Namespace:   "namespace",
 								Credentials: "credentials",
 							},
 						},
@@ -192,20 +178,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					Bookkeeper: &v1alpha1.BookkeeperSpec{
-						Replicas:  5,
-						Resources: customReq,
-						Image: &v1alpha1.BookkeeperImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "foo/bookkeeper",
-							},
-						},
-						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
-							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
-							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
-							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
-						},
-					},
+					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:              2,
 						SegmentStoreReplicas:            4,
@@ -312,20 +285,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					Bookkeeper: &v1alpha1.BookkeeperSpec{
-						Replicas:  5,
-						Resources: customReq,
-						Image: &v1alpha1.BookkeeperImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "foo/bookkeeper",
-							},
-						},
-						BookkeeperJVMOptions: &v1alpha1.BookkeeperJVMOptions{
-							MemoryOpts:    []string{"-Xms2g", "-XX:MaxDirectMemorySize=2g"},
-							GcOpts:        []string{"-XX:MaxGCPauseMillis=20", "-XX:-UseG1GC"},
-							GcLoggingOpts: []string{"-XX:NumberOfGCLogFiles=10"},
-						},
-					},
+					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
 					Pravega: &v1alpha1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           4,

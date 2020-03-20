@@ -111,3 +111,28 @@ On GKE, the following command must be run before installing the Operator, replac
 ```
 $ kubectl create clusterrolebinding your-user-cluster-admin-binding --clusterrole=cluster-admin --user=your.google.cloud.email@example.org
 ```
+
+## Steps for creating a pull request on Pravega Operator
+
+```
+$> git clone <operator repo url>
+$> git checkout -b <issue-234-unique-branch-name>
+```
+
+Commit changes to this branch using:
+```
+$> git commit --signoff -m "commit message"
+```
+
+A PR can be created after the very first commit on the branch from github UI.
+Once the PR is created, all subsequent commits to the branch will be added appended to the same PR.
+
+To refresh from master:
+```
+$> git pull origin master
+```
+
+To push changes to branch:
+```
+$> git push origin issue-234-unique-branch-name
+```

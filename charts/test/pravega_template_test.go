@@ -33,9 +33,7 @@ func TestPravegaTemplate(t *testing.T) {
 			"zookeeperUri":                 "foo-client:2181",
 			"externalAccess.enabled":       "true",
 			"externalAccess.type":          "NodePort",
-			"bookkeeper.image.repository":  "tristan1900/bookkeeper",
-			"bookkeeper.replicas":          "5",
-			"bookkeeper.autoRecovery":      "false",
+			"bookkeeperUri":                "bookkeeper-service:3181",
 			"pravega.image.repository":     "tristan1900/pravega",
 			"pravega.controllerReplicas":   "2",
 			"pravega.segmentStoreReplicas": "7",
@@ -52,14 +50,11 @@ func TestPravegaTemplate(t *testing.T) {
 	helm.UnmarshalK8SYaml(t, output, &p)
 
 	// Verify the output
-	boolFalse := false
 	g.Expect(p.Spec.Version).To(Equal("0.4.0-beta"))
 	g.Expect(p.Spec.ZookeeperUri).To(Equal("foo-client:2181"))
 	g.Expect(p.Spec.ExternalAccess.Enabled).To(BeTrue())
 	g.Expect(p.Spec.ExternalAccess.Type).To(Equal(corev1.ServiceTypeNodePort))
-	g.Expect(p.Spec.Bookkeeper.Image.Repository).To(Equal("tristan1900/bookkeeper"))
-	g.Expect(p.Spec.Bookkeeper.Replicas).To(BeEquivalentTo(5))
-	g.Expect(p.Spec.Bookkeeper.AutoRecovery).To(Equal(&boolFalse))
+	g.Expect(p.Spec.BookkeeperUri).To(Equal("bookkeeper-service:3181"))
 	g.Expect(p.Spec.Pravega.Image.Repository).To(Equal("tristan1900/pravega"))
 	g.Expect(p.Spec.Pravega.ControllerReplicas).To(BeEquivalentTo(2))
 	g.Expect(p.Spec.Pravega.SegmentStoreReplicas).To(BeEquivalentTo(7))
