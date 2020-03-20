@@ -7,35 +7,42 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-FROM golang:1.10.1-alpine3.7 as go-builder
+ARG GO_VERSION=1.13.8
+ARG ALPINE_VERSION=3.11
+
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
 
 ARG PROJECT_NAME=pravega-operator
-ARG REPO_PATH=github.com/pravega/${PROJECT_NAME}
-ARG BUILD_PATH=${REPO_PATH}/cmd/manager
+ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
 
 # Build version and commit SHA should be passed in when performing docker build
 ARG VERSION=0.0.0-localdev
 ARG GIT_SHA=0000000
 
-COPY pkg /go/src/${REPO_PATH}/pkg
-COPY cmd /go/src/${REPO_PATH}/cmd
-COPY vendor /go/src/${REPO_PATH}/vendor
+WORKDIR /src
 
-RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${GOBIN}/${PROJECT_NAME} \
+COPY pkg ./pkg
+COPY cmd ./cmd
+COPY go.mod ./
+
+# Download all dependencies.
+RUN go mod download
+
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /src/${PROJECT_NAME} \
     -ldflags "-X ${REPO_PATH}/pkg/version.Version=${VERSION} -X ${REPO_PATH}/pkg/version.GitSHA=${GIT_SHA}" \
-    $BUILD_PATH
+    /src/cmd/manager
 
 # =============================================================================
-FROM alpine:3.7 AS final
+FROM alpine:${ALPINE_VERSION} AS final
 
 RUN apk add --update \
     sudo \
     libcap
 
 ARG PROJECT_NAME=pravega-operator
-ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
 
-COPY --from=go-builder ${GOBIN}/${PROJECT_NAME} /usr/local/bin/${PROJECT_NAME}
+COPY --from=go-builder /src/${PROJECT_NAME} /usr/local/bin/${PROJECT_NAME}
+
 RUN sudo setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/${PROJECT_NAME}
 
 RUN adduser -D ${PROJECT_NAME}

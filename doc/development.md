@@ -1,7 +1,7 @@
 ## Development
 
 Requirements:
-  - Go 1.10+
+  - Go 1.13+
 
 ### Install Go
 
@@ -27,8 +27,8 @@ Install a new go version:
 ```
 gvm install go1.4 -B
 gvm use go1.4
-gvm install go1.11 --binary
-gvm use go1.11 --default
+gvm install go1.13.8 --binary
+gvm use go1.13.8 --default
 ```
 Your GOPATH should be be set by now, check using
 ```
@@ -43,19 +43,15 @@ go get github.com/pravega/pravega-operator
 ```
 This should clone operator code under `$GOPATH/src/github.com/pravega/pravega-operator`
 
-### Install dep
-```
-curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-```
-This may prompt for creation of `GOBIN` directory. Please create it and then issue this command again.
+For pulling the dependencies we are using go modules for more details on go modules refer to the link below:-
 
+https://blog.golang.org/using-go-modules
 ### Build the operator image
 
-Use the `make` command to build the Pravega operator image.
+Use the `make` command to build the Pravega operator image, it will also automatically get all the dependencies by using the go.mod file.
 
 ```
 $ cd $GOPATH/src/github.com/pravega/pravega-operator
-$ make dep
 $ make build
 ```
 That will generate a Docker image with the format
