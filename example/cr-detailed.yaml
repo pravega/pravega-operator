@@ -72,6 +72,7 @@ spec:
       attributeIndex.readBlockSize: "1048576"
       readIndex.storageReadAlignment: "1048576"
       durableLog.checkpointMinCommitCount: "300"
+      bookkeeper.bkAckQuorumSize: "3"
       metrics.dynamicCacheSize: "100000"
       metrics.enableStatistics: "true"
       metrics.statsdHost: "telegraph.default"
