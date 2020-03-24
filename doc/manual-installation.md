@@ -72,9 +72,7 @@ metadata:
 spec:
   version: 0.4.0
   zookeeperUri: [ZOOKEEPER_HOST]:2181
-
-  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
-
+  bookkeeperUri: [BOOKKEEPER_SVC]:3181"
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
@@ -89,6 +87,7 @@ spec:
 where:
 
 - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
+- `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
 Check out other sample CR files in the [`example`](../example) directory.
 
