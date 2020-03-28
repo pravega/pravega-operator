@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"strings"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,32 +28,32 @@ const (
 	dot                      = "."
 )
 
-func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.StatefulSet {
+func MakeSegmentStoreStatefulSet(p *api.PravegaCluster) *appsv1.StatefulSet {
 	statefulSet := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.StatefulSetNameForSegmentstore(pravegaCluster),
-			Namespace: pravegaCluster.Namespace,
-			Labels:    util.LabelsForSegmentStore(pravegaCluster),
+			Name:      p.StatefulSetNameForSegmentstore(),
+			Namespace: p.Namespace,
+			Labels:    p.LabelsForSegmentStore(),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
-			Replicas:            &pravegaCluster.Spec.Pravega.SegmentStoreReplicas,
+			Replicas:            &p.Spec.Pravega.SegmentStoreReplicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
 			},
-			Template: MakeSegmentStorePodTemplate(pravegaCluster),
+			Template: MakeSegmentStorePodTemplate(p),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
+				MatchLabels: p.LabelsForSegmentStore(),
 			},
 		},
 	}
-	if util.IsVersionBelow07(pravegaCluster.Spec.Version) {
-		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(pravegaCluster.Spec.Pravega)
+	if util.IsVersionBelow07(p.Spec.Version) {
+		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(p.Spec.Pravega)
 	}
 	return statefulSet
 }
@@ -61,7 +61,7 @@ func MakeSegmentStoreStatefulSet(pravegaCluster *api.PravegaCluster) *appsv1.Sta
 func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      util.LabelsForSegmentStore(p),
+			Labels:      p.LabelsForSegmentStore(),
 			Annotations: map[string]string{"pravega.version": p.Spec.Version},
 		},
 		Spec: makeSegmentstorePodSpec(p),
@@ -75,7 +75,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: util.ConfigMapNameForSegmentstore(p.Name),
+					Name: p.ConfigMapNameForSegmentstore(),
 				},
 			},
 		},
@@ -105,7 +105,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
-				Image:           util.PravegaImage(p),
+				Image:           p.PravegaImage(),
 				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
 				Args: []string{
 					"segmentstore",
@@ -224,7 +224,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"CLUSTER_NAME":          p.Name,
 		"ZK_URL":                p.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
-		"CONTROLLER_URL":        util.PravegaControllerServiceURL(*p),
+		"CONTROLLER_URL":        p.PravegaControllerServiceURL(),
 	}
 
 	// Wait for at least 3 Bookies to come up
@@ -248,9 +248,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.ConfigMapNameForSegmentstore(p.Name),
+			Name:      p.ConfigMapNameForSegmentstore(),
 			Namespace: p.Namespace,
-			Labels:    util.LabelsForSegmentStore(p),
+			Labels:    p.LabelsForSegmentStore(),
 		},
 		Data: configData,
 	}
@@ -367,16 +367,16 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 	}
 }
 
-func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.HeadlessServiceNameForSegmentStore(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
-			Labels:    util.LabelsForSegmentStore(pravegaCluster),
+			Name:      p.HeadlessServiceNameForSegmentStore(),
+			Namespace: p.Namespace,
+			Labels:    p.LabelsForSegmentStore(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -386,7 +386,7 @@ func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1
 					Protocol: "TCP",
 				},
 			},
-			Selector:  util.LabelsForSegmentStore(pravegaCluster),
+			Selector:  p.LabelsForSegmentStore(),
 			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
@@ -426,19 +426,19 @@ func generateDNSAnnotationForSvc(domainName string, podName string) (dnsAnnotati
 	return ssFQDN
 }
 
-func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*corev1.Service {
+func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 
-	serviceType := getSSServiceType(pravegaCluster)
-	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
+	serviceType := getSSServiceType(p)
+	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
 
-	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
-		ssPodName := util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
-		annotationMap := pravegaCluster.Spec.Pravega.SegmentStoreServiceAnnotations
-		annotationValue := generateDNSAnnotationForSvc(pravegaCluster.Spec.ExternalAccess.DomainName, ssPodName)
+	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
+		ssPodName := p.ServiceNameForSegmentStore(i)
+		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
+		annotationValue := generateDNSAnnotationForSvc(p.Spec.ExternalAccess.DomainName, ssPodName)
 
 		if annotationValue != "" {
-			annotationMap = cloneMap(pravegaCluster.Spec.Pravega.SegmentStoreServiceAnnotations)
+			annotationMap = cloneMap(p.Spec.Pravega.SegmentStoreServiceAnnotations)
 			annotationMap[externalDNSAnnotationKey] = annotationValue
 		}
 
@@ -449,8 +449,8 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        ssPodName,
-				Namespace:   pravegaCluster.Namespace,
-				Labels:      util.LabelsForSegmentStore(pravegaCluster),
+				Namespace:   p.Namespace,
+				Labels:      p.LabelsForSegmentStore(),
 				Annotations: annotationMap,
 			},
 			Spec: corev1.ServiceSpec{
@@ -465,7 +465,7 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 				},
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Selector: map[string]string{
-					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", util.StatefulSetNameForSegmentstore(pravegaCluster), i),
+					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", p.StatefulSetNameForSegmentstore(), i),
 				},
 			},
 		}
@@ -474,10 +474,10 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 	return services
 }
 
-func MakeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+func MakeSegmentstorePodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	var maxUnavailable intstr.IntOrString
 
-	if pravegaCluster.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+	if p.Spec.Pravega.SegmentStoreReplicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
 		maxUnavailable = intstr.FromInt(1)
@@ -489,13 +489,13 @@ func MakeSegmentstorePodDisruptionBudget(pravegaCluster *api.PravegaCluster) *po
 			APIVersion: "policy/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.PdbNameForSegmentstore(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
+			Name:      p.PdbNameForSegmentstore(),
+			Namespace: p.Namespace,
 		},
 		Spec: policyv1beta1.PodDisruptionBudgetSpec{
 			MaxUnavailable: &maxUnavailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: util.LabelsForSegmentStore(pravegaCluster),
+				MatchLabels: p.LabelsForSegmentStore(),
 			},
 		},
 	}

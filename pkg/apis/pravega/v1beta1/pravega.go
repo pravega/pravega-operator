@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package v1alpha1
+package v1beta1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
@@ -124,6 +124,14 @@ type PravegaSpec struct {
 	// SegmentStoreResources includes CPU and memory resources
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
 
+	// Provides the name of the configmap created by the user to provide additional key-value pairs
+	// that need to be configured into the ss pod as environmental variables
+	SegmentStoreEnvVars string `json:"segmentStoreEnvVars,omitempty"`
+
+	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
+	// either as an environment variable or by mounting it to a volume
+	SegmentStoreSecret *SegmentStoreSecret `json:"segmentStoreSecret"`
+
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
@@ -224,6 +232,15 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
+	if s.SegmentStoreSecret == nil {
+		changed = true
+		s.SegmentStoreSecret = &SegmentStoreSecret{}
+	}
+
+	if s.SegmentStoreSecret.withDefaults() {
+		changed = true
+	}
+
 	if s.ControllerServiceAnnotations == nil {
 		changed = true
 		s.ControllerServiceAnnotations = map[string]string{}
@@ -232,6 +249,26 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if s.SegmentStoreServiceAnnotations == nil {
 		changed = true
 		s.SegmentStoreServiceAnnotations = map[string]string{}
+	}
+
+	return changed
+}
+
+// SegmentStoreSecret defines the configuration of the secret for the Segment Store
+type SegmentStoreSecret struct {
+	// Secret specifies the name of Secret which needs to be configured
+	Secret string `json:"secret"`
+
+	// Path to the volume where the secret will be mounted
+	// This value is considered only when the secret is provided
+	// If this value is provided, the secret is mounted to a Volume
+	// else the secret is exposed as an Environment Variable
+	MountPath string `json:"mountPath"`
+}
+
+func (s *SegmentStoreSecret) withDefaults() (changed bool) {
+	if s.Secret == "" {
+		s.MountPath = ""
 	}
 
 	return changed

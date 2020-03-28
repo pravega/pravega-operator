@@ -13,7 +13,6 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/pravega/pravega-operator/pkg/webhook"
 	"os"
 	"runtime"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
@@ -42,7 +42,7 @@ var (
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
-	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
+	flag.BoolVar(&webhookFlag, "webhook", false, "Enable webhook, the default is enabled.")
 }
 
 func printVersion() {
@@ -104,11 +104,24 @@ func main() {
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Fatal(err)
 	}
-
+	/*
+		if webhookFlag {
+			// Setup webhook
+			if err := webhook.AddToManager(mgr); err != nil {
+				log.Fatal(err)
+			}
+		}
+	*/
+	/*
+		if err = (&v1alpha1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
+			log.Error(err, "unable to create conversion webhook %s", err.Error())
+			os.Exit(1)
+		}
+	*/
 	if webhookFlag {
-		// Setup webhook
-		if err := webhook.AddToManager(mgr); err != nil {
-			log.Fatal(err)
+		if err = (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
+			log.Error(err, "unable to create webhook %s", err.Error())
+			os.Exit(1)
 		}
 	}
 
