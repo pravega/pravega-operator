@@ -42,7 +42,7 @@ var (
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
-	flag.BoolVar(&webhookFlag, "webhook", false, "Enable webhook, the default is enabled.")
+	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 }
 
 func printVersion() {
@@ -88,7 +88,11 @@ func main() {
 	defer r.Unset()
 
 	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{
+		Namespace: namespace,
+		CertDir:   "/tmp/secret",
+	})
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,6 +122,7 @@ func main() {
 			os.Exit(1)
 		}
 	*/
+
 	if webhookFlag {
 		if err = (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook %s", err.Error())

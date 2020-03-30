@@ -35,3 +35,11 @@ spec:
               fieldPath: metadata.name
         - name: OPERATOR_NAME
           value: {{ template "pravega-operator.fullname" . }}
+        volumeMounts:
+        - name: webhook-cert
+          mountPath: "/tmp/secret"
+          readOnly: true
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: selfsigned-cert-tls

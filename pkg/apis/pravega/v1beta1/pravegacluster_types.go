@@ -15,7 +15,6 @@ import (
 	"os"
 
 	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -253,25 +252,26 @@ func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
 func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	log.Printf("ConvertFrom: invoked")
 	// logic for conveting from v1alpha1 to v1beta1
-	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
-	//var srcObj pravegav1alpha1.PravegaCluster = pravegav1alpha1.PravegaCluster(srcRaw)
-	bkClusterSize := int(srcObj.Spec.Bookkeeper.Replicas)
-	log.Printf("ConvertFrom: BK Size %d\n", bkClusterSize)
-	var bookieUrl string = ""
-	for i := 0; i < bkClusterSize; i++ {
-		bkStsName := fmt.Sprintf("%s-bookie", srcObj.Name)
-		bkSvcName := fmt.Sprintf("%s-bookie-headless", srcObj.Name)
-		bookieUrl += fmt.Sprintf("%s-%d.%s.%s:3181",
-			bkStsName,
-			i,
-			bkSvcName,
-			srcObj.Namespace)
-		if i < bkClusterSize-1 {
-			bookieUrl += ","
+	/*
+		srcObj := srcRaw.(*v1alpha1.PravegaCluster)
+		bkClusterSize := int(srcObj.Spec.Bookkeeper.Replicas)
+		log.Printf("ConvertFrom: BK Size %d\n", bkClusterSize)
+		var bookieUrl string = ""
+		for i := 0; i < bkClusterSize; i++ {
+			bkStsName := fmt.Sprintf("%s-bookie", srcObj.Name)
+			bkSvcName := fmt.Sprintf("%s-bookie-headless", srcObj.Name)
+			bookieUrl += fmt.Sprintf("%s-%d.%s.%s:3181",
+				bkStsName,
+				i,
+				bkSvcName,
+				srcObj.Namespace)
+			if i < bkClusterSize-1 {
+				bookieUrl += ","
+			}
 		}
-	}
 
-	dst.Spec.BookkeeperUri = bookieUrl
+		dst.Spec.BookkeeperUri = bookieUrl
+	*/
 	return nil
 }
 
