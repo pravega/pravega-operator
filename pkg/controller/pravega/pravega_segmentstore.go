@@ -159,10 +159,10 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 			{
-				Name: ecs-certs,
+				Name: "ecs-certs",
                 VolumeSource: corev1.VolumeSource{
                     Secret: &corev1.SecretVolumeSource{
-                        SecretName: p.Spec.Tier2.Ecs.Certificates,
+                        SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates,
                     },
                 },
             },
@@ -189,8 +189,8 @@ func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
 			MountPath: heapDumpDir,
 		},
 		{
-			Name:      ecs-certs,
-			MountPath: /etc/ssl/certs/java/ecs-certs,
+			Name:      "ecs-certs",
+			MountPath: "/etc/ssl/certs/java/ecs-certs/",
 		},
 	}
 	if util.IsVersionBelow07(p.Spec.Version) {
