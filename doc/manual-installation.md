@@ -70,7 +70,7 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  version: 0.4.0
+  version: 0.7.0
   zookeeperUri: [ZOOKEEPER_HOST]:2181
   bookkeeperUri: [BOOKKEEPER_SVC]:3181"
   pravega:

@@ -34,7 +34,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 - [x] Create and destroy a Pravega cluster
 - [x] Resize cluster
-- [x] Rolling upgrades (experimental)
+- [x] Rolling upgrades
 
 ## Requirements
 
@@ -129,7 +129,7 @@ bar-pravega  0.4.0     7                 7               2m
 
 ```
 $ kubectl get all -l pravega_cluster=bar-pravega
-NAME                                              READY   STATUS    RESTARTS   AGE
+NAME                                          READY   STATUS    RESTARTS   AGE
 pod/bar-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
 pod/bar-pravega-segmentstore-0                1/1     Running   0          2m
 pod/bar-pravega-segmentstore-1                1/1     Running   0          1m

@@ -32,20 +32,13 @@ spec:
     segmentStoreResources:
       requests:
         memory: "4Gi"
-        cpu: "2000m"
+        cpu: "1000m"
       limits:
-        memory: "16Gi"
-        cpu: "8000m"
+        memory: "4Gi"
+        cpu: "2000m"
 
     # Turn on Pravega Debug Logging
     debugLogging: false
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
 
     tier2:
       filesystem:
@@ -67,7 +60,7 @@ spec:
     # for available configuration properties
     options:
       pravegaservice.containerCount: "4"
-      pravegaservice.cacheMaxSize: "11811160064"
+      pravegaservice.cacheMaxSize: "1073741824"
       pravegaservice.zkSessionTimeoutMs: "10000"
       attributeIndex.readBlockSize: "1048576"
       readIndex.storageReadAlignment: "1048576"
@@ -89,4 +82,4 @@ spec:
 
     # Pass the JVM options to controller and segmentstore
     controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
-    segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
+    segmentStoreJVMOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
