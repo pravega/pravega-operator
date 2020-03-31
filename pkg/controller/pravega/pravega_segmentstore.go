@@ -160,13 +160,11 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 			{
 				Name: "ecs-certs",
-                VolumeSource: corev1.VolumeSource{
-                    Secret: &corev1.SecretVolumeSource{
-                        SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates,
-                    },
-                },
-            },
-        },
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
+				},
+			},
+		},
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
@@ -188,10 +186,12 @@ func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
 			Name:      heapDumpName,
 			MountPath: heapDumpDir,
 		},
-		{
+	}
+	if len(p.Spec.Pravega.Tier2.Ecs.Certificates) > 0 {
+		volumeMount = append(volumeMount, corev1.VolumeMount{
 			Name:      "ecs-certs",
 			MountPath: "/etc/ssl/certs/java/ecs-certs/",
-		},
+		})
 	}
 	if util.IsVersionBelow07(p.Spec.Version) {
 		volumeMount = append(volumeMount, corev1.VolumeMount{
