@@ -151,20 +151,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
-		Volumes: []corev1.Volume{
-			{
-				Name: heapDumpName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: "ecs-certs",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
-				},
-			},
-		},
+		Volumes:  MakeSegmentStoreVolumes(p),
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
@@ -178,6 +165,23 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
+}
+
+func MakeSegmentStoreVolumes(p *api.PravegaCluster) []corev1.Volume {
+	volumes := []corev1.Volume{
+		{
+			Name: heapDumpName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+	if len(p.Spec.Pravega.Tier2.Ecs.Certificates) > 0 {
+		volumes = append(volumes, corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
+		})
+	}
+	return volumes
 }
 
 func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
