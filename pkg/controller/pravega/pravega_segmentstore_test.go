@@ -97,6 +97,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 								Bucket:      "bucket",
 								Prefix:      "prefix",
 								Credentials: "credentials",
+								Certificates: "ecs-certificate",
 							},
 						},
 						DebugLogging: true,
