@@ -177,8 +177,11 @@ func MakeSegmentStoreVolumes(p *api.PravegaCluster) []corev1.Volume {
 		},
 	}
 	if len(p.Spec.Pravega.Tier2.Ecs.Certificates) > 0 {
-		volumes = append(volumes, corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
+		volumes = append(volumes, corev1.Volume{
+			Name: "ecs-certs",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
+			},
 		})
 	}
 	return volumes
