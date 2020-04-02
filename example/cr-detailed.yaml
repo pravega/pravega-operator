@@ -3,7 +3,7 @@ kind: "PravegaCluster"
 metadata:
   name: "example"
 spec:
-  version: 0.4.0
+  version: 0.7.0
   zookeeperUri: zk-client:2181
 
   # Security configurations for Pravega
@@ -13,61 +13,7 @@ spec:
       controllerSecret: "controller-pki"
       segmentStoreSecret: "segmentstore-pki"
 
-  bookkeeper:
-    image:
-      repository: pravega/bookkeeper
-    replicas: 3
-
-    resources:
-      requests:
-        memory: "3Gi"
-        cpu: "1000m"
-      limits:
-        memory: "5Gi"
-        cpu: "2000m"
-
-    storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-      indexVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
-
-    # Turns on automatic recovery
-    # see https://bookkeeper.apache.org/docs/latest/admin/autorecovery/
-    autoRecovery: true
-
-    # To enable bookkeeper metrics feature, take codahale for example here.
-    # See http://bookkeeper.apache.org/docs/4.7.0/admin/metrics/ for more metrics provider
-    # See http://bookkeeper.apache.org/docs/4.7.0/reference/config/#statistics for metrics provider configuration details
-    options:
-      enableStatistics: "true"
-      statsProviderClass: "org.apache.bookkeeper.stats.codahale.CodahaleMetricsProvider"
-      codahaleStatsGraphiteEndpoint: "graphite.example.com:2003"
-      # Default is 60
-      codahaleStatsOutputFrequencySeconds: "30"
-
-    # Pass the JVM options to Bookkeeper
-    bookkeeperJVMOptions:
-      memoryOpts: ["-Xms2g", "-XX:MaxDirectMemorySize=2g"]
-      gcOpts: ["-XX:MaxGCPauseMillis=20"]
-      gcLoggingOpts: ["-XX:NumberOfGCLogFiles=10"]
-      extraOpts: []
+  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
   pravega:
     image:
@@ -85,21 +31,14 @@ spec:
     segmentStoreReplicas: 3
     segmentStoreResources:
       requests:
-        memory: "3Gi"
+        memory: "4Gi"
         cpu: "1000m"
       limits:
-        memory: "5Gi"
+        memory: "4Gi"
         cpu: "2000m"
 
     # Turn on Pravega Debug Logging
     debugLogging: false
-
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
 
     tier2:
       filesystem:
@@ -121,7 +60,7 @@ spec:
     # for available configuration properties
     options:
       pravegaservice.containerCount: "4"
-      pravegaservice.cacheMaxSize: "17179869184"
+      pravegaservice.cacheMaxSize: "1073741824"
       pravegaservice.zkSessionTimeoutMs: "10000"
       attributeIndex.readBlockSize: "1048576"
       readIndex.storageReadAlignment: "1048576"
@@ -143,4 +82,4 @@ spec:
 
     # Pass the JVM options to controller and segmentstore
     controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
-    segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
+    segmentStoreJVMOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
