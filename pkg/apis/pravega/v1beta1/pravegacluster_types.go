@@ -26,6 +26,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+var (
+	// The key is the supported versions, the value is a list of versions that can upgrade to.
+	supportedVersions = map[string][]string{
+		"0.1.0": []string{"0.1.0"},
+		"0.2.0": []string{"0.2.0"},
+		"0.3.0": []string{"0.3.0", "0.3.1", "0.3.2"},
+		"0.3.1": []string{"0.3.1", "0.3.2"},
+		"0.3.2": []string{"0.3.2"},
+		"0.4.0": []string{"0.4.0"},
+		"0.5.0": []string{"0.5.0", "0.5.1", "0.6.0", "0.6.1", "0.7.0"},
+		"0.5.1": []string{"0.5.1", "0.6.0", "0.6.1", "0.7.0"},
+		"0.6.0": []string{"0.6.0", "0.6.1", "0.7.0"},
+		"0.6.1": []string{"0.6.1", "0.7.0"},
+		"0.7.0": []string{"0.7.0"},
+	}
+)
+
 const (
 	// DefaultZookeeperUri is the default ZooKeeper URI in the form of "hostname:port"
 	DefaultZookeeperUri = "zk-client:2181"
@@ -38,7 +55,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.6.1"
+	DefaultPravegaVersion = "0.7.0"
 )
 
 func init() {
@@ -280,22 +297,20 @@ var _ webhook.Validator = &PravegaCluster{}
 func (p *PravegaCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	log.Print("Registering Webhook")
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(p).
+		For(&PravegaCluster{}).
 		Complete()
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateCreate() error {
 	log.Printf("validate create %s", p.Name)
-	// validatePravegaVersion()
-	return nil
+	return p.validatePravegaVersion()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 	log.Printf("validate update %s", p.Name)
-	//validatePravegaVersion()
-	return nil
+	return p.validatePravegaVersion()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -305,31 +320,24 @@ func (p *PravegaCluster) ValidateDelete() error {
 	return nil
 }
 
-/*
 func (p *PravegaCluster) validatePravegaVersion() error {
-	configMap := &corev1.ConfigMap{}
-	err := pwh.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForPravega(), Namespace: p.Namespace}, configMap)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return fmt.Errorf("config map %s not found. Please create this config map first and then retry", util.ConfigMapNameForPravega(p.Name))
+	/*
+		configMap := &corev1.ConfigMap{}
+		err := pwh.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForPravega(), Namespace: p.Namespace}, configMap)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return fmt.Errorf("config map %s not found. Please create this config map first and then retry", util.ConfigMapNameForPravega(p.Name))
+			}
+			return err
 		}
-		return err
-	}
-
-	supportedVersions := configMap.Data
+	*/
+	//supportedVersions := configMap.Data
+	//supportedVersions := util.GetSupportedVersions()
 
 	// Identify the request Pravega version
-	// Mutate the version if it is empty
+	// Apply default version if the version feild is empty
 	if p.Spec.Version == "" {
-		if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
-			p.Spec.Version = p.Spec.Pravega.Image.Tag
-		} else {
-			p.Spec.Version = pravegav1alpha1.DefaultPravegaVersion
-		}
-	}
-	// Set Pravega and Bookkeeper tag to empty
-	if p.Spec.Pravega != nil && p.Spec.Pravega.Image != nil && p.Spec.Pravega.Image.Tag != "" {
-		p.Spec.Pravega.Image.Tag = ""
+		p.Spec.Version = DefaultPravegaVersion
 	}
 
 	requestVersion := p.Spec.Version
@@ -341,7 +349,6 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return nil
 	}
 
-	// Allow upgrade only if Cluster is in Ready State
 	// Check if the request has a valid Pravega version
 	normRequestVersion, err := util.NormalizeVersion(requestVersion)
 	if err != nil {
@@ -351,41 +358,34 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
-	// Check if the request is an upgrade
-	found := &pravegav1alpha1.PravegaCluster{}
-	nn := types.NamespacedName{
-		Namespace: p.Namespace,
-		Name:      p.Name,
-	}
-	err = pwh.client.Get(context.TODO(), nn, found)
-	if err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to obtain PravegarequestVersionCluster resource: %v", err)
-	}
-
-	foundVersion := found.Spec.Version
-	// This is not an upgrade if "found" is empty or the requested version is equal to the running version
-	if errors.IsNotFound(err) || foundVersion == requestVersion {
+	if p.Status.CurrentVersion == "" {
+		// we're deploying for the first time
 		return nil
 	}
-
+	// This is not an upgrade if CurrentVersion == requestVersion
+	if p.Status.CurrentVersion == requestVersion {
+		return nil
+	}
 	// This is an upgrade, check if this requested version is in the upgrade path
-	normFoundVersion, err := util.NormalizeVersion(foundVersion)
+	normFoundVersion, err := util.NormalizeVersion(p.Status.CurrentVersion)
 	if err != nil {
 		// It should never happen
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
-	upgradeString, ok := supportedVersions[normFoundVersion]
+	//upgradeString, ok := supportedVersions[normFoundVersion]
+	upgradeList, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")
 	}
-	upgradeList := strings.Split(upgradeString, ",")
+	//upgradeList := strings.Split(upgradeString, ",")
 	if !util.ContainsVersion(upgradeList, normRequestVersion) {
-		return fmt.Errorf("unsupported upgrade from version %s to %s", foundVersion, requestVersion)
+		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
 	}
+
 	return nil
 }
-*/
+
 //to return name of segmentstore based on the version
 func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
 	if util.IsVersionBelow07(p.Spec.Version) {
@@ -425,10 +425,6 @@ func (pravegaCluster *PravegaCluster) LabelsForPravegaCluster() map[string]strin
 		"app":             "pravega-cluster",
 		"pravega_cluster": pravegaCluster.Name,
 	}
-}
-
-func (p *PravegaCluster) ConfigMapNameForPravega() string {
-	return fmt.Sprintf("%s-supported-upgrade-paths", p.ObjectMeta.Name)
 }
 
 func (p *PravegaCluster) PdbNameForController() string {

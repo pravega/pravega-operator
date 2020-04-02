@@ -39,6 +39,11 @@ var (
 	webhookFlag bool
 )
 
+/*
+const (
+	supportedVersions string = "pravega-supported-versions"
+)
+*/
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
@@ -88,10 +93,7 @@ func main() {
 	defer r.Unset()
 
 	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{
-		Namespace: namespace,
-		CertDir:   "/tmp/secret",
-	})
+	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
 
 	if err != nil {
 		log.Fatal(err)
@@ -124,11 +126,35 @@ func main() {
 	*/
 
 	if webhookFlag {
-		if err = (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook %s", err.Error())
 			os.Exit(1)
 		}
 	}
+	/*
+		log.Print("Reading Supported Versions map")
+		operatorNamespace, err := k8sutil.GetOperatorNamespace()
+		if err != nil {
+			log.Error(err, "unable to get operator namespace %s", err.Error())
+			os.Exit(1)
+		}
+		// Read Supported versions map
+
+			configMap := &corev1.ConfigMap{}
+			err1 := mgr.GetClient().Get(context.TODO(),
+				types.NamespacedName{Name: supportedVersions, Namespace: operatorNamespace}, configMap)
+			if err1 != nil {
+				if errors.IsNotFound(err1) {
+					log.Errorf("config map %s not found. Please create pravega-supported-versions config map and then retry",
+						supportedVersions)
+				} else {
+					log.Errorf("Error getting config map %v", err1)
+				}
+				os.Exit(1)
+			}
+	*/
+
+	//util.SetSupportedVersions(versionsMap)
 
 	log.Print("Starting the Cmd")
 
