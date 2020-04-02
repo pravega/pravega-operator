@@ -189,6 +189,8 @@ $ kubectl delete -f ./example/pvc-tier2.yaml
 $ helm delete foo --purge
 ```
 
+If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator.
+
 ### Manual installation
 
 You can also manually install/uninstall the operator and Pravega with `kubectl` commands. Check out the [manual installation](doc/manual-installation.md) document for instructions.
