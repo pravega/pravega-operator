@@ -10,8 +10,8 @@ jsonpath1="{.spec.replicas}"
 jsonpath2="{.status.readyReplicas}"
 zk_opr_name=zook-opr
 zk_name=zook
-bk_opr_name=book
-bk_name=book-opr
+bk_opr_name=book-opr
+bk_name=book
 pr_opr_name=pr-opr
 pr_name=pr
 
