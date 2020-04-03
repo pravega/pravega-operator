@@ -142,6 +142,7 @@ spec:
       bucket: "shared"
       prefix: "example"
       credentials: ecs-credentials
+      certificates: ecs-certificate
 ```
 
 ### Use HDFS as Tier 2
