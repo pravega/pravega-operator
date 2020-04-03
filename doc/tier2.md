@@ -112,38 +112,55 @@ $ kubectl create -f pvc.yaml
 
 Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm) as Tier 2.
 
-Create a file with the secret definition containing your access and secret keys.
+1. Create a file with the secret definition containing your access and secret keys.
 
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ecs-credentials
-type: Opaque
-stringData:
-  ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
-  SECRET_KEY: 0123456789
-```
+    ```
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ecs-credentials
+    type: Opaque
+    stringData:
+      ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
+      SECRET_KEY: 0123456789
+    ```
 
-Assuming that the file is named `ecs-credentials.yaml`.
+2. Assuming that the file is named `ecs-credentials.yaml`.
+    ```
+    $ kubectl create -f ecs-credentials.yaml
+    ```
+3. Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+    ```
+    ...
+    spec:
+    tier2:
+        ecs:
+          configUri: http://10.247.10.52:9020?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+    ```
+In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must trust the certificate in order to establish secured connection with it. 
 
-```
-$ kubectl create -f ecs-credentials.yaml
-```
+(No action is needed if the ECS's certificate is signed by an CA, as in the case of ECS test drive.)
 
-Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
 
-```
-...
-spec:
-  tier2:
-    ecs:
-      configUri: http://10.247.10.52:9020?namespace=pravega
-      bucket: "shared"
-      prefix: "example"
-      credentials: ecs-credentials
-      certificates: ecs-certificates
-```
+2. Upload the certificate into Kubernetes Secret
+    ```
+    kubectl create secret generic ecs-certificate --from-file ./ecs-certificate.pem
+    ```
+3. Specify the secret name of the certificate in the Pravega config file. 
+    ```
+    ...
+    tier2:
+        ecs:
+          configUri: http://10.247.10.52:9020?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+          certificates: ecs-certificate
+    ```
 
 ### Use HDFS as Tier 2
 
