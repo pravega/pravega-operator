@@ -232,6 +232,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 
 	if p.Spec.ExternalAccess.Enabled {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
+		serviceName := util.ServiceNameForSegmentStore(p.Name, 0)
+		serviceName = serviceName[0 : len(serviceName)-2]
+		configData["SERVICE_NAME"] = serviceName
 	}
 
 	if p.Spec.Pravega.DebugLogging {
