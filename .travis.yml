@@ -84,7 +84,7 @@ jobs:
         # Install Bookkeeper
         - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
         - sleep 30s
-        - kubectl -n deafult create -f test/e2e/resources/bk_version_map.yaml
+        - kubectl -n default create -f test/e2e/resources/bk_version_map.yaml
         - kubectl -n default create -f test/e2e/resources/bk-cluster.yaml
         - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done
         # Install the ConfigMap for version dependency
@@ -99,8 +99,6 @@ jobs:
         # kill background echo loop
         - echo "killing while sleep loop" && kill %1
       after_script:
-        - eksctl delete cluster --name $CLUSTER_NAME
-      after_failure:
         - eksctl delete cluster --name $CLUSTER_NAME
 
     - stage: deploy
