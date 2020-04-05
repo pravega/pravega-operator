@@ -1,7 +1,7 @@
 apiVersion: "bookkeeper.pravega.io/v1alpha1"
 kind: "BookkeeperCluster"
 metadata:
-  name: "pravega"
+  name: "pravega-bk"
 spec:
   zookeeperUri: zk-client:2181
 
