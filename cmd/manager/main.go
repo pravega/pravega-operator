@@ -25,13 +25,12 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
+	log "github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -39,11 +38,6 @@ var (
 	webhookFlag bool
 )
 
-/*
-const (
-	supportedVersions string = "pravega-supported-versions"
-)
-*/
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
@@ -110,20 +104,6 @@ func main() {
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Fatal(err)
 	}
-	/*
-		if webhookFlag {
-			// Setup webhook
-			if err := webhook.AddToManager(mgr); err != nil {
-				log.Fatal(err)
-			}
-		}
-	*/
-	/*
-		if err = (&v1alpha1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
-			log.Error(err, "unable to create conversion webhook %s", err.Error())
-			os.Exit(1)
-		}
-	*/
 
 	if webhookFlag {
 		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
@@ -131,30 +111,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	/*
-		log.Print("Reading Supported Versions map")
-		operatorNamespace, err := k8sutil.GetOperatorNamespace()
-		if err != nil {
-			log.Error(err, "unable to get operator namespace %s", err.Error())
-			os.Exit(1)
-		}
-		// Read Supported versions map
-
-			configMap := &corev1.ConfigMap{}
-			err1 := mgr.GetClient().Get(context.TODO(),
-				types.NamespacedName{Name: supportedVersions, Namespace: operatorNamespace}, configMap)
-			if err1 != nil {
-				if errors.IsNotFound(err1) {
-					log.Errorf("config map %s not found. Please create pravega-supported-versions config map and then retry",
-						supportedVersions)
-				} else {
-					log.Errorf("Error getting config map %v", err1)
-				}
-				os.Exit(1)
-			}
-	*/
-
-	//util.SetSupportedVersions(versionsMap)
 
 	log.Print("Starting the Cmd")
 

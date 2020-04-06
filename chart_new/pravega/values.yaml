@@ -1,0 +1,26 @@
+# Default values for pravega.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+version: 0.7.0
+zookeeperUri: zk-client:2181
+
+externalAccess:
+  enabled: false
+  type: LoadBalancer
+
+serviceAccount:
+  name: pravega-components
+
+bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+
+pravega:
+  image:
+    repository: pravega/pravega
+  controllerReplicas: 1
+  segmentStoreReplicas: 1
+  debugLogging: false
+  cacheVolumeRequest: 20Gi
+  storage:
+    className: standard
+  tier2: pravega-tier2

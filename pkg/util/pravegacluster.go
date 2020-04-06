@@ -24,7 +24,6 @@ import (
 
 var (
 	versionRegexp *regexp.Regexp
-	versionMap    map[string]string
 )
 
 const (
@@ -33,14 +32,6 @@ const (
 
 func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
-}
-
-func SetSupportedVersions(data map[string]string) {
-	versionMap = data
-}
-
-func GetSupportedVersions() map[string]string {
-	return versionMap
 }
 
 //function to check if the version is below 0.7 or not

@@ -11,10 +11,13 @@
 package v1beta1
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -24,23 +27,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-)
-
-var (
-	// The key is the supported versions, the value is a list of versions that can upgrade to.
-	supportedVersions = map[string][]string{
-		"0.1.0": []string{"0.1.0"},
-		"0.2.0": []string{"0.2.0"},
-		"0.3.0": []string{"0.3.0", "0.3.1", "0.3.2"},
-		"0.3.1": []string{"0.3.1", "0.3.2"},
-		"0.3.2": []string{"0.3.2"},
-		"0.4.0": []string{"0.4.0"},
-		"0.5.0": []string{"0.5.0", "0.5.1", "0.6.0", "0.6.1", "0.7.0"},
-		"0.5.1": []string{"0.5.1", "0.6.0", "0.6.1", "0.7.0"},
-		"0.6.0": []string{"0.6.0", "0.6.1", "0.7.0"},
-		"0.6.1": []string{"0.6.1", "0.7.0"},
-		"0.7.0": []string{"0.7.0"},
-	}
 )
 
 const (
@@ -268,27 +254,26 @@ func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
 
 func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	log.Printf("ConvertFrom: invoked")
-	// logic for conveting from v1alpha1 to v1beta1
-	/*
-		srcObj := srcRaw.(*v1alpha1.PravegaCluster)
-		bkClusterSize := int(srcObj.Spec.Bookkeeper.Replicas)
-		log.Printf("ConvertFrom: BK Size %d\n", bkClusterSize)
-		var bookieUrl string = ""
-		for i := 0; i < bkClusterSize; i++ {
-			bkStsName := fmt.Sprintf("%s-bookie", srcObj.Name)
-			bkSvcName := fmt.Sprintf("%s-bookie-headless", srcObj.Name)
-			bookieUrl += fmt.Sprintf("%s-%d.%s.%s:3181",
-				bkStsName,
-				i,
-				bkSvcName,
-				srcObj.Namespace)
-			if i < bkClusterSize-1 {
-				bookieUrl += ","
-			}
-		}
+	//logic for conveting from v1alpha1 to v1beta1
 
-		dst.Spec.BookkeeperUri = bookieUrl
-	*/
+	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
+	bkClusterSize := int(srcObj.Spec.Bookkeeper.Replicas)
+	log.Printf("ConvertFrom: BK Size %d\n", bkClusterSize)
+	var bookieUrl string = ""
+	for i := 0; i < bkClusterSize; i++ {
+		bkStsName := fmt.Sprintf("%s-bookie", srcObj.Name)
+		bkSvcName := fmt.Sprintf("%s-bookie-headless", srcObj.Name)
+		bookieUrl += fmt.Sprintf("%s-%d.%s.%s:3181",
+			bkStsName,
+			i,
+			bkSvcName,
+			srcObj.Namespace)
+		if i < bkClusterSize-1 {
+			bookieUrl += ","
+		}
+	}
+	log.Printf("BK Uri %s\n", bookieUrl)
+	dst.Spec.BookkeeperUri = bookieUrl
 	return nil
 }
 
@@ -320,22 +305,37 @@ func (p *PravegaCluster) ValidateDelete() error {
 	return nil
 }
 
-func (p *PravegaCluster) validatePravegaVersion() error {
-	/*
-		configMap := &corev1.ConfigMap{}
-		err := pwh.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForPravega(), Namespace: p.Namespace}, configMap)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				return fmt.Errorf("config map %s not found. Please create this config map first and then retry", util.ConfigMapNameForPravega(p.Name))
-			}
-			return err
-		}
-	*/
-	//supportedVersions := configMap.Data
-	//supportedVersions := util.GetSupportedVersions()
+func getSupportedVersions() (map[string]string, error) {
+	var supportedVersions = map[string]string{}
+	file, err := os.Open("/tmp/config/keys")
 
-	// Identify the request Pravega version
-	// Apply default version if the version feild is empty
+	if err != nil {
+		log.Fatalf("failed opening file: %s", err)
+		return supportedVersions, nil
+	}
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	var txtlines []string
+
+	for scanner.Scan() {
+		txtlines = append(txtlines, scanner.Text())
+	}
+
+	defer file.Close()
+
+	for _, eachline := range txtlines {
+		entry := strings.Split(eachline, ":")
+		supportedVersions[entry[0]] = entry[1]
+	}
+	return supportedVersions, nil
+}
+
+func (p *PravegaCluster) validatePravegaVersion() error {
+	supportedVersions, err := getSupportedVersions()
+	if err != nil {
+		return fmt.Errorf("Error retrieving suported versions %v", err)
+	}
 	if p.Spec.Version == "" {
 		p.Spec.Version = DefaultPravegaVersion
 	}
@@ -359,30 +359,30 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	}
 
 	if p.Status.CurrentVersion == "" {
-		// we're deploying for the first time
+		// we're deploying for the very first time
 		return nil
 	}
+
 	// This is not an upgrade if CurrentVersion == requestVersion
 	if p.Status.CurrentVersion == requestVersion {
 		return nil
 	}
-	// This is an upgrade, check if this requested version is in the upgrade path
+	// This is an upgrade, check if requested version is in the upgrade path
 	normFoundVersion, err := util.NormalizeVersion(p.Status.CurrentVersion)
 	if err != nil {
 		// It should never happen
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
-	//upgradeString, ok := supportedVersions[normFoundVersion]
-	upgradeList, ok := supportedVersions[normFoundVersion]
+	upgradeString, ok := supportedVersions[normFoundVersion]
+	//upgradeList, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")
 	}
-	//upgradeList := strings.Split(upgradeString, ",")
+	upgradeList := strings.Split(upgradeString, ",")
 	if !util.ContainsVersion(upgradeList, normRequestVersion) {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
 	}
-
 	return nil
 }
 

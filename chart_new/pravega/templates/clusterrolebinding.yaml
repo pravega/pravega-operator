@@ -1,0 +1,14 @@
+{{- if .Values.externalAccess.enabled }}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: {{ template "pravega-components.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ template "pravega-components.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
