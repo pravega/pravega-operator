@@ -581,11 +581,15 @@ func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaC
 				if !util.IsVersionBelow07(p.Spec.Version) {
 					name = util.ServiceNameForSegmentStoreBelow07(p.Name, i)
 				} else {
-					name = util.ServiceNameForSegmentStoreBelow07(p.Name, i)
+					name = util.ServiceNameForSegmentStoreAbove07(p.Name, i)
 				}
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
 				if err != nil {
-					return err
+					if errors.IsNotFound(err) {
+						continue
+					} else {
+						return err
+					}
 				}
 				err = r.client.Delete(context.TODO(), service)
 				if err != nil {
