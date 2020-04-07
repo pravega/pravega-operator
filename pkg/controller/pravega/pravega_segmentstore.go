@@ -433,7 +433,7 @@ func MakeSegmentStoreExternalServices(pravegaCluster *api.PravegaCluster) []*cor
 	services := make([]*corev1.Service, pravegaCluster.Spec.Pravega.SegmentStoreReplicas)
 
 	for i := int32(0); i < pravegaCluster.Spec.Pravega.SegmentStoreReplicas; i++ {
-		ssPodName := util.ServiceNameForSegmentStore(pravegaCluster.Name, i)
+		ssPodName := util.ServiceNameForSegmentStore(pravegaCluster, i)
 		annotationMap := pravegaCluster.Spec.Pravega.SegmentStoreServiceAnnotations
 		annotationValue := generateDNSAnnotationForSvc(pravegaCluster.Spec.ExternalAccess.DomainName, ssPodName)
 

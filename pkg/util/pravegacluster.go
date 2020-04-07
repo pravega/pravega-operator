@@ -62,7 +62,20 @@ func ServiceNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
-func ServiceNameForSegmentStore(clusterName string, index int32) string {
+func ServiceNameForSegmentStore(p *api.PravegaCluster, index int32) string {
+	if IsVersionBelow07(p.Spec.Version) {
+		return ServiceNameForSegmentStoreBelow07(p.Name, index)
+	}
+	return ServiceNameForSegmentStoreAbove07(p.Name, index)
+}
+
+//if version is above or equals to 0.7 this name will be assigned
+func ServiceNameForSegmentStoreAbove07(clusterName string,index int32) string {
+	return fmt.Sprintf("%s-pravega-segment-store-%d", clusterName, index)
+}
+
+//if version is below 0.7 this name will be assigned
+func ServiceNameForSegmentStoreBelow07(clusterName string,index int32) string {
 	return fmt.Sprintf("%s-pravega-segmentstore-%d", clusterName, index)
 }
 
