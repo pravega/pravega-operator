@@ -4,7 +4,7 @@
 
 image:
   repository: pbelgundi/pravega-operator
-  tag: m16
+  tag: m23
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
