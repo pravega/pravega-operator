@@ -444,12 +444,29 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	//this check is to see if the newsts is present or not if it's not present it will be created here
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if p.Spec.ExternalAccess.Enabled {
+				services := pravega.MakeSegmentStoreExternalServices(p)
+				for _, service := range services {
+					controllerutil.SetControllerReference(p, service, r.scheme)
+					err = r.client.Create(context.TODO(), service)
+					if err != nil && !errors.IsAlreadyExists(err) {
+						*newsts.Spec.Replicas = 0
+						err2 := r.client.Create(context.TODO(), newsts)
+						if err2 != nil {
+							log.Printf("failed to create StatefulSet: %v", err2)
+							return false, err2
+						}
+						return false, err
+					}
+				}
+			}
 			*newsts.Spec.Replicas = 0
 			err2 := r.client.Create(context.TODO(), newsts)
 			if err2 != nil {
 				log.Printf("failed to create StatefulSet: %v", err2)
 				return false, err2
 			}
+
 		} else {
 			log.Printf("failed to get StatefulSet: %v", err)
 			return false, err
@@ -564,6 +581,30 @@ func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaC
 	}
 	//this is to check if all the new ss pods have comeup before deleteing the old sts
 	if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+		if p.Spec.ExternalAccess.Enabled {
+			var name string = ""
+			for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
+				service := &corev1.Service{}
+				if !util.IsVersionBelow07(p.Spec.Version) {
+					name = util.ServiceNameForSegmentStoreBelow07(p.Name, i)
+				} else {
+					name = util.ServiceNameForSegmentStoreAbove07(p.Name, i)
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						continue
+					} else {
+						return err
+					}
+
+				}
+				err = r.client.Delete(context.TODO(), service)
+				if err != nil {
+					return err
+				}
+			}
+		}
 		err = r.client.Delete(context.TODO(), oldsts)
 	}
 	if err != nil {
