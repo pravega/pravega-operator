@@ -3,8 +3,13 @@
 # Declare variables to be passed into your templates.
 
 image:
+<<<<<<< HEAD
   repository: pbelgundi/pravega-operator
   tag: m23
+=======
+  repository: pravega/pravega-operator
+  tag: latest
+>>>>>>> 075cb79f920963316e6a145090ce74a19cf53d2c
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
