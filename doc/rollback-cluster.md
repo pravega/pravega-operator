@@ -95,7 +95,7 @@ Status:
     Type:                  Error
     Last Update Time:      2019-09-20T10:45:12Z
     Message:               1
-    Reason:                Updating Bookkeeper
+    Reason:                Updating Segmentstore
     Status:                True
     Type:                  RollbackInProgress
 . . .
@@ -107,7 +107,6 @@ The operator rolls back components following the reverse upgrade order :
 
 1. Pravega Controller
 2. Pravega Segment Store
-3. BookKeeper
 
 A `versionHistory` field in the PravegaClusterSpec maintains the history of upgrades.
 
@@ -168,7 +167,7 @@ Status:
     Type:                  PodsReady
     Last Transition Time:  2019-09-20T09:46:24Z
     Last Update Time:      2019-09-20T09:50:57Z
-    Message:               failed to sync bookkeeper version. pod pravega-bookie-0 update failed because of ImagePullBackOff
+    Message:               failed to sync segmentstore version. pod pravega-pravega-segmentstore-0 update failed because of ImagePullBackOff
     Reason:                RollbackFailed
     Status:                True
     Type:                  Error

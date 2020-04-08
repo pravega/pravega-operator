@@ -2,19 +2,9 @@
 
 ### Use non-default service accounts
 
-You can optionally configure non-default service accounts for the Bookkeeper, Pravega Controller, and Pravega Segment Store pods.
+You can optionally configure non-default service accounts for Pravega Controller and Pravega Segment Store pods.
 
-For BookKeeper, set the `serviceAccountName` field under the `bookkeeper` block.
-
-```
-...
-spec:
-  bookkeeper:
-    serviceAccountName: bk-service-account
-...
-```
-
-For Pravega, set the `controllerServiceAccountName` and `segmentStoreServiceAccountName` fields under the `pravega` block.
+Set the `controllerServiceAccountName` and `segmentStoreServiceAccountName` fields under the `pravega` block.
 
 ```
 ...
@@ -88,9 +78,6 @@ pravega   28m
 ```
 $ kubectl -n pravega-io get pods -l pravega_cluster=pravega
 NAME                                          READY     STATUS    RESTARTS   AGE
-pravega-bookie-0                              1/1       Running   0          29m
-pravega-bookie-1                              1/1       Running   0          29m
-pravega-bookie-2                              1/1       Running   0          29m
 pravega-pravega-controller-6c54fdcdf5-947nw   1/1       Running   0          29m
 pravega-pravega-segmentstore-0                1/1       Running   0          29m
 pravega-pravega-segmentstore-1                1/1       Running   0          29m
