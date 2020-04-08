@@ -64,9 +64,9 @@ func ServiceNameForController(clusterName string) string {
 
 func ServiceNameForSegmentStore(p *api.PravegaCluster, index int32) string {
 	if IsVersionBelow07(p.Spec.Version) {
-		return ServiceNameForSegmentStoreBelow07(p.Name, index)
+		return fmt.Sprintf("%s-pravega-segmentstore-%d", p.Name, index)
 	}
-	return ServiceNameForSegmentStoreAbove07(p.Name, index)
+	return fmt.Sprintf("%s-pravega-segment-store-%d", p.Name, index)
 }
 
 func HeadlessServiceNameForSegmentStore(clusterName string) string {
@@ -117,14 +117,6 @@ func StatefulSetNameForSegmentstoreAbove07(name string) string {
 //if version is below 0.7 this name will be assigned
 func StatefulSetNameForSegmentstoreBelow07(name string) string {
 	return fmt.Sprintf("%s-pravega-segmentstore", name)
-}
-
-func ServiceNameForSegmentStoreBelow07(name string, index int32) string {
-	return fmt.Sprintf("%s-pravega-segmentstore-%d", name, index)
-}
-
-func ServiceNameForSegmentStoreAbove07(name string, index int32) string {
-	return fmt.Sprintf("%s-pravega-segment-store-%d", name, index)
 }
 
 //to return name of segmentstore based on the version
