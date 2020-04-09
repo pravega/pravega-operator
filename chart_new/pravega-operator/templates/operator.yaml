@@ -48,4 +48,4 @@ spec:
           secretName: selfsigned-cert-tls
       - name: versions-volume
         configMap:
-          name: pravega-supported-versions
+          name: supported-versions-map

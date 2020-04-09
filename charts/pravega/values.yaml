@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 version: 0.7.0
-zookeeperUri: zk-client:2181
+zookeeperUri: example-client:2181
 
 externalAccess:
   enabled: false
@@ -12,7 +12,16 @@ externalAccess:
 serviceAccount:
   name: pravega-components
 
-bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
+bookkeeper:
+  image:
+    repository: pravega/bookkeeper
+  replicas: 3
+  storage:
+    className: standard
+    ledgerVolumeRequest: 10Gi
+    journalVolumeRequest: 10Gi
+    indexVolumeRequest: 10Gi
+  autoRecovery: true
 
 pravega:
   image:
@@ -20,7 +29,7 @@ pravega:
   controllerReplicas: 1
   segmentStoreReplicas: 1
   debugLogging: false
-  cacheVolumeRequest: 20Gi
+  cacheVolumeRequest: 2Gi
   storage:
     className: standard
   tier2: pravega-tier2

@@ -144,47 +144,47 @@ spec:
                         required:
                           - kind
                           - name
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                          additionalProperties:
-                            type: string
-                        requests:
-                          type: object
-                          additionalProperties:
-                            type: string
-                    selector:
-                      type: object
-                      description: A label query over volumes to consider for binding.
-                      properties:
-                        matchExpressions:
-                          items:
-                            properties:
-                              key:
-                                type: string
-                              operator:
-                                type: string
-                              values:
-                                items:
-                                  type: string
-                                type: array
-                            required:
-                              - key
-                              - operator
+                      resources:
+                        type: object
+                        properties:
+                          limits:
                             type: object
-                          type: array
-                        matchLabels:
-                          type: object
-                          additionalProperties:
-                            type: string
-                    storageClassName:
-                      type: string
-                    volumeMode:
-                      type: string
-                    volumeName:
-                      type: string
+                            additionalProperties:
+                              type: string
+                          requests:
+                            type: object
+                            additionalProperties:
+                              type: string
+                      selector:
+                        type: object
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  type: array
+                                  items:
+                                    type: string
+                              required:
+                                - key
+                                - operator
+                          matchLabels:
+                            type: object
+                            additionalProperties:
+                              type: string
+                      storageClassName:
+                         type: string
+                      volumeMode:
+                        type: string
+                      volumeName:
+                        type: string
                   tier2:
                     type: object
                     properties:
@@ -650,47 +650,47 @@ spec:
                         required:
                           - kind
                           - name
-                    resources:
-                      type: object
-                      properties:
-                        limits:
-                          type: object
-                          additionalProperties:
-                            type: string
-                        requests:
-                          type: object
-                          additionalProperties:
-                            type: string
-                    selector:
-                      type: object
-                      description: A label query over volumes to consider for binding.
-                      properties:
-                        matchExpressions:
-                          items:
-                            properties:
-                              key:
-                                type: string
-                              operator:
-                                type: string
-                              values:
-                                items:
-                                  type: string
-                                type: array
-                            required:
-                              - key
-                              - operator
+                      resources:
+                        type: object
+                        properties:
+                          limits:
                             type: object
-                          type: array
-                        matchLabels:
-                          type: object
-                          additionalProperties:
-                            type: string
-                    storageClassName:
-                      type: string
-                    volumeMode:
-                      type: string
-                    volumeName:
-                      type: string
+                            additionalProperties:
+                              type: string
+                          requests:
+                            type: object
+                            additionalProperties:
+                              type: string
+                      selector:
+                        type: object
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            items:
+                              properties:
+                                key:
+                                  type: string
+                                operator:
+                                  type: string
+                                values:
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                                - key
+                                - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            type: object
+                            additionalProperties:
+                              type: string
+                      storageClassName:
+                        type: string
+                      volumeMode:
+                        type: string
+                      volumeName:
+                        type: string
                   tier2:
                     type: object
                     properties:
