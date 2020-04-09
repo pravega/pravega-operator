@@ -218,7 +218,7 @@ func specCopy(p *pravegav1alpha1.BookkeeperSpec, b *bookkeeperv1alpha1.Bookkeepe
 	if p.Image != nil {
 		b.Spec.Image.PullPolicy = p.Image.PullPolicy
 		b.Spec.Image.Repository = p.Image.Repository
-		b.Spec.Image.Tag = "0.6.1"
+		b.Spec.Image.Tag = p.Image.Tag
 	}
 	if p.Storage != nil {
 		b.Spec.Storage.IndexVolumeClaimTemplate = p.Storage.IndexVolumeClaimTemplate
