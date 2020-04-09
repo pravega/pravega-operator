@@ -151,11 +151,11 @@ func MakeSegmentStoreVolumes(p *api.PravegaCluster) []corev1.Volume {
 			},
 		},
 	}
-	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Certificates) != "" {
+	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Tls) != "" {
 		volumes = append(volumes, corev1.Volume{
 			Name: "ecs-certs",
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Certificates},
+				Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Tls},
 			},
 		})
 	}
@@ -173,7 +173,7 @@ func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
 			MountPath: heapDumpDir,
 		},
 	}
-	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Certificates) != "" {
+	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Tls) != "" {
 		volumeMount = append(volumeMount, corev1.VolumeMount{
 			Name:      "ecs-certs",
 			MountPath: "/etc/ssl/certs/java/ecs-certs/",

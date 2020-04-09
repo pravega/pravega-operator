@@ -106,11 +106,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 						},
 						Tier2: &v1alpha1.Tier2Spec{
 							Ecs: &v1alpha1.ECSSpec{
-								ConfigUri:    "configUri",
-								Bucket:       "bucket",
-								Prefix:       "prefix",
-								Credentials:  "ecs-credentials",
-								Certificates: "ecs-certificate",
+								ConfigUri:   "configUri",
+								Bucket:      "bucket",
+								Prefix:      "prefix",
+								Credentials: "credentials",
+								Tls:         "ecs-tls",
 							},
 						},
 						DebugLogging: true,

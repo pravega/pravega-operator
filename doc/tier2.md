@@ -112,38 +112,74 @@ $ kubectl create -f pvc.yaml
 
 Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm) as Tier 2.
 
-Create a file with the secret definition containing your access and secret keys.
+1. Create a file with the secret definition containing your access and secret keys.
 
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ecs-credentials
-type: Opaque
-stringData:
-  ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
-  SECRET_KEY: 0123456789
-```
+    ```
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ecs-credentials
+    type: Opaque
+    stringData:
+      ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
+      SECRET_KEY: 0123456789
+    ```
 
-Assuming that the file is named `ecs-credentials.yaml`.
+2. Assuming that the file is named `ecs-credentials.yaml`.
+    ```
+    $ kubectl create -f ecs-credentials.yaml
+    ```
+3. Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+    ```
+    ...
+    spec:
+    tier2:
+        ecs:
+          configUri: http://10.247.10.52:9020?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+    ```
 
-```
-$ kubectl create -f ecs-credentials.yaml
-```
+#### (Optional) ECS TLS Support
+In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must trust the certificate in order to establish secured connection with it.
 
-Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+This is done by adding the ECS certificate into the Java Truststore used by Pravega.
 
-```
-...
-spec:
-  tier2:
-    ecs:
-      configUri: http://10.247.10.52:9020?namespace=pravega
-      bucket: "shared"
-      prefix: "example"
-      credentials: ecs-credentials
-      certificates: ecs-certificate
-```
+(No action is needed if the ECS's certificate is signed by public CA, as in the case of ECS test drive.)
+
+1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
+
+2. Create a file with the secret references to the certificate content, the path and password of the Java Truststore used by Pravega.
+    ```
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ecs-tls
+    type: Opaque
+    stringData:
+      JAVA_TRUST_STORE_PATH: "/etc/ssl/certs/java/cacerts"
+      JAVA_TRUST_STORE_PASSWORD: "changeit"
+    data:
+      ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
+    ```
+
+    Assuming that the file is named `ecs-tls.yaml`
+    ```
+    $ kubectl create -f ecs-tls.yaml
+    ```
+
+3. In the Pravega config file, specify the secret name of the TLS configs defined above. 
+    ```
+    ...
+    tier2:
+        ecs:
+          configUri: http://10.247.10.52:9020?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+          tls: ecs-tls
+    ```
 
 ### Use HDFS as Tier 2
 
