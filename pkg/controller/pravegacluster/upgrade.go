@@ -320,7 +320,6 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 }
 
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-
 	sts := &appsv1.StatefulSet{}
 	name := util.StatefulSetNameForSegmentstore(p)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
@@ -435,6 +434,39 @@ func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaClu
 	return r.syncSegmentStoreVersion(p)
 }
 
+func (r *ReconcilePravegaCluster) createExternalServices(p *pravegav1alpha1.PravegaCluster) error {
+	services := pravega.MakeSegmentStoreExternalServices(p)
+	for _, service := range services {
+		controllerutil.SetControllerReference(p, service, r.scheme)
+		err := r.client.Create(context.TODO(), service)
+		if err != nil && !errors.IsAlreadyExists(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1alpha1.PravegaCluster) error {
+	var name string = ""
+	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
+		service := &corev1.Service{}
+		name = util.ServiceNameForSegmentStore(p, i)
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				continue
+			} else {
+				return err
+			}
+		}
+		err = r.client.Delete(context.TODO(), service)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
 func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
 	p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
@@ -444,6 +476,18 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	//this check is to see if the newsts is present or not if it's not present it will be created here
 	if err != nil {
 		if errors.IsNotFound(err) {
+			if p.Spec.ExternalAccess.Enabled {
+				err = r.createExternalServices(p)
+				if err != nil {
+					*newsts.Spec.Replicas = 0
+					err2 := r.client.Create(context.TODO(), newsts)
+					if err2 != nil {
+						log.Printf("failed to create StatefulSet: %v", err2)
+						return false, err2
+					}
+					return false, err
+				}
+			}
 			*newsts.Spec.Replicas = 0
 			err2 := r.client.Create(context.TODO(), newsts)
 			if err2 != nil {
@@ -564,6 +608,9 @@ func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaC
 	}
 	//this is to check if all the new ss pods have comeup before deleteing the old sts
 	if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+		if p.Spec.ExternalAccess.Enabled {
+			r.deleteExternalServices(p)
+		}
 		err = r.client.Delete(context.TODO(), oldsts)
 	}
 	if err != nil {
