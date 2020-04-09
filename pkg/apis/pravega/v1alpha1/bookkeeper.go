@@ -87,6 +87,8 @@ type BookkeeperSpec struct {
 	// If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
 	BookkeeperJVMOptions *BookkeeperJVMOptions `json:"bookkeeperJVMOptions"`
+
+	Flag *bool `json:"flag"`
 }
 
 func (s *BookkeeperSpec) withDefaults() (changed bool) {
@@ -144,6 +146,11 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
+	if s.Flag == nil {
+		changed = true
+		boolFalse := false
+		s.Flag = &boolFalse
+	}
 	return changed
 }
 

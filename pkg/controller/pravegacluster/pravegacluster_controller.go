@@ -15,12 +15,13 @@ import (
 	"fmt"
 	"time"
 
+	bookkeeperv1alpha1 "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -35,6 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	log "github.com/sirupsen/logrus"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
 // ReconcileTime is the delay between reconciliations
@@ -149,7 +153,6 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 	if err != nil {
 		return fmt.Errorf("Rollback attempt failed: %v", err)
 	}
-
 	err = r.reconcileClusterStatus(p)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile cluster status: %v", err)
@@ -157,11 +160,136 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1alpha1.PravegaCluster) (err er
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
-	err = r.deployBookie(p)
+func setOwnerReferenceControllerFalse(ownerreference []v1.OwnerReference) {
+	for _, value := range ownerreference {
+		if value.Kind == "PravegaCluster" {
+			*value.Controller = false
+		}
+	}
+}
+func (r *ReconcilePravegaCluster) movingPvcTypeToBKOperator(pvcType string, p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+	pvc := &corev1.PersistentVolumeClaim{}
+	name := pvcType + "-" + p.GetName() + "-bookie-"
+	for i := int32(0); i < p.Spec.Bookkeeper.Replicas; i++ {
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: name + fmt.Sprintf("%d", i), Namespace: p.Namespace}, pvc)
+		if err != nil {
+			return err
+		}
+		owref := pvc.GetOwnerReferences()
+		setOwnerReferenceControllerFalse(owref)
+		err = controllerutil.SetControllerReference(b, pvc, r.scheme)
+		if err != nil {
+			log.Printf(" error = " + err.Error())
+		}
+		r.client.Update(context.TODO(), pvc)
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) movingPvcToBkOperator(p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+
+	err = r.movingPvcTypeToBKOperator("index", p, b)
 	if err != nil {
-		log.Printf("failed to deploy bookie: %v", err)
 		return err
+	}
+
+	err = r.movingPvcTypeToBKOperator("journal", p, b)
+	if err != nil {
+		return err
+	}
+
+	err = r.movingPvcTypeToBKOperator("ledger", p, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func specCopy(p *pravegav1alpha1.BookkeeperSpec, b *bookkeeperv1alpha1.BookkeeperCluster) {
+
+	if p.AutoRecovery != nil {
+		b.Spec.AutoRecovery = p.AutoRecovery
+	}
+	if p.Resources != nil {
+		b.Spec.Resources = p.Resources
+	}
+	if p.Options != nil {
+		b.Spec.Options = p.Options
+	}
+	if p.Image != nil {
+		b.Spec.Image.PullPolicy = p.Image.PullPolicy
+		b.Spec.Image.Repository = p.Image.Repository
+		b.Spec.Image.Tag = "0.6.1"
+	}
+	if p.Storage != nil {
+		b.Spec.Storage.IndexVolumeClaimTemplate = p.Storage.IndexVolumeClaimTemplate
+		b.Spec.Storage.JournalVolumeClaimTemplate = p.Storage.JournalVolumeClaimTemplate
+		b.Spec.Storage.LedgerVolumeClaimTemplate = p.Storage.LedgerVolumeClaimTemplate
+	}
+	if p.BookkeeperJVMOptions != nil {
+		b.Spec.JVMOptions.ExtraOpts = p.BookkeeperJVMOptions.ExtraOpts
+		b.Spec.JVMOptions.GcLoggingOpts = p.BookkeeperJVMOptions.GcLoggingOpts
+		b.Spec.JVMOptions.GcOpts = p.BookkeeperJVMOptions.GcOpts
+		b.Spec.JVMOptions.MemoryOpts = p.BookkeeperJVMOptions.MemoryOpts
+	}
+	b.Spec.Replicas = p.Replicas
+}
+
+func (r *ReconcilePravegaCluster) movingBkObjectsToBkOperator(p *pravegav1alpha1.PravegaCluster) (err error) {
+	b := &bookkeeperv1alpha1.BookkeeperCluster{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "pravega", Namespace: p.Namespace}, b)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			b.WithDefaults()
+			b.Name = p.GetName()
+			b.Namespace = p.GetNamespace()
+			specCopy(p.Spec.Bookkeeper, b)
+			err = r.client.Create(context.TODO(), b)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err = r.movingStsToBkOperator(p, b)
+	if err != nil {
+		return err
+	}
+
+	err = r.movingPvcToBkOperator(p, b)
+	if err != nil {
+		return err
+	}
+
+	err = r.movingConfigMapToBkOperator(p, b)
+	if err != nil {
+		return err
+	}
+
+	err = r.movingHeadlessServiceToBkOperator(p, b)
+	if err != nil {
+		return err
+	}
+
+	err = r.movingPDBToBkOperator(p, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluster) (err error) {
+	if !*p.Spec.Bookkeeper.Flag {
+		err = r.deployBookie(p)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = r.movingBkObjectsToBkOperator(p)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = r.deployController(p)
@@ -175,12 +303,81 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1alpha1.PravegaCluste
 		log.Printf("failed to deploy segment store: %v", err)
 		return err
 	}
+	return nil
+}
 
+func (r *ReconcilePravegaCluster) movingStsToBkOperator(p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+	sts := &appsv1.StatefulSet{}
+	name := util.StatefulSetNameForBookie(p.Name)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("point of changing the value of sts")
+
+	owref := sts.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, sts, r.scheme)
+	if err != nil {
+		log.Printf("most important error2 = " + err.Error())
+	}
+	r.client.Update(context.TODO(), sts)
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) movingConfigMapToBkOperator(p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+	configmap := &corev1.ConfigMap{}
+	name := util.ConfigMapNameForBookie(p.Name)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
+	if err != nil {
+		return err
+	}
+	owref := configmap.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, configmap, r.scheme)
+	if err != nil {
+		log.Printf("most important error2 = " + err.Error())
+	}
+	r.client.Update(context.TODO(), configmap)
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) movingHeadlessServiceToBkOperator(p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+	headlessservice := &corev1.Service{}
+	name := util.HeadlessServiceNameForBookie(p.Name)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, headlessservice)
+	if err != nil {
+		return err
+	}
+	owref := headlessservice.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, headlessservice, r.scheme)
+	if err != nil {
+		log.Printf("most important error2 = " + err.Error())
+	}
+	r.client.Update(context.TODO(), headlessservice)
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) movingPDBToBkOperator(p *pravegav1alpha1.PravegaCluster, b *bookkeeperv1alpha1.BookkeeperCluster) (err error) {
+	pdb := &policyv1beta1.PodDisruptionBudget{}
+	name := util.PdbNameForBookie(p.Name)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, pdb)
+	if err != nil {
+		return err
+	}
+	owref := pdb.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, pdb, r.scheme)
+	if err != nil {
+		log.Printf("most important error2 = " + err.Error())
+	}
+	r.client.Update(context.TODO(), pdb)
 	return nil
 }
 
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaCluster) (err error) {
-
 	pdb := pravega.MakeControllerPodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
@@ -208,7 +405,6 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1alpha1.PravegaClu
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
-
 	return nil
 }
 

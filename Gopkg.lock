@@ -597,6 +597,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:ba14ee21af1de7b58408d6184fc87dba20358aed5b6146191c5235d90fdd5a7f"
+  name = "github.com/pravega/bookkeeper-operator"
+  packages = ["pkg/apis/bookkeeper/v1alpha1"]
+  pruneopts = "NT"
+  revision = "1d78ac020799e01ba5b2dc27293b0bd5ba84243b"
+  version = "v0.1.1-rc0"
+
+[[projects]]
   digest = "1:ec2a29e3bd141038ae5c3d3a4f57db0c341fcc1d98055a607aedd683aed124ee"
   name = "github.com/prometheus/client_golang"
   packages = [
@@ -1245,6 +1253,7 @@
     "github.com/operator-framework/operator-sdk/pkg/test",
     "github.com/operator-framework/operator-sdk/pkg/test/e2eutil",
     "github.com/operator-framework/operator-sdk/version",
+    "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1",
     "github.com/samuel/go-zookeeper/zk",
     "github.com/sirupsen/logrus",
     "k8s.io/api/admissionregistration/v1beta1",

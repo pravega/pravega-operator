@@ -13,9 +13,10 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/pravega/pravega-operator/pkg/webhook"
 	"os"
 	"runtime"
+
+	"github.com/pravega/pravega-operator/pkg/webhook"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
