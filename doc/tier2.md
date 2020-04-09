@@ -140,17 +140,36 @@ Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](htt
           prefix: "example"
           credentials: ecs-credentials
     ```
-In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must trust the certificate in order to establish secured connection with it. 
 
-(No action is needed if the ECS's certificate is signed by an CA, as in the case of ECS test drive.)
+#### (Optional) ECS TLS Support
+In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must trust the certificate in order to establish secured connection with it.
+
+This is done by adding the ECS certificate into the Java Truststore used by Pravega.
+
+(No action is needed if the ECS's certificate is signed by public CA, as in the case of ECS test drive.)
 
 1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
 
-2. Upload the certificate into Kubernetes Secret
+2. Create a file with the secret references to the certificate content, the path and password of the Java Truststore used by Pravega.
     ```
-    kubectl create secret generic ecs-certificate --from-file ./ecs-certificate.pem
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ecs-tls
+    type: Opaque
+    stringData:
+      JAVA_TRUST_STORE_PATH: "/etc/ssl/certs/java/cacerts"
+      JAVA_TRUST_STORE_PASSWORD: "changeit"
+    data:
+      ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
     ```
-3. Specify the secret name of the certificate in the Pravega config file. 
+
+    Assuming that the file is named `ecs-tls.yaml`
+    ```
+    $ kubectl create -f ecs-tls.yaml
+    ```
+
+3. In the Pravega config file, specify the secret name of the TLS configs defined above. 
     ```
     ...
     tier2:
@@ -159,7 +178,7 @@ In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must t
           bucket: "shared"
           prefix: "example"
           credentials: ecs-credentials
-          certificates: ecs-certificate
+          tls: ecs-tls
     ```
 
 ### Use HDFS as Tier 2
