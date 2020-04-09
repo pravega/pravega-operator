@@ -179,7 +179,7 @@ func (r *ReconcilePravegaCluster) movingPvcTypeToBKOperator(pvcType string, p *p
 		setOwnerReferenceControllerFalse(owref)
 		err = controllerutil.SetControllerReference(b, pvc, r.scheme)
 		if err != nil {
-			log.Printf(" error = " + err.Error())
+			return err
 		}
 		r.client.Update(context.TODO(), pvc)
 	}
@@ -314,13 +314,11 @@ func (r *ReconcilePravegaCluster) movingStsToBkOperator(p *pravegav1alpha1.Prave
 		return err
 	}
 
-	log.Printf("point of changing the value of sts")
-
 	owref := sts.GetOwnerReferences()
 	setOwnerReferenceControllerFalse(owref)
 	err = controllerutil.SetControllerReference(b, sts, r.scheme)
 	if err != nil {
-		log.Printf("most important error2 = " + err.Error())
+		return err
 	}
 	r.client.Update(context.TODO(), sts)
 	return nil
@@ -337,7 +335,7 @@ func (r *ReconcilePravegaCluster) movingConfigMapToBkOperator(p *pravegav1alpha1
 	setOwnerReferenceControllerFalse(owref)
 	err = controllerutil.SetControllerReference(b, configmap, r.scheme)
 	if err != nil {
-		log.Printf("most important error2 = " + err.Error())
+		return err
 	}
 	r.client.Update(context.TODO(), configmap)
 	return nil
@@ -354,7 +352,7 @@ func (r *ReconcilePravegaCluster) movingHeadlessServiceToBkOperator(p *pravegav1
 	setOwnerReferenceControllerFalse(owref)
 	err = controllerutil.SetControllerReference(b, headlessservice, r.scheme)
 	if err != nil {
-		log.Printf("most important error2 = " + err.Error())
+		return err
 	}
 	r.client.Update(context.TODO(), headlessservice)
 	return nil
@@ -371,7 +369,7 @@ func (r *ReconcilePravegaCluster) movingPDBToBkOperator(p *pravegav1alpha1.Prave
 	setOwnerReferenceControllerFalse(owref)
 	err = controllerutil.SetControllerReference(b, pdb, r.scheme)
 	if err != nil {
-		log.Printf("most important error2 = " + err.Error())
+		return err
 	}
 	r.client.Update(context.TODO(), pdb)
 	return nil
