@@ -110,7 +110,6 @@ var _ = Describe("PravegaSegmentstore", func() {
 								Bucket:      "bucket",
 								Prefix:      "prefix",
 								Credentials: "credentials",
-								Tls:         "ecs-tls",
 							},
 						},
 						DebugLogging: true,

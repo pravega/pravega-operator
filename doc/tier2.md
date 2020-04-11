@@ -150,16 +150,17 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
 
 1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
 
-2. Create a file with the secret references to the certificate content, the path and password of the Java Truststore used by Pravega.
+2. Create a file with the secret references to the content and name of the ECS certificate, and the path and password of the Java Truststore used by ECS Client inside Pravega Segment Store.
     ```
     apiVersion: v1
     kind: Secret
     metadata:
-      name: ecs-tls
+      name: "ecs-tls"
     type: Opaque
     stringData:
-      JAVA_TRUST_STORE_PATH: "/etc/ssl/certs/java/cacerts"
-      JAVA_TRUST_STORE_PASSWORD: "changeit"
+      ECS_JAVA_TRUST_STORE_PATH: "/etc/ssl/certs/java/cacerts"
+      ECS_JAVA_TRUST_STORE_PASSWORD: "changeit"
+      ECS_CERTIFICATE_NAME: "ecs-certificate.pem"
     data:
       ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
     ```
@@ -169,8 +170,16 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
     $ kubectl create -f ecs-tls.yaml
     ```
 
-3. In the Pravega config file, specify the secret name of the TLS configs defined above. 
+3. In the Pravega manifest file, specify the secret name of the ECS TLS defined above in the "tls" section. 
     ```
+    ...
+    kind: "PravegaCluster"
+    metadata:
+      name: "example"
+    spec:
+    tls:
+      static:
+        ecsSecret: "ecs-tls"
     ...
     tier2:
         ecs:
@@ -178,7 +187,6 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
           bucket: "shared"
           prefix: "example"
           credentials: ecs-credentials
-          tls: ecs-tls
     ```
 
 ### Use HDFS as Tier 2

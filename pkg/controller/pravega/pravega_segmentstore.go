@@ -93,10 +93,19 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						ContainerPort: 12345,
 					},
 				},
-				EnvFrom:      environment,
-				Env:          util.DownwardAPIEnv(),
-				VolumeMounts: MakeSegmentStoreVolumeMount(p),
-				Resources:    *p.Spec.Pravega.SegmentStoreResources,
+				EnvFrom: environment,
+				Env:     util.DownwardAPIEnv(),
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      cacheVolumeName,
+						MountPath: cacheVolumeMountPoint,
+					},
+					{
+						Name:      heapDumpName,
+						MountPath: heapDumpDir,
+					},
+				},
+				Resources: *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -128,7 +137,14 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
-		Volumes:  MakeSegmentStoreVolumes(p),
+		Volumes: []corev1.Volume{
+			{
+				Name: heapDumpName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		},
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
@@ -137,49 +153,11 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
+	configureECSTLSSecret(&podSpec, p)
+
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
-}
-
-func MakeSegmentStoreVolumes(p *api.PravegaCluster) []corev1.Volume {
-	volumes := []corev1.Volume{
-		{
-			Name: heapDumpName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-	}
-	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Tls) != "" {
-		volumes = append(volumes, corev1.Volume{
-			Name: "ecs-certs",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{SecretName: p.Spec.Pravega.Tier2.Ecs.Tls},
-			},
-		})
-	}
-	return volumes
-}
-
-func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
-	volumeMount := []corev1.VolumeMount{
-		{
-			Name:      cacheVolumeName,
-			MountPath: cacheVolumeMountPoint,
-		},
-		{
-			Name:      heapDumpName,
-			MountPath: heapDumpDir,
-		},
-	}
-	if p.Spec.Pravega.Tier2.Ecs != nil && strings.TrimSpace(p.Spec.Pravega.Tier2.Ecs.Tls) != "" {
-		volumeMount = append(volumeMount, corev1.VolumeMount{
-			Name:      "ecs-certs",
-			MountPath: "/etc/ssl/certs/java/ecs-certs/",
-		})
-	}
-	return volumeMount
 }
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
@@ -336,6 +314,25 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: p.Spec.TLS.Static.SegmentStoreSecret,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      tlsVolumeName,
+			MountPath: tlsMountDir,
+		})
+	}
+}
+
+func configureECSTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.TLS.IsSecureECS() {
+		vol := corev1.Volume{
+			Name: tlsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.TLS.Static.EcsSecret,
 				},
 			},
 		}

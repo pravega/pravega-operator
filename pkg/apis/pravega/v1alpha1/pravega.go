@@ -299,7 +299,6 @@ type ECSSpec struct {
 	Bucket      string `json:"bucket"`
 	Prefix      string `json:"prefix"`
 	Credentials string `json:"credentials"`
-	Tls         string `json:"tls"`
 }
 
 // HDFSSpec contains the connection details to an HDFS system

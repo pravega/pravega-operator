@@ -184,6 +184,7 @@ type TLSPolicy struct {
 type StaticTLS struct {
 	ControllerSecret   string `json:"controllerSecret,omitempty"`
 	SegmentStoreSecret string `json:"segmentStoreSecret,omitempty"`
+	EcsSecret          string `json:"ecsSecret,omitempty"`
 }
 
 func (tp *TLSPolicy) IsSecureController() bool {
@@ -198,6 +199,13 @@ func (tp *TLSPolicy) IsSecureSegmentStore() bool {
 		return false
 	}
 	return len(tp.Static.SegmentStoreSecret) != 0
+}
+
+func (tp *TLSPolicy) IsSecureECS() bool {
+	if tp == nil || tp.Static == nil {
+		return false
+	}
+	return len(tp.Static.EcsSecret) != 0
 }
 
 type AuthenticationParameters struct {
