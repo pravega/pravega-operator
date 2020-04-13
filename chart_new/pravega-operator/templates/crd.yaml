@@ -44,7 +44,7 @@ spec:
   versions:
   - name: v1beta1
     served: true
-    storage: true
+    storage: false 
     schema:
       openAPIV3Schema:
         type: object
@@ -132,6 +132,7 @@ spec:
                           type: string
                       dataSource:
                         type: object
+                        nullable: true
                         properties:
                           apiGroup:
                             type: string
@@ -172,9 +173,6 @@ spec:
                                   type: array
                                   items:
                                     type: string
-                              required:
-                                - key
-                                - operator
                           matchLabels:
                             type: object
                             additionalProperties:
@@ -229,8 +227,6 @@ spec:
                       limits:
                         additionalProperties:
                           type: string
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -308,7 +304,7 @@ spec:
                 type: integer
   - name: v1alpha1
     served: true
-    storage: false
+    storage: true 
     schema:
       openAPIV3Schema:
         type: object
@@ -380,6 +376,7 @@ spec:
                               type: string
                           dataSource:
                             type: object
+                            nullable: true
                             properties:
                               apiGroup:
                                 type: string
@@ -418,9 +415,6 @@ spec:
                                       items:
                                         type: string
                                       type: array
-                                  required:
-                                    - key
-                                    - operator
                                   type: object
                                 type: array
                               matchLabels:
@@ -442,6 +436,7 @@ spec:
                               type: string
                           dataSource:
                             type: object
+                            nullable: true
                             properties:
                               apiGroup:
                                 type: string
@@ -480,9 +475,6 @@ spec:
                                       items:
                                         type: string
                                       type: array
-                                  required:
-                                    - key
-                                    - operator
                                   type: object
                                 type: array
                               matchLabels:
@@ -504,6 +496,7 @@ spec:
                               type: string
                           dataSource:
                             type: object
+                            nullable: true
                             properties:
                               apiGroup:
                                 type: string
@@ -542,9 +535,6 @@ spec:
                                       items:
                                         type: string
                                       type: array
-                                  required:
-                                    - key
-                                    - operator
                                   type: object
                                 type: array
                               matchLabels:
@@ -567,8 +557,6 @@ spec:
                       limits:
                         additionalProperties:
                           type: string
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:
@@ -638,6 +626,7 @@ spec:
                           type: string
                       dataSource:
                         type: object
+                        nullable: true
                         properties:
                           apiGroup:
                             type: string
@@ -647,9 +636,6 @@ spec:
                           name:
                             description: Name is the name of resource being referenced
                             type: string
-                        required:
-                          - kind
-                          - name
                       resources:
                         type: object
                         properties:
@@ -676,9 +662,6 @@ spec:
                                   items:
                                     type: string
                                   type: array
-                              required:
-                                - key
-                                - operator
                               type: object
                             type: array
                           matchLabels:
@@ -735,8 +718,6 @@ spec:
                       limits:
                         additionalProperties:
                           type: string
-                        description: 'Limits describes the maximum amount of compute
-                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                       requests:
                         additionalProperties:

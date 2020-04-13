@@ -11,14 +11,11 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -56,35 +53,44 @@ func main() {
 	flag.Parse()
 
 	printVersion()
-
+	log.Print("After print-version.")
 	if versionFlag {
 		os.Exit(0)
 	}
-
+	log.Print("Checking for controller testmode.")
 	if controllerconfig.TestMode {
 		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
+	log.Print("BEFORE GetWatchNamespace")
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
 		log.Fatal(err, "failed to get watch namespace")
 	}
-
+	log.Print("AFTER GetWatchNamespace")
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	log.Print("AFTER GetConfig")
 	// Become the leader before proceeding
-	leader.Become(context.TODO(), "pravega-operator-lock")
+	/*
+		err = leader.Become(context.TODO(), "pravega-operator-lock")
+		if err != nil {
+			log.Error(err, "Failed to retry for leader lock")
+			os.Exit(1)
+		}
 
-	r := ready.NewFileReady()
-	err = r.Set()
-	if err != nil {
-		log.Fatal(err, "")
-	}
-	defer r.Unset()
+		log.Print("The new operator pod is now the leader.")
+		r := ready.NewFileReady()
+		log.Print("Creating ready file...")
+		err = r.Set()
+		if err != nil {
+			log.Fatal(err, "")
+		}
+		defer r.Unset()
+	*/
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
