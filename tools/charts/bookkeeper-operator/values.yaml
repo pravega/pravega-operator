@@ -1,0 +1,24 @@
+# Default values for pravega-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: pravega/bookkeeper-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+## Install RBAC roles and bindings
+rbac:
+  create: true
+
+## Service account names and whether to create them
+serviceAccount:
+  create: true
+  name: bookkeeper-operator
+
+# Whether to create custom resource
+crd:
+  create: true
+
+# whether to enable test mode
+testmode: false

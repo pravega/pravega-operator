@@ -8,35 +8,33 @@ fi
 
 
 function UpgradingToPoperator(){
-
+echo $1 $2
 local namespace=$1
 
 local name=$2
+echo namespace is ${namespace}
 
-sed -i "/namespace/c \ \ namespace: $namespace " chart_new/pravega-operator/templates/webhook.yaml 
+sed -i "s/namespace.*/namespace: $namespace "/ ./webhook.yaml
 
-kubectl create -f ./templates/webhook.yaml
+kubectl create -f ./webhook.yaml
 
-sed -i "/namespace/c \ \ name: $name" chart_new/pravega-operator/templates/version_map.yaml
+sed -i "s/name.*/name: ${name}-supported-upgrade-paths"/ ./version_map.yaml
 
-kubectl create -f ./templates/version_map.yaml
+kubectl create -f  ./version_map.yaml
 
-kubectl create -f ./templates/secret.yaml
+kubectl create -f  ./secret.yaml
 
-kubectl apply -f new_operator.yaml
+kubectl apply -f  ./operator.yaml
 
-kubectl apply -f new_crd.yaml
+kubectl apply -f  ./crd.yaml
 
 echo "helm install charts/bookkeeper --name bkop --namespace $namespace"
 
 helm install charts/bookkeeper --name bkop --namespace $namespace
 
-kubectl apply -f roles.yaml
+kubectl apply -f role.yaml
 
-sed -i "/namespace/c \ \ name: $name" chart_new/pravega-operator/templates/bk_version_map.yaml
-
-kubectl create -f ./templates/bk_version_map.yaml
 
 }
 
-UpgradingToPoperator
+UpgradingToPoperator $1 $2

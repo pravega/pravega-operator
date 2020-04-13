@@ -1,0 +1,39 @@
+{{- if .Values.crd.create }}
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: bookkeeperclusters.bookkeeper.pravega.io
+spec:
+  group: bookkeeper.pravega.io
+  names:
+    kind: BookkeeperCluster
+    listKind: BookkeeperClusterList
+    plural: bookkeeperclusters
+    singular: bookkeepercluster
+    shortNames:
+      - bk
+  additionalPrinterColumns:
+  - name: Version
+    type: string
+    description: The current bookkeeper version
+    JSONPath: .status.currentVersion
+  - name: Desired Version
+    type: string
+    description: The desired bookkeeper version
+    JSONPath: .spec.version
+  - name: Desired Members
+    type: integer
+    description: The number of desired bookkeeper members
+    JSONPath: .status.replicas
+  - name: Ready Members
+    type: integer
+    description: The number bookkeeper members ready
+    JSONPath: .status.readyReplicas
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp
+  scope: Namespaced
+  version: v1alpha1
+  subresources:
+    status: {}
+{{- end }}

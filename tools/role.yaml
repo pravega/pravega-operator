@@ -1,8 +1,7 @@
-{{- if .Values.rbac.create }}
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "pravega-operator.fullname" . }}
+  name: pravega-operator
 rules:
 - apiGroups:
   - pravega.pravega.io
@@ -22,21 +21,6 @@ rules:
   - secrets
   verbs:
   - '*'
-- apiGroups:
-  - bookkeeper.pravega.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - daemonsets
-  - replicasets
-  - statefulsets
-  verbs:
-  - "*"  
 - apiGroups:
   - apps
   resources:
@@ -58,4 +42,69 @@ rules:
   - jobs
   verbs:
   - '*'
-{{- end }}
+- apiGroups:
+  - bookkeeper.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - "*"  
+
+---
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pravega-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - pods
+  - services
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - "*"
+  verbs:
+  - '*'
+- apiGroups:
+  - pravega.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - "*"
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - "*"

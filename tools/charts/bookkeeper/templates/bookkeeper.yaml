@@ -1,0 +1,13 @@
+apiVersion: "bookkeeper.pravega.io/v1alpha1"
+kind: "BookkeeperCluster"
+metadata:
+  name: {{ template "bookkeeper.fullname" . }}
+spec:
+  replicas: {{ .Values.replicas }}
+  image:
+    repository: {{ with .Values.image }}{{ .repository }}{{ end }}
+    pullPolicy: {{ with .Values.image }}{{ .pullPolicy }}{{ end }}
+  envVars: {{ template "configmap.fullname" . }}
+  version: {{ .Values.version }}
+  zookeeperUri: {{ .Values.zookeeperUri }}
+  autoRecovery: {{ .Values.autoRecovery }}

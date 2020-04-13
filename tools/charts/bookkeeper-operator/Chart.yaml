@@ -1,0 +1,12 @@
+name: bookkeeper-operator
+version: 0.1.0
+appVersion: 0.1.0
+description: bookkeeper operator Helm chart for Kubernetes
+keywords:
+- pravega
+- storage
+home: https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator
+icon: https://bookkeeper.apache.org/images/bookkeeper_logo_blk.png
+sources:
+- https://github.com/pravega/bookkeeper-operator/tree/master/charts
+engine: gotpl

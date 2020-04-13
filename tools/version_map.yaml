@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: yo
+  name: pravega-supported-upgrade-paths
 data:
   keys: |
         0.1.0:0.1.0

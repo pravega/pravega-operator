@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pravega-webhook-svc
-  namespace: prabhu
+  namespace: default 
 spec:
   ports:
   - port: 443
@@ -24,7 +24,7 @@ webhooks:
 - clientConfig:
     service:
       name: pravega-webhook-svc
-  namespace: prabhu
+      namespace: default 
       path: /validate-pravega-pravega-io-v1beta1-pravegacluster
   name: pravegawebhook.pravega.io
   rules:
