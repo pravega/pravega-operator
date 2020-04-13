@@ -257,8 +257,102 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	//logic for conveting from v1alpha1 to v1beta1
 
 	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
+	dst.ObjectMeta = srcObj.ObjectMeta
+
+	log.Printf("DST: Name %s, Namespace %s, UID %v", dst.Name, dst.Namespace, dst.UID)
+	log.Printf("SRC: Name %s, Namespace %s, UID %v", srcObj.Name, srcObj.Namespace, srcObj.UID)
+
+	dst.Spec.Authentication = &AuthenticationParameters{
+		Enabled:            srcObj.Spec.Authentication.Enabled,
+		PasswordAuthSecret: srcObj.Spec.Authentication.PasswordAuthSecret,
+	}
+
+	dst.Spec.BookkeeperUri = getBookkeeperUri(srcObj)
+
+	if srcObj.Spec.ExternalAccess != nil {
+		dst.Spec.ExternalAccess = &ExternalAccess{
+			Enabled:    srcObj.Spec.ExternalAccess.Enabled,
+			Type:       srcObj.Spec.ExternalAccess.Type,
+			DomainName: srcObj.Spec.ExternalAccess.DomainName,
+		}
+	}
+
+	if srcObj.Spec.TLS != nil {
+		dst.Spec.TLS = &TLSPolicy{
+			Static: &StaticTLS{
+				ControllerSecret:   srcObj.Spec.TLS.Static.ControllerSecret,
+				SegmentStoreSecret: srcObj.Spec.TLS.Static.SegmentStoreSecret,
+			},
+		}
+	}
+
+	dst.Spec.Version = srcObj.Spec.Version
+	dst.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
+	dst.Spec.Pravega = &PravegaSpec{
+		ControllerReplicas:   srcObj.Spec.Pravega.ControllerReplicas,
+		SegmentStoreReplicas: srcObj.Spec.Pravega.SegmentStoreReplicas,
+		DebugLogging:         srcObj.Spec.Pravega.DebugLogging,
+		Image: &ImageSpec{
+			Repository: srcObj.Spec.Pravega.Image.Repository,
+			PullPolicy: srcObj.Spec.Pravega.Image.PullPolicy,
+		},
+		Options:                         srcObj.Spec.Pravega.Options,
+		ControllerJvmOptions:            srcObj.Spec.Pravega.ControllerJvmOptions,
+		SegmentStoreJVMOptions:          srcObj.Spec.Pravega.SegmentStoreJVMOptions,
+		CacheVolumeClaimTemplate:        srcObj.Spec.Pravega.CacheVolumeClaimTemplate,
+		ControllerServiceAccountName:    srcObj.Spec.Pravega.ControllerServiceAccountName,
+		SegmentStoreServiceAccountName:  srcObj.Spec.Pravega.SegmentStoreServiceAccountName,
+		ControllerExternalServiceType:   srcObj.Spec.Pravega.ControllerExternalServiceType,
+		ControllerServiceAnnotations:    srcObj.Spec.Pravega.ControllerServiceAnnotations,
+		SegmentStoreExternalServiceType: srcObj.Spec.Pravega.SegmentStoreExternalServiceType,
+		SegmentStoreServiceAnnotations:  srcObj.Spec.Pravega.SegmentStoreServiceAnnotations,
+	}
+
+	if srcObj.Spec.Pravega.Tier2.FileSystem != nil {
+		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+			FileSystem: &FileSystemSpec{
+				PersistentVolumeClaim: srcObj.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim,
+			},
+		}
+	} else if srcObj.Spec.Pravega.Tier2.Ecs != nil {
+		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+			Ecs: &ECSSpec{
+				ConfigUri:   srcObj.Spec.Pravega.Tier2.Ecs.ConfigUri,
+				Bucket:      srcObj.Spec.Pravega.Tier2.Ecs.Bucket,
+				Prefix:      srcObj.Spec.Pravega.Tier2.Ecs.Prefix,
+				Credentials: srcObj.Spec.Pravega.Tier2.Ecs.Credentials,
+			},
+		}
+	} else if srcObj.Spec.Pravega.Tier2.Hdfs != nil {
+		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+			Hdfs: &HDFSSpec{
+				Uri:               srcObj.Spec.Pravega.Tier2.Hdfs.Uri,
+				Root:              srcObj.Spec.Pravega.Tier2.Hdfs.Root,
+				ReplicationFactor: srcObj.Spec.Pravega.Tier2.Hdfs.ReplicationFactor,
+			},
+		}
+	}
+
+	// Controller Resources
+	if srcObj.Spec.Pravega.ControllerResources != nil {
+		dst.Spec.Pravega.ControllerResources = &v1.ResourceRequirements{
+			Requests: srcObj.Spec.Pravega.ControllerResources.Requests,
+			Limits:   srcObj.Spec.Pravega.ControllerResources.Limits,
+		}
+	}
+	// SegmentStore Resources
+	if srcObj.Spec.Pravega.SegmentStoreResources != nil {
+		dst.Spec.Pravega.SegmentStoreResources = &v1.ResourceRequirements{
+			Requests: srcObj.Spec.Pravega.SegmentStoreResources.Requests,
+			Limits:   srcObj.Spec.Pravega.SegmentStoreResources.Limits,
+		}
+	}
+
+	return nil
+}
+
+func getBookkeeperUri(srcObj *v1alpha1.PravegaCluster) string {
 	bkClusterSize := int(srcObj.Spec.Bookkeeper.Replicas)
-	log.Printf("ConvertFrom: BK Size %d\n", bkClusterSize)
 	var bookieUrl string = ""
 	for i := 0; i < bkClusterSize; i++ {
 		bkStsName := fmt.Sprintf("%s-bookie", srcObj.Name)
@@ -272,9 +366,7 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 			bookieUrl += ","
 		}
 	}
-	log.Printf("BK Uri %s\n", bookieUrl)
-	dst.Spec.BookkeeperUri = bookieUrl
-	return nil
+	return bookieUrl
 }
 
 var _ webhook.Validator = &PravegaCluster{}
@@ -310,7 +402,7 @@ func getSupportedVersions() (map[string]string, error) {
 	file, err := os.Open("/tmp/config/keys")
 
 	if err != nil {
-		log.Fatalf("failed opening file: %s", err)
+		log.Fatalf("failed opening file: %v", err)
 		return supportedVersions, nil
 	}
 

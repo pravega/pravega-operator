@@ -81,7 +81,7 @@ type PravegaSpec struct {
 
 	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega" will be used.
-	Image *PravegaImageSpec `json:"image"`
+	Image *ImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
@@ -162,7 +162,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 
 	if s.Image == nil {
 		changed = true
-		s.Image = &PravegaImageSpec{}
+		s.Image = &ImageSpec{}
 	}
 	if s.Image.withDefaults() {
 		changed = true
@@ -274,18 +274,11 @@ func (s *SegmentStoreSecret) withDefaults() (changed bool) {
 	return changed
 }
 
-// PravegaImageSpec defines the fields needed for a Pravega Docker image
-type PravegaImageSpec struct {
-	ImageSpec
-}
-
-func (s *PravegaImageSpec) withDefaults() (changed bool) {
+func (s *ImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultPravegaImageRepository
 	}
-
-	s.Tag = ""
 
 	if s.PullPolicy == "" {
 		changed = true
