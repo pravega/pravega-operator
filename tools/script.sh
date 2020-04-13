@@ -31,7 +31,7 @@ echo "helm install charts/bookkeeper --name bkop --namespace $namespace"
 
 helm install charts/bookkeeper --name bkop --namespace $namespace
 
-kubectl apply -f new_roles.yaml
+kubectl apply -f roles.yaml
 
 sed -i "/namespace/c \ \ name: $name" chart_new/pravega-operator/templates/bk_version_map.yaml
 

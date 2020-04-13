@@ -23,6 +23,21 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - bookkeeper.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - "*"  
+- apiGroups:
   - apps
   resources:
   - deployments
