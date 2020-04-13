@@ -16,7 +16,7 @@ echo namespace is ${namespace}
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./webhook.yaml
 
-kubectl create -f ./webhook.yaml
+kubectl apply -f ./webhook.yaml
 
 sed -i "s/name.*/name: ${name}-supported-upgrade-paths"/ ./version_map.yaml
 
@@ -25,6 +25,8 @@ kubectl create -f  ./version_map.yaml
 kubectl create -f  ./secret.yaml
 
 kubectl apply -f  ./operator.yaml
+
+sed -i "s/namespace.*/namespace: $namespace "/ ./crd.yaml
 
 kubectl apply -f  ./crd.yaml
 
