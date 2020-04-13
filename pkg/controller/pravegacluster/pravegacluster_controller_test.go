@@ -186,7 +186,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 						// should not be any client service
 						foundSvc := &corev1.Service{}
 						nn := types.NamespacedName{
-							Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+							Name:      util.ServiceNameForSegmentStore(p, 0),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSvc)
@@ -432,21 +432,21 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Name:      util.ServiceNameForSegmentStore(p, 0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Name:      util.ServiceNameForSegmentStore(p, 1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Name:      util.ServiceNameForSegmentStore(p, 2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -468,15 +468,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
 					Ω(mapLength).To(Equal(1))
 
-					svcName1 := util.ServiceNameForSegmentStore(p.Name, 0) + "." + domainName
+					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p.Name, 1) + "." + domainName
+					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p.Name, 2) + "." + domainName
+					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -556,21 +556,21 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Name:      util.ServiceNameForSegmentStore(p, 0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Name:      util.ServiceNameForSegmentStore(p, 1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Name:      util.ServiceNameForSegmentStore(p, 2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -601,15 +601,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"service.beta.kubernetes.io/aws-load-balancer-type",
 						"nlb"))
-					svcName1 := util.ServiceNameForSegmentStore(p.Name, 0) + "." + domainName
+					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p.Name, 1) + "." + domainName
+					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p.Name, 2) + "." + domainName
+					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -655,21 +655,21 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Name:      util.ServiceNameForSegmentStore(p, 0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Name:      util.ServiceNameForSegmentStore(p, 1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Name:      util.ServiceNameForSegmentStore(p, 2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -734,21 +734,21 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Name:      util.ServiceNameForSegmentStore(p, 0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 1),
+						Name:      util.ServiceNameForSegmentStore(p, 1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Name:      util.ServiceNameForSegmentStore(p, 2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -762,15 +762,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 				It("should set provided domain name as annotation", func() {
 					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
 					Ω(mapLength).To(Equal(1))
-					svcName1 := util.ServiceNameForSegmentStore(p.Name, 0) + "." + domainName
+					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p.Name, 1) + "." + domainName
+					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p.Name, 2) + "." + domainName
+					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -817,7 +817,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					foundSegmentStoreSvc1 = &corev1.Service{}
 
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 0),
+						Name:      util.ServiceNameForSegmentStore(p, 0),
 						Namespace: Namespace,
 					}
 
@@ -829,7 +829,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					foundSegmentStoreSvc2 = &corev1.Service{}
 
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 2),
+						Name:      util.ServiceNameForSegmentStore(p, 2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
@@ -840,7 +840,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					foundSegmentStoreSvc3 = &corev1.Service{}
 
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p.Name, 3),
+						Name:      util.ServiceNameForSegmentStore(p, 3),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)

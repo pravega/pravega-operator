@@ -440,7 +440,10 @@ func (p *PravegaCluster) ServiceNameForController() string {
 }
 
 func (p *PravegaCluster) ServiceNameForSegmentStore(index int32) string {
-	return fmt.Sprintf("%s-pravega-segmentstore-%d", p.ObjectMeta.Name, index)
+	if util.IsVersionBelow07(p.Spec.Version) {
+		return fmt.Sprintf("%s-pravega-segmentstore-%d", p.Name, index)
+	}
+	return fmt.Sprintf("%s-pravega-segment-store-%d", p.Name, index)
 }
 
 func (p *PravegaCluster) HeadlessServiceNameForSegmentStore() string {
