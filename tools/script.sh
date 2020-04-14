@@ -1,7 +1,11 @@
 #! /bin/bash
-if [ "$#" -lt 1 ]; then
+#set +ex
+
+echo "This is a pre upgrade script required for updating pravega operator <= 0.4.x to >=0.5.x "
+
+if [ "$#" -eq 2 ]; then
 	echo "Error : Invalid number of arguments"
-	echo "Usage: ./script.sh install namespace(pravega operator) name(pravega operator) or ./script delete"
+	echo "Usage: ./script.sh namespace(pravega operator) name(pravega cluster)"
 	exit 1
 fi
 
@@ -11,72 +15,39 @@ local namespace=$1
 
 local name=$2
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./webhook.yaml
+sed "s|cert.*|cert-manager.io/inject-ca-from: $namespace/selfsigned-cert|" ./manifest_files/webhook.yaml
 
-kubectl apply -f ./webhook.yaml
+sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/webhook.yaml
 
-sed -i "s/name.*/name: ${name}-supported-upgrade-paths"/ ./version_map.yaml
+kubectl apply -f ./manifest_files/webhook.yaml
 
-kubectl create -f  ./version_map.yaml
+kubectl apply -f  ./manifest_files/version_map.yaml
 
 kubectl apply -f "https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.yaml"
 
-sed -i "s/namespace.*/namespace: $namespace"/ ./secret.yaml
+sed -i "s/namespace.*/namespace: $namespace"/ ./manifest_files/secret.yaml
 
-kubectl create -f  ./secret.yaml
+kubectl apply -f  ./manifest_files/secret.yaml
 
-op_name=`kubectl get deployment | grep "pravega-operator" | awk '{print $1}'`
-
-sed -i "/configMap.*/{n;s/name.*/name: ${name}-supported-upgrade-paths/}" ./patch.yaml
-
-kubectl patch deployment $op_name --type merge --patch "$(cat patch.yaml)"
+kubectl patch deployment $op_name --type merge --patch "$(cat ./manifest_files/patch.yaml)"
 
 cabundle=`kubectl get ValidatingWebhookConfiguration pravega-webhook-config --output yaml | grep caBundle: | awk '{print $2}'`
 
-sed -i "s/caBundle.*/caBundle: $cabundle "/ ./crd.yaml
+sed -i "s/caBundle.*/caBundle: $cabundle "/ ./manifest_files/crd.yaml
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./crd.yaml
+sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 
-kubectl apply -f  ./crd.yaml
+kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name.*/name: ${name}-bk-supported-upgrade-paths"/ ./bk_version_map.yaml
+sed -i "s/name.*/name: ${name}-bk-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
 
-kubectl create -f  ./bk_version_map.yaml
+kubectl apply -f  ./manifest_files/bk_version_map.yaml
 
-helm install charts/bookkeeper --name bkop --namespace $namespace
+helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
-kubectl apply -f ./role.yaml
-
-}
-
-function deletepoperator(){
-	
-kubectl delete -f ./webhook.yaml
-	
-kubectl delete -f  ./version_map.yaml
-	
-kubectl delete -f  ./secret.yaml
-	
-kubectl delete -f  ./operator.yaml
-
-kubectl delete -f  ./crd.yaml
-
-kubectl delete -f ./bk_version_map.yaml
-
-helm delete bkop --purge
-
-kubectl delete -f ./roles.yaml 
+kubectl apply -f ./manifest_files/role.yaml
 
 }
 
-if  [ $1 == "install" ]; then
-	UpgradingToPoperator $2 $3
 
-elif [ $1 == "delete" ]; then
-	deletepoperator
-
-else
-	echo "Error: Invalid argument"
-	echo "Use [install] to install the cluster or [delete] to remove the existing setup"
-	exit 1
-fi
+UpgradingToPoperator $1 $2
