@@ -69,7 +69,7 @@ kubectl delete -f ./roles.yaml
 
 }
 
-if ["$#" -eq 3] && [ $1 == "install" ]; then
+if [ $1 == "install" ]; then
 	UpgradingToPoperator $2 $3
 
 elif [ $1 == "delete" ]; then
