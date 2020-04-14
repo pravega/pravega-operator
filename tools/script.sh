@@ -32,6 +32,10 @@ kubectl apply -f  ./crd.yaml
 
 echo "helm install charts/bookkeeper --name bkop --namespace $namespace"
 
+sed -i "s/name.*/name: ${name}-bk-supported-upgrade-paths"/ ./bk_version_map.yaml
+
+kubectl create -f  ./bk_version_map.yaml
+
 helm install charts/bookkeeper --name bkop --namespace $namespace
 
 kubectl apply -f role.yaml
