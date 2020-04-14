@@ -1,9 +1,9 @@
 #! /bin/bash
-#set +ex
+set -ex
 
 echo "This is a pre upgrade script required for updating pravega operator <= 0.4.x to >=0.5.x "
 
-if [ "$#" -eq 2 ]; then
+if [ "$#" -ne 2 ]; then
 	echo "Error : Invalid number of arguments"
 	echo "Usage: ./script.sh namespace(pravega operator) name(pravega cluster)"
 	exit 1
@@ -48,6 +48,5 @@ helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 kubectl apply -f ./manifest_files/role.yaml
 
 }
-
 
 UpgradingToPoperator $1 $2
