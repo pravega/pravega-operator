@@ -53,27 +53,26 @@ func main() {
 	flag.Parse()
 
 	printVersion()
-	log.Print("After print-version.")
+
 	if versionFlag {
 		os.Exit(0)
 	}
-	log.Print("Checking for controller testmode.")
+
 	if controllerconfig.TestMode {
 		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
-	log.Print("BEFORE GetWatchNamespace")
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
 		log.Fatal(err, "failed to get watch namespace")
 	}
-	log.Print("AFTER GetWatchNamespace")
+
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print("AFTER GetConfig")
+
 	// Become the leader before proceeding
 	/*
 		err = leader.Become(context.TODO(), "pravega-operator-lock")

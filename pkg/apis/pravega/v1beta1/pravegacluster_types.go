@@ -240,9 +240,6 @@ func (ap *AuthenticationParameters) IsEnabled() bool {
 type ImageSpec struct {
 	Repository string `json:"repository"`
 
-	// Deprecated: Use `spec.Version` instead
-	Tag string `json:"tag,omitempty"`
-
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }
 
@@ -252,13 +249,7 @@ func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
-	log.Printf("ConvertFrom: invoked")
-	//logic for conveting from v1alpha1 to v1beta1
-
-	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
-	dst.ObjectMeta = srcObj.ObjectMeta
-
+func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster) error {
 	log.Printf("DST: Name %s, Namespace %s, UID %v", dst.Name, dst.Namespace, dst.UID)
 	log.Printf("SRC: Name %s, Namespace %s, UID %v", srcObj.Name, srcObj.Namespace, srcObj.UID)
 
@@ -267,6 +258,7 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		PasswordAuthSecret: srcObj.Spec.Authentication.PasswordAuthSecret,
 	}
 
+	log.Printf("Converting Bookkeeper Uri...")
 	dst.Spec.BookkeeperUri = getBookkeeperUri(srcObj)
 
 	if srcObj.Spec.ExternalAccess != nil {
@@ -288,6 +280,7 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 
 	dst.Spec.Version = srcObj.Spec.Version
 	dst.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
+	log.Printf("Converting Pravega Spec...")
 	dst.Spec.Pravega = &PravegaSpec{
 		ControllerReplicas:   srcObj.Spec.Pravega.ControllerReplicas,
 		SegmentStoreReplicas: srcObj.Spec.Pravega.SegmentStoreReplicas,
@@ -309,13 +302,13 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	if srcObj.Spec.Pravega.Tier2.FileSystem != nil {
-		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+		dst.Spec.Pravega.LongTermStorage = &LongTermStorageSpec{
 			FileSystem: &FileSystemSpec{
 				PersistentVolumeClaim: srcObj.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim,
 			},
 		}
 	} else if srcObj.Spec.Pravega.Tier2.Ecs != nil {
-		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+		dst.Spec.Pravega.LongTermStorage = &LongTermStorageSpec{
 			Ecs: &ECSSpec{
 				ConfigUri:   srcObj.Spec.Pravega.Tier2.Ecs.ConfigUri,
 				Bucket:      srcObj.Spec.Pravega.Tier2.Ecs.Bucket,
@@ -324,7 +317,7 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 			},
 		}
 	} else if srcObj.Spec.Pravega.Tier2.Hdfs != nil {
-		dst.Spec.Pravega.Tier2 = &Tier2Spec{
+		dst.Spec.Pravega.LongTermStorage = &LongTermStorageSpec{
 			Hdfs: &HDFSSpec{
 				Uri:               srcObj.Spec.Pravega.Tier2.Hdfs.Uri,
 				Root:              srcObj.Spec.Pravega.Tier2.Hdfs.Root,
@@ -348,6 +341,56 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		}
 	}
 
+	log.Printf("Converting Status...")
+	// Convert status
+	dst.Status.CurrentVersion = srcObj.Status.CurrentVersion
+	dst.Status.VersionHistory = srcObj.Status.VersionHistory
+	dst.Status.TargetVersion = srcObj.Status.TargetVersion
+
+	log.Printf("Converting Status Conditions")
+	numConditions := len(srcObj.Status.Conditions)
+	dst.Status.Conditions = make([]ClusterCondition, numConditions)
+	for i := 0; i < numConditions; i++ {
+		condition := &ClusterCondition{
+			Type:               getNewConditionType(srcObj.Status.Conditions[i].Type),
+			Status:             srcObj.Status.Conditions[i].Status,
+			Reason:             srcObj.Status.Conditions[i].Reason,
+			Message:            srcObj.Status.Conditions[i].Message,
+			LastUpdateTime:     srcObj.Status.Conditions[i].LastUpdateTime,
+			LastTransitionTime: srcObj.Status.Conditions[i].LastTransitionTime,
+		}
+		log.Printf("Adding cluster ConditionType: %s, Status: %v, Reason: %s ", condition.Type, condition.Status, condition.Reason)
+		dst.Status.Conditions = append(dst.Status.Conditions, *condition)
+	}
+
+	return nil
+}
+
+func getNewConditionType(typ v1alpha1.ClusterConditionType) ClusterConditionType {
+	if typ == v1alpha1.ClusterConditionError {
+		return ClusterConditionError
+	} else if typ == v1alpha1.ClusterConditionUpgrading {
+		return ClusterConditionUpgrading
+	} else if typ == v1alpha1.ClusterConditionPodsReady {
+		return ClusterConditionPodsReady
+	} else if typ == v1alpha1.ClusterConditionRollback {
+		return ClusterConditionRollback
+	}
+	// should never get here..
+	panic(fmt.Sprintf("Invalid Status Condition in source object %v", typ))
+}
+
+func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
+	log.Printf("ConvertFrom: invoked")
+	//logic for conveting from v1alpha1 to v1beta1
+
+	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
+	dst.ObjectMeta = srcObj.ObjectMeta
+	err := dst.convertSpecAndStatus(srcObj)
+	if err != nil {
+		log.Fatalf("Error converting CR object from version v1alpha1 to v1beta1 %v", err)
+		return err
+	}
 	return nil
 }
 
@@ -413,7 +456,6 @@ func getSupportedVersions() (map[string]string, error) {
 	for scanner.Scan() {
 		txtlines = append(txtlines, scanner.Text())
 	}
-
 	defer file.Close()
 
 	for _, eachline := range txtlines {
@@ -428,12 +470,13 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	if err != nil {
 		return fmt.Errorf("Error retrieving suported versions %v", err)
 	}
+
 	if p.Spec.Version == "" {
 		p.Spec.Version = DefaultPravegaVersion
 	}
 
 	requestVersion := p.Spec.Version
-
+	log.Printf("validatePravegaVersion:: request-version %s", requestVersion)
 	if p.Status.IsClusterInUpgradeFailedState() {
 		if requestVersion != p.Status.GetLastVersion() {
 			return fmt.Errorf("Rollback to version %s not supported. Only rollback to version %s is supported.", requestVersion, p.Status.GetLastVersion())
@@ -446,10 +489,12 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	if err != nil {
 		return fmt.Errorf("request version is not in valid format: %v", err)
 	}
+
 	if _, ok := supportedVersions[normRequestVersion]; !ok {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
+	log.Printf("validatePravegaVersion:: current-version %s", p.Status.CurrentVersion)
 	if p.Status.CurrentVersion == "" {
 		// we're deploying for the very first time
 		return nil
@@ -457,6 +502,7 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 
 	// This is not an upgrade if CurrentVersion == requestVersion
 	if p.Status.CurrentVersion == requestVersion {
+		log.Print("validatePravegaVersion:: This is not an upgrade so returning...")
 		return nil
 	}
 	// This is an upgrade, check if requested version is in the upgrade path
@@ -465,6 +511,8 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		// It should never happen
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
+
+	log.Printf("validatePravegaVersion:: normFoundVersion %s", normFoundVersion)
 	upgradeString, ok := supportedVersions[normFoundVersion]
 	//upgradeList, ok := supportedVersions[normFoundVersion]
 	if !ok {
@@ -475,6 +523,7 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	if !util.ContainsVersion(upgradeList, normRequestVersion) {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
 	}
+	log.Print("validatePravegaVersion:: No error found...returning...")
 	return nil
 }
 
@@ -488,16 +537,16 @@ func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
 
 //if version is above or equals to 0.7 this name will be assigned
 func (p *PravegaCluster) StatefulSetNameForSegmentstoreAbove07() string {
-	return fmt.Sprintf("%s-pravega-segment-store", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-segment-store", p.Name)
 }
 
 //if version is below 0.7 this name will be assigned
 func (p *PravegaCluster) StatefulSetNameForSegmentstoreBelow07() string {
-	return fmt.Sprintf("%s-pravega-segmentstore", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-segmentstore", p.Name)
 }
 
 func (p *PravegaCluster) PravegaControllerServiceURL() string {
-	return fmt.Sprintf("tcp://%v.%v:%v", p.ServiceNameForController(), p.ObjectMeta.Namespace, "9090")
+	return fmt.Sprintf("tcp://%v.%v:%v", p.ServiceNameForController(), p.Namespace, "9090")
 }
 
 func (p *PravegaCluster) LabelsForController() map[string]string {
@@ -520,15 +569,15 @@ func (pravegaCluster *PravegaCluster) LabelsForPravegaCluster() map[string]strin
 }
 
 func (p *PravegaCluster) PdbNameForController() string {
-	return fmt.Sprintf("%s-pravega-controller", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-controller", p.Name)
 }
 
 func (p *PravegaCluster) ConfigMapNameForController() string {
-	return fmt.Sprintf("%s-pravega-controller", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-controller", p.Name)
 }
 
 func (p *PravegaCluster) ServiceNameForController() string {
-	return fmt.Sprintf("%s-pravega-controller", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-controller", p.Name)
 }
 
 func (p *PravegaCluster) ServiceNameForSegmentStore(index int32) string {
@@ -539,23 +588,23 @@ func (p *PravegaCluster) ServiceNameForSegmentStore(index int32) string {
 }
 
 func (p *PravegaCluster) HeadlessServiceNameForSegmentStore() string {
-	return fmt.Sprintf("%s-pravega-segmentstore-headless", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-segmentstore-headless", p.Name)
 }
 
 func (p *PravegaCluster) HeadlessServiceNameForBookie() string {
-	return fmt.Sprintf("%s-bookie-headless", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-bookie-headless", p.Name)
 }
 
 func (p *PravegaCluster) DeploymentNameForController() string {
-	return fmt.Sprintf("%s-pravega-controller", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-controller", p.Name)
 }
 
 func (p *PravegaCluster) PdbNameForSegmentstore() string {
-	return fmt.Sprintf("%s-segmentstore", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-segmentstore", p.Name)
 }
 
 func (p *PravegaCluster) ConfigMapNameForSegmentstore() string {
-	return fmt.Sprintf("%s-pravega-segmentstore", p.ObjectMeta.Name)
+	return fmt.Sprintf("%s-pravega-segmentstore", p.Name)
 }
 
 func (p *PravegaCluster) GetClusterExpectedSize() (size int) {

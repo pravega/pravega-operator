@@ -3,8 +3,8 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: pravega/pravega-operator
-  tag: 0.4.4 
+  repository: pbelgundi/pravega-operator
+  tag: m26
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
@@ -18,7 +18,7 @@ serviceAccount:
 
 # Whether to create custom resource
 crd:
-  create: true
+  create: false 
 
 # whether to enable test mode
 testmode: false

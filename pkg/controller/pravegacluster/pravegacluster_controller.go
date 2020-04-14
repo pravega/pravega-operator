@@ -167,8 +167,51 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 			log.Printf("failed to deploy segment store: %v", err)
 			return err
 		}
-	}
 
+		if !util.IsVersionBelow07(p.Spec.Version) {
+			// We should be here only once in case of operator upgrade
+			// to version 0.5.0 from version 0.4.x
+			r.deleteOldSegmentStoreIfExists(p)
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta1.PravegaCluster) error {
+	// delete sts
+	sts := &appsv1.StatefulSet{}
+	pc := &pravegav1beta1.PravegaCluster{}
+	pc.WithDefaults()
+	pc.Name = p.Name
+	pc.Spec.Version = "0.6.0"
+	stsName := pc.StatefulSetNameForSegmentstore()
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: stsName, Namespace: p.Namespace}, sts)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// nothing to do since old STS was not found
+			return nil
+		}
+		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
+	}
+	r.client.Delete(context.TODO(), sts)
+	log.Printf("Deleted old SegmentStore STS %s", sts.Name)
+	if p.Spec.ExternalAccess.Enabled {
+		// delete external Services
+		for i := int32(1); i <= p.Spec.Pravega.SegmentStoreReplicas; i++ {
+			extService := &corev1.Service{}
+			svcName := pc.ServiceNameForSegmentStore(i)
+			err := r.client.Get(context.TODO(), types.NamespacedName{Name: svcName, Namespace: p.Namespace}, extService)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					// nothing to do since old STS was not found
+					return nil
+				}
+				return fmt.Errorf("failed to get external service (%s): %v", svcName, err)
+			}
+			r.client.Delete(context.TODO(), extService)
+			log.Printf("Deleted old SegmentStore external service %s", extService)
+		}
+	}
 	return nil
 }
 

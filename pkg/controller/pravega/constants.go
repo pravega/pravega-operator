@@ -13,8 +13,8 @@ package pravega
 const (
 	cacheVolumeName        = "cache"
 	cacheVolumeMountPoint  = "/tmp/pravega/cache"
-	tier2FileMountPoint    = "/mnt/tier2"
-	tier2VolumeName        = "tier2"
+	ltsFileMountPoint      = "/mnt/tier2"
+	ltsVolumeName          = "tier2"
 	segmentStoreKind       = "pravega-segmentstore"
 	ssSecretVolumeName     = "ss-secret"
 	tlsVolumeName          = "tls-secret"

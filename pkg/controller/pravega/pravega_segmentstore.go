@@ -169,7 +169,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
-	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
+	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
 
 	return podSpec
 }
@@ -268,28 +268,28 @@ func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.Persist
 }
 
 func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
-	if pravegaSpec.Tier2.FileSystem != nil {
+	if pravegaSpec.LongTermStorage.FileSystem != nil {
 		return map[string]string{
 			"TIER2_STORAGE": "FILESYSTEM",
-			"NFS_MOUNT":     tier2FileMountPoint,
+			"NFS_MOUNT":     ltsFileMountPoint,
 		}
 	}
 
-	if pravegaSpec.Tier2.Ecs != nil {
+	if pravegaSpec.LongTermStorage.Ecs != nil {
 		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
-			"EXTENDEDS3_CONFIGURI": pravegaSpec.Tier2.Ecs.ConfigUri,
-			"EXTENDEDS3_BUCKET":    pravegaSpec.Tier2.Ecs.Bucket,
-			"EXTENDEDS3_PREFIX":    pravegaSpec.Tier2.Ecs.Prefix,
+			"EXTENDEDS3_CONFIGURI": pravegaSpec.LongTermStorage.Ecs.ConfigUri,
+			"EXTENDEDS3_BUCKET":    pravegaSpec.LongTermStorage.Ecs.Bucket,
+			"EXTENDEDS3_PREFIX":    pravegaSpec.LongTermStorage.Ecs.Prefix,
 		}
 	}
 
-	if pravegaSpec.Tier2.Hdfs != nil {
+	if pravegaSpec.LongTermStorage.Hdfs != nil {
 		return map[string]string{
 			"TIER2_STORAGE": "HDFS",
-			"HDFS_URL":      pravegaSpec.Tier2.Hdfs.Uri,
-			"HDFS_ROOT":     pravegaSpec.Tier2.Hdfs.Root,
+			"HDFS_URL":      pravegaSpec.LongTermStorage.Hdfs.Uri,
+			"HDFS_ROOT":     pravegaSpec.LongTermStorage.Hdfs.Root,
 		}
 	}
 
@@ -297,12 +297,12 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 }
 
 func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {
-	if pravegaSpec.Tier2.Ecs != nil {
+	if pravegaSpec.LongTermStorage.Ecs != nil {
 		return append(environment, corev1.EnvFromSource{
 			Prefix: "EXTENDEDS3_",
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: pravegaSpec.Tier2.Ecs.Credentials,
+					Name: pravegaSpec.LongTermStorage.Ecs.Credentials,
 				},
 			},
 		})
@@ -311,18 +311,18 @@ func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.
 	return environment
 }
 
-func configureTier2Filesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
+func configureLTSFilesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
 
-	if pravegaSpec.Tier2.FileSystem != nil {
+	if pravegaSpec.LongTermStorage.FileSystem != nil {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      tier2VolumeName,
-			MountPath: tier2FileMountPoint,
+			Name:      ltsVolumeName,
+			MountPath: ltsFileMountPoint,
 		})
 
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{
-			Name: tier2VolumeName,
+			Name: ltsVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: pravegaSpec.Tier2.FileSystem.PersistentVolumeClaim,
+				PersistentVolumeClaim: pravegaSpec.LongTermStorage.FileSystem.PersistentVolumeClaim,
 			},
 		})
 	}

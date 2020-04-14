@@ -29,8 +29,8 @@ const (
 	// Pravega SegmentStore cache volume
 	DefaultPravegaCacheVolumeSize = "20Gi"
 
-	// DefaultPravegaTier2ClaimName is the default volume claim name used as Tier 2
-	DefaultPravegaTier2ClaimName = "pravega-tier2"
+	// DefaultPravegaLongTermStorageClaimName is the default volume claim name used as Tier 2
+	DefaultPravegaLongTermStorageClaimName = "pravega-longterm"
 
 	// DefaultControllerReplicas is the default number of replicas for the Pravega
 	// Controller component
@@ -103,10 +103,10 @@ type PravegaSpec struct {
 	// emptyDir as volume
 	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
 
-	// Tier2 is the configuration of Pravega's tier 2 storage. If no configuration
-	// is provided, it will assume that a PersistentVolumeClaim called "pravega-tier2"
+	// LongTermStorage is the configuration of Pravega's tier 2 storage. If no configuration
+	// is provided, it will assume that a PersistentVolumeClaim called "pravega-longterm"
 	// is present and it will use it as Tier 2
-	Tier2 *Tier2Spec `json:"tier2"`
+	LongTermStorage *LongTermStorageSpec `json:"longtermStorage"`
 
 	// ControllerServiceAccountName configures the service account used on controller instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
@@ -195,12 +195,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
-	if s.Tier2 == nil {
+	if s.LongTermStorage == nil {
 		changed = true
-		s.Tier2 = &Tier2Spec{}
+		s.LongTermStorage = &LongTermStorageSpec{}
 	}
 
-	if s.Tier2.withDefaults() {
+	if s.LongTermStorage.withDefaults() {
 		changed = true
 	}
 
@@ -288,10 +288,10 @@ func (s *ImageSpec) withDefaults() (changed bool) {
 	return changed
 }
 
-// Tier2Spec configures the Tier 2 storage type to use with Pravega.
+// LongTermStorageSpec configures the Tier 2 storage type to use with Pravega.
 // If not specified, Tier 2 will be configured in filesystem mode and will try
-// to use a PersistentVolumeClaim with the name "pravega-tier2"
-type Tier2Spec struct {
+// to use a PersistentVolumeClaim with the name "pravega-longterm"
+type LongTermStorageSpec struct {
 	// FileSystem is used to configure a pre-created Persistent Volume Claim
 	// as Tier 2 backend.
 	// It is default Tier 2 mode.
@@ -304,12 +304,12 @@ type Tier2Spec struct {
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
 }
 
-func (s *Tier2Spec) withDefaults() (changed bool) {
+func (s *LongTermStorageSpec) withDefaults() (changed bool) {
 	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil {
 		changed = true
 		fs := &FileSystemSpec{
 			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: DefaultPravegaTier2ClaimName,
+				ClaimName: DefaultPravegaLongTermStorageClaimName,
 			},
 		}
 		s.FileSystem = fs
