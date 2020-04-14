@@ -4,7 +4,7 @@
 
 image:
   repository: pbelgundi/pravega-operator
-  tag: m26
+  tag: m33
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
@@ -18,7 +18,7 @@ serviceAccount:
 
 # Whether to create custom resource
 crd:
-  create: false 
+  create: true 
 
 # whether to enable test mode
 testmode: false
