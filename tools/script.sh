@@ -1,7 +1,7 @@
 #! /bin/bash
 if [ "$#" -lt 1 ]; then
 	echo "Error : Invalid number of arguments"
-	echo "Usage: ./script.sh install namespace name or ./script delete"
+	echo "Usage: ./script.sh install namespace(pravega operator) name(pravega operator) or ./script delete"
 	exit 1
 fi
 
@@ -69,7 +69,7 @@ kubectl delete -f ./roles.yaml
 
 }
 
-if [ $1 == "install" ]; then
+if  [ $1 == "install" ]; then
 	UpgradingToPoperator $2 $3
 
 elif [ $1 == "delete" ]; then
