@@ -1,7 +1,7 @@
 #! /bin/bash
 set -ex
 
-echo "This is a pre upgrade script required for updating pravega operator <= 0.4.x to >=0.5.x "
+echo "This is a pre upgrade script required for upgradig pravega operator <= 0.4.x to >=0.5.x "
 
 if [ "$#" -ne 2 ]; then
 	echo "Error : Invalid number of arguments"

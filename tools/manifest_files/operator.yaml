@@ -20,17 +20,28 @@ spec:
           ports:
           - containerPort: 60000
             name: metrics
+          volumeMounts:
+          - name: webhook-cert
+            mountPath: "/tmp/k8s-webhook-server/serving-certs"
+            readOnly: true
+          - name: versions-volume
+            mountPath: "/tmp/config"             
           command:
           - pravega-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: ""
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "pravega-operator"
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: selfsigned-cert-tls
+      - name: versions-volume
+        configMap:
+          name: supported-upgrade-paths
