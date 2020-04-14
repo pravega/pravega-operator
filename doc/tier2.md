@@ -155,7 +155,7 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
     apiVersion: v1
     kind: Secret
     metadata:
-      name: "ecs-tls"
+      name: "segmentstore-tls"
     type: Opaque
     stringData:
       ECS_JAVA_TRUST_STORE_PATH: "/etc/ssl/certs/java/cacerts"
@@ -165,12 +165,14 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
       ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
     ```
 
+    Note: the secret name must be same as the secret name of other SegmentStore TLS materials, so all the materials can be mounted together.
+
     Assuming that the file is named `ecs-tls.yaml`
     ```
-    $ kubectl create -f ecs-tls.yaml
+    $ kubectl apply -f ecs-tls.yaml
     ```
 
-3. In the Pravega manifest file, specify the secret name of the ECS TLS defined above in the "tls" section. 
+3. In the Pravega manifest file, specify the name of the secret defined above to "tls/static/segmentStoreSecret". 
     ```
     ...
     kind: "PravegaCluster"
@@ -179,7 +181,7 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
     spec:
     tls:
       static:
-        ecsSecret: "ecs-tls"
+        segmentStoreSecret: "segmentstore-tls"
     ...
     tier2:
         ecs:
