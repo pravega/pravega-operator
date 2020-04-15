@@ -2,6 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: supported-upgrade-paths
+  namespace: default
 data:
   keys: |
         0.1.0:0.1.0
