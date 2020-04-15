@@ -43,7 +43,7 @@ sed -i "/containers.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.ya
 
 sed -i "/name: OPERATOR_NAME.*/{n;s/value.*/value: $op_name/}" ./manifest_files/operator.yaml
 
-sed -i "{s/image:.*/image: $op_image/}" ./manifest_files/operator.yaml
+sed -i "s|image:.*|image: $op_image|" ./manifest_files/operator.yaml
 
 kubectl apply -f ./manifest_files/operator.yaml
 
