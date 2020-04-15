@@ -12,22 +12,31 @@ package v1beta1
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	log "github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
+
+var Mgr manager.Manager
 
 const (
 	// DefaultZookeeperUri is the default ZooKeeper URI in the form of "hostname:port"
@@ -37,7 +46,7 @@ const (
 	DefaultBookkeeperUri = "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
 
 	// DefaultServiceType is the default service type for external access
-	DefaultServiceType = v1.ServiceTypeLoadBalancer
+	DefaultServiceType = corev1.ServiceTypeLoadBalancer
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
@@ -179,7 +188,7 @@ type ExternalAccess struct {
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
-	Type v1.ServiceType `json:"type,omitempty"`
+	Type corev1.ServiceType `json:"type,omitempty"`
 
 	// Domain Name to be used for External Access
 	// This value is ignored if External Access is disabled
@@ -238,9 +247,8 @@ func (ap *AuthenticationParameters) IsEnabled() bool {
 
 // ImageSpec defines the fields needed for a Docker repository image
 type ImageSpec struct {
-	Repository string `json:"repository"`
-
-	PullPolicy v1.PullPolicy `json:"pullPolicy"`
+	Repository string            `json:"repository"`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 }
 
 func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
@@ -328,14 +336,14 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 
 	// Controller Resources
 	if srcObj.Spec.Pravega.ControllerResources != nil {
-		dst.Spec.Pravega.ControllerResources = &v1.ResourceRequirements{
+		dst.Spec.Pravega.ControllerResources = &corev1.ResourceRequirements{
 			Requests: srcObj.Spec.Pravega.ControllerResources.Requests,
 			Limits:   srcObj.Spec.Pravega.ControllerResources.Limits,
 		}
 	}
 	// SegmentStore Resources
 	if srcObj.Spec.Pravega.SegmentStoreResources != nil {
-		dst.Spec.Pravega.SegmentStoreResources = &v1.ResourceRequirements{
+		dst.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
 			Requests: srcObj.Spec.Pravega.SegmentStoreResources.Requests,
 			Limits:   srcObj.Spec.Pravega.SegmentStoreResources.Limits,
 		}
@@ -349,7 +357,7 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 
 	log.Printf("Converting Status Conditions")
 	numConditions := len(srcObj.Status.Conditions)
-	dst.Status.Conditions = make([]ClusterCondition, numConditions)
+	dst.Status.Conditions = []ClusterCondition{}
 	for i := 0; i < numConditions; i++ {
 		condition := &ClusterCondition{
 			Type:               getNewConditionType(srcObj.Status.Conditions[i].Type),
@@ -359,10 +367,8 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 			LastUpdateTime:     srcObj.Status.Conditions[i].LastUpdateTime,
 			LastTransitionTime: srcObj.Status.Conditions[i].LastTransitionTime,
 		}
-		log.Printf("Adding cluster ConditionType: %s, Status: %v, Reason: %s ", condition.Type, condition.Status, condition.Reason)
 		dst.Status.Conditions = append(dst.Status.Conditions, *condition)
 	}
-
 	return nil
 }
 
@@ -383,7 +389,6 @@ func getNewConditionType(typ v1alpha1.ClusterConditionType) ClusterConditionType
 func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	log.Printf("ConvertFrom: invoked")
 	//logic for conveting from v1alpha1 to v1beta1
-
 	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
 	dst.ObjectMeta = srcObj.ObjectMeta
 	err := dst.convertSpecAndStatus(srcObj)
@@ -391,7 +396,290 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		log.Fatalf("Error converting CR object from version v1alpha1 to v1beta1 %v", err)
 		return err
 	}
+	err = dst.migrateBookkeeper(srcObj)
+	return err
+}
+
+func createConfigMap(p *v1alpha1.PravegaCluster) error {
+	cmName := "pravega-config"
+	cfgMap := &corev1.ConfigMap{}
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: cmName, Namespace: p.Namespace}, cfgMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			cm := &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cmName,
+					Namespace: p.Namespace,
+				},
+				Data: map[string]string{
+					"PRAVEGA_CLUSTER_NAME": p.Name,
+					"WAIT_FOR":             p.Spec.ZookeeperUri,
+				},
+			}
+			err = Mgr.GetClient().Create(context.TODO(), cm)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
 	return nil
+}
+
+func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) error {
+	b := &bkapi.BookkeeperCluster{}
+	err := Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, b)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			b.WithDefaults()
+			b.Name = p.GetName()
+			b.Namespace = p.GetNamespace()
+			err = createConfigMap(srcObj)
+			if err != nil {
+				return err
+			}
+			specCopy(srcObj, b)
+			errBk := Mgr.GetClient().Create(context.TODO(), b)
+			if errBk != nil {
+				log.Fatalf("Error creating BK Cluster object %v", errBk)
+				return errBk
+			}
+			log.Print("Created new Bk Cluster Object.")
+		} else {
+			return err
+		}
+	}
+
+	err = transferControlPVC(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK PVC %v", err)
+		return err
+	}
+	log.Print("Released Control of PVC")
+
+	err = transferControlCM(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK CM %v", err)
+		return err
+	}
+	log.Print("Released Control of CM")
+
+	err = transferControlPDB(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK PDB %v", err)
+		return err
+	}
+	log.Print("Released Control of PDB")
+
+	err = transferControlSTS(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK STS %v", err)
+		return err
+	}
+	log.Print("Deleted STS")
+	err = transferControlHeadlessSvc(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK HeadlessSvc %v", err)
+		return err
+	}
+	log.Print("Deleted headless SVC")
+	return nil
+}
+
+func nameForBookie(clusterName string) string {
+	return fmt.Sprintf("%s-bookie", clusterName)
+}
+
+func setOwnerReferenceControllerFalse(ownerreference []metav1.OwnerReference) {
+	for _, value := range ownerreference {
+		if value.Kind == "PravegaCluster" {
+			*value.Controller = false
+		}
+	}
+}
+
+func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	sts := &appsv1.StatefulSet{}
+	name := nameForBookie(p.Name)
+	log.Printf("updating STS %s", name)
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	appVal, appExists := sts.Spec.Selector.MatchLabels["app"]
+	_, pcExists := sts.Spec.Selector.MatchLabels["pravega_cluster"]
+	log.Printf("STS label values: app=%s, %v ", appVal, pcExists)
+
+	if pcExists && appExists && appVal == "pravega-cluster" {
+		log.Print("Deleting STS")
+		return Mgr.GetClient().Delete(context.TODO(), sts)
+	}
+	return nil
+}
+
+func labelsForBookie(b *bkapi.BookkeeperCluster) map[string]string {
+	return map[string]string{
+		"app":                "bookkeeper-cluster",
+		"bookkeeper_cluster": b.Name,
+		"component":          "bookie",
+	}
+}
+
+func transferControlCM(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	configmap := &corev1.ConfigMap{}
+	name := nameForBookie(p.Name)
+	log.Printf("updating config map %s", name)
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
+	if err != nil {
+		return err
+	}
+	owref := configmap.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, configmap, Mgr.GetScheme())
+	if err != nil {
+		return err
+	}
+	return Mgr.GetClient().Update(context.TODO(), configmap)
+}
+
+func transferControlHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	headlessservice := &corev1.Service{}
+	name := fmt.Sprintf("%s-bookie-headless", p.Name)
+	log.Printf("updating headlessservice %s", name)
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: p.Namespace}, headlessservice)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	appVal, appExists := headlessservice.Spec.Selector["app"]
+	_, pcExists := headlessservice.Spec.Selector["pravega_cluster"]
+	log.Printf("Headless svc label values: app=%s, %v ", appVal, pcExists)
+
+	if pcExists && appExists && appVal == "pravega-cluster" {
+		log.Print("Deleting headlessservice")
+		return Mgr.GetClient().Delete(context.TODO(), headlessservice)
+	}
+	return nil
+}
+
+func transferPVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	pvc := &corev1.PersistentVolumeClaim{}
+	name := pvcType + "-" + p.Name + "-bookie-"
+	for i := int32(0); i < p.Spec.Bookkeeper.Replicas; i++ {
+		pvcName := name + fmt.Sprintf("%d", i)
+		err := Mgr.GetClient().Get(context.TODO(),
+			types.NamespacedName{Name: pvcName, Namespace: p.Namespace}, pvc)
+		if err != nil {
+			return err
+		}
+		owref := pvc.GetOwnerReferences()
+		setOwnerReferenceControllerFalse(owref)
+		err = controllerutil.SetControllerReference(b, pvc, Mgr.GetScheme())
+		if err != nil {
+			return err
+		}
+		err = Mgr.GetClient().Update(context.TODO(), pvc)
+		if err != nil {
+			return err
+		}
+		log.Printf("Updated PVC %s", pvcName)
+	}
+	return nil
+}
+
+func transferControlPVC(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	log.Printf("Releasing owner reference for PVCs")
+	err := transferPVC("index", p, b)
+	if err != nil {
+		return err
+	}
+	log.Printf("Released owner reference for index PVCs")
+	err = transferPVC("journal", p, b)
+	if err != nil {
+		return err
+	}
+	log.Printf("Released owner reference for journal PVCs")
+	err = transferPVC("ledger", p, b)
+	if err != nil {
+		return err
+	}
+	log.Printf("Released owner reference for ledger PVCs")
+	return nil
+}
+
+func transferControlPDB(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	pdb := &policyv1beta1.PodDisruptionBudget{}
+	name := nameForBookie(p.Name)
+	log.Printf("Releasing owner reference for PDB %s", name)
+	err := Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, pdb)
+	if err != nil {
+		return err
+	}
+	owref := pdb.GetOwnerReferences()
+	setOwnerReferenceControllerFalse(owref)
+	err = controllerutil.SetControllerReference(b, pdb, Mgr.GetScheme())
+	if err != nil {
+		return err
+	}
+	return Mgr.GetClient().Update(context.TODO(), pdb)
+}
+
+func specCopy(srcObj *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) {
+	bkSpec := srcObj.Spec.Bookkeeper
+	if bkSpec.Image != nil {
+		b.Spec.Image.PullPolicy = bkSpec.Image.PullPolicy
+		b.Spec.Image.Repository = bkSpec.Image.Repository
+		b.Spec.Image.Tag = bkSpec.Image.Tag
+	}
+
+	b.Spec.Replicas = bkSpec.Replicas
+
+	if bkSpec.Storage != nil {
+		b.Spec.Storage.IndexVolumeClaimTemplate = bkSpec.Storage.IndexVolumeClaimTemplate
+		b.Spec.Storage.JournalVolumeClaimTemplate = bkSpec.Storage.JournalVolumeClaimTemplate
+		b.Spec.Storage.LedgerVolumeClaimTemplate = bkSpec.Storage.LedgerVolumeClaimTemplate
+	}
+
+	if bkSpec.AutoRecovery != nil {
+		b.Spec.AutoRecovery = bkSpec.AutoRecovery
+	}
+
+	b.Spec.ServiceAccountName = bkSpec.ServiceAccountName
+
+	if bkSpec.Resources != nil {
+		b.Spec.Resources = bkSpec.Resources
+	}
+
+	if bkSpec.Options != nil {
+		b.Spec.Options = bkSpec.Options
+	}
+
+	if bkSpec.BookkeeperJVMOptions != nil {
+		b.Spec.JVMOptions.ExtraOpts = bkSpec.BookkeeperJVMOptions.ExtraOpts
+		b.Spec.JVMOptions.GcLoggingOpts = bkSpec.BookkeeperJVMOptions.GcLoggingOpts
+		b.Spec.JVMOptions.GcOpts = bkSpec.BookkeeperJVMOptions.GcOpts
+		b.Spec.JVMOptions.MemoryOpts = bkSpec.BookkeeperJVMOptions.MemoryOpts
+	}
+
+	b.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
+	// name of config-map having pravega configuration
+	b.Spec.EnvVars = "pravega-config"
+	b.Spec.Version = srcObj.Spec.Version
 }
 
 func getBookkeeperUri(srcObj *v1alpha1.PravegaCluster) string {
@@ -625,13 +913,13 @@ func (p *PravegaCluster) PravegaTargetImage() (string, error) {
 func (p *PravegaCluster) NewEvent(name string, reason string, message string, eventType string) *corev1.Event {
 	now := metav1.Now()
 	operatorName, _ := k8s.GetOperatorName()
-	event := v1.Event{
+	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: p.Namespace,
 			Labels:    p.LabelsForPravegaCluster(),
 		},
-		InvolvedObject: v1.ObjectReference{
+		InvolvedObject: corev1.ObjectReference{
 			APIVersion:      p.APIVersion,
 			Kind:            "PravegaCluster",
 			Name:            p.GetName(),

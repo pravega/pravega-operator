@@ -18,6 +18,7 @@ require (
 	github.com/onsi/gomega v1.8.1
 	github.com/operator-framework/operator-sdk v0.4.0
 	github.com/pquerna/otp v1.2.0 // indirect
+	github.com/pravega/bookkeeper-operator v0.1.1-rc0
 	github.com/samuel/go-zookeeper v0.0.0-20180130194729-c4fab1ac1bec
 	github.com/sirupsen/logrus v1.4.2
 	k8s.io/api v0.17.2

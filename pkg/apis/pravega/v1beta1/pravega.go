@@ -30,7 +30,7 @@ const (
 	DefaultPravegaCacheVolumeSize = "20Gi"
 
 	// DefaultPravegaLongTermStorageClaimName is the default volume claim name used as Tier 2
-	DefaultPravegaLongTermStorageClaimName = "pravega-longterm"
+	DefaultPravegaLongTermStorageClaimName = "pravega-tier2"
 
 	// DefaultControllerReplicas is the default number of replicas for the Pravega
 	// Controller component

@@ -110,6 +110,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	v1beta1.Mgr = mgr
 	if webhookFlag {
 		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
 			log.Error(err, "unable to create webhook %s", err.Error())
