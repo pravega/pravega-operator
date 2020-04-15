@@ -61,7 +61,7 @@ sed -i "s|image:.*|image: $op_image|" ./manifest_files/operator.yaml
 
 kubectl apply -f ./manifest_files/operator.yaml
 
-sed -i "s/name.*/name: ${name}-bk-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
+sed -i "s/name:.*/name: ${name}-bk-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
 
