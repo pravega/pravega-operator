@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pravega-operator
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -16,7 +17,7 @@ spec:
       serviceAccountName: pravega-operator
       containers:
         - name: pravega-operator
-          image: prabhu75/pravega_operator:for_679
+          image: pravega/pravega-operator:0.4.4
           ports:
           - containerPort: 60000
             name: metrics
@@ -37,7 +38,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "pravega-operator"
+              value: pravega-operator
       volumes:
       - name: webhook-cert
         secret:
