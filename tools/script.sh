@@ -33,17 +33,17 @@ op_name=`kubectl get deployment | grep "pravega-operator" | awk '{print $1}'`
 
 op_image=`kubectl get deployment $op_name --output yaml | grep "image:" | awk '{print $2}'`
 
-sed -i "/metadata.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
+sed -i "/metadata:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
 
-sed -i "/matchLabels.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
+sed -i "/matchLabels:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
 
-sed -i "/labels.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
+sed -i "/labels:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
 
 sed -i "/containers.*/{n;s/name.*/name: $op_name/}" ./manifest_files/operator.yaml
 
-sed -i "/name.*/{n;s/value.*/value: $op_name/}" ./manifest_files/operator.yaml
+sed -i "/name: OPERATOR_NAME.*/{n;s/value.*/value: $op_name/}" ./manifest_files/operator.yaml
 
-sed -i "/name.*/{n;s/image.*/image: $op_image/}" ./manifest_files/operator.yaml
+sed -i "{s/image:.*/image: $op_image/}" ./manifest_files/operator.yaml
 
 kubectl apply -f ./manifest_files/operator.yaml
 
