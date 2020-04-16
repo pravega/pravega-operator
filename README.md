@@ -80,13 +80,12 @@ For upgrading operator version from 0.4.0 to 0.5.0, we have to execute a script 
 
 Script will do the following operations
 
-Installing cert manager and secrets
-Installing webhook
-Installing version map of operator, that will mention the supported operator  versions
-Updating crd
-Installing bookkeeper operator
-Update the operator Roles
-Update the operator image
+- Installing cert manager and secrets
+- Installing webhook
+- Installing version map of operator, that will mention the supported operator  versions
+- Updating crd 
+- Update the operator Roles
+- Update the operator image
 
 #### Executing the script
 git clone pravega-operator repo
