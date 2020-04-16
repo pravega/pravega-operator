@@ -71,21 +71,13 @@ Pravega operator can be upgraded by modifying the image tag using
 ```
 $ kubectl edit <operator deployment name>
 ```
-This approach will work for upgrades upto 0.4.0
+This approach will work for upgrades upto 0.4.x
 
-Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4 to 0.5, we have to tansfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1 and v1beta1 inside the crd. v1alpha1 is for older versions and v1beta1 is for newer versions. And during upgrade we are triggering conversion webhook that will change the current version to v1beta1
+Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4.x to 0.5, we have to tansfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1(Pravega Custom Resource with Bookkeeper) and v1beta1(Pravega Custom Resource without Bookkeeper) inside the crd.  And during upgrade we are triggering conversion webhook that will change the current version to v1beta1.`bookkeeperUri` field is added in v1beta1.Also, Tier2 storage name is changed to `longTermStorage`
+
 More details on upgrade can be  found at  https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
 
-For upgrading operator version from 0.4.0 to 0.5.0, we have to execute a script and can be found at this  location https://github.com/pravega/pravega-operator/blob/test-relinquishing-ownership/tools/operatorUpgrade.sh
-
-Script will do the following operations
-
-- Installing cert manager and secrets
-- Installing webhook
-- Installing version map of operator, that will mention the supported operator  versions
-- Updating crd
-- Update the operator Roles
-- Update the operator image
+upgrading operator  from 0.4.x to 0.5.0 can be triggered using the operatorUpgrade.sh script under tools folder. This script does all necessary configuration changes to enable the upgrade and also triggers the upgrade.
 
 #### Executing the script
 git clone pravega-operator repo
@@ -104,6 +96,7 @@ Once upgrade is completed, if the pravega version installed is 0.7 and higher, s
 #### Known Issues
  - Once the upgrade is completed, deletion of pravega cluster is hanging
  - Bookkeeper cluster deletion is hanging post upgrade.
+ - Currently, more than 1 replica of pravega-operator is not supported.
 
 
 ### Install a sample Pravega cluster
