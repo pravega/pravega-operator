@@ -29,8 +29,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -400,7 +400,165 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	if err != nil {
 		return err
 	}
+	err = dst.updatePravegaOwnerReferences()
+	if err != nil {
+		return err
+	}
 	log.Print("Version migration completed successfully.")
+	return nil
+}
+
+func (dst *PravegaCluster) updatePravegaOwnerReferences() error {
+	ownerRefs := &[]metav1.OwnerReference{
+		{
+			APIVersion:         "pravega.pravega.io/v1beta1",
+			Kind:               "PravegaCluster",
+			Name:               dst.GetName(),
+			UID:                dst.GetUID(),
+			BlockOwnerDeletion: pointer.BoolPtr(true),
+			Controller:         pointer.BoolPtr(true),
+		},
+	}
+	err := dst.updateSSSReferences(*ownerRefs)
+	if err != nil {
+		return err
+	}
+	return dst.updateControllerReferences(*ownerRefs)
+}
+
+func (dst *PravegaCluster) updateSSSReferences(ownerRefs []metav1.OwnerReference) error {
+	if util.IsVersionBelow07(dst.Spec.Version) {
+		sts := &appsv1.StatefulSet{}
+		name := dst.StatefulSetNameForSegmentstore()
+		err := Mgr.GetClient().Get(context.TODO(),
+			types.NamespacedName{Name: name, Namespace: dst.Namespace}, sts)
+		if err != nil {
+			return err
+		}
+		sts.SetOwnerReferences(ownerRefs)
+		for _, pvc := range sts.Spec.VolumeClaimTemplates {
+			log.Printf("SSS updating owner for pvc ")
+			pvc.SetOwnerReferences(ownerRefs)
+		}
+		err = Mgr.GetClient().Update(context.TODO(), sts)
+		if err != nil {
+			return err
+		}
+
+		if dst.Spec.ExternalAccess.Enabled {
+			numSvcs := dst.Spec.Pravega.SegmentStoreReplicas
+			for i := int32(0); i < numSvcs; i++ {
+				extSvc := &corev1.Service{}
+				name = dst.ServiceNameForSegmentStore(i)
+				log.Printf("SSS updating owner external service %s", name)
+				err = Mgr.GetClient().Get(context.TODO(),
+					types.NamespacedName{Name: name, Namespace: dst.Namespace}, extSvc)
+				if err != nil {
+					return err
+				}
+				extSvc.SetOwnerReferences(ownerRefs)
+				err = Mgr.GetClient().Update(context.TODO(), extSvc)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	configmap := &corev1.ConfigMap{}
+	name := dst.ConfigMapNameForSegmentstore()
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: dst.Namespace}, configmap)
+	if err != nil {
+		return err
+	}
+	configmap.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), configmap)
+	if err != nil {
+		return err
+	}
+
+	headlessservice := &corev1.Service{}
+	name = dst.HeadlessServiceNameForSegmentStore()
+	log.Printf("SSS updating owner headlessservice %s", name)
+	err = Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: dst.Namespace}, headlessservice)
+	if err != nil {
+		return err
+	}
+	headlessservice.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), headlessservice)
+	if err != nil {
+		return err
+	}
+
+	pdb := &policyv1beta1.PodDisruptionBudget{}
+	name = dst.PdbNameForSegmentstore()
+	log.Printf("Releasing owner reference for PDB %s", name)
+	err = Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: name, Namespace: dst.Namespace}, pdb)
+	if err != nil {
+		return err
+	}
+	pdb.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), pdb)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dst *PravegaCluster) updateControllerReferences(ownerRefs []metav1.OwnerReference) error {
+	configmap := &corev1.ConfigMap{}
+	name := dst.ConfigMapNameForController()
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: dst.Namespace}, configmap)
+	if err != nil {
+		return err
+	}
+	configmap.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), configmap)
+	if err != nil {
+		return err
+	}
+
+	svc := &corev1.Service{}
+	name = dst.ServiceNameForController()
+	log.Printf("Controller updating owner for service %s", name)
+	err = Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: dst.Namespace}, svc)
+	if err != nil {
+		return err
+	}
+	svc.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), svc)
+	if err != nil {
+		return err
+	}
+
+	pdb := &policyv1beta1.PodDisruptionBudget{}
+	name = dst.PdbNameForController()
+	log.Printf("Controller updating owner for PDB %s", name)
+	err = Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: name, Namespace: dst.Namespace}, pdb)
+	if err != nil {
+		return err
+	}
+	pdb.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), pdb)
+	if err != nil {
+		return err
+	}
+
+	deploy := &appsv1.Deployment{}
+	name = dst.DeploymentNameForController()
+	err = Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: name, Namespace: dst.Namespace}, deploy)
+	if err != nil {
+		return fmt.Errorf("failed to get deployment (%s): %v", name, err)
+	}
+	deploy.SetOwnerReferences(ownerRefs)
+	err = Mgr.GetClient().Update(context.TODO(), deploy)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -460,19 +618,19 @@ func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) erro
 		}
 	}
 
-	err = transferControlPVC(srcObj, b)
-	if err != nil {
-		log.Fatalf("Error releasing BK PVC %v", err)
-		return err
-	}
-	log.Print("Released Control of PVC")
-
 	err = transferControlCM(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK CM %v", err)
 		return err
 	}
 	log.Print("Released Control of CM")
+
+	err = transferControlPVC(srcObj, b)
+	if err != nil {
+		log.Fatalf("Error releasing BK PVC %v", err)
+		return err
+	}
+	log.Print("Released Control of PVC")
 
 	err = transferControlPDB(srcObj, b)
 	if err != nil {
@@ -493,28 +651,12 @@ func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) erro
 		return err
 	}
 	log.Print("Deleted headless SVC")
+
 	return nil
 }
 
 func nameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
-}
-
-func setOwnerReferenceControllerFalse(ownerreference []metav1.OwnerReference) {
-	for _, value := range ownerreference {
-		if value.Kind == "PravegaCluster" {
-			*value.Controller = false
-		}
-	}
-}
-
-func getPravegaOwnerReference(ownerreference []metav1.OwnerReference) int {
-	for i, value := range ownerreference {
-		if value.Kind == "PravegaCluster" {
-			return i
-		}
-	}
-	return -1
 }
 
 func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
@@ -540,37 +682,31 @@ func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) 
 	return nil
 }
 
-func labelsForBookie(b *bkapi.BookkeeperCluster) map[string]string {
-	return map[string]string{
-		"app":                "bookkeeper-cluster",
-		"bookkeeper_cluster": b.Name,
-		"component":          "bookie",
-	}
-}
-
-func getBKConfigMap(p *v1alpha1.PravegaCluster) (*corev1.ConfigMap, error) {
-	configmap := &corev1.ConfigMap{}
-	name := nameForBookie(p.Name)
-	err := Mgr.GetClient().Get(context.TODO(),
-		types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
-	return configmap, err
-}
 func transferControlCM(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	configmap := &corev1.ConfigMap{}
 	name := nameForBookie(p.Name)
-	log.Printf("updating config map %s", name)
 	err := Mgr.GetClient().Get(context.TODO(),
 		types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
 	if err != nil {
 		return err
 	}
-	owref := configmap.GetOwnerReferences()
-	setOwnerReferenceControllerFalse(owref)
-	err = controllerutil.SetControllerReference(b, configmap, Mgr.GetScheme())
+	ownerRef := &[]metav1.OwnerReference{
+		{
+			APIVersion:         "bookkeeper.pravega.io/v1alpha1",
+			Kind:               "BookkeeperCluster",
+			Name:               b.GetName(),
+			UID:                b.GetUID(),
+			BlockOwnerDeletion: pointer.BoolPtr(true),
+			Controller:         pointer.BoolPtr(true),
+		},
+	}
+	configmap.SetOwnerReferences(*ownerRef)
+	err = Mgr.GetClient().Update(context.TODO(), configmap)
 	if err != nil {
 		return err
 	}
-	return Mgr.GetClient().Update(context.TODO(), configmap)
+	log.Printf("Updated Owner ref for CM %v", len(configmap.GetOwnerReferences()))
+	return nil
 }
 
 func transferControlHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
@@ -598,6 +734,16 @@ func transferControlHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperC
 }
 
 func transferPVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	ownerRef := &[]metav1.OwnerReference{
+		{
+			APIVersion:         "bookkeeper.pravega.io/v1alpha1",
+			Kind:               "BookkeeperCluster",
+			Name:               b.GetName(),
+			UID:                b.GetUID(),
+			BlockOwnerDeletion: pointer.BoolPtr(true),
+			Controller:         pointer.BoolPtr(true),
+		},
+	}
 	pvc := &corev1.PersistentVolumeClaim{}
 	name := pvcType + "-" + p.Name + "-bookie-"
 	for i := int32(0); i < p.Spec.Bookkeeper.Replicas; i++ {
@@ -607,12 +753,7 @@ func transferPVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.Bookkeeper
 		if err != nil {
 			return err
 		}
-		owref := pvc.GetOwnerReferences()
-		setOwnerReferenceControllerFalse(owref)
-		err = controllerutil.SetControllerReference(b, pvc, Mgr.GetScheme())
-		if err != nil {
-			return err
-		}
+		pvc.SetOwnerReferences(*ownerRef)
 		err = Mgr.GetClient().Update(context.TODO(), pvc)
 		if err != nil {
 			return err
@@ -643,6 +784,16 @@ func transferControlPVC(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) 
 }
 
 func transferControlPDB(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	ownerRef := &[]metav1.OwnerReference{
+		{
+			APIVersion:         "bookkeeper.pravega.io/v1alpha1",
+			Kind:               "BookkeeperCluster",
+			Name:               b.GetName(),
+			UID:                b.GetUID(),
+			BlockOwnerDeletion: pointer.BoolPtr(true),
+			Controller:         pointer.BoolPtr(true),
+		},
+	}
 	pdb := &policyv1beta1.PodDisruptionBudget{}
 	name := nameForBookie(p.Name)
 	log.Printf("Releasing owner reference for PDB %s", name)
@@ -650,12 +801,7 @@ func transferControlPDB(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) 
 	if err != nil {
 		return err
 	}
-	owref := pdb.GetOwnerReferences()
-	setOwnerReferenceControllerFalse(owref)
-	err = controllerutil.SetControllerReference(b, pdb, Mgr.GetScheme())
-	if err != nil {
-		return err
-	}
+	pdb.SetOwnerReferences(*ownerRef)
 	return Mgr.GetClient().Update(context.TODO(), pdb)
 }
 
