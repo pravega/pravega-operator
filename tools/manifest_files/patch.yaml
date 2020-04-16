@@ -12,8 +12,8 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: OPERATOR_NAME
-          value: pravega-operator
-        image: prabhu75/pravega_operator:for_679
+          value: pravega-operator 
+        image: pbelgundi/pravega-operator:m40
         imagePullPolicy: Always
         name: pravega-operator
         ports:
@@ -35,5 +35,5 @@ spec:
           secretName: selfsigned-cert-tls
       - name: versions-volume
         configMap:
-          name: supported-versions-map 
+          name: supported-upgrade-paths 
 
