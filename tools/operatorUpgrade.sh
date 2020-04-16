@@ -13,9 +13,9 @@ function UpgradingToPoperator(){
 
 local op_deployment_name=$1
 
-local op_name= kubectl describe deploy ${op_deployment_name} | grep "Name:" | awk '{print $2}' | head -1
+local op_name=`kubectl describe deploy ${op_deployment_name} | grep "Name:" | awk '{print $2}' | head -1`
 
-local namespace= kubectl describe deploy ${op_deployment_name} | grep "Namespace:" | awk '{print $2}' | head -1
+local namespace=`kubectl describe deploy ${op_deployment_name} | grep "Namespace:" | awk '{print $2}' | head -1`
 
 local op_image=$2
 
