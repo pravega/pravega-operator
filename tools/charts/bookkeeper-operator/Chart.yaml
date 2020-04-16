@@ -1,6 +1,6 @@
 name: bookkeeper-operator
-version: 0.1.0
-appVersion: 0.1.0
+version: latest
+appVersion: latest
 description: bookkeeper operator Helm chart for Kubernetes
 keywords:
 - pravega
