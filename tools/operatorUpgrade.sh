@@ -55,7 +55,7 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/bk_version_map.y
 #Installing the version map for bookkeeper
 kubectl apply -f  ./manifest_files/bk_version_map.yaml
 
-#INstalling the bookkeeper-operator
+#Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/role.yaml
@@ -69,7 +69,7 @@ sed -i "s/value:.*/value: $op_name "/ ./manifest_files/patch.yaml
 
 sed -i "/imagePullPolicy:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/patch.yaml
 
-#updating the operator using 
+#updating the operator using patch file
 kubectl patch deployment $op_name --type merge --patch "$(cat ./manifest_files/patch.yaml)"
 
 }
