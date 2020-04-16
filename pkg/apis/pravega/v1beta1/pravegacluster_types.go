@@ -397,7 +397,11 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 	err = dst.migrateBookkeeper(srcObj)
-	return err
+	if err != nil {
+		return err
+	}
+	log.Print("Version migration completed successfully.")
+	return nil
 }
 
 func createConfigMap(p *v1alpha1.PravegaCluster) error {
@@ -504,6 +508,15 @@ func setOwnerReferenceControllerFalse(ownerreference []metav1.OwnerReference) {
 	}
 }
 
+func getPravegaOwnerReference(ownerreference []metav1.OwnerReference) int {
+	for i, value := range ownerreference {
+		if value.Kind == "PravegaCluster" {
+			return i
+		}
+	}
+	return -1
+}
+
 func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	sts := &appsv1.StatefulSet{}
 	name := nameForBookie(p.Name)
@@ -535,6 +548,13 @@ func labelsForBookie(b *bkapi.BookkeeperCluster) map[string]string {
 	}
 }
 
+func getBKConfigMap(p *v1alpha1.PravegaCluster) (*corev1.ConfigMap, error) {
+	configmap := &corev1.ConfigMap{}
+	name := nameForBookie(p.Name)
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
+	return configmap, err
+}
 func transferControlCM(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	configmap := &corev1.ConfigMap{}
 	name := nameForBookie(p.Name)
@@ -765,6 +785,16 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 
 	requestVersion := p.Spec.Version
 	log.Printf("validatePravegaVersion:: request-version %s", requestVersion)
+
+	if p.Status.IsClusterInUpgradingState() && requestVersion != p.Status.TargetVersion {
+		return fmt.Errorf("failed to process the request, cluster is upgrading")
+	}
+
+	if p.Status.IsClusterInRollbackState() {
+		if requestVersion != p.Status.GetLastVersion() {
+			return fmt.Errorf("failed to process the request, rollback in progress.")
+		}
+	}
 	if p.Status.IsClusterInUpgradeFailedState() {
 		if requestVersion != p.Status.GetLastVersion() {
 			return fmt.Errorf("Rollback to version %s not supported. Only rollback to version %s is supported.", requestVersion, p.Status.GetLastVersion())
@@ -772,6 +802,9 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return nil
 	}
 
+	if p.Status.IsClusterInErrorState() {
+		return fmt.Errorf("failed to process the request, cluster is in error state.")
+	}
 	// Check if the request has a valid Pravega version
 	normRequestVersion, err := util.NormalizeVersion(requestVersion)
 	if err != nil {
