@@ -71,8 +71,41 @@ Pravega operator can be upgraded by modifying the image tag using
 ```
 $ kubectl edit <operator deployment name>
 ```
-Currently, the minor version upgrade is supported, e.g. 0.4.0 -> 0.4.1. However, the major version upgrade
-has not been supported yet, e.g. 0.4.0 -> 0.5.0.
+This approach will work for upgrades upto 0.4.0
+
+Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4 to 0.5, we have to tansfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1 and v1beta1 inside the crd. v1alpha1 is for older versions and v1beta1 is for newer versions. And during upgrade we are triggering conversion webhook that will change the current version to v1beta1
+More details on upgrade can be  found at  https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
+
+For upgrading operator version from 0.4.0 to 0.5.0, we have to execute a script and can be found at this  location https://github.com/pravega/pravega-operator/blob/test-relinquishing-ownership/tools/operatorUpgrade.sh
+
+Script will do the following operations
+
+Installing cert manager and secrets
+Installing webhook
+Installing version map of operator, that will mention the supported operator  versions
+Updating crd
+Installing bookkeeper operator
+Update the operator Roles
+Update the operator image
+
+#### Executing the script
+git clone pravega-operator repo
+
+Change the path to `tools` folder
+
+Execute the script as follows
+```
+./operatorUpgrade.sh  <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo/image-tag> <pravegacluster name>
+
+```
+Once the script is ran successfully, ensure that operator upgrade is completed and new operator pod is in running state.
+
+Once upgrade is completed, if the pravega version installed is 0.7 and higher, segment store pods will come up with new name, as the ss pod names are changed with 0.5 operator. After the upgrade to 0.5 , bk objects will be managed by bookkeeper operator and only controller and segment stores are managed by pravega operator
+
+#### Known Issues
+ Once the upgrade is completed, deletion of pravega cluster is hanging
+ Bookkeeper cluster deletion is hanging post upgrade.
+
 
 ### Install a sample Pravega cluster
 
