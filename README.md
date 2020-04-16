@@ -94,7 +94,7 @@ Change the path to `tools` folder
 
 Execute the script as follows
 ```
-./operatorUpgrade.sh  <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo/image-tag> <pravegacluster name>
+./upgradeOperator.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>
 
 ```
 Once the script is ran successfully, ensure that operator upgrade is completed and new operator pod is in running state.
