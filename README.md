@@ -83,7 +83,7 @@ Script will do the following operations
 - Installing cert manager and secrets
 - Installing webhook
 - Installing version map of operator, that will mention the supported operator  versions
-- Updating crd 
+- Updating crd
 - Update the operator Roles
 - Update the operator image
 
@@ -102,8 +102,8 @@ Once the script is ran successfully, ensure that operator upgrade is completed a
 Once upgrade is completed, if the pravega version installed is 0.7 and higher, segment store pods will come up with new name, as the ss pod names are changed with 0.5 operator. After the upgrade to 0.5 , bk objects will be managed by bookkeeper operator and only controller and segment stores are managed by pravega operator
 
 #### Known Issues
- Once the upgrade is completed, deletion of pravega cluster is hanging
- Bookkeeper cluster deletion is hanging post upgrade.
+ - Once the upgrade is completed, deletion of pravega cluster is hanging
+ - Bookkeeper cluster deletion is hanging post upgrade.
 
 
 ### Install a sample Pravega cluster
