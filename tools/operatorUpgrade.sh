@@ -5,7 +5,7 @@ echo "Running pre-upgrade script for upgrading pravega operator from version 0.4
 
 if [ "$#" -ne 3 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./upgradeOperator.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>"
+	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>"
 	exit 1
 fi
 
