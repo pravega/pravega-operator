@@ -63,7 +63,7 @@ kubectl apply -f  ./manifest_files/bk_version_map.yaml
 #Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
-sed -i "s/name:. */name: $op_name" / ./manifest_files/role.yaml
+sed -i "s/name:. */name: $op_name"/ ./manifest_files/role.yaml
 
 sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/role.yaml
 
