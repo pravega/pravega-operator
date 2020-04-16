@@ -53,9 +53,9 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
+sed -i "s/name:.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
+sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
 
 #Installing the version map for bookkeeper
 kubectl apply -f  ./manifest_files/bk_version_map.yaml
@@ -63,7 +63,9 @@ kubectl apply -f  ./manifest_files/bk_version_map.yaml
 #Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/role.yaml
+sed -i "s/name:. */name: $op_name" / ./manifest_files/role.yaml
+
+sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/role.yaml
 
 #updating the roles for pravega-operator
 kubectl apply -f ./manifest_files/role.yaml
