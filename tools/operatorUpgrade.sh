@@ -19,7 +19,7 @@ local namespace= kubectl describe deploy ${op_deployment_name} | grep "Namespace
 
 local op_image=$2
 
-local pr_name=$3
+local pravega_cluser_name=$3
 
 #Installing the cert-manager
 kubectl apply -f ./manifest_files/cert-manager.yaml
@@ -53,7 +53,7 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name.*/name: ${pr_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
+sed -i "s/name.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
 
