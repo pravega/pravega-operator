@@ -182,7 +182,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.SegmentStoreJVMOptions = []string{}
 	}
-
+/*
 	if s.CacheVolumeClaimTemplate == nil {
 		changed = true
 		s.CacheVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
@@ -194,7 +194,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 			},
 		}
 	}
-
+*/
 	if s.LongTermStorage == nil {
 		changed = true
 		s.LongTermStorage = &LongTermStorageSpec{}

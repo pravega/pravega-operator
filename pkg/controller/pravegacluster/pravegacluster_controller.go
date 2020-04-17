@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -123,6 +124,11 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err error) {
 
+	err = r.reconcileFinalizers(p)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile finalizers %v", err)
+	}
+
 	err = r.deployCluster(p)
 	if err != nil {
 		return fmt.Errorf("failed to deploy cluster: %v", err)
@@ -152,6 +158,17 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 	return nil
 }
 
+func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
+	zkFinalizer := "cleanUpZookeeper"
+	if util.ContainsString(p.ObjectMeta.Finalizers, zkFinalizer) {
+		p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, zkFinalizer)
+		if err = r.client.Update(context.TODO(), p); err != nil {
+			return fmt.Errorf("failed to remove Zk Finalizer from Pravega object (%s): %v", p.Name, err)
+		}
+	}
+	return nil
+}
+
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster) (err error) {
 	err = r.deployController(p)
 	if err != nil {
@@ -171,20 +188,16 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 		if !util.IsVersionBelow07(p.Spec.Version) {
 			// We should be here only once in case of operator upgrade
 			// to version 0.5.0 from version 0.4.x
-			r.deleteOldSegmentStoreIfExists(p)
+			return r.deleteOldSegmentStoreIfExists(p)
 		}
 	}
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta1.PravegaCluster) error {
+func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) error {
 	// delete sts
 	sts := &appsv1.StatefulSet{}
-	pc := &pravegav1beta1.PravegaCluster{}
-	pc.WithDefaults()
-	pc.Name = p.Name
-	pc.Spec.Version = "0.6.0"
-	stsName := pc.StatefulSetNameForSegmentstore()
+	stsName := p.StatefulSetNameForSegmentstoreBelow07()
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: stsName, Namespace: p.Namespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -193,13 +206,56 @@ func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta
 		}
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
+	numPvcs := len(sts.Spec.VolumeClaimTemplates)
+	log.Print("Deleting old STS, PVCs: %v", numPvcs)
 	r.client.Delete(context.TODO(), sts)
 	log.Printf("Deleted old SegmentStore STS %s", sts.Name)
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deletePVC(p *pravegav1beta1.PravegaCluster) error {
+	numPvcs := int(p.Spec.Pravega.SegmentStoreReplicas)
+	for i := 0; i < numPvcs; i++ {
+		pvcName := "cache-" + p.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
+		//log.Printf("PVC NAME %s", pvcName)
+		pvc := &corev1.PersistentVolumeClaim{}
+		err := r.client.Get(context.TODO(),
+			types.NamespacedName{Name: pvcName, Namespace: p.Namespace}, pvc)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				// nothing to do since old STS was not found
+				continue
+			}
+			return fmt.Errorf("failed to get pvc (%s): %v", pvcName, err)
+		}
+		pvcDelete := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pvcName,
+				Namespace: p.Namespace,
+			},
+		}
+		err = r.client.Delete(context.TODO(), pvcDelete)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta1.PravegaCluster) error {
+	err := r.deleteSTS(p)
+	if err != nil {
+		return err
+	}
+	err = r.deletePVC(p)
+	if err != nil {
+		return err
+	}
 	if p.Spec.ExternalAccess.Enabled {
 		// delete external Services
-		for i := int32(1); i <= p.Spec.Pravega.SegmentStoreReplicas; i++ {
+		for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 			extService := &corev1.Service{}
-			svcName := pc.ServiceNameForSegmentStore(i)
+			svcName := p.ServiceNameForSegmentStoreBelow07(i)
 			err := r.client.Get(context.TODO(), types.NamespacedName{Name: svcName, Namespace: p.Namespace}, extService)
 			if err != nil {
 				if errors.IsNotFound(err) {
@@ -284,9 +340,13 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
-	for i := range statefulSet.Spec.VolumeClaimTemplates {
-		controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+	if statefulSet.Spec.VolumeClaimTemplates != nil {
+		for i := range statefulSet.Spec.VolumeClaimTemplates {
+			log.Printf("deploySegmentStore::Setting owner for new SSS PVC")
+			controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+		}
 	}
+
 	err = r.client.Create(context.TODO(), statefulSet)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err

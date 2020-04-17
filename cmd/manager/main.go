@@ -11,11 +11,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-sdk/pkg/ready"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -74,22 +77,18 @@ func main() {
 	}
 
 	// Become the leader before proceeding
-	/*
-		err = leader.Become(context.TODO(), "pravega-operator-lock")
-		if err != nil {
-			log.Error(err, "Failed to retry for leader lock")
-			os.Exit(1)
-		}
+	err = leader.Become(context.TODO(), "pravega-operator-lock")
+	if err != nil {
+		log.Error(err, "Failed to retry for leader lock")
+		os.Exit(1)
+	}
 
-		log.Print("The new operator pod is now the leader.")
-		r := ready.NewFileReady()
-		log.Print("Creating ready file...")
-		err = r.Set()
-		if err != nil {
-			log.Fatal(err, "")
-		}
-		defer r.Unset()
-	*/
+	r := ready.NewFileReady()
+	err = r.Set()
+	if err != nil {
+		log.Fatal(err, "")
+	}
+	defer r.Unset()
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
