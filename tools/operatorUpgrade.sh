@@ -5,7 +5,7 @@ echo "Running pre-upgrade script for upgrading pravega operator from version 0.4
 
 if [ "$#" -ne 3 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>"
+	Usage: "./upgradeOperator.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>"
 	exit 1
 fi
 
@@ -53,10 +53,17 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
+sed -i "s/name:.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
+
+sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
+
+#Installing the version map for bookkeeper
+kubectl apply -f  ./manifest_files/bk_version_map.yaml
+
 #Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
-sed -i "s/name:.*/name: $op_name"/ ./manifest_files/role.yaml
+sed -i "s/name:. */name: $op_name"/ ./manifest_files/role.yaml
 
 sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/role.yaml
 
