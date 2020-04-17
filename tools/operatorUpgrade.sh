@@ -53,13 +53,6 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name:.*/name: bk-supported-versions-map"/ ./manifest_files/bk_version_map.yaml
-
-sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
-
-#Installing the version map for bookkeeper
-kubectl apply -f  ./manifest_files/bk_version_map.yaml
-
 #Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
