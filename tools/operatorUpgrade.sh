@@ -53,7 +53,7 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name:.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
+sed -i "s/name:.*/name: bk-supported-versions-map"/ ./manifest_files/bk_version_map.yaml
 
 sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
 

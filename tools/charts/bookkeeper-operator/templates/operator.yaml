@@ -35,3 +35,10 @@ spec:
               fieldPath: metadata.name
         - name: OPERATOR_NAME
           value: {{ template "bookkeeper-operator.fullname" . }}
+        volumeMounts:
+        - name: versions-volume
+          mountPath: "/tmp/config"
+      volumes:
+      - name: versions-volume
+        configMap:
+          name: bk-supported-versions-map
