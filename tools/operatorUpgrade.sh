@@ -3,9 +3,9 @@ set -ex
 
 echo "Running pre-upgrade script for upgrading pravega operator from version 0.4.x to 0.5.0"
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 2 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>"
+	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag>"
 	exit 1
 fi
 
@@ -18,8 +18,6 @@ local op_name=`kubectl describe deploy ${op_deployment_name} | grep "Name:" | aw
 local namespace=`kubectl describe deploy ${op_deployment_name} | grep "Namespace:" | awk '{print $2}' | head -1`
 
 local op_image=$2
-
-local pravega_cluser_name=$3
 
 #Installing the cert-manager
 kubectl apply -f ./manifest_files/cert-manager.yaml
@@ -53,13 +51,6 @@ sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
 
-sed -i "s/name:.*/name: ${pravega_cluser_name}-supported-upgrade-paths"/ ./manifest_files/bk_version_map.yaml
-
-sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/bk_version_map.yaml
-
-#Installing the version map for bookkeeper
-kubectl apply -f  ./manifest_files/bk_version_map.yaml
-
 #Installing the bookkeeper-operator
 helm install charts/bookkeeper-operator --name bkop --namespace $namespace
 
@@ -81,4 +72,4 @@ kubectl patch deployment $op_name --type merge --patch "$(cat ./manifest_files/p
 
 }
 
-UpgradingToPoperator $1 $2 $3 
+UpgradingToPoperator $1 $2

@@ -1,8 +1,8 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pravega-operator
-  namespace: default
+  name: foo-pravega-operator
+  namespace: default 
 rules:
 - apiGroups:
   - pravega.pravega.io
@@ -54,8 +54,8 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: pravega-operator
-  namespace: default
+  name: foo-pravega-operator
+  namespace: default 
 rules:
 - apiGroups:
   - ""
