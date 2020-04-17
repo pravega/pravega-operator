@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: pravega-supported-upgrade-paths
+  name: bk-supported-upgrade-paths
   namespace: default
 data:
   0.1.0: "0.1.0"
