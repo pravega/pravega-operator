@@ -1,4 +1,4 @@
-apiVersion: "pravega.pravega.io/v1alpha1"
+apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: {{ template "pravega.fullname" . }}
@@ -35,13 +35,7 @@ spec:
         memory: "5Gi"
         cpu: "2000m"
     debugLogging: {{ .Values.pravega.debugLogging }}
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.pravega.storage.className }}
-      resources:
-        requests:
-          storage: {{ .Values.pravega.cacheVolumeRequest }}
-    tier2:
+    longTermStorage:
       filesystem:
         persistentVolumeClaim:
           claimName: {{ .Values.pravega.tier2 }}

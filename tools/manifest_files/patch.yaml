@@ -12,10 +12,10 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: OPERATOR_NAME
-          value: pravega-operator 
-        image: pbelgundi/pravega-operator:m40
+          value: foo-pravega-operator 
+        image: prabhu75/pravega_operator:for_679_1
         imagePullPolicy: Always
-        name: pravega-operator
+        name: foo-pravega-operator
         ports:
         - containerPort: 60000
           name: metrics

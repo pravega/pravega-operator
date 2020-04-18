@@ -20,7 +20,4 @@ pravega:
   controllerReplicas: 1
   segmentStoreReplicas: 1
   debugLogging: false
-  cacheVolumeRequest: 20Gi
-  storage:
-    className: standard
-  tier2: pravega-tier2
+  longtermStorage: pravega-tier2
