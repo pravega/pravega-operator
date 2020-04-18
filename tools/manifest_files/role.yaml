@@ -73,6 +73,8 @@ rules:
   - watch
   - list
   - create
+  - update
+  - delete
 - apiGroups:
   - admissionregistration.k8s.io
   resources:

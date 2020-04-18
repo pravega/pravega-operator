@@ -12,7 +12,7 @@ externalAccess:
 serviceAccount:
   name: pravega-components
 
-bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
 
 pravega:
   image:
@@ -20,4 +20,7 @@ pravega:
   controllerReplicas: 1
   segmentStoreReplicas: 1
   debugLogging: false
+  cacheVolumeRequest: 20Gi
+  storage:
+    className: standard
   longtermStorage: pravega-tier2

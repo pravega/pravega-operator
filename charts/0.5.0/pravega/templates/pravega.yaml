@@ -35,6 +35,12 @@ spec:
         memory: "5Gi"
         cpu: "2000m"
     debugLogging: {{ .Values.pravega.debugLogging }}
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.pravega.storage.className }}
+      resources:
+        requests:
+          storage: {{ .Values.pravega.cacheVolumeRequest }}
     longTermStorage:
       filesystem:
         persistentVolumeClaim:

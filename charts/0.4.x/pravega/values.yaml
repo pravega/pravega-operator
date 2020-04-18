@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 version: 0.7.0
-zookeeperUri: example-client:2181
+zookeeperUri: zk-client:2181
 
 externalAccess:
   enabled: false
