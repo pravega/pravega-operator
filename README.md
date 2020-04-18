@@ -73,7 +73,7 @@ $ kubectl edit <operator deployment name>
 ```
 This approach will work for upgrades upto 0.4.x
 
-Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4.x to 0.5, we have to tansfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1(Pravega Custom Resource with Bookkeeper) and v1beta1(Pravega Custom Resource without Bookkeeper) inside the crd.  And during upgrade we are triggering conversion webhook that will change the current version to v1beta1.`bookkeeperUri` field is added in v1beta1.Also, Tier2 storage name is changed to `longTermStorage`
+Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4.x to 0.5, we have to transfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1(Pravega Custom Resource with Bookkeeper) and v1beta1(Pravega Custom Resource without Bookkeeper) inside the crd.  And during upgrade we are triggering conversion webhook that will change the current version to v1beta1.`bookkeeperUri` field is added in v1beta1.Also, Tier2 storage name is changed to `longTermStorage`
 
 More details on upgrade can be  found at  https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
 
@@ -86,7 +86,7 @@ Change the path to `tools` folder
 
 Execute the script as follows
 ```
-./upgradeOperator.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag> <pravegacluster name>
+./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag>
 
 ```
 Once the script is ran successfully, ensure that operator upgrade is completed and new operator pod is in running state.
