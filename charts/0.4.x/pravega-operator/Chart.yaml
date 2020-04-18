@@ -1,0 +1,12 @@
+name: pravega-operator
+version: 0.4.0
+appVersion: 0.4.0
+description: pravega operator Helm chart for Kubernetes
+keywords:
+- pravega
+- storage
+home: https://github.com/pravega/pravega-operator/blob/master/charts/pravega-operator
+icon: https://avatars3.githubusercontent.com/u/25698199
+sources:
+- https://github.com/pravega/charts/blob/master/pravega-operator
+engine: gotpl

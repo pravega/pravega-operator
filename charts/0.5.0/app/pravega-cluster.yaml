@@ -1,0 +1,52 @@
+apiVersion: app.k8s.io/v1beta1
+kind: Application
+metadata:
+  namespace: "default"
+  name: "pravega-cluster"
+  labels:
+    product: "streamingdata"
+    app.kubernetes.io/name: "pravega-cluster"
+  annotations:
+    com.dellemc.kahm.subscribed: "true"
+spec:
+  assemblyPhase: "Pending"
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: "pravega-cluster"
+  componentKinds:
+    - group: core
+      kind: Service
+    - group: core
+      kind: Pod
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: ReplicaSet
+    - group: apps
+      kind: StatefulSet
+    - group: core
+      kind: ConfigMap
+    - group: core
+      kind: Secret
+    - group: core
+      kind: PersistentVolumeClaim
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: core
+      kind: ServiceAccount
+    - group: pravega.pravega.io
+      kind: PravegaCluster
+  descriptor:
+    type: "pravega-cluster"
+    version: "latest"
+    description: >
+      Deployment of 0.6.0 Pravega with Metrics Stack.
+    keywords:
+      - "nautilus"
+      - "pravega"
+    links:
+      - description: "Project Website"
+        url: "http://pravega.io/"
+    info:
