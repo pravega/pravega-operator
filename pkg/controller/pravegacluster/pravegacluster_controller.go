@@ -348,13 +348,39 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 	}
 
 	err = r.client.Create(context.TODO(), statefulSet)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	if err != nil {
+		if !errors.IsAlreadyExists(err) {
+			return err
+		} else {
+			sts := &appsv1.StatefulSet{}
+			name := p.StatefulSetNameForSegmentstore()
+			err := r.client.Get(context.TODO(),
+				types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+			if err != nil {
+				return err
+			}
+			owRefs := sts.GetOwnerReferences()
+			if hasOldVersionOwnerReference(owRefs) {
+				log.Printf("Found old version STS owner ref for segment store")
+				err = r.client.Delete(context.TODO(), sts)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	return nil
 }
 
+func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
+	for _, value := range ownerreference {
+		if value.Kind == "PravegaCluster" && value.APIVersion == "pravega.pravega.io/v1alpha1" {
+			return true
+		}
+	}
+	return false
+}
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaCluster) (err error) {
 	/*We skip calling syncSegmentStoreSize() during upgrade/rollback from version 07*/
 	if !r.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {

@@ -15,6 +15,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -442,26 +443,24 @@ func (dst *PravegaCluster) updatePravegaOwnerReferences() error {
 
 func (dst *PravegaCluster) updateSSSReferences(ownerRefs []metav1.OwnerReference) error {
 	if util.IsVersionBelow07(dst.Spec.Version) {
-		sts := &appsv1.StatefulSet{}
-		name := dst.StatefulSetNameForSegmentstore()
-		err := Mgr.GetClient().Get(context.TODO(),
-			types.NamespacedName{Name: name, Namespace: dst.Namespace}, sts)
-		if err != nil {
-			return err
-		}
-		sts.SetOwnerReferences(ownerRefs)
-		for _, pvc := range sts.Spec.VolumeClaimTemplates {
+		log.Printf("Updating cache volume owner refs...")
+		numPvcs := int(dst.Spec.Pravega.SegmentStoreReplicas)
+		for i := 0; i < numPvcs; i++ {
+			pvcName := "cache-" + dst.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
+			pvc := &corev1.PersistentVolumeClaim{}
+			err := Mgr.GetClient().Get(context.TODO(),
+				types.NamespacedName{Name: pvcName, Namespace: dst.Namespace}, pvc)
+			if err != nil {
+				return fmt.Errorf("failed to get pvc (%s): %v", pvcName, err)
+			}
 			pvc.SetOwnerReferences(ownerRefs)
-		}
-		if sts.Spec.VolumeClaimTemplates != nil {
-			for i := range sts.Spec.VolumeClaimTemplates {
-				sts.Spec.VolumeClaimTemplates[i].SetOwnerReferences(ownerRefs)
+			log.Printf("Cache VOL NAME %s", pvcName)
+			err = Mgr.GetClient().Update(context.TODO(), pvc)
+			if err != nil {
+				return err
 			}
 		}
-		err = Mgr.GetClient().Update(context.TODO(), sts)
-		if err != nil {
-			return err
-		}
+
 		if dst.Spec.ExternalAccess.Enabled {
 			numSvcs := dst.Spec.Pravega.SegmentStoreReplicas
 			for i := int32(0); i < numSvcs; i++ {

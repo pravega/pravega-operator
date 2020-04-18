@@ -11,14 +11,13 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
+	//"github.com/operator-framework/operator-sdk/pkg/leader"
+
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -26,8 +25,10 @@ import (
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
 	log "github.com/sirupsen/logrus"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -75,20 +76,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// Become the leader before proceeding
-	err = leader.Become(context.TODO(), "pravega-operator-lock")
-	if err != nil {
-		log.Error(err, "Failed to retry for leader lock")
-		os.Exit(1)
-	}
-
-	r := ready.NewFileReady()
-	err = r.Set()
-	if err != nil {
-		log.Fatal(err, "")
-	}
-	defer r.Unset()
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})

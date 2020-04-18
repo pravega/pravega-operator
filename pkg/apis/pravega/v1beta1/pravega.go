@@ -182,19 +182,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.SegmentStoreJVMOptions = []string{}
 	}
-/*
-	if s.CacheVolumeClaimTemplate == nil {
-		changed = true
-		s.CacheVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
-			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
-			Resources: v1.ResourceRequirements{
-				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse(DefaultPravegaCacheVolumeSize),
-				},
-			},
-		}
-	}
-*/
+
 	if s.LongTermStorage == nil {
 		changed = true
 		s.LongTermStorage = &LongTermStorageSpec{}
