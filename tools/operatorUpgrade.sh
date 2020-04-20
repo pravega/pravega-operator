@@ -3,9 +3,9 @@ set -ex
 
 echo "Running pre-upgrade script for upgrading pravega operator from version 0.4.x to 0.5.0"
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 3 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag>"
+	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo/image-tag> "
 	exit 1
 fi
 
@@ -13,17 +13,11 @@ function UpgradingToPoperator(){
 
 local op_deployment_name=$1
 
-local op_name=`kubectl describe deploy ${op_deployment_name} | grep "Name:" | awk '{print $2}' | head -1`
+local namespace=$2
 
-local namespace=`kubectl describe deploy ${op_deployment_name} | grep "Namespace:" | awk '{print $2}' | head -1`
+local op_name=`kubectl describe deploy ${op_deployment_name} -n ${namespace}| grep "Name:" | awk '{print $2}' | head -1`
 
-local op_image=$2
-
-#Installing the cert-manager
-kubectl apply -f ./manifest_files/cert-manager.yaml
-
-#Insuring that the cer-manger get's installed 
-sleep 60
+local op_image=$3
 
 sed -i "s/namespace.*/namespace: $namespace"/ ./manifest_files/secret.yaml
 
@@ -72,4 +66,4 @@ kubectl patch deployment $op_name --type merge --patch "$(cat ./manifest_files/p
 
 }
 
-UpgradingToPoperator $1 $2
+UpgradingToPoperator $1 $2 $3
