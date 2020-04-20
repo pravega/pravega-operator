@@ -49,10 +49,14 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-Use Helm to quickly deploy a Pravega operator with the release name `foo`.
+#### Install certmanager
+Cert manager can be installed using the steps described here https://cert-manager.io/docs/installation/kubernetes/
+This is required if we are deploying pravega operator version 0.5.0 or higher
+
+Use Helm to quickly deploy a Pravega operator with the release name `foo`. Base on the operator version we can select charts as charts/0.4.x or charts/0.5.0
 
 ```
-$ helm install charts/pravega-operator --name foo
+$ helm install charts/0.5.0/pravega-operator --name foo
 ```
 
 Verify that the Pravega Operator is running.
@@ -67,43 +71,12 @@ foo-pravega-operator     1         1         1            1           17s
  The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
-Pravega operator can be upgraded by modifying the image tag using
-```
-$ kubectl edit <operator deployment name>
-```
-This approach will work for upgrades upto 0.4.x
-
-Starting from operator version 0.5 onwards, pravega operator is not handling bookies, and that will be handled by bookkeeper-operator.So while upgrading from 0.4.x to 0.5, we have to transfer the ownership of bookkeeper objects to bookkeeper operator. For this we are maintaining 2 versions namely, v1alpha1(Pravega Custom Resource with Bookkeeper) and v1beta1(Pravega Custom Resource without Bookkeeper) inside the crd.  And during upgrade we are triggering conversion webhook that will change the current version to v1beta1.`bookkeeperUri` field is added in v1beta1.Also, Tier2 storage name is changed to `longTermStorage`
-
-More details on upgrade can be  found at  https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/
-
-upgrading operator  from 0.4.x to 0.5.0 can be triggered using the operatorUpgrade.sh script under tools folder. This script does all necessary configuration changes to enable the upgrade and also triggers the upgrade.
-
-#### Executing the script
-git clone pravega-operator repo
-
-Change the path to `tools` folder
-
-Execute the script as follows
-```
-./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator new image-repo/image-tag>
-
-```
-Once the script is ran successfully, ensure that operator upgrade is completed and new operator pod is in running state.
-
-Once upgrade is completed, if the pravega version installed is 0.7 and higher, segment store pods will come up with new name, as the ss pod names are changed with 0.5 operator. After the upgrade to 0.5 , bk objects will be managed by bookkeeper operator and only controller and segment stores are managed by pravega operator
-
-#### Known Issues
- - Once the upgrade is completed, deletion of pravega cluster is hanging
- - Bookkeeper cluster deletion is hanging post upgrade.
- - Currently, more than 1 replica of pravega-operator is not supported.
-
-
+Check out the [upgrade operator guide](doc/upgrade-operator.md).
 ### Install a sample Pravega cluster
 
 #### Set up Tier 2 Storage
 
-Pravega requires a long term storage provider known as Tier 2 storage.
+Pravega requires a long term storage provider known as Tier 2 storage. Long term storage name is changed to `longTermStorage` from pravega operator version 0.5 onwards
 
 Check out the available [options for Tier 2](doc/tier2.md) and how to configure it.
 
@@ -124,7 +97,7 @@ $ kubectl create -f ./example/pvc-tier2.yaml
 Use Helm to install a sample Pravega cluster with release name `bar`.
 
 ```
-$ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set pravega.tier2=[TIER2_NAME]
+$ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set pravega.longTermStorage=[TIER2_NAME]
 ```
 
 where:
