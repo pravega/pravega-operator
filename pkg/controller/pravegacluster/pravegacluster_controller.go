@@ -108,6 +108,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	if changed {
 		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
 		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
+			log.Printf("Error applying defaults on Pravega Cluster %v", err)
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{Requeue: true}, nil
@@ -118,7 +119,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
 		return reconcile.Result{}, err
 	}
-
+	log.Print("Completed Reconcile of pravega cluster %s/%s", request.Namespace, request.Name)
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
 }
 
@@ -165,6 +166,7 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 		if err = r.client.Update(context.TODO(), p); err != nil {
 			return fmt.Errorf("failed to remove Zk Finalizer from Pravega object (%s): %v", p.Name, err)
 		}
+		log.Printf("ZK Finalizer removed from Pravega CR.")
 	}
 	return nil
 }
@@ -342,7 +344,6 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
 	if statefulSet.Spec.VolumeClaimTemplates != nil {
 		for i := range statefulSet.Spec.VolumeClaimTemplates {
-			log.Printf("deploySegmentStore::Setting owner for new SSS PVC")
 			controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
 		}
 	}
@@ -361,7 +362,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			}
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
-				log.Printf("Found old version STS owner ref for segment store")
+				log.Printf("Deleting SSS STS as STS has old version owner ref.")
 				err = r.client.Delete(context.TODO(), sts)
 				if err != nil {
 					return err
@@ -369,7 +370,6 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			}
 		}
 	}
-
 	return nil
 }
 

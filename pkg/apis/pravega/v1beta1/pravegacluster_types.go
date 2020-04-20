@@ -267,20 +267,15 @@ type ImageSpec struct {
 
 func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
 	//do nothing here as we never want to move from v1beta1 to v1alpha1
-	log.Print("ConvertTo invoked")
 	return nil
 }
 
 func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster) error {
-	log.Printf("DST: Name %s, Namespace %s, UID %v", dst.Name, dst.Namespace, dst.UID)
-	log.Printf("SRC: Name %s, Namespace %s, UID %v", srcObj.Name, srcObj.Namespace, srcObj.UID)
-
 	dst.Spec.Authentication = &AuthenticationParameters{
 		Enabled:            srcObj.Spec.Authentication.Enabled,
 		PasswordAuthSecret: srcObj.Spec.Authentication.PasswordAuthSecret,
 	}
 
-	log.Printf("Converting Bookkeeper Uri...")
 	dst.Spec.BookkeeperUri = getBookkeeperUri(srcObj)
 
 	if srcObj.Spec.ExternalAccess != nil {
@@ -302,7 +297,7 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 
 	dst.Spec.Version = srcObj.Spec.Version
 	dst.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
-	log.Printf("Converting Pravega Spec...")
+	log.Printf("Converting Spec...")
 	dst.Spec.Pravega = &PravegaSpec{
 		ControllerReplicas:   srcObj.Spec.Pravega.ControllerReplicas,
 		SegmentStoreReplicas: srcObj.Spec.Pravega.SegmentStoreReplicas,
@@ -369,7 +364,6 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 	dst.Status.VersionHistory = srcObj.Status.VersionHistory
 	dst.Status.TargetVersion = srcObj.Status.TargetVersion
 
-	log.Printf("Converting Status Conditions")
 	numConditions := len(srcObj.Status.Conditions)
 	dst.Status.Conditions = []ClusterCondition{}
 	for i := 0; i < numConditions; i++ {
@@ -401,7 +395,7 @@ func getNewConditionType(typ v1alpha1.ClusterConditionType) ClusterConditionType
 }
 
 func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
-	log.Printf("ConvertFrom: invoked")
+	log.Printf("Converting Pravega CR version from v1alpha1 to v1beta1.")
 	//logic for conveting from v1alpha1 to v1beta1
 	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
 	dst.ObjectMeta = srcObj.ObjectMeta
@@ -635,34 +629,34 @@ func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) erro
 		log.Fatalf("Error releasing BK CM %v", err)
 		return err
 	}
-	log.Print("Released Control of CM")
+	log.Print("Migrated Bookkeeper ConfigMap")
 
 	err = transferControlPVC(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK PVC %v", err)
 		return err
 	}
-	log.Print("Released Control of PVC")
+	log.Print("Migrated Bookkeeper PVCs")
 
 	err = transferControlPDB(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK PDB %v", err)
 		return err
 	}
-	log.Print("Released Control of PDB")
+	log.Print("Migrated Bookkeeper PDB")
 
 	err = transferControlSTS(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK STS %v", err)
 		return err
 	}
-	log.Print("Deleted STS")
+	log.Print("Deleted Bookkeeper STS")
 	err = transferControlHeadlessSvc(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK HeadlessSvc %v", err)
 		return err
 	}
-	log.Print("Deleted headless SVC")
+	log.Print("Deleted Bookkeeper SVC")
 
 	return nil
 }
