@@ -62,7 +62,7 @@ sed -i "s/value:.*/value: $op_name "/ ./manifest_files/patch.yaml
 sed -i "/imagePullPolicy:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/patch.yaml
 
 #updating the operator using patch file
-kubectl patch deployment $op_name --type merge --patch "$(cat ./manifest_files/patch.yaml)"
+kubectl patch deployment $op_name --namespace ${namespace} --type merge --patch "$(cat ./manifest_files/patch.yaml)"
 
 }
 
