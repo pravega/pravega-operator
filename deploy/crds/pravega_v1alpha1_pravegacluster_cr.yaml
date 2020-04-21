@@ -19,7 +19,7 @@ spec:
   externalAccess:
     enabled: true
     type: LoadBalancer
-  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+  bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
@@ -31,7 +31,7 @@ spec:
           storage: 20Gi
     image:
       repository: pravega/pravega
-      tag: latest
+      tag: 0.7.0
       pullPolicy: IfNotPresent
     tier2:
       filesystem:

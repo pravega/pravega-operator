@@ -98,9 +98,9 @@ type ClusterSpec struct {
 	// BookkeeperUri specifies the hostname/IP address and port in the format
 	// "hostname:port".
 	// comma delimited list of BK server URLs
-	//pravega-bookie-0.pravega-bookie-headless.default:3181,
-	//pravega-bookie-1.pravega-bookie-headless.default:3181,
-	//pravega-bookie-2.pravega-bookie-headless.default:3181
+	//pravega-bk-bookie-0.pravega-bk-bookie-headless.default:3181,
+	//pravega-bk-bookie-1.pravega-bk-bookie-headless.default:3181,
+	//pravega-bk-bookie-2.pravega-bk-bookie-headless.default:3181
 	BookkeeperUri string `json:"bookkeeperUri"`
 
 	// Pravega configuration

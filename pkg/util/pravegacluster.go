@@ -19,7 +19,7 @@ import (
 	v "github.com/hashicorp/go-version"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -62,8 +62,11 @@ func ServiceNameForController(clusterName string) string {
 	return fmt.Sprintf("%s-pravega-controller", clusterName)
 }
 
-func ServiceNameForSegmentStore(clusterName string, index int32) string {
-	return fmt.Sprintf("%s-pravega-segmentstore-%d", clusterName, index)
+func ServiceNameForSegmentStore(p *api.PravegaCluster, index int32) string {
+	if IsVersionBelow07(p.Spec.Version) {
+		return fmt.Sprintf("%s-pravega-segmentstore-%d", p.Name, index)
+	}
+	return fmt.Sprintf("%s-pravega-segment-store-%d", p.Name, index)
 }
 
 func HeadlessServiceNameForSegmentStore(clusterName string) string {
