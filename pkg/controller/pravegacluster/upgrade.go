@@ -450,7 +450,11 @@ func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1alpha1.Prav
 	var name string = ""
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		service := &corev1.Service{}
-		name = util.ServiceNameForSegmentStore(p, i)
+		if !util.IsVersionBelow07(p.Spec.Version) {
+			name = util.ServiceNameForSegmentStoreBelow07(p.Name, i)
+		} else {
+			name = util.ServiceNameForSegmentStoreAbove07(p.Name, i)
+		}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -608,6 +612,7 @@ func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaC
 	}
 	//this is to check if all the new ss pods have comeup before deleteing the old sts
 	if newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas {
+
 		if p.Spec.ExternalAccess.Enabled {
 			r.deleteExternalServices(p)
 		}
