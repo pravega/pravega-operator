@@ -318,7 +318,9 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 		SegmentStoreServiceAnnotations:  srcObj.Spec.Pravega.SegmentStoreServiceAnnotations,
 	}
 
+	log.Println("Converting tier2 ")
 	if srcObj.Spec.Pravega.Tier2.FileSystem != nil {
+
 		dst.Spec.Pravega.LongTermStorage = &LongTermStorageSpec{
 			FileSystem: &FileSystemSpec{
 				PersistentVolumeClaim: srcObj.Spec.Pravega.Tier2.FileSystem.PersistentVolumeClaim,

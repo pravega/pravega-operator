@@ -29,8 +29,8 @@ const (
 	// Pravega SegmentStore cache volume
 	DefaultPravegaCacheVolumeSize = "20Gi"
 
-	// DefaultPravegaLongTermStorageClaimName is the default volume claim name used as Tier 2
-	DefaultPravegaLongTermStorageClaimName = "pravega-tier2"
+	// DefaultPravegaLTSClaimName is the default volume claim name used as Tier 2
+	DefaultPravegaLTSClaimName = "pravega-tier2"
 
 	// DefaultControllerReplicas is the default number of replicas for the Pravega
 	// Controller component
@@ -297,7 +297,7 @@ func (s *LongTermStorageSpec) withDefaults() (changed bool) {
 		changed = true
 		fs := &FileSystemSpec{
 			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: DefaultPravegaLongTermStorageClaimName,
+				ClaimName: DefaultPravegaLTSClaimName,
 			},
 		}
 		s.FileSystem = fs

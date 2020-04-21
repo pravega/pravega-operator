@@ -119,7 +119,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
 		return reconcile.Result{}, err
 	}
-	log.Print("Completed Reconcile of pravega cluster %s/%s", request.Namespace, request.Name)
+	log.Printf("Completed Reconcile of pravega cluster %s/%s", request.Namespace, request.Name)
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
 }
 
@@ -177,10 +177,11 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 		log.Printf("failed to deploy controller: %v", err)
 		return err
 	}
-
+	log.Printf("Deployed Controller.")
 	/*this check is to avoid creation of a new segmentstore when the CurrentVersion is below 07 and target version is above 07
 	  as we are doing it in the upgrade path*/
 	if !r.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
+		log.Printf("Deploying SSS.")
 		err = r.deploySegmentStore(p)
 		if err != nil {
 			log.Printf("failed to deploy segment store: %v", err)
@@ -209,7 +210,7 @@ func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) er
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
 	numPvcs := len(sts.Spec.VolumeClaimTemplates)
-	log.Print("Deleting old STS, PVCs: %v", numPvcs)
+	log.Printf("Deleting old STS, PVCs: %v", numPvcs)
 	r.client.Delete(context.TODO(), sts)
 	log.Printf("Deleted old SegmentStore STS %s", sts.Name)
 	return nil
