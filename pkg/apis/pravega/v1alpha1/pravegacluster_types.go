@@ -189,6 +189,7 @@ type TLSPolicy struct {
 type StaticTLS struct {
 	ControllerSecret   string `json:"controllerSecret,omitempty"`
 	SegmentStoreSecret string `json:"segmentStoreSecret,omitempty"`
+	CaBundle           string `json:"caBundle,omitempty"`
 }
 
 func (tp *TLSPolicy) IsSecureController() bool {
@@ -203,6 +204,13 @@ func (tp *TLSPolicy) IsSecureSegmentStore() bool {
 		return false
 	}
 	return len(tp.Static.SegmentStoreSecret) != 0
+}
+
+func (tp *TLSPolicy) IsCaBundlePresent() bool {
+	if tp == nil || tp.Static == nil {
+		return false
+	}
+	return len(tp.Static.CaBundle) != 0
 }
 
 type AuthenticationParameters struct {

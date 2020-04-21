@@ -150,27 +150,26 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
 
 1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
 
-2. Create a file with the secret references to the content and name of the ECS certificate.
+2. Load the certificate into secret:
+    ```
+    kubectl create secret generic ecs-cert --from-file ./ecs-certificate.pem
+    ```
+    or create a file directly to contain the certificate content:
     ```
     apiVersion: v1
     kind: Secret
     metadata:
-      name: "segmentstore-tls"
+      name: "ecs-cert"
     type: Opaque
-    stringData:
-      ECS_CERTIFICATE_NAME: "ecs-certificate.pem"
     data:
       ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
     ```
-
-    Note: the secret name must be same as the secret name of other SegmentStore TLS materials, so all the materials can be mounted together.
-
-    Assuming that the file is named `ecs-tls.yaml`, apply it so it appends, instead of replaces, the SegmentStore TLS secret.
+    Assuming the above file is named `ecs-tls.yaml`, then create secret using the above file.
     ```
-    $ kubectl apply -f ecs-tls.yaml
+    $ kubectl create -f ecs-tls.yaml
     ```
 
-3. In the Pravega manifest file, specify the name of the secret defined above to "tls/static/segmentStoreSecret". 
+3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section. 
     ```
     ...
     kind: "PravegaCluster"
@@ -180,6 +179,7 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
     tls:
       static:
         segmentStoreSecret: "segmentstore-tls"
+        caBundle: "ecs-cert"
     ...
     tier2:
         ecs:
@@ -188,6 +188,9 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
           prefix: "example"
           credentials: ecs-credentials
     ```
+4. Pravega operator then mounts caBundle onto folder "/etc/secret-volume/ca-bundle" in container.
+
+5. Pravega Segmentstore container adds certificates found under "/etc/secret-volume/ca-bundle" into the default Java Truststore, in order to establish TLS connection with ECS. 
 
 ### Use HDFS as Tier 2
 
