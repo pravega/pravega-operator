@@ -15,7 +15,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
