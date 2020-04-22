@@ -141,16 +141,16 @@ Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](htt
           credentials: ecs-credentials
     ```
 
-#### (Optional) ECS TLS Support
-In case the ECS is secured using self-signed TLS/SSL certificate, Pravega must trust the certificate in order to establish secured connection with it.
+#### (Optional) ECS HTTPS/TLS Support on Kubernetes
+Pravega connects ECS endpoint through OpenJDK based HTTP or HTTPS, so by default Pravega as an HTTPS client is configured to verify ECS server certificate.
 
-This is done by adding the ECS certificate into the Java Truststore used by Pravega.
+The ECS server certificate, or its signing CA's certificate, must present in OpenJDK's Truststore, for Pravega to establish HTTPS/TLS connection with ECS endpoint.
 
-(No action is needed if the ECS's certificate is signed by public CA, as in the case of ECS test drive.)
+Refer to the steps below to add ECS server certificate or CA's certificate into OpenJDK's Truststore:
 
-1. Retrieve the TLS certificate of the ECS server, e.g. "ecs-certificate.pem".
+1. Retrieve CA certificate or the server certificate as file, e.g. "ecs-certificate.pem".
 
-2. Load the certificate into secret:
+2. Load the certificate into Kubernetes secret:
     ```
     kubectl create secret generic ecs-cert --from-file ./ecs-certificate.pem
     ```
@@ -178,19 +178,18 @@ This is done by adding the ECS certificate into the Java Truststore used by Prav
     spec:
     tls:
       static:
-        segmentStoreSecret: "segmentstore-tls"
         caBundle: "ecs-cert"
     ...
     tier2:
         ecs:
-          configUri: http://10.247.10.52:9020?namespace=pravega
+          configUri: https://10.247.10.52:9021?namespace=pravega
           bucket: "shared"
           prefix: "example"
           credentials: ecs-credentials
     ```
 4. Pravega operator then mounts caBundle onto folder "/etc/secret-volume/ca-bundle" in container.
 
-5. Pravega Segmentstore container adds certificates found under "/etc/secret-volume/ca-bundle" into the default Java Truststore, in order to establish TLS connection with ECS. 
+5. Pravega Segmentstore container adds certificates found under "/etc/secret-volume/ca-bundle" into the default OpenJDK Truststore, in order to establish HTTPS/TLS connection with ECS.
 
 ### Use HDFS as Tier 2
 
