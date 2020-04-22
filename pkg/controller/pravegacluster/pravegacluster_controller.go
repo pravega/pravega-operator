@@ -119,7 +119,6 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 		log.Printf("failed to reconcile pravega cluster (%s): %v", pravegaCluster.Name, err)
 		return reconcile.Result{}, err
 	}
-	log.Printf("Completed Reconcile of pravega cluster %s/%s", request.Namespace, request.Name)
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
 }
 
