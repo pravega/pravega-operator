@@ -177,11 +177,11 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 		log.Printf("failed to deploy controller: %v", err)
 		return err
 	}
-	log.Printf("Deployed Controller.")
+
 	/*this check is to avoid creation of a new segmentstore when the CurrentVersion is below 07 and target version is above 07
 	  as we are doing it in the upgrade path*/
 	if !r.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {
-		log.Printf("Deploying SSS.")
+
 		err = r.deploySegmentStore(p)
 		if err != nil {
 			log.Printf("failed to deploy segment store: %v", err)
@@ -189,16 +189,24 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 		}
 
 		if !util.IsVersionBelow07(p.Spec.Version) {
-			// We should be here only once in case of operator upgrade
-			// to version 0.5.0 from version 0.4.x
-			return r.deleteOldSegmentStoreIfExists(p)
+			newsts := &appsv1.StatefulSet{}
+			name := p.StatefulSetNameForSegmentstoreAbove07()
+			err = r.client.Get(context.TODO(),
+				types.NamespacedName{Name: name, Namespace: p.Namespace}, newsts)
+			if err != nil {
+				return fmt.Errorf("failed to get stateful-set (%s): %v", newsts.Name, err)
+			}
+			if newsts.Status.ReadyReplicas > 0 {
+				return r.deleteOldSegmentStoreIfExists(p)
+			}
 		}
 	}
 	return nil
 }
 
 func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) error {
-	// delete sts
+	// We should be here only in case of Pravega CR version migration
+	// to version 0.5.0 from version 0.4.x
 	sts := &appsv1.StatefulSet{}
 	stsName := p.StatefulSetNameForSegmentstoreBelow07()
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: stsName, Namespace: p.Namespace}, sts)
@@ -209,8 +217,7 @@ func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) er
 		}
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
-	numPvcs := len(sts.Spec.VolumeClaimTemplates)
-	log.Printf("Deleting old STS, PVCs: %v", numPvcs)
+	// delete sts, if found
 	r.client.Delete(context.TODO(), sts)
 	log.Printf("Deleted old SegmentStore STS %s", sts.Name)
 	return nil
@@ -363,7 +370,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			}
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
-				log.Printf("Deleting SSS STS as STS has old version owner ref.")
+				log.Printf("Deleting SSS STS as it has old version owner ref.")
 				err = r.client.Delete(context.TODO(), sts)
 				if err != nil {
 					return err
@@ -382,6 +389,7 @@ func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
 	}
 	return false
 }
+
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaCluster) (err error) {
 	/*We skip calling syncSegmentStoreSize() during upgrade/rollback from version 07*/
 	if !r.IsClusterUpgradingTo07(p) && !r.IsClusterRollbackingFrom07(p) {

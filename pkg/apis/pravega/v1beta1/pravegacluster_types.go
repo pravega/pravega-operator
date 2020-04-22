@@ -270,7 +270,7 @@ func (src *PravegaCluster) ConvertTo(dstRaw conversion.Hub) error {
 	return nil
 }
 
-func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster) error {
+func (dst *PravegaCluster) convertSpec(srcObj *v1alpha1.PravegaCluster) error {
 	dst.Spec.Authentication = &AuthenticationParameters{
 		Enabled:            srcObj.Spec.Authentication.Enabled,
 		PasswordAuthSecret: srcObj.Spec.Authentication.PasswordAuthSecret,
@@ -297,7 +297,6 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 
 	dst.Spec.Version = srcObj.Spec.Version
 	dst.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
-	log.Printf("Converting Spec...")
 	dst.Spec.Pravega = &PravegaSpec{
 		ControllerReplicas:   srcObj.Spec.Pravega.ControllerReplicas,
 		SegmentStoreReplicas: srcObj.Spec.Pravega.SegmentStoreReplicas,
@@ -318,7 +317,6 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 		SegmentStoreServiceAnnotations:  srcObj.Spec.Pravega.SegmentStoreServiceAnnotations,
 	}
 
-	log.Println("Converting tier2 ")
 	if srcObj.Spec.Pravega.Tier2.FileSystem != nil {
 
 		dst.Spec.Pravega.LongTermStorage = &LongTermStorageSpec{
@@ -359,41 +357,7 @@ func (dst *PravegaCluster) convertSpecAndStatus(srcObj *v1alpha1.PravegaCluster)
 			Limits:   srcObj.Spec.Pravega.SegmentStoreResources.Limits,
 		}
 	}
-
-	log.Printf("Converting Status...")
-	// Convert status
-	dst.Status.CurrentVersion = srcObj.Status.CurrentVersion
-	dst.Status.VersionHistory = srcObj.Status.VersionHistory
-	dst.Status.TargetVersion = srcObj.Status.TargetVersion
-
-	numConditions := len(srcObj.Status.Conditions)
-	dst.Status.Conditions = []ClusterCondition{}
-	for i := 0; i < numConditions; i++ {
-		condition := &ClusterCondition{
-			Type:               getNewConditionType(srcObj.Status.Conditions[i].Type),
-			Status:             srcObj.Status.Conditions[i].Status,
-			Reason:             srcObj.Status.Conditions[i].Reason,
-			Message:            srcObj.Status.Conditions[i].Message,
-			LastUpdateTime:     srcObj.Status.Conditions[i].LastUpdateTime,
-			LastTransitionTime: srcObj.Status.Conditions[i].LastTransitionTime,
-		}
-		dst.Status.Conditions = append(dst.Status.Conditions, *condition)
-	}
 	return nil
-}
-
-func getNewConditionType(typ v1alpha1.ClusterConditionType) ClusterConditionType {
-	if typ == v1alpha1.ClusterConditionError {
-		return ClusterConditionError
-	} else if typ == v1alpha1.ClusterConditionUpgrading {
-		return ClusterConditionUpgrading
-	} else if typ == v1alpha1.ClusterConditionPodsReady {
-		return ClusterConditionPodsReady
-	} else if typ == v1alpha1.ClusterConditionRollback {
-		return ClusterConditionRollback
-	}
-	// should never get here..
-	panic(fmt.Sprintf("Invalid Status Condition in source object %v", typ))
 }
 
 func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
@@ -401,7 +365,7 @@ func (dst *PravegaCluster) ConvertFrom(srcRaw conversion.Hub) error {
 	//logic for conveting from v1alpha1 to v1beta1
 	srcObj := srcRaw.(*v1alpha1.PravegaCluster)
 	dst.ObjectMeta = srcObj.ObjectMeta
-	err := dst.convertSpecAndStatus(srcObj)
+	err := dst.convertSpec(srcObj)
 	if err != nil {
 		log.Fatalf("Error converting CR object from version v1alpha1 to v1beta1 %v", err)
 		return err
@@ -433,13 +397,17 @@ func (dst *PravegaCluster) updatePravegaOwnerReferences() error {
 	if err != nil {
 		return err
 	}
-	log.Print("Updated SSS OwnerRefs")
-	return dst.updateControllerReferences(*ownerRefs)
+	log.Print("Updated SegmentStore OwnerReferences.")
+	err = dst.updateControllerReferences(*ownerRefs)
+	if err != nil {
+		return err
+	}
+	log.Print("Updated Controller OwnerReferences.")
+	return nil
 }
 
 func (dst *PravegaCluster) updateSSSReferences(ownerRefs []metav1.OwnerReference) error {
 	if util.IsVersionBelow07(dst.Spec.Version) {
-		log.Printf("Updating cache volume owner refs...")
 		numPvcs := int(dst.Spec.Pravega.SegmentStoreReplicas)
 		for i := 0; i < numPvcs; i++ {
 			pvcName := "cache-" + dst.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
@@ -450,7 +418,6 @@ func (dst *PravegaCluster) updateSSSReferences(ownerRefs []metav1.OwnerReference
 				return fmt.Errorf("failed to get pvc (%s): %v", pvcName, err)
 			}
 			pvc.SetOwnerReferences(ownerRefs)
-			log.Printf("Cache VOL NAME %s", pvcName)
 			err = Mgr.GetClient().Update(context.TODO(), pvc)
 			if err != nil {
 				return err
@@ -546,7 +513,6 @@ func (dst *PravegaCluster) updateControllerReferences(ownerRefs []metav1.OwnerRe
 
 	pdb := &policyv1beta1.PodDisruptionBudget{}
 	name = dst.PdbNameForController()
-
 	err = Mgr.GetClient().Get(context.TODO(), types.NamespacedName{Name: name, Namespace: dst.Namespace}, pdb)
 	if err != nil {
 		return err
@@ -626,39 +592,40 @@ func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) erro
 		}
 	}
 
-	err = transferControlCM(srcObj, b)
+	log.Printf("Created Bookkeeper CR by name %s", b.Name)
+	err = migrateConfigMap(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK CM %v", err)
 		return err
 	}
-	log.Print("Migrated Bookkeeper ConfigMap")
+	log.Print("Migrated Bookkeeper ConfigMap.")
 
-	err = transferControlPVC(srcObj, b)
+	err = migratePVC(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK PVC %v", err)
 		return err
 	}
-	log.Print("Migrated Bookkeeper PVCs")
+	log.Print("Migrated Bookkeeper PVCs.")
 
-	err = transferControlPDB(srcObj, b)
+	err = migratePDB(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK PDB %v", err)
 		return err
 	}
-	log.Print("Migrated Bookkeeper PDB")
+	log.Print("Migrated Bookkeeper PDB.")
 
-	err = transferControlSTS(srcObj, b)
+	err = migrateSTS(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK STS %v", err)
 		return err
 	}
-	log.Print("Deleted Bookkeeper STS")
-	err = transferControlHeadlessSvc(srcObj, b)
+	log.Print("Deleted Bookkeeper STS (to be recreated by BK-Operator).")
+	err = migrateHeadlessSvc(srcObj, b)
 	if err != nil {
 		log.Fatalf("Error releasing BK HeadlessSvc %v", err)
 		return err
 	}
-	log.Print("Deleted Bookkeeper SVC")
+	log.Print("Deleted Bookkeeper SVC (to be recreated by BK-Operator).")
 
 	return nil
 }
@@ -667,7 +634,7 @@ func nameForBookie(clusterName string) string {
 	return fmt.Sprintf("%s-bookie", clusterName)
 }
 
-func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func migrateSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	sts := &appsv1.StatefulSet{}
 	name := nameForBookie(p.Name)
 	err := Mgr.GetClient().Get(context.TODO(),
@@ -687,7 +654,7 @@ func transferControlSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) 
 	return nil
 }
 
-func transferControlCM(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func migrateConfigMap(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	configmap := &corev1.ConfigMap{}
 	name := nameForBookie(p.Name)
 	err := Mgr.GetClient().Get(context.TODO(),
@@ -713,7 +680,7 @@ func transferControlCM(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) e
 	return nil
 }
 
-func transferControlHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func migrateHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	headlessservice := &corev1.Service{}
 	name := fmt.Sprintf("%s-bookie-headless", p.Name)
 	err := Mgr.GetClient().Get(context.TODO(),
@@ -734,7 +701,7 @@ func transferControlHeadlessSvc(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperC
 	return nil
 }
 
-func transferPVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func movePVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	ownerRef := &[]metav1.OwnerReference{
 		{
 			APIVersion:         "bookkeeper.pravega.io/v1alpha1",
@@ -763,18 +730,18 @@ func transferPVC(pvcType string, p *v1alpha1.PravegaCluster, b *bkapi.Bookkeeper
 	return nil
 }
 
-func transferControlPVC(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
-	err := transferPVC("index", p, b)
+func migratePVC(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+	err := movePVC("index", p, b)
 	if err != nil {
 		return err
 	}
 	log.Printf("Updating owner reference for index PVCs")
-	err = transferPVC("journal", p, b)
+	err = movePVC("journal", p, b)
 	if err != nil {
 		return err
 	}
 	log.Printf("Updating owner reference for journal PVCs")
-	err = transferPVC("ledger", p, b)
+	err = movePVC("ledger", p, b)
 	if err != nil {
 		return err
 	}
@@ -782,7 +749,7 @@ func transferControlPVC(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) 
 	return nil
 }
 
-func transferControlPDB(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func migratePDB(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	ownerRef := &[]metav1.OwnerReference{
 		{
 			APIVersion:         "bookkeeper.pravega.io/v1alpha1",
@@ -929,7 +896,6 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	}
 
 	requestVersion := p.Spec.Version
-	log.Printf("validatePravegaVersion:: request-version %s", requestVersion)
 
 	if p.Status.IsClusterInUpgradingState() && requestVersion != p.Status.TargetVersion {
 		return fmt.Errorf("failed to process the request, cluster is upgrading")
@@ -960,7 +926,6 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
 	}
 
-	log.Printf("validatePravegaVersion:: current-version %s", p.Status.CurrentVersion)
 	if p.Status.CurrentVersion == "" {
 		// we're deploying for the very first time
 		return nil
@@ -968,7 +933,6 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 
 	// This is not an upgrade if CurrentVersion == requestVersion
 	if p.Status.CurrentVersion == requestVersion {
-		log.Print("validatePravegaVersion:: This is not an upgrade so returning...")
 		return nil
 	}
 	// This is an upgrade, check if requested version is in the upgrade path
