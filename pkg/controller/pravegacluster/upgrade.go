@@ -451,7 +451,11 @@ func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1beta1.Prave
 	var name string = ""
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		service := &corev1.Service{}
-		name = p.ServiceNameForSegmentStore(i)
+		if !util.IsVersionBelow07(p.Spec.Version) {
+			name = p.ServiceNameForSegmentStoreBelow07(i)
+		} else {
+			name = p.ServiceNameForSegmentStoreAbove07(i)
+		}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
 		if err != nil {
 			if errors.IsNotFound(err) {
