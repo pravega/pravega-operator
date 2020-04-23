@@ -944,7 +944,6 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 
 	log.Printf("validatePravegaVersion:: normFoundVersion %s", normFoundVersion)
 	upgradeString, ok := supportedVersions[normFoundVersion]
-	//upgradeList, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
 		return fmt.Errorf("failed to find current cluster version in the supported versions")

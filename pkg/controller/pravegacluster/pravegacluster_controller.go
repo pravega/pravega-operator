@@ -226,7 +226,6 @@ func (r *ReconcilePravegaCluster) deletePVC(p *pravegav1beta1.PravegaCluster) er
 	numPvcs := int(p.Spec.Pravega.SegmentStoreReplicas)
 	for i := 0; i < numPvcs; i++ {
 		pvcName := "cache-" + p.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
-		//log.Printf("PVC NAME %s", pvcName)
 		pvc := &corev1.PersistentVolumeClaim{}
 		err := r.client.Get(context.TODO(),
 			types.NamespacedName{Name: pvcName, Namespace: p.Namespace}, pvc)
