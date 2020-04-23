@@ -1,6 +1,6 @@
 name: pravega-operator
-version: latest
-appVersion: latest
+version: 0.5.0
+appVersion: 0.5.0
 description: pravega operator Helm chart for Kubernetes
 keywords:
 - pravega

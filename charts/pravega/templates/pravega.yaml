@@ -1,4 +1,4 @@
-apiVersion: "pravega.pravega.io/v1alpha1"
+apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: {{ template "pravega.fullname" . }}
@@ -41,7 +41,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.pravega.cacheVolumeRequest }}
-    tier2:
+    longTermStorage:
       filesystem:
         persistentVolumeClaim:
           claimName: {{ .Values.pravega.tier2 }}
