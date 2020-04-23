@@ -15,7 +15,7 @@ import (
 	"fmt"
 	"time"
 
-	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -31,11 +31,11 @@ import (
 
 type componentSyncVersionFun struct {
 	name string
-	fun  func(p *pravegav1alpha1.PravegaCluster) (synced bool, err error)
+	fun  func(p *pravegav1beta1.PravegaCluster) (synced bool, err error)
 }
 
 // upgrade
-func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaCluster) (err error) {
+func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCluster) (err error) {
 	defer func() {
 		r.client.Status().Update(context.TODO(), p)
 	}()
@@ -45,8 +45,8 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 		return nil
 	}
 
-	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionUpgrading)
-	_, readyCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionPodsReady)
+	_, upgradeCondition := p.Status.GetClusterCondition(pravegav1beta1.ClusterConditionUpgrading)
+	_, readyCondition := p.Status.GetClusterCondition(pravegav1beta1.ClusterConditionPodsReady)
 
 	if upgradeCondition == nil {
 		// Initially set upgrading condition to false and
@@ -74,7 +74,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 			p.Status.SetErrorConditionTrue("UpgradeFailed", err.Error())
 			// emit an event for Upgrade Failure
 			message := fmt.Sprintf("Error Upgrading from version %v to %v. %v", p.Status.CurrentVersion, p.Status.TargetVersion, err.Error())
-			event := util.NewEvent("UPGRADE_ERROR", p, pravegav1alpha1.UpgradeErrorReason, message, "Error")
+			event := p.NewEvent("UPGRADE_ERROR", pravegav1beta1.UpgradeErrorReason, message, "Error")
 			pubErr := r.client.Create(context.TODO(), event)
 			if pubErr != nil {
 				log.Printf("Error publishing Upgrade Failure event to k8s. %v", pubErr)
@@ -120,7 +120,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaCluster) (err error) {
+func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1beta1.PravegaCluster) (err error) {
 	p.Status.SetUpgradingConditionFalse()
 	p.Status.TargetVersion = ""
 	// need to deep copy the status struct, otherwise it will be overwritten
@@ -135,11 +135,11 @@ func (r *ReconcilePravegaCluster) clearUpgradeStatus(p *pravegav1alpha1.PravegaC
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.PravegaCluster, version string) (err error) {
+func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1beta1.PravegaCluster, version string) (err error) {
 	defer func() {
 		r.client.Status().Update(context.TODO(), p)
 	}()
-	_, rollbackCondition := p.Status.GetClusterCondition(pravegav1alpha1.ClusterConditionRollback)
+	_, rollbackCondition := p.Status.GetClusterCondition(pravegav1beta1.ClusterConditionRollback)
 	if rollbackCondition == nil || rollbackCondition.Status != corev1.ConditionTrue {
 		// We're in the first iteration for Rollback
 		// Add Rollback Condition to Cluster Status
@@ -161,7 +161,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 		p.Status.SetErrorConditionTrue("RollbackFailed", err.Error())
 		// emit an event for Rollback Failure
 		message := fmt.Sprintf("Error Rollingback from version %v to %v. %v", p.Status.CurrentVersion, p.Status.TargetVersion, err.Error())
-		event := util.NewEvent("ROLLBACK_ERROR", p, pravegav1alpha1.RollbackErrorReason, message, "Error")
+		event := p.NewEvent("ROLLBACK_ERROR", pravegav1beta1.RollbackErrorReason, message, "Error")
 		pubErr := r.client.Create(context.TODO(), event)
 		if pubErr != nil {
 			log.Printf("Error publishing ROLLBACK_ERROR event to k8s. %v", pubErr)
@@ -184,7 +184,7 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1alpha1.Prav
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.PravegaCluster) (err error) {
+func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1beta1.PravegaCluster) (err error) {
 	log.Printf("clearRollbackStatus")
 	p.Status.SetRollbackConditionFalse()
 	p.Status.TargetVersion = ""
@@ -200,7 +200,7 @@ func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1alpha1.Pravega
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
 	componentSyncFuncs := []componentSyncVersionFun{
 		componentSyncVersionFun{
 			name: "segmentstore",
@@ -235,7 +235,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1alpha1.Prave
 	return true, nil
 }
 
-func (r *ReconcilePravegaCluster) syncComponent(component componentSyncVersionFun, p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncComponent(component componentSyncVersionFun, p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
 	isSyncComplete, err := component.fun(p)
 	if err != nil {
 		return false, fmt.Errorf("failed to sync %s version. %s", component.name, err)
@@ -250,21 +250,21 @@ func (r *ReconcilePravegaCluster) syncComponent(component componentSyncVersionFu
 	return true, nil
 }
 
-func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
 	deploy := &appsv1.Deployment{}
-	name := util.DeploymentNameForController(p.Name)
+	name := p.DeploymentNameForController()
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
 	if err != nil {
 		return false, fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 	}
 
-	targetImage, err := util.PravegaTargetImage(p)
+	targetImage, err := p.PravegaTargetImage()
 	if err != nil {
 		return false, err
 	}
 
 	if deploy.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.UpdateProgress(pravegav1alpha1.UpdatingControllerReason, "0")
+		p.Status.UpdateProgress(pravegav1beta1.UpdatingControllerReason, "0")
 
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
@@ -319,21 +319,22 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1alpha1.Prave
 	return true, nil
 }
 
-func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
+
 	sts := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForSegmentstore(p)
+	name := p.StatefulSetNameForSegmentstore()
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 	if err != nil {
 		return false, fmt.Errorf("failed to get statefulset (%s): %v", sts.Name, err)
 	}
 
-	targetImage, err := util.PravegaTargetImage(p)
+	targetImage, err := p.PravegaTargetImage()
 	if err != nil {
 		return false, err
 	}
 
 	if sts.Spec.Template.Spec.Containers[0].Image != targetImage {
-		p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
+		p.Status.UpdateProgress(pravegav1beta1.UpdatingSegmentstoreReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
 		log.Printf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
@@ -366,7 +367,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 	}
 	// Upgrade still in progress
 	// Check if segmentstore fail to have progress within a timeout
-	err = checkSyncTimeout(p, pravegav1alpha1.UpdatingSegmentstoreReason, sts.Status.UpdatedReplicas)
+	err = checkSyncTimeout(p, pravegav1beta1.UpdatingSegmentstoreReason, sts.Status.UpdatedReplicas)
 	if err != nil {
 		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
 	}
@@ -405,7 +406,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1alpha1.Pra
 }
 
 //this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
-func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.PravegaCluster) bool {
+func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1beta1.PravegaCluster) bool {
 	if util.IsVersionBelow07(p.Spec.Version) && r.IsAbove07STSPresent(p) {
 		return true
 	}
@@ -413,9 +414,9 @@ func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1alpha1.
 }
 
 //This function checks if stsabove07 exsists
-func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1alpha1.PravegaCluster) bool {
+func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1beta1.PravegaCluster) bool {
 	stsAbove07 := &appsv1.StatefulSet{}
-	name := util.StatefulSetNameForSegmentstoreAbove07(p.Name)
+	name := p.StatefulSetNameForSegmentstoreAbove07()
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, stsAbove07)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -427,14 +428,14 @@ func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1alpha1.Pravega
 	return true
 }
 
-func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	if util.IsClusterUpgradingTo07(p) || r.IsClusterRollbackingFrom07(p) {
+func (r *ReconcilePravegaCluster) syncStoreVersion(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
+	if r.IsClusterUpgradingTo07(p) || r.IsClusterRollbackingFrom07(p) {
 		return r.syncSegmentStoreVersionTo07(p)
 	}
 	return r.syncSegmentStoreVersion(p)
 }
 
-func (r *ReconcilePravegaCluster) createExternalServices(p *pravegav1alpha1.PravegaCluster) error {
+func (r *ReconcilePravegaCluster) createExternalServices(p *pravegav1beta1.PravegaCluster) error {
 	services := pravega.MakeSegmentStoreExternalServices(p)
 	for _, service := range services {
 		controllerutil.SetControllerReference(p, service, r.scheme)
@@ -446,11 +447,15 @@ func (r *ReconcilePravegaCluster) createExternalServices(p *pravegav1alpha1.Prav
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1alpha1.PravegaCluster) error {
+func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1beta1.PravegaCluster) error {
 	var name string = ""
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		service := &corev1.Service{}
-		name = util.ServiceNameForSegmentStore(p, i)
+		if !util.IsVersionBelow07(p.Spec.Version) {
+			name = p.ServiceNameForSegmentStoreBelow07(i)
+		} else {
+			name = p.ServiceNameForSegmentStoreAbove07(i)
+		}
 		err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, service)
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -468,8 +473,8 @@ func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1alpha1.Prav
 }
 
 //To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
-func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1.PravegaCluster) (synced bool, err error) {
-	p.Status.UpdateProgress(pravegav1alpha1.UpdatingSegmentstoreReason, "0")
+func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
+	p.Status.UpdateProgress(pravegav1beta1.UpdatingSegmentstoreReason, "0")
 	newsts := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, newsts, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newsts.Name, Namespace: p.Namespace}, newsts)
@@ -503,10 +508,10 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 	//here we are getting the name of the oldsts based on either we are upgrading or doing rollback
 	var oldstsName string = ""
 	oldsts := &appsv1.StatefulSet{}
-	if util.IsClusterUpgradingTo07(p) {
-		oldstsName = util.StatefulSetNameForSegmentstoreBelow07(p.Name)
+	if r.IsClusterUpgradingTo07(p) {
+		oldstsName = p.StatefulSetNameForSegmentstoreBelow07()
 	} else {
-		oldstsName = util.StatefulSetNameForSegmentstoreAbove07(p.Name)
+		oldstsName = p.StatefulSetNameForSegmentstoreAbove07()
 	}
 
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oldstsName, Namespace: p.Namespace}, oldsts)
@@ -558,7 +563,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1alpha1
 }
 
 //this function will check if furter increment or decrement in pods needed in case of rollback from version 0.7
-func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1alpha1.PravegaCluster, sts *appsv1.StatefulSet) bool {
+func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1beta1.PravegaCluster, sts *appsv1.StatefulSet) bool {
 	if r.IsClusterRollbackingFrom07(p) && sts.Status.ReadyReplicas == *sts.Spec.Replicas {
 		return true
 	}
@@ -566,7 +571,7 @@ func (r *ReconcilePravegaCluster) rollbackConditionFor07(p *pravegav1alpha1.Prav
 }
 
 //this function will check if furter increment or decrement in pods needed in case of upgrade to version 0.7 or above
-func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) bool {
+func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) bool {
 	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas && newsts.Status.ReadyReplicas == *newsts.Spec.Replicas {
 		return true
 	}
@@ -574,7 +579,7 @@ func (r *ReconcilePravegaCluster) upgradeConditionFor07(p *pravegav1alpha1.Prave
 }
 
 //this function will increase two replicas of the new sts and delete 2 replicas of the old sts everytime it's called
-func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
 	err := r.client.Update(context.TODO(), newsts)
 	if err != nil {
@@ -589,7 +594,7 @@ func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1alpha1.Praveg
 }
 
 //This function will remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
-func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
+func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = p.Spec.Pravega.SegmentStoreReplicas
 	err := r.client.Update(context.TODO(), newsts)
 	if err != nil {
@@ -600,7 +605,7 @@ func (r *ReconcilePravegaCluster) transitionToNewSTS(p *pravegav1alpha1.PravegaC
 	if err != nil {
 		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
 	}
-	if util.IsClusterUpgradingTo07(p) {
+	if r.IsClusterUpgradingTo07(p) {
 		err = r.syncStatefulSetPvc(oldsts)
 		if err != nil {
 			return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
@@ -645,7 +650,7 @@ func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, ver
 		Namespace:     sts.Namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), podlistOps, podList)
+	err = r.client.List(context.TODO(), podList, podlistOps)
 	if err != nil {
 		return nil, err
 	}
@@ -687,7 +692,7 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, n
 		Namespace:     namespace,
 		LabelSelector: selector,
 	}
-	err := r.client.List(context.TODO(), podlistOps, podList)
+	err := r.client.List(context.TODO(), podList, podlistOps)
 	if err != nil {
 		return nil, err
 	}
@@ -702,7 +707,7 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, n
 	return pods, nil
 }
 
-func checkSyncTimeout(p *pravegav1alpha1.PravegaCluster, reason string, updatedReplicas int32) error {
+func checkSyncTimeout(p *pravegav1beta1.PravegaCluster, reason string, updatedReplicas int32) error {
 	lastCondition := p.Status.GetLastCondition()
 	if lastCondition == nil {
 		return nil

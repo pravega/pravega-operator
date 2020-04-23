@@ -13,6 +13,7 @@ spec:
         name: {{ template "pravega-operator.fullname" . }}
         component: pravega-operator
     spec:
+      automountServiceAccountToken: true
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
       - name: {{ template "pravega-operator.fullname" . }}
@@ -35,3 +36,16 @@ spec:
               fieldPath: metadata.name
         - name: OPERATOR_NAME
           value: {{ template "pravega-operator.fullname" . }}
+        volumeMounts:
+        - name: webhook-cert
+          mountPath: "/tmp/k8s-webhook-server/serving-certs"
+          readOnly: true
+        - name: versions-volume
+          mountPath: "/tmp/config"
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: selfsigned-cert-tls
+      - name: versions-volume
+        configMap:
+          name: supported-versions-map

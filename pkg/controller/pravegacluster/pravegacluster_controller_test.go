@@ -12,13 +12,13 @@ package pravegacluster
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/pravega/pravega-operator/pkg/util"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,7 +53,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 		var (
 			req reconcile.Request
 			res reconcile.Result
-			p   *v1alpha1.PravegaCluster
+			p   *v1beta1.PravegaCluster
 		)
 
 		BeforeEach(func() {
@@ -63,24 +63,26 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Namespace: Namespace,
 				},
 			}
-			p = &v1alpha1.PravegaCluster{
+			p = &v1beta1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      Name,
 					Namespace: Namespace,
 				},
 			}
-			s.AddKnownTypes(v1alpha1.SchemeGroupVersion, p)
+			s.AddKnownTypes(v1beta1.SchemeGroupVersion, p)
 		})
 
 		Context("Without spec", func() {
 			var (
-				client client.Client
-				err    error
+				client       client.Client
+				err          error
+				foundPravega *v1beta1.PravegaCluster
 			)
 
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				//1st reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -94,23 +96,23 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 
 				It("should set the default cluster spec options", func() {
-					foundPravega := &v1alpha1.PravegaCluster{}
+					foundPravega = &v1beta1.PravegaCluster{}
 					err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 					Ω(err).Should(BeNil())
-					Ω(foundPravega.Spec.Version).Should(Equal("0.6.1"))
-					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
+					Ω(foundPravega.Spec.Version).Should(Equal(v1beta1.DefaultPravegaVersion))
+					Ω(foundPravega.Spec.ZookeeperUri).Should(Equal(v1beta1.DefaultZookeeperUri))
+					Ω(foundPravega.Spec.BookkeeperUri).Should(Equal(v1beta1.DefaultBookkeeperUri))
 					Ω(foundPravega.Spec.ExternalAccess).ShouldNot(BeNil())
 					Ω(foundPravega.Spec.ExternalAccess.Enabled).Should(Equal(false))
 					Ω(foundPravega.Spec.ExternalAccess.DomainName).Should(Equal(""))
 					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
-					Ω(foundPravega.Spec.BookkeeperUri).ShouldNot(BeNil())
+					fmt.Println("DEFAULTS ARE SET")
 				})
 			})
 
 			Context("After defaults are applied", func() {
-
 				BeforeEach(func() {
-					// 2nd reconcile iteration
+					// 2nd reconcile
 					res, err = r.Reconcile(req)
 				})
 
@@ -118,11 +120,33 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(res.RequeueAfter).To(Equal(ReconcileTime))
 				})
 
+				It("should set current version on 2nd reconcile ", func() {
+					res, err = r.Reconcile(req)
+					foundPravega := &v1beta1.PravegaCluster{}
+					err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					Ω(err).Should(BeNil())
+					Ω(foundPravega.Spec.Version).Should(Equal(v1beta1.DefaultPravegaVersion))
+					Ω(foundPravega.Status.CurrentVersion).Should(Equal(v1beta1.DefaultPravegaVersion))
+				})
+			})
+
+			Context("Cluster deployment", func() {
+				BeforeEach(func() {
+					// 2nd reconcile
+					res, err = r.Reconcile(req)
+					foundPravega = &v1beta1.PravegaCluster{}
+					err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("shouldn't error", func() {
+					Ω(err).Should(BeNil())
+				})
+
 				Context("Controller", func() {
 					It("should create a deployment", func() {
 						foundController := &appsv1.Deployment{}
 						nn := types.NamespacedName{
-							Name:      util.DeploymentNameForController(p.Name),
+							Name:      foundPravega.DeploymentNameForController(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundController)
@@ -132,7 +156,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					It("should create a config-map", func() {
 						foundCm := &corev1.ConfigMap{}
 						nn := types.NamespacedName{
-							Name:      util.ConfigMapNameForController(p.Name),
+							Name:      foundPravega.ConfigMapNameForController(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundCm)
@@ -142,7 +166,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					It("should create a client-service", func() {
 						foundSvc := &corev1.Service{}
 						nn := types.NamespacedName{
-							Name:      util.ServiceNameForController(p.Name),
+							Name:      foundPravega.ServiceNameForController(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSvc)
@@ -151,10 +175,21 @@ var _ = Describe("PravegaCluster Controller", func() {
 				})
 
 				Context("SegmentStore", func() {
+					BeforeEach(func() {
+						// 3rd reconcile
+						res, err = r.Reconcile(req)
+						foundPravega = &v1beta1.PravegaCluster{}
+						err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					})
+
+					It("shouldn't error", func() {
+						Ω(err).Should(BeNil())
+					})
+
 					It("should create a statefulset", func() {
 						foundSS := &appsv1.StatefulSet{}
 						nn := types.NamespacedName{
-							Name:      util.StatefulSetNameForSegmentstore(p),
+							Name:      foundPravega.StatefulSetNameForSegmentstore(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSS)
@@ -164,7 +199,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					It("should create a config-map", func() {
 						foundCm := &corev1.ConfigMap{}
 						nn := types.NamespacedName{
-							Name:      util.ConfigMapNameForSegmentstore(p.Name),
+							Name:      foundPravega.ConfigMapNameForSegmentstore(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundCm)
@@ -174,7 +209,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					It("should create a headless-service", func() {
 						foundSvc := &corev1.Service{}
 						nn := types.NamespacedName{
-							Name:      util.HeadlessServiceNameForSegmentStore(p.Name),
+							Name:      foundPravega.HeadlessServiceNameForSegmentStore(),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSvc)
@@ -186,11 +221,12 @@ var _ = Describe("PravegaCluster Controller", func() {
 						// should not be any client service
 						foundSvc := &corev1.Service{}
 						nn := types.NamespacedName{
-							Name:      util.ServiceNameForSegmentStore(p, 0),
+							Name:      foundPravega.ServiceNameForSegmentStore(0),
 							Namespace: Namespace,
 						}
 						err = client.Get(context.TODO(), nn, foundSvc)
-						Ω(err).Should(MatchError("services \"example-pravega-segmentstore-0\" not found"))
+						fmt.Printf("client-services error: %v", err)
+						Ω(err).Should(MatchError("services \"example-pravega-segment-store-0\" not found"))
 					})
 				})
 			})
@@ -214,32 +250,32 @@ var _ = Describe("PravegaCluster Controller", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version:       "0.3.2-rc2",
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:    2,
 						SegmentStoreReplicas:  4,
 						ControllerResources:   customReq,
 						SegmentStoreResources: customReq,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
 						},
 					},
 				}
+				//equivalent of 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -251,19 +287,20 @@ var _ = Describe("PravegaCluster Controller", func() {
 				Ω(res.RequeueAfter).To(Equal(ReconcileTime))
 			})
 
-			Context("Cluster", func() {
-				It("should have a custom version", func() {
-					Ω(p.Spec.Version).Should(Equal("0.3.2-rc2"))
-				})
+			It("should have a custom version", func() {
+				foundPravega := &v1beta1.PravegaCluster{}
+				err = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				Ω(err).Should(BeNil())
+				Ω(foundPravega.Spec.Version).Should(Equal("0.3.2-rc2"))
+				Ω(foundPravega.Status.CurrentVersion).Should(Equal("0.3.2-rc2"))
 			})
 
 			Context("Pravega Controller", func() {
 				var foundController *appsv1.Deployment
-
 				BeforeEach(func() {
 					foundController = &appsv1.Deployment{}
 					nn := types.NamespacedName{
-						Name:      util.DeploymentNameForController(p.Name),
+						Name:      p.DeploymentNameForController(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundController)
@@ -299,7 +336,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				It("shoud overide pravega controller jvm options", func() {
 					foundCm := &corev1.ConfigMap{}
 					nn := types.NamespacedName{
-						Name:      util.ConfigMapNameForController(p.Name),
+						Name:      p.ConfigMapNameForController(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundCm)
@@ -315,9 +352,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 				var foundSS *appsv1.StatefulSet
 
 				BeforeEach(func() {
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
 					foundSS = &appsv1.StatefulSet{}
 					nn := types.NamespacedName{
-						Name:      util.StatefulSetNameForSegmentstore(p),
+						Name:      p.StatefulSetNameForSegmentstore(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundSS)
@@ -353,7 +392,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				It("should overide pravega segmentstore jvm options", func() {
 					foundCm := &corev1.ConfigMap{}
 					nn := types.NamespacedName{
-						Name:      util.ConfigMapNameForSegmentstore(p.Name),
+						Name:      p.ConfigMapNameForSegmentstore(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundCm)
@@ -375,21 +414,23 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 			BeforeEach(func() {
 				domainName = "pravega.com."
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.3.2-rc2",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: domainName,
 					},
-					Pravega: &v1alpha1.PravegaSpec{
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:   2,
 						SegmentStoreReplicas: 3,
 					},
 				}
+				// equivalent of 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -403,7 +444,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundControllerSvc = &corev1.Service{}
 					nn := types.NamespacedName{
-						Name:      util.ServiceNameForController(p.Name),
+						Name:      p.ServiceNameForController(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundControllerSvc)
@@ -430,23 +471,28 @@ var _ = Describe("PravegaCluster Controller", func() {
 				var foundSegmentStoreSvc3 *corev1.Service
 
 				BeforeEach(func() {
+					// 2nd reconcile
+					res, err = r.Reconcile(req)
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
+
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 0),
+						Name:      p.ServiceNameForSegmentStore(0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 1),
+						Name:      p.ServiceNameForSegmentStore(1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 2),
+						Name:      p.ServiceNameForSegmentStore(2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -468,15 +514,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
 					Ω(mapLength).To(Equal(1))
 
-					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
+					svcName1 := p.ServiceNameForSegmentStore(0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
+					svcName2 := p.ServiceNameForSegmentStore(1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
+					svcName3 := p.ServiceNameForSegmentStore(2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -495,14 +541,14 @@ var _ = Describe("PravegaCluster Controller", func() {
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				}
 				domainName = "pravega.com."
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.3.2-rc2",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: domainName,
 					},
-					Pravega: &v1alpha1.PravegaSpec{
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:              2,
 						SegmentStoreReplicas:            3,
 						ControllerExternalServiceType:   corev1.ServiceTypeLoadBalancer,
@@ -511,9 +557,11 @@ var _ = Describe("PravegaCluster Controller", func() {
 						SegmentStoreServiceAnnotations:  annotationsMap,
 					},
 				}
+				// equivalent of 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -527,7 +575,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				BeforeEach(func() {
 					foundControllerSvc = &corev1.Service{}
 					nn := types.NamespacedName{
-						Name:      util.ServiceNameForController(p.Name),
+						Name:      p.ServiceNameForController(),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn, foundControllerSvc)
@@ -554,23 +602,26 @@ var _ = Describe("PravegaCluster Controller", func() {
 				var foundSegmentStoreSvc3 *corev1.Service
 
 				BeforeEach(func() {
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
+
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 0),
+						Name:      p.ServiceNameForSegmentStore(0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 1),
+						Name:      p.ServiceNameForSegmentStore(1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 2),
+						Name:      p.ServiceNameForSegmentStore(2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -601,15 +652,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"service.beta.kubernetes.io/aws-load-balancer-type",
 						"nlb"))
-					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
+					svcName1 := p.ServiceNameForSegmentStore(0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
+					svcName2 := p.ServiceNameForSegmentStore(1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
+					svcName3 := p.ServiceNameForSegmentStore(2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -626,20 +677,22 @@ var _ = Describe("PravegaCluster Controller", func() {
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-prefix": "abc",
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.3.2-rc2",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled: true,
 						Type:    corev1.ServiceTypeClusterIP,
 					},
-					Pravega: &v1alpha1.PravegaSpec{
+					Pravega: &v1beta1.PravegaSpec{
 						SegmentStoreReplicas:           3,
 						SegmentStoreServiceAnnotations: annotationsMap,
 					},
 				}
+				//equivalent 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -653,23 +706,25 @@ var _ = Describe("PravegaCluster Controller", func() {
 				var foundSegmentStoreSvc3 *corev1.Service
 
 				BeforeEach(func() {
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 0),
+						Name:      p.ServiceNameForSegmentStore(0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 1),
+						Name:      p.ServiceNameForSegmentStore(1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 2),
+						Name:      p.ServiceNameForSegmentStore(2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -705,20 +760,22 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 			BeforeEach(func() {
 				domainName = "pravega.com."
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.3.2-rc2",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: domainName,
 					},
-					Pravega: &v1alpha1.PravegaSpec{
+					Pravega: &v1beta1.PravegaSpec{
 						SegmentStoreReplicas: 3,
 					},
 				}
+				// 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, err = r.Reconcile(req)
 			})
 
@@ -732,23 +789,25 @@ var _ = Describe("PravegaCluster Controller", func() {
 				var foundSegmentStoreSvc3 *corev1.Service
 
 				BeforeEach(func() {
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
 					foundSegmentStoreSvc1 = &corev1.Service{}
 					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 0),
+						Name:      p.ServiceNameForSegmentStore(0),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 
 					foundSegmentStoreSvc2 = &corev1.Service{}
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 1),
+						Name:      p.ServiceNameForSegmentStore(1),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 
 					foundSegmentStoreSvc3 = &corev1.Service{}
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 2),
+						Name:      p.ServiceNameForSegmentStore(2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
@@ -762,15 +821,15 @@ var _ = Describe("PravegaCluster Controller", func() {
 				It("should set provided domain name as annotation", func() {
 					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
 					Ω(mapLength).To(Equal(1))
-					svcName1 := util.ServiceNameForSegmentStore(p, 0) + "." + domainName
+					svcName1 := p.ServiceNameForSegmentStore(0) + "." + domainName
 					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 
-					svcName2 := util.ServiceNameForSegmentStore(p, 1) + "." + domainName
+					svcName2 := p.ServiceNameForSegmentStore(1) + "." + domainName
 					Expect(foundSegmentStoreSvc2.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName2))
 
-					svcName3 := util.ServiceNameForSegmentStore(p, 2) + "." + domainName
+					svcName3 := p.ServiceNameForSegmentStore(2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
 				})
@@ -779,77 +838,89 @@ var _ = Describe("PravegaCluster Controller", func() {
 
 		Context("Custom spec with ExternalAccess with Segmentstore Scaledown", func() {
 			var (
-				req    reconcile.Request
-				client client.Client
-				err    error
+				client       client.Client
+				err          error
+				foundPravega *v1beta1.PravegaCluster
 			)
 
 			BeforeEach(func() {
-				p.Spec = v1alpha1.ClusterSpec{
-					Version: "0.5.0",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+				p.Spec = v1beta1.ClusterSpec{
+					Version: v1beta1.DefaultPravegaVersion,
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled: true,
-						Type:    corev1.ServiceTypeClusterIP,
+						Type:    corev1.ServiceTypeLoadBalancer,
 					},
-					Pravega: &v1alpha1.PravegaSpec{
+					Pravega: &v1beta1.PravegaSpec{
 						SegmentStoreReplicas: 3,
 					},
 				}
+				// 1st reconcile
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
 				res, _ = r.Reconcile(req)
-				foundPravega := &v1alpha1.PravegaCluster{}
-				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
-				foundPravega.Spec.Pravega.SegmentStoreReplicas = 1
-				client.Update(context.TODO(), foundPravega)
+				// 3rd reconcile
 				_, _ = r.Reconcile(req)
+				foundPravega = &v1beta1.PravegaCluster{}
+				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 			})
 
 			Context("Scaledown Segmentstore Services", func() {
+
 				var (
 					foundSegmentStoreSvc1 *corev1.Service
 					foundSegmentStoreSvc2 *corev1.Service
 					foundSegmentStoreSvc3 *corev1.Service
 				)
 
-				It("should not error", func() {
-					foundSegmentStoreSvc1 = &corev1.Service{}
+				BeforeEach(func() {
+					foundPravega.Spec.Pravega.SegmentStoreReplicas = 1
+					client.Update(context.TODO(), foundPravega)
+					// 4th reconcile
+					_, _ = r.Reconcile(req)
+				})
 
-					nn1 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 0),
+				It("sts should be present", func() {
+					foundSS := &appsv1.StatefulSet{}
+					nn := types.NamespacedName{
+						Name:      foundPravega.StatefulSetNameForSegmentstore(),
 						Namespace: Namespace,
 					}
+					err = client.Get(context.TODO(), nn, foundSS)
+					Ω(err).Should(BeNil())
+				})
 
+				It("svc 1 should be found", func() {
+					foundSegmentStoreSvc1 = &corev1.Service{}
+					nn1 := types.NamespacedName{
+						Name:      foundPravega.ServiceNameForSegmentStore(0),
+						Namespace: Namespace,
+					}
 					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
 					Ω(err).Should(BeNil())
 				})
 
-				It("should not be found", func() {
+				It("svc2 should not be found", func() {
 					foundSegmentStoreSvc2 = &corev1.Service{}
-
 					nn2 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 2),
+						Name:      foundPravega.ServiceNameForSegmentStore(2),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn2, foundSegmentStoreSvc2)
 					Ω(err).ShouldNot(BeNil())
 				})
 
-				It("should not be found", func() {
+				It("svc3 should not be found", func() {
 					foundSegmentStoreSvc3 = &corev1.Service{}
-
 					nn3 := types.NamespacedName{
-						Name:      util.ServiceNameForSegmentStore(p, 3),
+						Name:      foundPravega.ServiceNameForSegmentStore(3),
 						Namespace: Namespace,
 					}
 					err = client.Get(context.TODO(), nn3, foundSegmentStoreSvc3)
 					Ω(err).ShouldNot(BeNil())
 				})
-
 			})
-
 		})
-
 	})
 })

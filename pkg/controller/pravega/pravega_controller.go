@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"strings"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,9 +32,9 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.DeploymentNameForController(p.Name),
+			Name:      p.DeploymentNameForController(),
 			Namespace: p.Namespace,
-			Labels:    util.LabelsForController(p),
+			Labels:    p.LabelsForController(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: &timeout,
@@ -42,7 +42,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 			RevisionHistoryLimit:    &zero,
 			Template:                MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
-				MatchLabels: util.LabelsForController(p),
+				MatchLabels: p.LabelsForController(),
 			},
 		},
 	}
@@ -51,7 +51,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:      util.LabelsForController(p),
+			Labels:      p.LabelsForController(),
 			Annotations: map[string]string{"pravega.version": p.Spec.Version},
 		},
 		Spec: *makeControllerPodSpec(p),
@@ -63,7 +63,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-controller",
-				Image:           util.PravegaImage(p),
+				Image:           p.PravegaImage(),
 				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
 				Args: []string{
 					"controller",
@@ -82,7 +82,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: util.ConfigMapNameForController(p.Name),
+								Name: p.ConfigMapNameForController(),
 							},
 						},
 					},
@@ -220,8 +220,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.ConfigMapNameForController(p.Name),
-			Labels:    util.LabelsForController(p),
+			Name:      p.ConfigMapNameForController(),
+			Labels:    p.LabelsForController(),
 			Namespace: p.Namespace,
 		},
 		Data: configData,
@@ -255,9 +255,9 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        util.ServiceNameForController(p.Name),
+			Name:        p.ServiceNameForController(),
 			Namespace:   p.Namespace,
-			Labels:      util.LabelsForController(p),
+			Labels:      p.LabelsForController(),
 			Annotations: annotationMap,
 		},
 		Spec: corev1.ServiceSpec{
@@ -272,12 +272,12 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 					Port: 9090,
 				},
 			},
-			Selector: util.LabelsForController(p),
+			Selector: p.LabelsForController(),
 		},
 	}
 }
 
-func MakeControllerPodDisruptionBudget(pravegaCluster *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	minAvailable := intstr.FromInt(1)
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
@@ -285,13 +285,13 @@ func MakeControllerPodDisruptionBudget(pravegaCluster *api.PravegaCluster) *poli
 			APIVersion: "policy/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      util.PdbNameForController(pravegaCluster.Name),
-			Namespace: pravegaCluster.Namespace,
+			Name:      p.PdbNameForController(),
+			Namespace: p.Namespace,
 		},
 		Spec: policyv1beta1.PodDisruptionBudgetSpec{
 			MinAvailable: &minAvailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: util.LabelsForController(pravegaCluster),
+				MatchLabels: p.LabelsForController(),
 			},
 		},
 	}

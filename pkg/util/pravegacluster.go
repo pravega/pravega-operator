@@ -17,9 +17,9 @@ import (
 	"strings"
 
 	v "github.com/hashicorp/go-version"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -34,61 +34,6 @@ func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
 }
 
-func ConfigMapNameForPravega(clusterName string) string {
-	return fmt.Sprintf("%s-supported-upgrade-paths", clusterName)
-}
-
-func PdbNameForBookie(clusterName string) string {
-	return fmt.Sprintf("%s-bookie", clusterName)
-}
-
-func ConfigMapNameForBookie(clusterName string) string {
-	return fmt.Sprintf("%s-bookie", clusterName)
-}
-
-func StatefulSetNameForBookie(clusterName string) string {
-	return fmt.Sprintf("%s-bookie", clusterName)
-}
-
-func PdbNameForController(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-controller", clusterName)
-}
-
-func ConfigMapNameForController(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-controller", clusterName)
-}
-
-func ServiceNameForController(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-controller", clusterName)
-}
-
-func ServiceNameForSegmentStore(p *api.PravegaCluster, index int32) string {
-	if IsVersionBelow07(p.Spec.Version) {
-		return fmt.Sprintf("%s-pravega-segmentstore-%d", p.Name, index)
-	}
-	return fmt.Sprintf("%s-pravega-segment-store-%d", p.Name, index)
-}
-
-func HeadlessServiceNameForSegmentStore(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-segmentstore-headless", clusterName)
-}
-
-func HeadlessServiceNameForBookie(clusterName string) string {
-	return fmt.Sprintf("%s-bookie-headless", clusterName)
-}
-
-func DeploymentNameForController(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-controller", clusterName)
-}
-
-func PdbNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-segmentstore", clusterName)
-}
-
-func ConfigMapNameForSegmentstore(clusterName string) string {
-	return fmt.Sprintf("%s-pravega-segmentstore", clusterName)
-}
-
 //function to check if the version is below 0.7 or not
 func IsVersionBelow07(ver string) bool {
 	if ver == "" {
@@ -99,57 +44,6 @@ func IsVersionBelow07(ver string) bool {
 		return true
 	}
 	return false
-}
-
-//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
-func IsClusterUpgradingTo07(p *api.PravegaCluster) bool {
-	if !IsVersionBelow07(p.Spec.Version) && IsVersionBelow07(p.Status.CurrentVersion) {
-		return true
-	}
-	return false
-}
-
-//if version is above or equals to 0.7 this name will be assigned
-func StatefulSetNameForSegmentstoreAbove07(name string) string {
-	return fmt.Sprintf("%s-pravega-segment-store", name)
-}
-
-//if version is below 0.7 this name will be assigned
-func StatefulSetNameForSegmentstoreBelow07(name string) string {
-	return fmt.Sprintf("%s-pravega-segmentstore", name)
-}
-
-//to return name of segmentstore based on the version
-func StatefulSetNameForSegmentstore(p *api.PravegaCluster) string {
-	if IsVersionBelow07(p.Spec.Version) {
-		return StatefulSetNameForSegmentstoreBelow07(p.Name)
-	}
-	return StatefulSetNameForSegmentstoreAbove07(p.Name)
-}
-
-func LabelsForBookie(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	labels := LabelsForPravegaCluster(pravegaCluster)
-	labels["component"] = "bookie"
-	return labels
-}
-
-func LabelsForController(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	labels := LabelsForPravegaCluster(pravegaCluster)
-	labels["component"] = "pravega-controller"
-	return labels
-}
-
-func LabelsForSegmentStore(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	labels := LabelsForPravegaCluster(pravegaCluster)
-	labels["component"] = "pravega-segmentstore"
-	return labels
-}
-
-func LabelsForPravegaCluster(pravegaCluster *v1alpha1.PravegaCluster) map[string]string {
-	return map[string]string{
-		"app":             "pravega-cluster",
-		"pravega_cluster": pravegaCluster.Name,
-	}
 }
 
 func IsOrphan(k8sObjectName string, replicas int32) bool {
@@ -164,10 +58,6 @@ func IsOrphan(k8sObjectName string, replicas int32) bool {
 	}
 
 	return int32(ordinal) >= replicas
-}
-
-func PravegaControllerServiceURL(pravegaCluster v1alpha1.PravegaCluster) string {
-	return fmt.Sprintf("tcp://%v.%v:%v", ServiceNameForController(pravegaCluster.Name), pravegaCluster.Namespace, "9090")
 }
 
 func HealthcheckCommand(port int32) []string {
@@ -199,21 +89,6 @@ func RemoveString(slice []string, str string) (result []string) {
 		result = append(result, item)
 	}
 	return result
-}
-
-func GetClusterExpectedSize(p *v1alpha1.PravegaCluster) (size int) {
-	return int(p.Spec.Pravega.ControllerReplicas + p.Spec.Pravega.SegmentStoreReplicas)
-}
-
-func PravegaImage(p *v1alpha1.PravegaCluster) (image string) {
-	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Spec.Version)
-}
-
-func PravegaTargetImage(p *v1alpha1.PravegaCluster) (string, error) {
-	if p.Status.TargetVersion == "" {
-		return "", fmt.Errorf("target version is not set")
-	}
-	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Status.TargetVersion), nil
 }
 
 func GetPodVersion(pod *v1.Pod) string {
@@ -349,4 +224,73 @@ func OverrideDefaultJVMOptions(defaultOpts []string, customOpts []string) []stri
 	}
 
 	return jvmOpts
+}
+
+func IsPodReady(pod *corev1.Pod) bool {
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
+func IsPodFaulty(pod *corev1.Pod) (bool, error) {
+	if pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
+		pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
+		return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+	}
+	return false, nil
+}
+
+func DownwardAPIEnv() []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "metadata.name",
+				},
+			},
+		},
+		{
+			Name: "POD_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "metadata.namespace",
+				},
+			},
+		},
+	}
+}
+
+func PodAntiAffinity(component string, clusterName string) *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "component",
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{component},
+								},
+								{
+									Key:      "pravega_cluster",
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{clusterName},
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		},
+	}
 }
