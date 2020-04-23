@@ -144,6 +144,37 @@ spec:
       credentials: ecs-credentials
 ```
 
+#### Update ECS Credentials
+
+There might be an operational need to update ECS credentials for a running Pravega cluster, where the following steps could be taken:
+
+1. Modify Segmentstore configmap, find "EXTENDEDS3_CONFIGURI", and then replace "secretKey" and/or "identity" with new values
+    ```
+    $ kubectl edit configmap pravega-pravega-segmentstore
+    ```
+
+    ```
+    ...
+    EXTENDEDS3_BUCKET: shared
+    EXTENDEDS3_CONFIGURI: https://10.243.86.64:9021?namespace=namespace%26identity=oldUser%26secretKey=oldPassword
+    EXTENDEDS3_PREFIX: example
+    ...
+    ```
+2. Delete all (running) Segmentstore pod(s) in one of the two approaches below:
+    ```
+    $ kubectl delete po -l component=pravega-segmentstore
+    ```
+
+    ```
+    $ kubectl delete po pravega-pravega-segmentstore-1
+    $ kubectl delete po pravega-pravega-segmentstore-2
+    $ kubectl delete po pravega-pravega-segmentstore-3
+    ...
+    ```
+    As StatefulSet, new Segementstore pods will be automatically created with the new ECS credentials, since the default upgrade strategy of Segmentstore is `OnDelete` instead of `RollingUpdate`.
+
+    Since ECS supports grace period when both old and new credentials are accepted, Pravega service is technically uninterrupted during the above process.
+
 ### Use HDFS as Tier 2
 
 Pravega can also use HDFS as the storage backend for Tier 2. The only requisite is that the HDFS backend must support Append operation.
