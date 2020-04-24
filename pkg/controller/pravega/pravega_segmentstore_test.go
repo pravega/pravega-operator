@@ -103,6 +103,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
@@ -208,6 +209,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
@@ -311,6 +313,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
