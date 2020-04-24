@@ -154,6 +154,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configureSegmentstoreTLSSecret(&podSpec, p)
 
 	configureTier2Filesystem(&podSpec, p.Spec.Pravega)
+	configureCaBundleSecret(&podSpec, p)
 
 	return podSpec
 }
@@ -324,7 +325,27 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 	}
 }
 
+func configureCaBundleSecret(podSpec *corev1.PodSpec, pravegaCluster *api.PravegaCluster) {
+	if p.Spec.TLS.IsCaBundlePresent() {
+		vol := corev1.Volume{
+			Name: caBundleVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.TLS.Static.CaBundle,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      caBundleVolumeName,
+			MountPath: caBundleMountDir,
+		})
+	}
+}
+
 func MakeSegmentStoreHeadlessService(pravegaCluster *api.PravegaCluster) *corev1.Service {
+
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
