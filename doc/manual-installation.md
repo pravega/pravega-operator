@@ -1,7 +1,7 @@
 ## Manual installation
 
 * [Install the Operator manually](#install-the-operator-manually)
-* [Set up Tier 2 Storage](#set-up-tier-2-storage)
+* [Set up LongTermStorage](#Set-up-LongTermStorage)
 * [Install the Pravega cluster manually](#install-the-pravega-cluster-manually)
 * [Uninstall the Pravega Cluster manually](#uninstall-the-pravega-cluster-manually)
 * [Uninstall the Operator manually](#uninstall-the-operator-manually)
@@ -94,7 +94,7 @@ where:
 - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
-Check out other sample CR files in the [`example`](../example) directory.
+Check out other sample CR files in the [`example`](../deploy/crds) directory.
 
 Deploy the Pravega cluster.
 
