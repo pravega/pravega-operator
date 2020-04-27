@@ -10,30 +10,34 @@
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
+install the cert-manager from the following link
+https://cert-manager.io/docs/installation/kubernetes/
+  
+Installing the secrets:-
+```
+$ kubectl apply -f deploy/secret.yaml
+```
+Insalling the webhook
+```
+$ kubectl apply -f deploy//webhook.yaml  
+```
+Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
+```
+$ kubectl apply -f  deploy//version_map.yaml 
+```
 Register the Pravega cluster custom resource definition (CRD).
-
 ```
-$ kubectl create -f deploy/crd.yaml
+$ kubectl create -f deploy/crds/crd.yaml
 ```
-
 Create the operator role, role binding and service account.
-
 ```
 $ kubectl create -f deploy/role.yaml
 $ kubectl create -f deploy/role_binding.yaml
 $ kubectl create -f deploy/service_account.yaml
 ```
-
 Install the operator.
-
 ```
-$ kubectl create -f deploy/operator.yaml
-```
-
-Finally create a ConfigMap which contains the list of supported upgrade paths for the pravega cluster.
-
-```
-$ kubectl create -f deploy/version_map.yaml
+$ kubectl create -f deploy/operator.yaml  
 ```
 
 ### Deploying in Test Mode
@@ -43,7 +47,7 @@ $ kubectl create -f deploy/version_map.yaml
 ```
 containers:
   - name: pravega-operator
-    image: pravega/pravega-operator:0.4.3-rc1
+    image: pravega/pravega-operator:0.5.0-rc1
     ports:
     - containerPort: 60000
       name: metrics
@@ -54,18 +58,18 @@ containers:
 ```
 ### Set up Tier 2 Storage
 
-Pravega requires a long term storage provider known as Tier 2 storage.
+Pravega requires a long term storage provider known as Long Term storage.
 
-Check out the available [options for Tier 2](tier2.md) and how to configure it.
+Check out the available [options for Long Term Storage](tier2.md) and how to configure it.
 
 In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](tier2.md#use-nfs-as-tier-2).
 
 ### Install the Pravega cluster manually
 
-Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (3 Bookies, 1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
+Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
 
 ```yaml
-apiVersion: "pravega.pravega.io/v1alpha1"
+apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: "example"
@@ -102,7 +106,7 @@ Verify that the cluster instances and its components are being created.
 ```
 $ kubectl get PravegaCluster
 NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-example   0.4.0     7                 0               25s
+example   0.7.0     4                 0               25s
 ```
 
 ### Uninstall the Pravega cluster manually
