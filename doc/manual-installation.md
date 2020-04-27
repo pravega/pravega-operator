@@ -57,7 +57,7 @@ containers:
     imagePullPolicy: Always
     args: [-test]
 ```
-### Set up LongTermstorage:-
+### Set up LongTermStorage:-
 
 Pravega requires a long term storage provider known as longtermStorage.
 
