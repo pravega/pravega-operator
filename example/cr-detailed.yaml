@@ -1,4 +1,4 @@
-apiVersion: "pravega.pravega.io/v1alpha1"
+apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: "example"
