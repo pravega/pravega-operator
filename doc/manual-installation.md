@@ -10,20 +10,21 @@
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-install the cert-manager from the following link
+In case you dont have a cert-manager, Install the cert-manager from the following link:-
+
 https://cert-manager.io/docs/installation/kubernetes/
   
 Installing the secrets:-
 ```
-$ kubectl apply -f deploy/secret.yaml
+$ kubectl create -f deploy/secret.yaml
 ```
 Insalling the webhook
 ```
-$ kubectl apply -f deploy//webhook.yaml  
+$ kubectl create -f deploy/webhook.yaml  
 ```
 Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
 ```
-$ kubectl apply -f  deploy//version_map.yaml 
+$ kubectl create -f  deploy/version_map.yaml 
 ```
 Register the Pravega cluster custom resource definition (CRD).
 ```
@@ -82,7 +83,7 @@ spec:
     segmentStoreReplicas: 3
     image:
       repository: pravega/pravega
-    tier2:
+    longtermStorage:
       filesystem:
         persistentVolumeClaim:
           claimName: pravega-tier2
