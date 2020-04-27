@@ -180,7 +180,7 @@ Refer to the steps below to add ECS server certificate or CA's certificate into 
       static:
         caBundle: "ecs-cert"
     ...
-    longtermstorage:
+    longtermStorage:
         ecs:
           configUri: https://10.247.10.52:9021?namespace=pravega
           bucket: "shared"
@@ -230,7 +230,7 @@ Follow the [instructions to deploy Pravega manually](manual-installation.md#inst
 
 ```
 spec:
-  longtermstorage:
+  longtermStorage:
     hdfs:
       uri: hdfs://10.28.2.14:8020/
       root: /example
