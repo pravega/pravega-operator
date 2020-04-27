@@ -40,7 +40,7 @@ spec:
     # Turn on Pravega Debug Logging
     debugLogging: false
 
-    tier2:
+    longtermStorage:
       filesystem:
         persistentVolumeClaim:
           claimName: pravega-tier2
