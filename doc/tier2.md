@@ -133,7 +133,7 @@ Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](htt
     ```
     ...
     spec:
-    tier2:
+    longtermStorage:
         ecs:
           configUri: http://10.247.10.52:9020?namespace=pravega
           bucket: "shared"
