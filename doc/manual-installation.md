@@ -57,11 +57,11 @@ containers:
     imagePullPolicy: Always
     args: [-test]
 ```
-### Set up Tier 2 Storage
+### Set up LongTermstorage:-
 
-Pravega requires a long term storage provider known as Long Term storage.
+Pravega requires a long term storage provider known as longtermStorage.
 
-Check out the available [options for Long Term Storage](tier2.md) and how to configure it.
+Check out the available [options for longtermStorage](tier2.md) and how to configure it.
 
 In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](tier2.md#use-nfs-as-tier-2).
 
