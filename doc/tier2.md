@@ -1,15 +1,15 @@
-## Tier 2 Storage
+## LongTermStorage
 
-The following Tier 2 storage providers are supported:
+The following LongTermStorage storage providers are supported:
 
-- [Filesystem: NFS](#use-nfs-as-tier-2)
-- [Filesystem: Google Filestore](#use-google-filestore-storage-as-tier-2)
-- [S3: Dell EMC ECS](#use-dell-emc-ecs-as-tier-2)
-- [HDFS](#use-hdfs-as-tier-2)
+- [Filesystem: NFS](#use-nfs-as-longtermstorage)
+- [Filesystem: Google Filestore](#use-google-filestore-storage-as-longtermstorage)
+- [S3: Dell EMC ECS](#use-dell-emc-ecs-as-longtermstorage)
+- [HDFS](#use-hdfs-as-longtermstorage)
 
-### Use NFS as Tier 2
+### Use NFS as LongTermStorage
 
-The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide Tier 2 storage.
+The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide LongTermStorage storage.
 
 ```
 $ helm install stable/nfs-server-provisioner
@@ -32,7 +32,7 @@ nfs    cluster.local/elevated-leopard-nfs-server-provisioner   24s
 ...
 ```
 
-Once the NFS provisioner is installed, you can create a `PersistentVolumeClaim` that will be used as Tier 2 for Pravega. Create a `pvc.yaml` file with the following content.
+Once the NFS provisioner is installed, you can create a `PersistentVolumeClaim` that will be used as LongTermStorage for Pravega. Create a `pvc.yaml` file with the following content.
 
 ```yaml
 kind: PersistentVolumeClaim
@@ -52,14 +52,14 @@ spec:
 $ kubectl create -f pvc.yaml
 ```
 
-### Use Google Filestore Storage as Tier 2
+### Use Google Filestore Storage as LongTermStorage
 
 1. [Create a Google Filestore](https://console.cloud.google.com/filestore/instances).
 
 > Refer to https://cloud.google.com/filestore/docs/accessing-fileshares for more information
 
 
-2. Create a `pv.yaml` file with the `PersistentVolume` specification to provide Tier 2 storage.
+2. Create a `pv.yaml` file with the `PersistentVolume` specification to provide LongTermStorage storage.
 
 ```yaml
 apiVersion: v1
@@ -108,9 +108,9 @@ spec:
 $ kubectl create -f pvc.yaml
 ```
 
-### Use Dell EMC ECS as Tier 2
+### Use Dell EMC ECS as LongTermStorage
 
-Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm) as Tier 2.
+Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm) as LongTermStorage.
 
 1. Create a file with the secret definition containing your access and secret keys.
 
@@ -129,7 +129,7 @@ Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](htt
     ```
     $ kubectl create -f ecs-credentials.yaml
     ```
-3. Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+3. Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the LongTermStorage block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
     ```
     ...
     spec:
@@ -180,7 +180,7 @@ Refer to the steps below to add ECS server certificate or CA's certificate into 
       static:
         caBundle: "ecs-cert"
     ...
-    tier2:
+    longtermstorage:
         ecs:
           configUri: https://10.247.10.52:9021?namespace=pravega
           bucket: "shared"
@@ -222,15 +222,15 @@ There might be an operational need to update ECS credentials for a running Prave
 
     Since ECS supports grace period when both old and new credentials are accepted, Pravega service is technically uninterrupted during the above process.
 
-### Use HDFS as Tier 2
+### Use HDFS as LongTermStorage
 
-Pravega can also use HDFS as the storage backend for Tier 2. The only requisite is that the HDFS backend must support Append operation.
+Pravega can also use HDFS as the storage backend for LongTermStorage. The only requisite is that the HDFS backend must support Append operation.
 
-Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your HDFS connection details.
+Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the LongTermStorage block in your `PravegaCluster` manifest with your HDFS connection details.
 
 ```
 spec:
-  tier2:
+  longtermstorage:
     hdfs:
       uri: hdfs://10.28.2.14:8020/
       root: /example
