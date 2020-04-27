@@ -94,7 +94,7 @@ where:
 - `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
-Check out other sample CR files in the [`example`](../deploy/crds) directory.
+Check out other sample CR files in the [`example`](../example) directory.
 
 Deploy the Pravega cluster.
 
