@@ -13,7 +13,7 @@ spec:
       controllerSecret: "controller-pki"
       segmentStoreSecret: "segmentstore-pki"
 
-  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+  bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
 
   pravega:
     image:

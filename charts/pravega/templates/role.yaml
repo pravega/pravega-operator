@@ -11,7 +11,7 @@ rules:
   - "*"
   verbs:
   - get
-- apiGroups: 
+- apiGroups:
   - ""
   resources:
   - pods

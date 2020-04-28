@@ -11,27 +11,27 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"github.com/pravega/pravega-operator/pkg/webhook"
 	"os"
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
-	"github.com/operator-framework/operator-sdk/pkg/ready"
+	//"github.com/operator-framework/operator-sdk/pkg/leader"
+
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
+	log "github.com/sirupsen/logrus"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -77,18 +77,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Become the leader before proceeding
-	leader.Become(context.TODO(), "pravega-operator-lock")
-
-	r := ready.NewFileReady()
-	err = r.Set()
-	if err != nil {
-		log.Fatal(err, "")
-	}
-	defer r.Unset()
-
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,10 +96,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	v1beta1.Mgr = mgr
 	if webhookFlag {
-		// Setup webhook
-		if err := webhook.AddToManager(mgr); err != nil {
-			log.Fatal(err)
+		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
+			log.Error(err, "unable to create webhook %s", err.Error())
+			os.Exit(1)
 		}
 	}
 

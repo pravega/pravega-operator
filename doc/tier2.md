@@ -112,37 +112,115 @@ $ kubectl create -f pvc.yaml
 
 Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](https://www.dellemc.com/sr-me/storage/ecs/index.htm) as Tier 2.
 
-Create a file with the secret definition containing your access and secret keys.
+1. Create a file with the secret definition containing your access and secret keys.
 
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ecs-credentials
-type: Opaque
-stringData:
-  ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
-  SECRET_KEY: 0123456789
-```
+    ```
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ecs-credentials
+    type: Opaque
+    stringData:
+      ACCESS_KEY_ID: QWERTY@ecstestdrive.emc.com
+      SECRET_KEY: 0123456789
+    ```
 
-Assuming that the file is named `ecs-credentials.yaml`.
+2. Assuming that the file is named `ecs-credentials.yaml`.
+    ```
+    $ kubectl create -f ecs-credentials.yaml
+    ```
+3. Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+    ```
+    ...
+    spec:
+    tier2:
+        ecs:
+          configUri: http://10.247.10.52:9020?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+    ```
 
-```
-$ kubectl create -f ecs-credentials.yaml
-```
+#### (Optional) ECS HTTPS/TLS Support on Kubernetes
+Pravega connects ECS endpoint through OpenJDK based HTTP or HTTPS, so by default Pravega as an HTTPS client is configured to verify ECS server certificate.
 
-Follow the [instructions to deploy Pravega manually](manual-installation.md#install-the-pravega-cluster-manually) and configure the Tier 2 block in your `PravegaCluster` manifest with your ECS connection details and a reference to the secret above.
+The ECS server certificate, or its signing CA's certificate, must present in OpenJDK's Truststore, for Pravega to establish HTTPS/TLS connection with ECS endpoint.
 
-```
-...
-spec:
-  tier2:
-    ecs:
-      configUri: http://10.247.10.52:9020?namespace=pravega
-      bucket: "shared"
-      prefix: "example"
-      credentials: ecs-credentials
-```
+Refer to the steps below to add ECS server certificate or CA's certificate into OpenJDK's Truststore:
+
+1. Retrieve CA certificate or the server certificate as file, e.g. "ecs-certificate.pem".
+
+2. Load the certificate into Kubernetes secret:
+    ```
+    kubectl create secret generic ecs-cert --from-file ./ecs-certificate.pem
+    ```
+    or create a file directly to contain the certificate content:
+    ```
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: "ecs-cert"
+    type: Opaque
+    data:
+      ecs-certificate.pem: QmFnIEF0dH......JpYnV0ZLS0tLQo=
+    ```
+    Assuming the above file is named `ecs-tls.yaml`, then create secret using the above file.
+    ```
+    $ kubectl create -f ecs-tls.yaml
+    ```
+
+3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section. 
+    ```
+    ...
+    kind: "PravegaCluster"
+    metadata:
+      name: "example"
+    spec:
+    tls:
+      static:
+        caBundle: "ecs-cert"
+    ...
+    tier2:
+        ecs:
+          configUri: https://10.247.10.52:9021?namespace=pravega
+          bucket: "shared"
+          prefix: "example"
+          credentials: ecs-credentials
+    ```
+4. Pravega operator then mounts caBundle onto folder "/etc/secret-volume/ca-bundle" in container.
+
+5. Pravega Segmentstore container adds certificates found under "/etc/secret-volume/ca-bundle" into the default OpenJDK Truststore, in order to establish HTTPS/TLS connection with ECS.
+
+#### Update ECS Credentials
+
+There might be an operational need to update ECS credentials for a running Pravega cluster, where the following steps could be taken:
+
+1. Modify Segmentstore configmap, find "EXTENDEDS3_CONFIGURI", and then replace "secretKey" and/or "identity" with new values
+    ```
+    $ kubectl edit configmap pravega-pravega-segmentstore
+    ```
+
+    ```
+    ...
+    EXTENDEDS3_BUCKET: shared
+    EXTENDEDS3_CONFIGURI: https://10.243.86.64:9021?namespace=namespace%26identity=oldUser%26secretKey=oldPassword
+    EXTENDEDS3_PREFIX: example
+    ...
+    ```
+2. Delete all (running) Segmentstore pod(s) in one of the two approaches below:
+    ```
+    $ kubectl delete po -l component=pravega-segmentstore
+    ```
+
+    ```
+    $ kubectl delete po pravega-pravega-segmentstore-1
+    $ kubectl delete po pravega-pravega-segmentstore-2
+    $ kubectl delete po pravega-pravega-segmentstore-3
+    ...
+    ```
+    As StatefulSet, new Segementstore pods will be automatically created with the new ECS credentials, since the default upgrade strategy of Segmentstore is `OnDelete` instead of `RollingUpdate`.
+
+    Since ECS supports grace period when both old and new credentials are accepted, Pravega service is technically uninterrupted during the above process.
 
 ### Use HDFS as Tier 2
 

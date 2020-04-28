@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package v1alpha1_test
+package v1beta1_test
 
 import (
 	"testing"
@@ -17,20 +17,20 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 )
 
-func TestV1alpha1(t *testing.T) {
+func TestV1beta1(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "PravegaCluster API")
 }
 
 var _ = Describe("PravegaCluster Types Spec", func() {
 
-	var p v1alpha1.PravegaCluster
+	var p v1beta1.PravegaCluster
 
 	BeforeEach(func() {
-		p = v1alpha1.PravegaCluster{
+		p = v1beta1.PravegaCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "default",
 			},
@@ -56,16 +56,16 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.ExternalAccess).ShouldNot(BeNil())
 		})
 
-		It("should set version to 0.4.0", func() {
-			Ω(p.Spec.Version).Should(Equal("0.4.0"))
+		It("should set version to 0.7.0", func() {
+			Ω(p.Spec.Version).Should(Equal("0.7.0"))
 		})
 
 		It("should set pravega spec", func() {
 			Ω(p.Spec.Pravega).ShouldNot(BeNil())
 		})
 
-		It("should set bookkeeper spec", func() {
-			Ω(p.Spec.Bookkeeper).ShouldNot(BeNil())
+		It("should set bookkeeper uri", func() {
+			Ω(p.Spec.BookkeeperUri).ShouldNot(BeNil())
 		})
 	})
 })

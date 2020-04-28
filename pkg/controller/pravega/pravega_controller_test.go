@@ -13,7 +13,7 @@ package pravega_test
 import (
 	"testing"
 
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,11 +33,11 @@ var _ = Describe("Controller", func() {
 
 	var _ = Describe("Controller Test", func() {
 		var (
-			p *v1alpha1.PravegaCluster
+			p *v1beta1.PravegaCluster
 		)
 
 		BeforeEach(func() {
-			p = &v1alpha1.PravegaCluster{
+			p = &v1beta1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "default",
 				},
@@ -65,16 +65,16 @@ var _ = Describe("Controller", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version:      "0.5.0",
 					ZookeeperUri: "example.com",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           4,
 						ControllerServiceAccountName:   "pravega-components",
@@ -83,10 +83,8 @@ var _ = Describe("Controller", func() {
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
@@ -97,13 +95,13 @@ var _ = Describe("Controller", func() {
 							VolumeName: "abc",
 						},
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
 						},
 					},
-					Authentication: &v1alpha1.AuthenticationParameters{
+					Authentication: &v1beta1.AuthenticationParameters{
 						Enabled:            true,
 						PasswordAuthSecret: "authentication-secret",
 					},
@@ -163,16 +161,16 @@ var _ = Describe("Controller", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version:      "0.5.0",
 					ZookeeperUri: "example.com",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           4,
 						ControllerServiceAccountName:   "pravega-components",
@@ -182,10 +180,8 @@ var _ = Describe("Controller", func() {
 						ControllerExternalServiceType:  corev1.ServiceTypeLoadBalancer,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
@@ -196,13 +192,13 @@ var _ = Describe("Controller", func() {
 							VolumeName: "abc",
 						},
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
 						},
 					},
-					Authentication: &v1alpha1.AuthenticationParameters{
+					Authentication: &v1beta1.AuthenticationParameters{
 						Enabled:            true,
 						PasswordAuthSecret: "authentication-secret",
 					},

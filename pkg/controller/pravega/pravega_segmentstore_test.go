@@ -13,7 +13,7 @@ package pravega_test
 import (
 	"testing"
 
-	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,11 +33,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 
 	var _ = Describe("SegmentStore Test", func() {
 		var (
-			p *v1alpha1.PravegaCluster
+			p *v1beta1.PravegaCluster
 		)
 
 		BeforeEach(func() {
-			p = &v1alpha1.PravegaCluster{
+			p = &v1beta1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "default",
 				},
@@ -64,15 +64,15 @@ var _ = Describe("PravegaSegmentstore", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.5.0",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           1,
 						ControllerServiceAccountName:   "pravega-components",
@@ -81,18 +81,16 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
-						Tier2: &v1alpha1.Tier2Spec{
-							Ecs: &v1alpha1.ECSSpec{
+						LongTermStorage: &v1beta1.LongTermStorageSpec{
+							Ecs: &v1beta1.ECSSpec{
 								ConfigUri:   "configUri",
 								Bucket:      "bucket",
 								Prefix:      "prefix",
@@ -101,13 +99,14 @@ var _ = Describe("PravegaSegmentstore", func() {
 						},
 						DebugLogging: true,
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
-					Authentication: &v1alpha1.AuthenticationParameters{
+					Authentication: &v1beta1.AuthenticationParameters{
 						Enabled:            true,
 						PasswordAuthSecret: "authentication-secret",
 					},
@@ -171,15 +170,15 @@ var _ = Describe("PravegaSegmentstore", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.5.0",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:              2,
 						SegmentStoreReplicas:            4,
 						ControllerServiceAccountName:    "pravega-components",
@@ -189,18 +188,16 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerServiceAnnotations:    annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
-						Tier2: &v1alpha1.Tier2Spec{
-							FileSystem: &v1alpha1.FileSystemSpec{
+						LongTermStorage: &v1beta1.LongTermStorageSpec{
+							FileSystem: &v1beta1.FileSystemSpec{
 								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 									ClaimName: "claim",
 									ReadOnly:  true,
@@ -208,13 +205,14 @@ var _ = Describe("PravegaSegmentstore", func() {
 							},
 						},
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
-					Authentication: &v1alpha1.AuthenticationParameters{
+					Authentication: &v1beta1.AuthenticationParameters{
 						Enabled:            true,
 						PasswordAuthSecret: "authentication-secret",
 					},
@@ -278,15 +276,15 @@ var _ = Describe("PravegaSegmentstore", func() {
 						corev1.ResourceMemory: resource.MustParse("6Gi"),
 					},
 				}
-				p.Spec = v1alpha1.ClusterSpec{
+				p.Spec = v1beta1.ClusterSpec{
 					Version: "0.5.0",
-					ExternalAccess: &v1alpha1.ExternalAccess{
+					ExternalAccess: &v1beta1.ExternalAccess{
 						Enabled:    true,
 						Type:       corev1.ServiceTypeClusterIP,
 						DomainName: "pravega.com.",
 					},
-					BookkeeperUri: v1alpha1.DefaultBookkeeperUri,
-					Pravega: &v1alpha1.PravegaSpec{
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
 						ControllerReplicas:             2,
 						SegmentStoreReplicas:           4,
 						ControllerServiceAccountName:   "pravega-components",
@@ -295,31 +293,30 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						Image: &v1alpha1.PravegaImageSpec{
-							ImageSpec: v1alpha1.ImageSpec{
-								Repository: "bar/pravega",
-							},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
 						},
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
-						Tier2: &v1alpha1.Tier2Spec{
-							Hdfs: &v1alpha1.HDFSSpec{
+						LongTermStorage: &v1beta1.LongTermStorageSpec{
+							Hdfs: &v1beta1.HDFSSpec{
 								Uri:               "uri",
 								Root:              "root",
 								ReplicationFactor: 1,
 							},
 						},
 					},
-					TLS: &v1alpha1.TLSPolicy{
-						Static: &v1alpha1.StaticTLS{
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
 							ControllerSecret:   "controller-secret",
 							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
 						},
 					},
-					Authentication: &v1alpha1.AuthenticationParameters{
+					Authentication: &v1beta1.AuthenticationParameters{
 						Enabled:            true,
 						PasswordAuthSecret: "authentication-secret",
 					},

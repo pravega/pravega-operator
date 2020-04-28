@@ -11,24 +11,33 @@
 package v1alpha1
 
 import (
-	"k8s.io/api/core/v1"
+	"log"
+
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const (
 	// DefaultZookeeperUri is the default ZooKeeper URI in the form of "hostname:port"
 	DefaultZookeeperUri = "zk-client:2181"
 
-	// DefaultBookkeeperUri is the default ZooKeeper URI in the form of "hostname:port"
-	DefaultBookkeeperUri = "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
-
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = v1.ServiceTypeLoadBalancer
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.6.1"
+	DefaultPravegaVersion = "0.4.0"
 )
+
+func (*PravegaCluster) Hub() {}
+
+func (p *PravegaCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	log.Print("SetupWebhookWithManager invoked")
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(p).
+		Complete()
+}
 
 func init() {
 	SchemeBuilder.Register(&PravegaCluster{}, &PravegaClusterList{})
@@ -95,13 +104,8 @@ type ClusterSpec struct {
 	// If version is not set, default is "0.4.0".
 	Version string `json:"version"`
 
-	// BookkeeperUri specifies the hostname/IP address and port in the format
-	// "hostname:port".
-	// comma delimited list of BK server URLs
-	//pravega-bookie-0.pravega-bookie-headless.default:3181,
-	//pravega-bookie-1.pravega-bookie-headless.default:3181,
-	//pravega-bookie-2.pravega-bookie-headless.default:3181
-	BookkeeperUri string `json:"bookkeeperUri"`
+	// Bookkeeper configuration
+	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`
 
 	// Pravega configuration
 	Pravega *PravegaSpec `json:"pravega"`
@@ -139,8 +143,11 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
-	if s.BookkeeperUri == "" {
-		s.BookkeeperUri = DefaultBookkeeperUri
+	if s.Bookkeeper == nil {
+		changed = true
+		s.Bookkeeper = &BookkeeperSpec{}
+	}
+	if s.Bookkeeper.withDefaults() {
 		changed = true
 	}
 
@@ -189,6 +196,7 @@ type TLSPolicy struct {
 type StaticTLS struct {
 	ControllerSecret   string `json:"controllerSecret,omitempty"`
 	SegmentStoreSecret string `json:"segmentStoreSecret,omitempty"`
+	CaBundle           string `json:"caBundle,omitempty"`
 }
 
 func (tp *TLSPolicy) IsSecureController() bool {
@@ -203,6 +211,13 @@ func (tp *TLSPolicy) IsSecureSegmentStore() bool {
 		return false
 	}
 	return len(tp.Static.SegmentStoreSecret) != 0
+}
+
+func (tp *TLSPolicy) IsCaBundlePresent() bool {
+	if tp == nil || tp.Static == nil {
+		return false
+	}
+	return len(tp.Static.CaBundle) != 0
 }
 
 type AuthenticationParameters struct {

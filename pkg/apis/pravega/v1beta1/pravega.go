@@ -8,7 +8,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package v1alpha1
+package v1beta1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
@@ -29,8 +29,8 @@ const (
 	// Pravega SegmentStore cache volume
 	DefaultPravegaCacheVolumeSize = "20Gi"
 
-	// DefaultPravegaTier2ClaimName is the default volume claim name used as Tier 2
-	DefaultPravegaTier2ClaimName = "pravega-tier2"
+	// DefaultPravegaLTSClaimName is the default volume claim name used as Tier 2
+	DefaultPravegaLTSClaimName = "pravega-tier2"
 
 	// DefaultControllerReplicas is the default number of replicas for the Pravega
 	// Controller component
@@ -81,7 +81,7 @@ type PravegaSpec struct {
 
 	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega" will be used.
-	Image *PravegaImageSpec `json:"image"`
+	Image *ImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
@@ -103,10 +103,10 @@ type PravegaSpec struct {
 	// emptyDir as volume
 	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
 
-	// Tier2 is the configuration of Pravega's tier 2 storage. If no configuration
-	// is provided, it will assume that a PersistentVolumeClaim called "pravega-tier2"
+	// LongTermStorage is the configuration of Pravega's tier 2 storage. If no configuration
+	// is provided, it will assume that a PersistentVolumeClaim called "pravega-longterm"
 	// is present and it will use it as Tier 2
-	Tier2 *Tier2Spec `json:"tier2"`
+	LongTermStorage *LongTermStorageSpec `json:"longtermStorage"`
 
 	// ControllerServiceAccountName configures the service account used on controller instances.
 	// If not specified, Kubernetes will automatically assign the default service account in the namespace
@@ -123,6 +123,14 @@ type PravegaSpec struct {
 	// SegmentStoreResources specifies the request and limit of resources that segmentStore can have.
 	// SegmentStoreResources includes CPU and memory resources
 	SegmentStoreResources *v1.ResourceRequirements `json:"segmentStoreResources,omitempty"`
+
+	// Provides the name of the configmap created by the user to provide additional key-value pairs
+	// that need to be configured into the ss pod as environmental variables
+	SegmentStoreEnvVars string `json:"segmentStoreEnvVars,omitempty"`
+
+	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
+	// either as an environment variable or by mounting it to a volume
+	SegmentStoreSecret *SegmentStoreSecret `json:"segmentStoreSecret"`
 
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
@@ -154,7 +162,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 
 	if s.Image == nil {
 		changed = true
-		s.Image = &PravegaImageSpec{}
+		s.Image = &ImageSpec{}
 	}
 	if s.Image.withDefaults() {
 		changed = true
@@ -175,24 +183,12 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.SegmentStoreJVMOptions = []string{}
 	}
 
-	if s.CacheVolumeClaimTemplate == nil {
+	if s.LongTermStorage == nil {
 		changed = true
-		s.CacheVolumeClaimTemplate = &v1.PersistentVolumeClaimSpec{
-			AccessModes: []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
-			Resources: v1.ResourceRequirements{
-				Requests: v1.ResourceList{
-					v1.ResourceStorage: resource.MustParse(DefaultPravegaCacheVolumeSize),
-				},
-			},
-		}
+		s.LongTermStorage = &LongTermStorageSpec{}
 	}
 
-	if s.Tier2 == nil {
-		changed = true
-		s.Tier2 = &Tier2Spec{}
-	}
-
-	if s.Tier2.withDefaults() {
+	if s.LongTermStorage.withDefaults() {
 		changed = true
 	}
 
@@ -224,6 +220,15 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
+	if s.SegmentStoreSecret == nil {
+		changed = true
+		s.SegmentStoreSecret = &SegmentStoreSecret{}
+	}
+
+	if s.SegmentStoreSecret.withDefaults() {
+		changed = true
+	}
+
 	if s.ControllerServiceAnnotations == nil {
 		changed = true
 		s.ControllerServiceAnnotations = map[string]string{}
@@ -237,18 +242,31 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	return changed
 }
 
-// PravegaImageSpec defines the fields needed for a Pravega Docker image
-type PravegaImageSpec struct {
-	ImageSpec
+// SegmentStoreSecret defines the configuration of the secret for the Segment Store
+type SegmentStoreSecret struct {
+	// Secret specifies the name of Secret which needs to be configured
+	Secret string `json:"secret"`
+
+	// Path to the volume where the secret will be mounted
+	// This value is considered only when the secret is provided
+	// If this value is provided, the secret is mounted to a Volume
+	// else the secret is exposed as an Environment Variable
+	MountPath string `json:"mountPath"`
 }
 
-func (s *PravegaImageSpec) withDefaults() (changed bool) {
+func (s *SegmentStoreSecret) withDefaults() (changed bool) {
+	if s.Secret == "" {
+		s.MountPath = ""
+	}
+
+	return changed
+}
+
+func (s *ImageSpec) withDefaults() (changed bool) {
 	if s.Repository == "" {
 		changed = true
 		s.Repository = DefaultPravegaImageRepository
 	}
-
-	s.Tag = ""
 
 	if s.PullPolicy == "" {
 		changed = true
@@ -258,10 +276,10 @@ func (s *PravegaImageSpec) withDefaults() (changed bool) {
 	return changed
 }
 
-// Tier2Spec configures the Tier 2 storage type to use with Pravega.
+// LongTermStorageSpec configures the Tier 2 storage type to use with Pravega.
 // If not specified, Tier 2 will be configured in filesystem mode and will try
-// to use a PersistentVolumeClaim with the name "pravega-tier2"
-type Tier2Spec struct {
+// to use a PersistentVolumeClaim with the name "pravega-longterm"
+type LongTermStorageSpec struct {
 	// FileSystem is used to configure a pre-created Persistent Volume Claim
 	// as Tier 2 backend.
 	// It is default Tier 2 mode.
@@ -274,12 +292,12 @@ type Tier2Spec struct {
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
 }
 
-func (s *Tier2Spec) withDefaults() (changed bool) {
+func (s *LongTermStorageSpec) withDefaults() (changed bool) {
 	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil {
 		changed = true
 		fs := &FileSystemSpec{
 			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-				ClaimName: DefaultPravegaTier2ClaimName,
+				ClaimName: DefaultPravegaLTSClaimName,
 			},
 		}
 		s.FileSystem = fs

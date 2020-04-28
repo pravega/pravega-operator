@@ -17,10 +17,5 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 
 {{- define "pravega-components.fullname" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-%s-%s" .Release.Name $name .Values.serviceAccount.name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{- define "versionmap.fullname" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-%s-supported-upgrade-paths" .Release.Name $name -}}
+{{- printf "%s" .Values.serviceAccount.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

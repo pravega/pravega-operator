@@ -16,7 +16,7 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	apis "github.com/pravega/pravega-operator/pkg/apis"
-	operator "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	operator "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,7 +25,7 @@ func TestPravegaCluster(t *testing.T) {
 	pravegaClusterList := &operator.PravegaClusterList{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PravegaCluster",
-			APIVersion: "pravega.pravega.io/v1alpha1",
+			APIVersion: "pravega.pravega.io/v1beta1",
 		},
 	}
 	err := framework.AddToFrameworkScheme(apis.AddToScheme, pravegaClusterList)
