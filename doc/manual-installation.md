@@ -1,7 +1,7 @@
 ## Manual installation
 
 * [Install the Operator manually](#install-the-operator-manually)
-* [Set up Tier 2 Storage](#set-up-tier-2-storage)
+* [Set up LongTermStorage](#Set-up-LongTermStorage)
 * [Install the Pravega cluster manually](#install-the-pravega-cluster-manually)
 * [Uninstall the Pravega Cluster manually](#uninstall-the-pravega-cluster-manually)
 * [Uninstall the Operator manually](#uninstall-the-operator-manually)
@@ -10,30 +10,35 @@
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
+In case you dont have a cert-manager, Install the cert-manager from the following link:-
+
+https://cert-manager.io/docs/installation/kubernetes/
+  
+Installing the secrets:-
+```
+$ kubectl create -f deploy/secret.yaml
+```
+Insalling the webhook
+```
+$ kubectl create -f deploy/webhook.yaml  
+```
+Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
+```
+$ kubectl create -f  deploy/version_map.yaml 
+```
 Register the Pravega cluster custom resource definition (CRD).
-
 ```
-$ kubectl create -f deploy/crd.yaml
+$ kubectl create -f deploy/crds/crd.yaml
 ```
-
 Create the operator role, role binding and service account.
-
 ```
 $ kubectl create -f deploy/role.yaml
 $ kubectl create -f deploy/role_binding.yaml
 $ kubectl create -f deploy/service_account.yaml
 ```
-
 Install the operator.
-
 ```
-$ kubectl create -f deploy/operator.yaml
-```
-
-Finally create a ConfigMap which contains the list of supported upgrade paths for the pravega cluster.
-
-```
-$ kubectl create -f deploy/version_map.yaml
+$ kubectl create -f deploy/operator.yaml  
 ```
 
 ### Deploying in Test Mode
@@ -43,7 +48,7 @@ $ kubectl create -f deploy/version_map.yaml
 ```
 containers:
   - name: pravega-operator
-    image: pravega/pravega-operator:0.4.3-rc1
+    image: pravega/pravega-operator:0.5.0-rc1
     ports:
     - containerPort: 60000
       name: metrics
@@ -52,20 +57,20 @@ containers:
     imagePullPolicy: Always
     args: [-test]
 ```
-### Set up Tier 2 Storage
+### Set up LongTermStorage:-
 
-Pravega requires a long term storage provider known as Tier 2 storage.
+Pravega requires a long term storage provider known as longtermStorage.
 
-Check out the available [options for Tier 2](tier2.md) and how to configure it.
+Check out the available [options for longtermStorage](longtermstorage.md) and how to configure it.
 
-In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](tier2.md#use-nfs-as-tier-2).
+In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](longtermstorage.md#use-nfs-as-longtermstorage).
 
 ### Install the Pravega cluster manually
 
-Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (3 Bookies, 1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
+Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
 
 ```yaml
-apiVersion: "pravega.pravega.io/v1alpha1"
+apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: "example"
@@ -76,9 +81,15 @@ spec:
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
     image:
       repository: pravega/pravega
-    tier2:
+    longtermStorage:
       filesystem:
         persistentVolumeClaim:
           claimName: pravega-tier2
@@ -102,7 +113,7 @@ Verify that the cluster instances and its components are being created.
 ```
 $ kubectl get PravegaCluster
 NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-example   0.4.0     7                 0               25s
+example   0.7.0     4                 0               25s
 ```
 
 ### Uninstall the Pravega cluster manually
