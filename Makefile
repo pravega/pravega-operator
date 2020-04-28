@@ -39,7 +39,7 @@ test-unit:
 test-e2e: test-e2e-remote
 
 test-e2e-remote: login
-	operator-sdk build $(TEST_IMAGE) --enable-tests
+	operator-sdk build $(TEST_IMAGE)
 	docker push $(TEST_IMAGE)
 	operator-sdk test local ./test/e2e --namespace default --image $(TEST_IMAGE) --go-test-flags "-v -timeout 0"
 
