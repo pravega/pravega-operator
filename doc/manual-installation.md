@@ -81,6 +81,12 @@ spec:
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3
+    cacheVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 20Gi
     image:
       repository: pravega/pravega
     longtermStorage:
