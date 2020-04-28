@@ -29,7 +29,7 @@ To install the Pravega Cluster along with all the required dependencies, run the
 
 in case of helm3+ run the following command
 ```
-$ ./pravegacluster_hem3.sh install
+$ ./pravegacluster_helm3.sh install
 ```
 
 otherwise run the fllowing command
@@ -44,7 +44,7 @@ To uninstall the Pravega Cluster along with all its dependencies, run the follow
 
 in case of helm3+ run the following command
 ```
-$ ./pravegacluster_hem3.sh  delete
+$ ./pravegacluster_helm3.sh  delete
 ```
 otherwise run the fllowing command
 ```
