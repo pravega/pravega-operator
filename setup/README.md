@@ -27,26 +27,14 @@ This will result in separate sub-directories for [zookeeper-operator](https://gi
 
 To install the Pravega Cluster along with all the required dependencies, run the following command:
 
-in case of helm3+ run the following command
-```
-$ ./pravegacluster_helm3.sh install
-```
-
-otherwise run the fllowing command
 ```
 $ ./pravegacluster.sh install
 ```
-
 
 ## Uninstalling the Pravega Cluster
 
 To uninstall the Pravega Cluster along with all its dependencies, run the following command:
 
-in case of helm3+ run the following command
-```
-$ ./pravegacluster_helm3.sh  delete
-```
-otherwise run the fllowing command
 ```
 $ ./pravegacluster.sh delete
 ```
