@@ -1070,9 +1070,10 @@ func (p *PravegaCluster) PravegaTargetImage() (string, error) {
 func (p *PravegaCluster) NewEvent(name string, reason string, message string, eventType string) *corev1.Event {
 	now := metav1.Now()
 	operatorName, _ := k8s.GetOperatorName()
+	generateName := name + "-"
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			GenerateName: generateName,
 			Namespace: p.Namespace,
 			Labels:    p.LabelsForPravegaCluster(),
 		},
