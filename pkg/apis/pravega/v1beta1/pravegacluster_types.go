@@ -1074,8 +1074,8 @@ func (p *PravegaCluster) NewEvent(name string, reason string, message string, ev
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: generateName,
-			Namespace: p.Namespace,
-			Labels:    p.LabelsForPravegaCluster(),
+			Namespace:    p.Namespace,
+			Labels:       p.LabelsForPravegaCluster(),
 		},
 		InvolvedObject: corev1.ObjectReference{
 			APIVersion:      p.APIVersion,
