@@ -13,7 +13,7 @@ spec:
               fieldPath: metadata.name
         - name: OPERATOR_NAME
           value: foo-pravega-operator 
-        image: prabhu75/pravega_operator:for_679_1
+        image: pravega/pravega-operator:latest
         imagePullPolicy: Always
         name: foo-pravega-operator
         ports:

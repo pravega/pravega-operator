@@ -17,7 +17,7 @@ spec:
       serviceAccountName: pravega-operator
       containers:
       - name: pravega-operator
-        image: pravega/pravega-operator:0.5.0-rc1
+        image: pravega/pravega-operator:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 6000
