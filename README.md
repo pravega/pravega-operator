@@ -71,7 +71,7 @@ foo-pravega-operator     1         1         1            1           17s
 
 ### Upgrade the Operator
 
-For upgradig the pravega operator refer the this link
+For upgrading the pravega operator refer this link 
 https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
 
 ### Install a sample Pravega cluster
