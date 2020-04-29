@@ -78,7 +78,7 @@ https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
 
 #### Set up Tier 2 Storage
 
-Pravega requires a long term storage provider known as longtermStorage storage.
+Pravega requires a long term storage provider known as longtermStorage.
 
 Check out the available [options for long term storage](doc/longtermstorage.md) and how to configure it.
 
