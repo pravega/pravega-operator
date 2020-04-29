@@ -44,4 +44,4 @@ spec:
     longTermStorage:
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ .Values.pravega.tier2 }}
+          claimName: {{ .Values.pravega.longtermStorage }}
