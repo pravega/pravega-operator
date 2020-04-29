@@ -48,8 +48,8 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : 
-https://cert-manager.io/docs/installation/kubernetes/
+We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc]( 
+https://cert-manager.io/docs/installation/kubernetes/)
 
 Then use Helm to quickly deploy a Pravega operator with the release name `foo`.
 
