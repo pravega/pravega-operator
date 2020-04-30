@@ -22,3 +22,7 @@ crd:
 
 # whether to enable test mode
 testmode: false
+
+# Specifies which namespace the Operator should watch for new ClusterResource resources
+# Default: "" == Watch ALL namespaces
+watchNamespace: ""
