@@ -19,7 +19,6 @@ The project is currently alpha. While no breaking API changes are currently plan
  * [Upgrade a Pravega Cluster](#upgrade-a-pravega-cluster)
  * [Uninstall the Pravega Cluster](#uninstall-the-pravega-cluster)
  * [Uninstall the Operator](#uninstall-the-operator)
- * [Upgrade the Operator](#upgrade-the-operator)
  * [Manual installation](#manual-installation)
  * [Configuration](#configuration)
  * [Development](#development)
@@ -38,7 +37,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 ## Requirements
 
-- Kubernetes 1.9+
+- Kubernetes 1.15+
 - Helm 2.10+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
 - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
@@ -49,7 +48,10 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-Use Helm to quickly deploy a Pravega operator with the release name `foo`.
+We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc]( 
+https://cert-manager.io/docs/installation/kubernetes/)
+
+Then use Helm to quickly deploy a Pravega operator with the release name `foo`.
 
 ```
 $ helm install charts/pravega-operator --name foo
@@ -67,20 +69,17 @@ foo-pravega-operator     1         1         1            1           17s
  The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
-Pravega operator can be upgraded by modifying the image tag using
-```
-$ kubectl edit <operator deployment name>
-```
-Currently, the minor version upgrade is supported, e.g. 0.4.0 -> 0.4.1. However, the major version upgrade
-has not been supported yet, e.g. 0.4.0 -> 0.5.0.
+
+For upgrading the pravega operator refer this link 
+https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
 
 ### Install a sample Pravega cluster
 
 #### Set up Tier 2 Storage
 
-Pravega requires a long term storage provider known as Tier 2 storage.
+Pravega requires a long term storage provider known as longtermStorage.
 
-Check out the available [options for Tier 2](doc/tier2.md) and how to configure it.
+Check out the available [options for long term storage](doc/longtermstorage.md) and how to configure it.
 
 For demo purposes, you can quickly install a toy NFS server.
 
@@ -88,7 +87,7 @@ For demo purposes, you can quickly install a toy NFS server.
 $ helm install stable/nfs-server-provisioner
 ```
 
-And create a PVC for Tier 2 that utilizes it.
+And create a PVC for longtermStorage that utilizes it.
 
 ```
 $ kubectl create -f ./example/pvc-tier2.yaml
@@ -99,14 +98,14 @@ $ kubectl create -f ./example/pvc-tier2.yaml
 Use Helm to install a sample Pravega cluster with release name `bar`.
 
 ```
-$ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set pravega.tier2=[TIER2_NAME]
+$ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set pravega.longtermStorage=[TIER2_NAME]
 ```
 
 where:
 
 - **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zk-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zk-0:2181,zk-1:2181,zk-2:2181`).
 - **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181`).
-- **[TIER2_NAME]** is the Tier 2 `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
+- **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
 
 
 Check out the [Pravega Helm Chart](charts/pravega) for more a complete list of installation parameters.

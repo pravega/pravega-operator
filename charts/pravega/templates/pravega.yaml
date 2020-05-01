@@ -41,7 +41,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.pravega.cacheVolumeRequest }}
-    longTermStorage:
+    longtermStorage:
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ .Values.pravega.tier2 }}
+          claimName: {{ .Values.pravega.longtermStorage }}
