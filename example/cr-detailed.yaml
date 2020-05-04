@@ -1,12 +1,12 @@
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
-  name:  bar-pravega
+  name: "example"
   labels:
     app.kubernetes.io/name: "pravega-cluster"
 spec:
   version: 0.7.0
-  zookeeperUri: pravega-zk-client:2181
+  zookeeperUri: zk-client:2181
 
   # Security configurations for Pravega
   # See https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
@@ -15,7 +15,7 @@ spec:
       controllerSecret: "controller-pki"
       segmentStoreSecret: "segmentstore-pki"
 
-  bookkeeperUri: pravega-bk-bookie-headless:3181
+  bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
 
   pravega:
     image:
