@@ -15,7 +15,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 	return &api.PravegaCluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PravegaCluster",
-			APIVersion: "pravega.pravega.io/v1alpha1",
+			APIVersion: "pravega.pravega.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "pravega",
@@ -95,7 +95,7 @@ func NewTier2(namespace string) *corev1.PersistentVolumeClaim {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "pravega-tier2",
+			Name:      "LongTermStorage",
 			Namespace: namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
