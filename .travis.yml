@@ -39,7 +39,6 @@ jobs:
 
     - stage: e2e
       name: End-to-end tests
-      if: type = pull_request OR branch = master OR tag IS present
       services:
         - docker
       env:
