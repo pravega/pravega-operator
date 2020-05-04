@@ -15,6 +15,7 @@ kind: "PravegaCluster"
 metadata:
   name: "pravega"
 spec:
+  version: 0.5.0
   zookeeperUri: zk-client:2181
 
   externalAccess:
@@ -24,7 +25,6 @@ spec:
   bookkeeper:
     image:
       repository: pravega/bookkeeper
-      tag: latest
       pullPolicy: IfNotPresent
 
     replicas: 3
@@ -59,7 +59,6 @@ spec:
 
     image:
       repository: pravega/pravega
-      tag: latest
       pullPolicy: IfNotPresent
 
     tier2:

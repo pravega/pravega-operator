@@ -4,7 +4,7 @@
 
 image:
   repository: pravega/pravega-operator
-  tag: 0.4.0
+  tag: 0.4.4
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings
@@ -22,3 +22,7 @@ crd:
 
 # whether to enable test mode
 testmode: false
+
+# Specifies which namespace the Operator should watch for new ClusterResource resources
+# Default: "" == Watch ALL namespaces
+watchNamespace: ""
