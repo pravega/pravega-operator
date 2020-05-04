@@ -1,7 +1,7 @@
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
-  name: bar-pravega
+  name: pravega
   labels:
     app.kubernetes.io/name: "pravega-cluster"
 spec:
