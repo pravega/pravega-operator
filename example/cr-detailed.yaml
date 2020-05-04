@@ -2,6 +2,8 @@ apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: "example"
+  labels:
+    app.kubernetes.io/name: "pravega-cluster"
 spec:
   version: 0.7.0
   zookeeperUri: zk-client:2181
@@ -81,5 +83,5 @@ spec:
       pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
 
     # Pass the JVM options to controller and segmentstore
-    controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
     segmentStoreJVMOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
+    controllerjvmOptions: ["-XX:MaxDirectMemorySize=1g"]
