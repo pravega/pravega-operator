@@ -20,6 +20,7 @@ import (
 
 	pravegav1alpha1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -73,7 +74,14 @@ func (pwh *pravegaWebhookHandler) mutatePravegaManifest(ctx context.Context, p *
 func (pwh *pravegaWebhookHandler) mutatePravegaVersion(ctx context.Context, p *pravegav1alpha1.PravegaCluster) error {
 	// The key is the supported versions, the value is a list of versions that can be upgraded to.
 	supportedVersions, err := createVersionMap()
-
+	if err != nil {
+		configMap := &corev1.ConfigMap{}
+		errr := pwh.client.Get(ctx, types.NamespacedName{Name: "supported-versions-map", Namespace: p.Namespace}, configMap)
+		if errr != nil {
+			return err
+		}
+		supportedVersions = configMap.Data
+	}
 	// Identify the request Pravega version
 	// Mutate the version if it is empty
 	if p.Spec.Version == "" {
@@ -211,7 +219,6 @@ func createVersionMap() (map[string]string, error) {
 	supportedVersions := make(map[string]string)
 	file, err := os.Open("/tmp/config/keys")
 	if err != nil {
-		log.Fatal(err)
 		return supportedVersions, fmt.Errorf("Version map /tmp/config/keys not found")
 	}
 	scanner := bufio.NewScanner(file)
