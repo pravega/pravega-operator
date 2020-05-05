@@ -106,7 +106,7 @@ install_cluster () {
 	bk_port=${arr[0]}
 
 	# Installing the Pravega Operator
-	if [ "$helmv3" == "" ]
+	if [ "$helmv3" == "" ];
 	then
 		helm install ../charts/pravega-operator --name $pr_opr_name
 	else
