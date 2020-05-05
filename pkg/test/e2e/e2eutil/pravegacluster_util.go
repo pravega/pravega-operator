@@ -13,6 +13,7 @@ package e2eutil
 import (
 	goctx "context"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ var (
 // CreateCluster creates a PravegaCluster CR with the desired spec
 func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
-	t.Logf("pravega cluster is: %v", p)
+	log.Printf("%+v", p)
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
