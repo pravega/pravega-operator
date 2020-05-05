@@ -101,7 +101,7 @@ type PravegaSpec struct {
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
 	// This field is optional. If no PVC spec, stateful containers will use
 	// emptyDir as volume
-	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
+	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate,,omitempty"`
 
 	// LongTermStorage is the configuration of Pravega's tier 2 storage. If no configuration
 	// is provided, it will assume that a PersistentVolumeClaim called "pravega-longterm"
