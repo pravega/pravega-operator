@@ -32,7 +32,7 @@ var (
 	RetryInterval        = time.Second * 5
 	Timeout              = time.Second * 60
 	CleanupRetryInterval = time.Second * 1
-	CleanupTimeout       = time.Second * 5
+	CleanupTimeout       = time.Second * 10
 	ReadyTimeout         = time.Minute * 5
 	UpgradeTimeout       = time.Minute * 10
 	TerminateTimeout     = time.Minute * 2
@@ -42,7 +42,7 @@ var (
 // CreateCluster creates a PravegaCluster CR with the desired spec
 func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
-	log.Printf("%+v", p)
+	log.Printf("Anisha:%+v", p)
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
