@@ -96,7 +96,7 @@ func NewTier2(namespace string) *corev1.PersistentVolumeClaim {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "LongTermStorage",
+			Name:      "pravega-tier2",
 			Namespace: namespace,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{

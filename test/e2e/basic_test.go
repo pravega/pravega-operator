@@ -52,6 +52,7 @@ func testCreateRecreateCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	defaultCluster = pravega_e2eutil.NewDefaultCluster(namespace)
+	defaultCluster.WithDefaults()
 
 	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
