@@ -33,7 +33,9 @@ func testScaleCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, pravega_e2eutil.NewDefaultCluster(namespace))
+	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
+	defaultCluster.WithDefaults()
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
