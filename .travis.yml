@@ -81,6 +81,8 @@ jobs:
         # Install ZooKeeper
         - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
         - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get pods -l kind=ZookeeperMember -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+        # Install the ConfigMap for version dependency
+        - kubectl -n default create -f deploy/version_map.yaml
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
