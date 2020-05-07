@@ -35,7 +35,7 @@ var (
 	ReadyTimeout         = time.Minute * 5
 	UpgradeTimeout       = time.Minute * 10
 	TerminateTimeout     = time.Minute * 2
-	VerificationTimeout  = time.Minute * 3
+	VerificationTimeout  = time.Minute * 5
 )
 
 // CreateCluster creates a PravegaCluster CR with the desired spec
