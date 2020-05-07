@@ -53,7 +53,7 @@ func MakeSegmentStoreStatefulSet(p *api.PravegaCluster) *appsv1.StatefulSet {
 		},
 	}
 	if util.IsVersionBelow07(p.Spec.Version) {
-		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(p.Spec.Pravega)
+		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(p)
 	}
 	return statefulSet
 }
@@ -258,13 +258,14 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 }
 
-func makeCacheVolumeClaimTemplate(pravegaSpec *api.PravegaSpec) []corev1.PersistentVolumeClaim {
+func makeCacheVolumeClaimTemplate(p *api.PravegaCluster) []corev1.PersistentVolumeClaim {
 	return []corev1.PersistentVolumeClaim{
 		{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: cacheVolumeName,
+				Name:      cacheVolumeName,
+				Namespace: p.Namespace,
 			},
-			Spec: *pravegaSpec.CacheVolumeClaimTemplate,
+			Spec: *p.Spec.Pravega.CacheVolumeClaimTemplate,
 		},
 	}
 }
