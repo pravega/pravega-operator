@@ -41,10 +41,8 @@ func testUpgradeCluster(t *testing.T) {
 	initialVersion := "0.5.0-1"
 	upgradeVersion := "0.5.0-2"
 	cluster.Spec.Version = initialVersion
-	cluster.Spec.Pravega.Image = &api.PravegaImageSpec{
-		ImageSpec: api.ImageSpec{
-			Repository: "adrianmo/pravega",
-		},
+	cluster.Spec.Pravega.Image = &api.ImageSpec{
+		Repository: "adrianmo/pravega",
 	}
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)

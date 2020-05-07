@@ -43,8 +43,8 @@ jobs:
       services:
         - docker
       env:
-        - KUBECTL_VERSION=v1.12.0
-        - OPERATOR_SDK_VERSION=v0.4.0
+        - KUBECTL_VERSION=v1.15.0
+        - OPERATOR_SDK_VERSION=v0.17.0
         - HELM_VERSION=v2.12.0
         - DEP_VERSION=v0.5.0
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
@@ -65,7 +65,7 @@ jobs:
         - aws configure set default.region $CLUSTER_ZONE
         - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.14 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
+        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.15 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide
@@ -90,6 +90,13 @@ jobs:
         - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done
         # Install the ConfigMap for version dependency
         - kubectl -n default create -f deploy/version_map.yaml
+        - kubectl apply -f "https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml"
+        - helm repo add jetstack https://charts.jetstack.io
+        - helm repo update
+        - helm install --name cert-manager  --namespace cert-manager  --version v0.14.1  jetstack/cert-manager --wait
+        - kubectl create -f deploy/secret.yaml
+        - kubectl create -f deploy/webhook.yaml
+        - kubectl create -f test/e2e/resources/crd.yaml
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
