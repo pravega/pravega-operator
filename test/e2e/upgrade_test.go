@@ -37,12 +37,11 @@ func testUpgradeCluster(t *testing.T) {
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	// TODO: use the official 0.5 image when it is released
-	initialVersion := "0.5.0-1"
-	upgradeVersion := "0.5.0-2"
+	initialVersion := "0.6.1"
+	upgradeVersion := "0.7.0"
 	cluster.Spec.Version = initialVersion
 	cluster.Spec.Pravega.Image = &api.ImageSpec{
-		Repository: "adrianmo/pravega",
+		Repository: "pravega/pravega",
 	}
 
 	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)
