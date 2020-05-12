@@ -23,8 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
-	"github.com/pravega/pravega-operator/pkg/util"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -36,7 +35,7 @@ var (
 	ReadyTimeout         = time.Minute * 5
 	UpgradeTimeout       = time.Minute * 10
 	TerminateTimeout     = time.Minute * 2
-	VerificationTimeout  = time.Minute * 3
+	VerificationTimeout  = time.Minute * 5
 )
 
 // CreateCluster creates a PravegaCluster CR with the desired spec
@@ -156,12 +155,12 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
 
 	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(util.LabelsForPravegaCluster(p)).String(),
+		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
 	}
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.Core().Pods(p.Namespace).List(listOptions)
+		podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -184,7 +183,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.Core().PersistentVolumeClaims(p.Namespace).List(listOptions)
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -212,14 +211,14 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 // WriteAndReadData writes sample data and reads it back from the given Pravega cluster
 func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("writing and reading data from pravega cluster: %s", p.Name)
-	testJob := NewTestWriteReadJob(p.Namespace, util.ServiceNameForController(p.Name))
+	testJob := NewTestWriteReadJob(p.Namespace, p.ServiceNameForController())
 	err := f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return fmt.Errorf("failed to create job: %s", err)
 	}
 
 	err = wait.Poll(RetryInterval, VerificationTimeout, func() (done bool, err error) {
-		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{IncludeUninitialized: false})
+		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -250,7 +249,7 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	}
 
 	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
-		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{IncludeUninitialized: false})
+		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
