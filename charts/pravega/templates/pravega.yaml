@@ -102,7 +102,7 @@ spec:
       {{- end }}
     {{- if .Values.options.enabled }}
     options:
-      {{- range .Values.options.properties }}
+      {{- range .Values.options.map }}
       {{ .key }} : {{ .value | quote }}
       {{- end }}
     {{- end }}

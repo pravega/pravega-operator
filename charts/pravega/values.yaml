@@ -14,8 +14,8 @@ authentication: {}
   # enabled: false
   # passwordAuthSecret: ""
 
-zookeeperUri: zoo-zookeeper-client:2181
-bookkeeperUri: boo-pravega-bk-bookie-headless:3181
+zookeeperUri: zk-client:2181
+bookkeeperUri: pravega-bk-bookie-headless:3181
 
 image:
   repository: pravega/pravega
@@ -90,7 +90,7 @@ storage:
 # add pravega options in the following format
 options:
   enabled: false
-  properties:
-  # set key and value for all the pravega options that you need to set
-  - key: option-name
-    value: option-value
+  map:
+  # set the list of key, value pairs for all the pravega options that you need to set
+  # - key: ""
+  #   value: ""
