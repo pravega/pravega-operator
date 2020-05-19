@@ -3,24 +3,94 @@
 # Declare variables to be passed into your templates.
 
 version: 0.7.0
-zookeeperUri: zk-client:2181
 
-externalAccess:
-  enabled: false
-  type: LoadBalancer
+tls: {}
+  # secret:
+  #   controller: "controller-pki"
+  #   segmentStore: "segmentstore-pki"
+  # caBundle: ""
+
+authentication: {}
+  # enabled: false
+  # passwordAuthSecret: ""
+
+zookeeperUri: zoo-zookeeper-client:2181
+bookkeeperUri: boo-pravega-bk-bookie-headless:3181
+
+image:
+  repository: pravega/pravega
+  pullPolicy: IfNotPresent
+
+externalAccess: {}
+  # enabled: false
+  # type: LoadBalancer
+  # domainName: ""
+
+debugLogging: false
 
 serviceAccount:
   name: pravega-components
 
-bookkeeperUri: "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 3Gi
+  service: {}
+    # type: ""
+    # annotations: {}
+  jvmOptions: []
 
-pravega:
-  image:
-    repository: pravega/pravega
-  controllerReplicas: 1
-  segmentStoreReplicas: 1
-  debugLogging: false
-  cacheVolumeRequest: 20Gi
-  storage:
+segmentStore:
+  replicas: 1
+  secret: {}
+    # name: ""
+    # path: ""
+  env: ""
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 3Gi
+    limits:
+      cpu: 2000m
+      memory: 5Gi
+  service: {}
+    # type: ""
+    # annotations: {}
+  jvmOptions: []
+
+storage:
+  longtermStorage:
+    # configure any one of filesystem/ecs/hdfs as the long term storage backend
+    # default option is filesystem
+    className: filesystem
+    # FileSystem is used to configure a pre-created Persistent Volume Claim
+    # as the long term storage backend
+    filesystem:
+      pvc: pravega-tier2
+    # ecs is used to configure a Dell EMC ECS system as the long term storage backend
+    ecs: {}
+      # configUri: ""
+      # bucket: ""
+      # prefix: ""
+      # credentials: ""
+    # Hdfs is used to configure an HDFS system as long term storage backend
+    hdfs: {}
+      # uri: ""
+      # root: ""
+      # replicationFactor:
+  cache:
+    size: 20Gi
     className: standard
-  longtermStorage: pravega-tier2
+
+# add pravega options in the following format
+options:
+  enabled: false
+  properties:
+  # set key and value for all the pravega options that you need to set
+  - key: option-name
+    value: option-value

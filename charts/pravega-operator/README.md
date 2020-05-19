@@ -7,15 +7,15 @@ Installs [pravega-operator](https://github.com/pravega/pravega-operator) to crea
 This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega Operator on multiple namespaces.
 
 ## Prerequisites
-  - Kubernetes 1.10+ with Beta APIs
-  - Helm 2.10+
+  - Kubernetes 1.15+ with Beta APIs
+  - Helm 3+
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```
-$ helm install --name my-release pravega-operator
+$ helm install my-release pravega-operator
 ```
 
 The command deploys pravega-operator on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -25,7 +25,7 @@ The command deploys pravega-operator on the Kubernetes cluster in the default co
 To uninstall/delete the `my-release` deployment:
 
 ```
-$ helm delete my-release
+$ helm uninstall my-release
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
