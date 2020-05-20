@@ -7,23 +7,22 @@ image:
   tag: 0.5.0
   pullPolicy: IfNotPresent
 
-## Install RBAC roles and bindings
+# whether to create RBAC roles and bindings
 rbac:
   create: true
 
-## Service account names and whether to create them
+# service account names and whether to create them
 serviceAccount:
   create: true
   name: pravega-operator
 
-# Whether to create custom resource
+# whether to create custom resource
 crd:
   create: true
 
 # whether to enable test mode
 testmode: false
 
-#
-# Specifies which namespace the Operator should watch for new ClusterResource resources
-# Default: "" == Watch ALL namespaces
+# specifies which namespace the Operator should watch for new resources
+# default: "" (to watch ALL namespaces)
 watchNamespace: ""

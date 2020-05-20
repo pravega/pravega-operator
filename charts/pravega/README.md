@@ -41,12 +41,12 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `version` | Pravega version | `0.5.0` |
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
-| `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | `` |
+| `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
 | `zookeeperUri` | Zookeeper client service URI | `zk-client:2181` |
 | `bookkeeperUri` | Bookkeeper headless service URI | `pravega-bk-bookie-headless:3181` |
 | `externalAccess.enabled` | Enable external access | `false` |
 | `externalAccess.type` | External access service type, if external access is enabled (LoadBalancer/NodePort) | `LoadBalancer` |
-| `externalAccess.domainName` | External access domain name, if external access is enabled  | `` |
+| `externalAccess.domainName` | External access domain name, if external access is enabled  | |
 | `image.repository` | Image repository | `pravega/pravega` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `debugLogging` | Enable debug logging | `false` |
@@ -56,17 +56,17 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
 | `controller.resources.limits.cpu` | CPU limits for controller | `2000m` |
 | `controller.resources.limits.memory` | Memory limits for controller | `3Gi` |
-| `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | `` |
+| `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `[]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
-| `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | `` |
+| `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |
 | `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `3Gi` |
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `5Gi` |
-| `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | `` |
+| `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
@@ -76,4 +76,4 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `storage.cache.className` | Storage class for cache volume | `standard` |
 | `storage.cache.size` | Storage requests for cache volume | `20Gi` |
 | `options.enabled` | Enable setting of Pravega options | `false` |
-| `options.list` | List of key-value pairs specifying Pravega options, if setting Pravega options is enabled | `` |
+| `options.list` | List of key-value pairs specifying Pravega options, if setting Pravega options is enabled | |

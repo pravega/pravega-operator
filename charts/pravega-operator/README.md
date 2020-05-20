@@ -36,12 +36,12 @@ The following table lists the configurable parameters of the Pravega operator ch
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `image.repository` | Repository for pravega operator image | `pravega/pravega-operator` |
-| `image.tag` | Tag for pravega operator image | `0.5.0` |
-| `image.pullPolicy` | Pull Policy for pravega operator image | `IfNotPresent` |
+| `image.repository` | Image repository | `pravega/pravega-operator` |
+| `image.tag` | Image tag | `0.5.0` |
+| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `crd.create` | Create pravega CRD | `true` |
 | `rbac.create` | Create RBAC resources | `true` |
-| `serviceAccount.create` | Create service account resources | `true` |
+| `serviceAccount.create` | Create service account | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
 | `testmode` | Enable test mode | `false` |
-| `watchNamespace` | Namespaces that will be watched by the controller  | `""` |
+| `watchNamespace` | Namespaces to be watched  | `""` |

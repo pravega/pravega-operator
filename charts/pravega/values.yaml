@@ -12,6 +12,7 @@ tls: {}
 
 authentication:
   enabled: false
+  # passwordAuthSecret is ignored if authentication is disabled
   passwordAuthSecret:
 
 zookeeperUri: zk-client:2181
@@ -19,6 +20,7 @@ bookkeeperUri: pravega-bk-bookie-headless:3181
 
 externalAccess:
   enabled: false
+  # type and domainName are ignored if external access is disabled
   type: LoadBalancer
   domainName:
 
@@ -40,7 +42,9 @@ controller:
     limits:
       cpu: 2000m
       memory: 3Gi
+  # service type and annotations are ignored if external access is disabled
   service:
+    # used to override the service type for controller
     type:
     annotations: {}
   jvmOptions: []
@@ -58,39 +62,52 @@ segmentStore:
     limits:
       cpu: 2000m
       memory: 5Gi
+  # service type and annotations are ignored if external access is disabled
   service:
+    # used to override the service type for segmentStore
     type:
     annotations: {}
   jvmOptions: []
 
 storage:
+
   longtermStorage:
-    # configure any one of filesystem/ecs/hdfs as the long term storage backend
+    # configure the long term storage backend type
+    # accepted values : filesystem/ecs/hdfs
     # default option is filesystem
     type: filesystem
+
     # FileSystem is used to configure a pre-created Persistent Volume Claim
     # as the long term storage backend
+    # this is the default longtermStorage type
     filesystem:
       pvc: pravega-tier2
+
     # ecs is used to configure a Dell EMC ECS system as the long term storage backend
+    # considered only if storage.longtermStorage.type = ecs
     ecs: {}
       # configUri: ""
       # bucket: ""
       # prefix: ""
       # credentials: ""
+
     # Hdfs is used to configure an HDFS system as long term storage backend
+    # considered only if storage.longtermStorage.type = hdfs
     hdfs: {}
       # uri: ""
       # root: ""
       # replicationFactor:
+
   cache:
     size: 20Gi
     className: standard
 
-# add pravega options in the following format
 options:
   enabled: false
   # provide the list of key-value pairs for pravega options
+  # considered only if options are enabled
   list:
+  # - key: ""
+  #   value: ""
   # - key: ""
   #   value: ""
