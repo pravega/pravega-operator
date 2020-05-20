@@ -41,7 +41,7 @@ controller:
       cpu: 2000m
       memory: 3Gi
   service:
-    type: ""
+    type:
     annotations: {}
   jvmOptions: []
 
@@ -59,7 +59,7 @@ segmentStore:
       cpu: 2000m
       memory: 5Gi
   service:
-    type: ""
+    type:
     annotations: {}
   jvmOptions: []
 

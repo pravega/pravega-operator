@@ -56,7 +56,7 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
 | `controller.resources.limits.cpu` | CPU limits for controller | `2000m` |
 | `controller.resources.limits.memory` | Memory limits for controller | `3Gi` |
-| `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | `""` |
+| `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | `` |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `[]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
@@ -66,7 +66,7 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `3Gi` |
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `5Gi` |
-| `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | `""` |
+| `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | `` |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
