@@ -1,4 +1,3 @@
-{{- if .Values.externalAccess }}
 {{- if .Values.externalAccess.enabled }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -11,5 +10,4 @@ rules:
   - nodes
   verbs:
   - get
-{{- end }}
 {{- end }}

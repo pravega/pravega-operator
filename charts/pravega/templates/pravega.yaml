@@ -12,32 +12,43 @@ spec:
       segmentStoreSecret: {{ .Values.tls.secret.segmentStore }}
       caBundle: {{ .Values.tls.caBundle }}
   {{- end }}
-  {{- if .Values.authentication }}
   authentication:
     enabled: {{ .Values.authentication.enabled }}
+    {{- if .Values.authentication.enabled }}
     passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
-  {{- end }}
+    {{- end }}
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}
-  {{- if .Values.externalAccess }}
   externalAccess:
     enabled: {{ .Values.externalAccess.enabled }}
+    {{- if .Values.externalAccess.enabled }}
     type: {{ .Values.externalAccess.type }}
+    {{- if .Values.externalAccess.domainName }}
     domainName: {{ .Values.externalAccess.domainName }}
-  {{- end }}
+    {{- end }}
+    {{- end }}
   pravega:
-    {{- if .Values.externalAccess }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
+    {{- if .Values.controller.service.type }}
+    controllerExtServiceType: {{ .Values.controller.service.type }}
+    {{- end }}
+    {{- if .Values.controller.service.annotations }}
+    controllerSvcAnnotations: {{ .Values.controller.service.annotations }}
+    {{- end }}
+    {{- if .Values.segmentStore.service.type }}
+    segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
+    {{- end }}
+    {{- if .Values.segmentStore.service.annotations }}
+    segmentStoreSvcAnnotations: {{ .Values.segmentStore.service.annotations }}
     {{- end }}
     {{- end }}
     image:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
-    {{- if .Values.controller.resources }}
     controllerResources:
       requests:
         memory: {{ .Values.controller.resources.requests.memory | quote }}
@@ -45,9 +56,7 @@ spec:
       limits:
         memory: {{ .Values.controller.resources.limits.memory | quote }}
         cpu: {{ .Values.controller.resources.limits.cpu | quote }}
-    {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
-    {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
       requests:
         memory: {{ .Values.segmentStore.resources.requests.memory | quote }}
@@ -55,42 +64,35 @@ spec:
       limits:
         memory: {{ .Values.segmentStore.resources.limits.memory | quote }}
         cpu: {{ .Values.segmentStore.resources.limits.cpu | quote }}
-    {{- end }}
     {{- if .Values.segmentStore.env }}
     segmentStoreEnvVars: {{ .Values.segmentStore.env }}
     {{- end }}
     {{- if .Values.segmentStore.secret }}
     segmentStoreSecret:
+      {{- if .Values.segmentStore.secret.name }}
       secret: {{ .Values.segmentStore.name }}
+      {{- end }}
+      {{- if .Values.segmentStore.secret.path }}
       mountPath: {{ .Values.segmentStore.path }}
-    {{- end }}
-    {{- if .Values.controller.service }}
-    controllerExtServiceType: {{ .Values.controller.service.type }}
-    controllerSvcAnnotations: {{ .Values.controller.service.annotations }}
-    {{- end }}
-    {{- if .Values.segmentStore.service }}
-    segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
-    segmentStoreSvcAnnotations: {{ .Values.segmentStore.service.annotations }}
+      {{- end }}
     {{- end }}
     controllerjvmOptions: {{ .Values.controller.jvmOptions }}
     segmentStoreJVMOptions: {{ .Values.segmentStore.jvmOptions }}
     debugLogging: {{ .Values.debugLogging }}
-    {{- if .Values.storage.cache }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: {{ .Values.storage.cache.className }}
       resources:
         requests:
           storage: {{ .Values.storage.cache.size }}
-    {{- end }}
     longtermStorage:
-      {{- if eq .Values.storage.longtermStorage.className "ecs"}}
+      {{- if eq .Values.storage.longtermStorage.type "ecs"}}
       ecs:
         configUri: {{ .Values.storage.longtermStorage.ecs.configUri }}
         bucket: {{ .Values.storage.longtermStorage.ecs.bucket }}
         prefix: {{ .Values.storage.longtermStorage.ecs.prefix }}
         credentials: {{ .Values.storage.longtermStorage.ecs.credentials }}
-      {{- else if eq .Values.storage.longtermStorage.className "hdfs"}}
+      {{- else if eq .Values.storage.longtermStorage.type "hdfs"}}
       hdfs:
         uri: {{ .Values.storage.longtermStorage.hdfs.uri }}
         root: {{ .Values.storage.longtermStorage.hdfs.root }}
@@ -102,7 +104,7 @@ spec:
       {{- end }}
     {{- if .Values.options.enabled }}
     options:
-      {{- range .Values.options.map }}
+      {{- range .Values.options.list }}
       {{ .key }} : {{ .value | quote }}
       {{- end }}
     {{- end }}

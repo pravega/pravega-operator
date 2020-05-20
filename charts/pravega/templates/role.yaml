@@ -1,4 +1,3 @@
-{{- if .Values.externalAccess }}
 {{- if .Values.externalAccess.enabled }}
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19,5 +18,4 @@ rules:
   - services
   verbs:
   - get
-{{- end }}
 {{- end }}

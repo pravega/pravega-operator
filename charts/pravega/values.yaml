@@ -10,21 +10,21 @@ tls: {}
   #   segmentStore: "segmentstore-pki"
   # caBundle: ""
 
-authentication: {}
-  # enabled: false
-  # passwordAuthSecret: ""
+authentication:
+  enabled: false
+  passwordAuthSecret:
 
 zookeeperUri: zk-client:2181
 bookkeeperUri: pravega-bk-bookie-headless:3181
 
+externalAccess:
+  enabled: false
+  type: LoadBalancer
+  domainName:
+
 image:
   repository: pravega/pravega
   pullPolicy: IfNotPresent
-
-externalAccess: {}
-  # enabled: false
-  # type: LoadBalancer
-  # domainName: ""
 
 debugLogging: false
 
@@ -40,17 +40,17 @@ controller:
     limits:
       cpu: 2000m
       memory: 3Gi
-  service: {}
-    # type: ""
-    # annotations: {}
+  service:
+    type: ""
+    annotations: {}
   jvmOptions: []
 
 segmentStore:
   replicas: 1
   secret: {}
-    # name: ""
-    # path: ""
-  env: ""
+    # name:
+    # path:
+  env:
   resources:
     requests:
       cpu: 1000m
@@ -58,16 +58,16 @@ segmentStore:
     limits:
       cpu: 2000m
       memory: 5Gi
-  service: {}
-    # type: ""
-    # annotations: {}
+  service:
+    type: ""
+    annotations: {}
   jvmOptions: []
 
 storage:
   longtermStorage:
     # configure any one of filesystem/ecs/hdfs as the long term storage backend
     # default option is filesystem
-    className: filesystem
+    type: filesystem
     # FileSystem is used to configure a pre-created Persistent Volume Claim
     # as the long term storage backend
     filesystem:
@@ -90,7 +90,7 @@ storage:
 # add pravega options in the following format
 options:
   enabled: false
-  map:
-  # set the list of key, value pairs for all the pravega options that you need to set
+  # provide the list of key-value pairs for pravega options
+  list:
   # - key: ""
   #   value: ""

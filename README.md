@@ -38,7 +38,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 ## Requirements
 
 - Kubernetes 1.15+
-- Helm 2.10+
+- Helm 3+
 - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
 - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
@@ -48,13 +48,13 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc]( 
+We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc](
 https://cert-manager.io/docs/installation/kubernetes/)
 
 Then use Helm to quickly deploy a Pravega operator with the release name `foo`.
 
 ```
-$ helm install charts/pravega-operator --name foo
+$ helm install foo charts/pravega-operator
 ```
 
 Verify that the Pravega Operator is running.
@@ -70,7 +70,7 @@ foo-pravega-operator     1         1         1            1           17s
 
 ### Upgrade the Operator
 
-For upgrading the pravega operator refer this link 
+For upgrading the pravega operator refer this link
 https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
 
 ### Install a sample Pravega cluster
@@ -84,7 +84,7 @@ Check out the available [options for long term storage](doc/longtermstorage.md) 
 For demo purposes, you can quickly install a toy NFS server.
 
 ```
-$ helm install stable/nfs-server-provisioner
+$ helm install stable/nfs-server-provisioner --generate-name
 ```
 
 And create a PVC for longtermStorage that utilizes it.
@@ -98,7 +98,7 @@ $ kubectl create -f ./example/pvc-tier2.yaml
 Use Helm to install a sample Pravega cluster with release name `bar`.
 
 ```
-$ helm install charts/pravega --name bar --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set pravega.longtermStorage=[TIER2_NAME]
+$ helm install bar charts/pravega --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
 
 where:
@@ -176,7 +176,7 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 ### Uninstall the Pravega cluster
 
 ```
-$ helm delete bar --purge
+$ helm uninstall bar
 $ kubectl delete -f ./example/pvc-tier2.yaml
 ```
 
@@ -185,7 +185,7 @@ $ kubectl delete -f ./example/pvc-tier2.yaml
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
 ```
-$ helm delete foo --purge
+$ helm uninstall foo
 ```
 
 If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator.
