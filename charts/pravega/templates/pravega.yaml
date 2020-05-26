@@ -76,8 +76,14 @@ spec:
       mountPath: {{ .Values.segmentStore.path }}
       {{- end }}
     {{- end }}
-    controllerjvmOptions: {{ .Values.controller.jvmOptions }}
-    segmentStoreJVMOptions: {{ .Values.segmentStore.jvmOptions }}
+    {{- if .Values.controller.jvmOptions }}
+    controllerjvmOptions:
+{{ toYaml .Values.controller.jvmOptions | indent 6 }}
+    {{- end }}
+    {{- if .Values.segmentStore.jvmOptions }}
+    segmentStoreJVMOptions:
+{{ toYaml .Values.segmentStore.jvmOptions | indent 6 }}
+    {{- end }}
     debugLogging: {{ .Values.debugLogging }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
