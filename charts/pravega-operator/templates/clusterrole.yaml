@@ -3,13 +3,11 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "pravega-operator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: pravega-operator
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 rules:
-- apiGroups:
-  - pravega.pravega.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
 - apiGroups:
   - ""
   resources:
@@ -26,12 +24,26 @@ rules:
   - watch
   - list
   - create
+  - update
+  - delete
 - apiGroups:
   - admissionregistration.k8s.io
   resources:
   - "*"
   verbs:
   - '*'
+- apiGroups:
+  - pravega.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - bookkeeper.pravega.io
+  resources:
+  - "*"
+  verbs:
+  - "*"  
 - apiGroups:
   - policy
   resources:
