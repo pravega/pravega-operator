@@ -1,0 +1,50 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: test-selfsigned
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: pravega-operator
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+{{- if .Values.webhookCert.selfsigned }}
+  selfSigned: {}
+{{- else }}
+  ca:
+    secretName: pravega-operator-key-pair
+{{- end }}
+---
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: selfsigned-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: pravega-operator
+    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+spec:
+  isCA: true
+  duration: 8760h
+  renewBefore: 360h
+  secretName: selfsigned-cert-tls
+  commonName: pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local ## TODO: namespace should be dynamic
+  dnsNames:
+    - pravega-webhook-svc
+    - pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local ## TODO: namespace should be dynamic
+    - pravega-webhook-svc.{{ .Release.Namespace }}.svc ## TODO: namespace should be dynamic
+  issuerRef:
+    name: selfsigned-cert
+---
+{{- if not .Values.webhookCert.selfsigned }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pravega-operator-key-pair
+  namespace: {{ .Release.Namespace }}
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ .Values.webhookCert.crt }}
+  tls.key: {{ .Values.webhookCert.key }}
+{{- end }}
