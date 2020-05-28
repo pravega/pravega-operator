@@ -108,3 +108,4 @@ storage:
     className: standard
 
 options:
+  # bookkeeper.bkAckQuorumSize: "3"
