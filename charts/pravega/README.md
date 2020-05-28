@@ -75,5 +75,4 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `storage.longtermStorage.hdfs` | Configuration to use an HDFS system, if long term storage type is hdfs | `{}` |
 | `storage.cache.className` | Storage class for cache volume | `standard` |
 | `storage.cache.size` | Storage requests for cache volume | `20Gi` |
-| `options.enabled` | Enable setting of Pravega options | `false` |
-| `options.list` | List of key-value pairs specifying Pravega options, if setting Pravega options is enabled | |
+| `options` | List of Pravega options | |

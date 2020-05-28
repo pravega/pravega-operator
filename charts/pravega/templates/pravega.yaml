@@ -108,9 +108,7 @@ spec:
         persistentVolumeClaim:
           claimName: {{ .Values.storage.longtermStorage.filesystem.pvc }}
       {{- end }}
-    {{- if .Values.options.enabled }}
+    {{- if .Values.options }}
     options:
-      {{- range .Values.options.list }}
-      {{ .key }} : {{ .value | quote }}
-      {{- end }}
+{{ toYaml .Values.options | indent 6 }}
     {{- end }}

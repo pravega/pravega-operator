@@ -108,11 +108,3 @@ storage:
     className: standard
 
 options:
-  enabled: false
-  # provide the list of key-value pairs for pravega options
-  # considered only if options are enabled
-  list:
-  # - key: ""
-  #   value: ""
-  # - key: ""
-  #   value: ""
