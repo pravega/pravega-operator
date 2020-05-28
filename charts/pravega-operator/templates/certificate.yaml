@@ -1,7 +1,7 @@
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
-  name: test-selfsigned
+  name: selfsigned-cert
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: pravega-operator
@@ -29,11 +29,11 @@ spec:
   duration: 8760h
   renewBefore: 360h
   secretName: selfsigned-cert-tls
-  commonName: pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local ## TODO: namespace should be dynamic
+  commonName: pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local
   dnsNames:
     - pravega-webhook-svc
-    - pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local ## TODO: namespace should be dynamic
-    - pravega-webhook-svc.{{ .Release.Namespace }}.svc ## TODO: namespace should be dynamic
+    - pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local
+    - pravega-webhook-svc.{{ .Release.Namespace }}.svc
   issuerRef:
     name: selfsigned-cert
 ---
