@@ -81,6 +81,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
+						SegmentStoreEnvVars:            "SEG_CONFIG_MAP",
+						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
+							Secret:    "seg-secret",
+							MountPath: "",
+						},
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
@@ -188,6 +193,10 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerServiceAnnotations:    annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
+						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
+							Secret:    "seg-secret",
+							MountPath: "/tmp/mount",
+						},
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
@@ -285,14 +294,15 @@ var _ = Describe("PravegaSegmentstore", func() {
 					},
 					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
 					Pravega: &v1beta1.PravegaSpec{
-						ControllerReplicas:             2,
-						SegmentStoreReplicas:           4,
-						ControllerServiceAccountName:   "pravega-components",
-						SegmentStoreServiceAccountName: "pravega-components",
-						ControllerResources:            customReq,
-						SegmentStoreResources:          customReq,
-						ControllerServiceAnnotations:   annotationsMap,
-						SegmentStoreServiceAnnotations: annotationsMap,
+						ControllerReplicas:              2,
+						SegmentStoreReplicas:            4,
+						ControllerServiceAccountName:    "pravega-components",
+						SegmentStoreServiceAccountName:  "pravega-components",
+						ControllerResources:             customReq,
+						SegmentStoreResources:           customReq,
+						ControllerServiceAnnotations:    annotationsMap,
+						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
@@ -355,6 +365,22 @@ var _ = Describe("PravegaSegmentstore", func() {
 				It("should set external access service type to LoadBalancer", func() {
 					_ = pravega.MakeSegmentStoreExternalServices(p)
 					Ω(err).Should(BeNil())
+				})
+				It("should create external service with default type", func() {
+					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
+					p.Spec.ExternalAccess.Type = ""
+					p.Spec.ExternalAccess.DomainName = "example"
+					_ = pravega.MakeSegmentStoreExternalServices(p)
+					Ω(err).Should(BeNil())
+				})
+				It("should create the service with external service type set only in pravega spec", func() {
+					m := make(map[string]string)
+					p.Spec.Pravega.SegmentStoreServiceAnnotations = m
+					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
+					p.Spec.ExternalAccess.Type = corev1.ServiceTypeLoadBalancer
+					_ = pravega.MakeSegmentStoreExternalServices(p)
+					Ω(err).Should(BeNil())
+
 				})
 
 			})
