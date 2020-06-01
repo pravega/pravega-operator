@@ -5,43 +5,110 @@ metadata:
   labels:
     app.kubernetes.io/name: "pravega-cluster"
 spec:
+  {{- if .Values.tls }}
+  tls:
+    static:
+      controllerSecret: {{ .Values.tls.secret.controller }}
+      segmentStoreSecret: {{ .Values.tls.secret.segmentStore }}
+      caBundle: {{ .Values.tls.caBundle }}
+  {{- end }}
+  authentication:
+    enabled: {{ .Values.authentication.enabled }}
+    {{- if .Values.authentication.enabled }}
+    passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
+    {{- end }}
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
+  bookkeeperUri: {{ .Values.bookkeeperUri }}
   externalAccess:
     enabled: {{ .Values.externalAccess.enabled }}
+    {{- if .Values.externalAccess.enabled }}
     type: {{ .Values.externalAccess.type }}
-  bookkeeperUri: {{ .Values.bookkeeperUri }}
+    {{- if .Values.externalAccess.domainName }}
+    domainName: {{ .Values.externalAccess.domainName }}
+    {{- end }}
+    {{- end }}
   pravega:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
+    {{- if .Values.controller.service.type }}
+    controllerExtServiceType: {{ .Values.controller.service.type }}
+    {{- end }}
+    {{- if .Values.controller.service.annotations }}
+    controllerSvcAnnotations: {{ .Values.controller.service.annotations }}
+    {{- end }}
+    {{- if .Values.segmentStore.service.type }}
+    segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
+    {{- end }}
+    {{- if .Values.segmentStore.service.annotations }}
+    segmentStoreSvcAnnotations: {{ .Values.segmentStore.service.annotations }}
+    {{- end }}
     {{- end }}
     image:
-      repository: {{ .Values.pravega.image.repository }}
-    controllerReplicas: {{ .Values.pravega.controllerReplicas }}
+      repository: {{ .Values.image.repository }}
+      pullPolicy: {{ .Values.image.pullPolicy }}
+    controllerReplicas: {{ .Values.controller.replicas }}
     controllerResources:
       requests:
-        memory: "1Gi"
-        cpu: "1000m"
+        memory: {{ .Values.controller.resources.requests.memory | quote }}
+        cpu: {{ .Values.controller.resources.requests.cpu | quote }}
       limits:
-        memory: "3Gi"
-        cpu: "2000m"
-    segmentStoreReplicas: {{ .Values.pravega.segmentStoreReplicas }}
+        memory: {{ .Values.controller.resources.limits.memory | quote }}
+        cpu: {{ .Values.controller.resources.limits.cpu | quote }}
+    segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
     segmentStoreResources:
       requests:
-        memory: "3Gi"
-        cpu: "1000m"
+        memory: {{ .Values.segmentStore.resources.requests.memory | quote }}
+        cpu: {{ .Values.segmentStore.resources.requests.cpu | quote }}
       limits:
-        memory: "5Gi"
-        cpu: "2000m"
-    debugLogging: {{ .Values.pravega.debugLogging }}
+        memory: {{ .Values.segmentStore.resources.limits.memory | quote }}
+        cpu: {{ .Values.segmentStore.resources.limits.cpu | quote }}
+    {{- if .Values.segmentStore.env }}
+    segmentStoreEnvVars: {{ .Values.segmentStore.env }}
+    {{- end }}
+    {{- if .Values.segmentStore.secret }}
+    segmentStoreSecret:
+      {{- if .Values.segmentStore.secret.name }}
+      secret: {{ .Values.segmentStore.name }}
+      {{- end }}
+      {{- if .Values.segmentStore.secret.path }}
+      mountPath: {{ .Values.segmentStore.path }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.controller.jvmOptions }}
+    controllerjvmOptions:
+{{ toYaml .Values.controller.jvmOptions | indent 6 }}
+    {{- end }}
+    {{- if .Values.segmentStore.jvmOptions }}
+    segmentStoreJVMOptions:
+{{ toYaml .Values.segmentStore.jvmOptions | indent 6 }}
+    {{- end }}
+    debugLogging: {{ .Values.debugLogging }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: {{ .Values.pravega.storage.className }}
+      storageClassName: {{ .Values.storage.cache.className }}
       resources:
         requests:
-          storage: {{ .Values.pravega.cacheVolumeRequest }}
+          storage: {{ .Values.storage.cache.size }}
     longtermStorage:
+      {{- if eq .Values.storage.longtermStorage.type "ecs"}}
+      ecs:
+        configUri: {{ .Values.storage.longtermStorage.ecs.configUri }}
+        bucket: {{ .Values.storage.longtermStorage.ecs.bucket }}
+        prefix: {{ .Values.storage.longtermStorage.ecs.prefix }}
+        credentials: {{ .Values.storage.longtermStorage.ecs.credentials }}
+      {{- else if eq .Values.storage.longtermStorage.type "hdfs"}}
+      hdfs:
+        uri: {{ .Values.storage.longtermStorage.hdfs.uri }}
+        root: {{ .Values.storage.longtermStorage.hdfs.root }}
+        replicationFactor: {{ .Values.storage.longtermStorage.hdfs.replicationFactor }}
+      {{- else }}
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ .Values.pravega.longtermStorage }}
+          claimName: {{ .Values.storage.longtermStorage.filesystem.pvc }}
+      {{- end }}
+    {{- if .Values.options }}
+    options:
+{{ toYaml .Values.options | indent 6 }}
+    {{- end }}
