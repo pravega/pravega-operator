@@ -67,5 +67,59 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("should set bookkeeper uri", func() {
 			Ω(p.Spec.BookkeeperUri).ShouldNot(BeNil())
 		})
+		It("IssecureController should return false", func() {
+			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
+		})
+		It("IssecureController should return false", func() {
+			p.Spec.TLS = nil
+			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
+		})
+		It("IsSecureSegmentStore should return false", func() {
+			Ω(p.Spec.TLS.IsSecureSegmentStore()).To(Equal(false))
+		})
+		It("IsSecureSegmentStore should return false", func() {
+			p.Spec.TLS = nil
+			Ω(p.Spec.TLS.IsSecureSegmentStore()).To(Equal(false))
+		})
+
+		It("IsCaBundlePresent should return false", func() {
+			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
+		})
+		It("IsCaBundlePresent should return false", func() {
+			p.Spec.TLS = nil
+			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
+		})
+		It("IsEnabled should return false", func() {
+			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
+		})
+		It("IsEnabled should return false", func() {
+			p.Spec.Authentication = nil
+			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
+		})
+		It("should set external access type and domain name to empty", func() {
+			p.Spec.ExternalAccess.Type = "LoadBalancer"
+			p.Spec.ExternalAccess.DomainName = "example.com"
+			p.WithDefaults()
+			Ω(string(p.Spec.ExternalAccess.Type)).Should(Equal(""))
+			Ω(p.Spec.ExternalAccess.DomainName).Should(Equal(""))
+		})
+		It("should set volume claim template", func() {
+			p.Spec.Version = "0.6.0"
+			p.WithDefaults()
+			Ω(p.Spec.Pravega.CacheVolumeClaimTemplate).ShouldNot(BeNil())
+		})
 	})
+	Context("checking event generation utility", func() {
+
+		BeforeEach(func() {
+			p.WithDefaults()
+		})
+		message := "upgrade failed"
+		event := p.NewEvent("UPGRADE_ERROR", v1beta1.UpgradeErrorReason, message, "Error")
+		It("Event size should not be zero", func() {
+
+			Ω(event.Size()).ShouldNot(Equal(0))
+		})
+	})
+
 })
