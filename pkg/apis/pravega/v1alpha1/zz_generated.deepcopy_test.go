@@ -160,5 +160,77 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			Ω(p1.Spec.Pravega.Tier2.DeepCopy()).Should(BeNil())
 			Ω(p1.Spec.Pravega.Image.DeepCopy()).Should(BeNil())
 		})
+		It("checking for nil member status", func() {
+			var memberstatus *v1alpha1.MembersStatus
+
+			memberstatus2 := memberstatus.DeepCopy()
+			Ω(memberstatus2).To(BeNil())
+		})
+		It("checking for nil cluster status", func() {
+			var clusterstatus *v1alpha1.ClusterStatus
+
+			clusterstatus2 := clusterstatus.DeepCopy()
+			Ω(clusterstatus2).To(BeNil())
+		})
+		It("checking for nil cluster spec", func() {
+			var clusterspec *v1alpha1.ClusterSpec
+			clusterspec2 := clusterspec.DeepCopy()
+			Ω(clusterspec2).To(BeNil())
+		})
+		It("checking for nil cluster condition", func() {
+			var clustercond *v1alpha1.ClusterCondition
+			clustercond2 := clustercond.DeepCopy()
+			Ω(clustercond2).To(BeNil())
+		})
+		It("checking for nil pravega cluster", func() {
+			var cluster *v1alpha1.PravegaCluster
+			cluster2 := cluster.DeepCopy()
+			Ω(cluster2).To(BeNil())
+		})
+		It("checking for nil imagespec", func() {
+			var imagespec *v1alpha1.ImageSpec
+			imagespec2 := imagespec.DeepCopy()
+			Ω(imagespec2).To(BeNil())
+		})
+		It("checking for nil clusterlist", func() {
+			var clusterlist *v1alpha1.PravegaClusterList
+			clusterlist2 := clusterlist.DeepCopy()
+			Ω(clusterlist2).To(BeNil())
+		})
+		It("checking for deepcopy for clusterlist", func() {
+			var clusterlist v1alpha1.PravegaClusterList
+			clusterlist.ResourceVersion = "v1alpha1"
+			clusterlist2 := clusterlist.DeepCopy()
+			Ω(clusterlist2.ResourceVersion).To(Equal("v1alpha1"))
+		})
+		It("checking for Deepcopy object", func() {
+			pravega := p2.DeepCopyObject()
+			Ω(pravega.GetObjectKind().GroupVersionKind().Version).To(Equal(""))
+		})
+		It("checking for nil pravega cluster deepcopyobject", func() {
+			var cluster *v1alpha1.PravegaCluster
+			cluster2 := cluster.DeepCopyObject()
+			Ω(cluster2).To(BeNil())
+		})
+		It("checking for deepcopyobject for clusterlist", func() {
+			var clusterlist v1alpha1.PravegaClusterList
+			clusterlist.ResourceVersion = "v1alpha1"
+			clusterlist2 := clusterlist.DeepCopyObject()
+			Ω(clusterlist2).ShouldNot(BeNil())
+		})
+		It("checking for nil pravega clusterlist deepcopyobject", func() {
+			var clusterlist *v1alpha1.PravegaClusterList
+
+			clusterlist2 := clusterlist.DeepCopyObject()
+			Ω(clusterlist2).To(BeNil())
+		})
+		It("checking for deepcopyobject for clusterlist with items", func() {
+			var clusterlist v1alpha1.PravegaClusterList
+			clusterlist.ResourceVersion = "v1alpha1"
+			clusterlist.Items = []v1alpha1.PravegaCluster{}
+
+			clusterlist2 := clusterlist.DeepCopyObject()
+			Ω(clusterlist2).ShouldNot(BeNil())
+		})
 	})
 })
