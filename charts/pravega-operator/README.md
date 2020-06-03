@@ -7,15 +7,15 @@ Installs [pravega-operator](https://github.com/pravega/pravega-operator) to crea
 This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega Operator on multiple namespaces.
 
 ## Prerequisites
-  - Kubernetes 1.10+ with Beta APIs
-  - Helm 2.10+
+  - Kubernetes 1.15+ with Beta APIs
+  - Helm 3+
 
 ## Installing the Chart
 
 To install the chart with the release name `my-release`:
 
 ```
-$ helm install --name my-release pravega-operator
+$ helm install my-release pravega-operator
 ```
 
 The command deploys pravega-operator on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -25,7 +25,7 @@ The command deploys pravega-operator on the Kubernetes cluster in the default co
 To uninstall/delete the `my-release` deployment:
 
 ```
-$ helm delete my-release
+$ helm uninstall my-release
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.
@@ -36,10 +36,12 @@ The following table lists the configurable parameters of the Pravega operator ch
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `image.repository` | Repository for pravega operator image | `pravega/pravega-operator` |
-| `image.tag` | Tag for pravega operator image | `0.3.2` |
-| `image.pullPolicy` | Pull policy for pravega operator image | `IfNotPresent` |
+| `image.repository` | Image repository | `pravega/pravega-operator` |
+| `image.tag` | Image tag | `0.5.0` |
+| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `crd.create` | Create pravega CRD | `true` |
 | `rbac.create` | Create RBAC resources | `true` |
-| `serviceAccount.create` | Create service account resources | `true` |
+| `serviceAccount.create` | Create service account | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
+| `testmode` | Enable test mode | `false` |
+| `watchNamespace` | Namespaces to be watched  | `""` |

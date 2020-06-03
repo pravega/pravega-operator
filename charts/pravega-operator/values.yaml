@@ -4,7 +4,7 @@
 
 image:
   repository: pravega/pravega-operator
-  tag: latest
+  tag: 0.5.0
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings.
@@ -20,8 +20,8 @@ serviceAccount:
 crd:
   create: true
 
-  ## Whether to enable test mode.
-  testmode: false
+## Whether to enable test mode.
+testmode: false
 
 webhookCert:
   ## Whether to use a new self-signed certificate.
