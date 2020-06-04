@@ -3,11 +3,8 @@ kind: Service
 metadata:
   name: pravega-webhook-svc
   namespace: {{ .Release.Namespace }}
-  namespace: default
   labels:
-    app.kubernetes.io/name: pravega-operator
-    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+{{ include "pravega-operator.commonLabels" . | indent 4 }}
 spec:
   ports:
   - port: 443
@@ -24,9 +21,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: pravega-webhook-config
   labels:
-    app.kubernetes.io/name: pravega-operator
-    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+{{ include "pravega-operator.commonLabels" . | indent 4 }}
   annotations:
     cert-manager.io/inject-ca-from: default/selfsigned-cert
 webhooks:

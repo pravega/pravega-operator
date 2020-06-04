@@ -4,9 +4,7 @@ metadata:
   name: supported-versions-map
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: pravega-operator
-    app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
-    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+{{ include "pravega-operator.commonLabels" . | indent 4 }}
 data:
   keys: |
         0.1.0:0.1.0
