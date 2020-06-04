@@ -141,6 +141,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 					_ = pravega.MakeSegmentstoreConfigMap(p)
 					Ω(err).Should(BeNil())
 				})
+				It("should create a config-map with empty tier2", func() {
+					p.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{}
+					_ = pravega.MakeSegmentstoreConfigMap(p)
+					Ω(err).Should(BeNil())
+				})
 
 				It("should create a stateful set", func() {
 					_ = pravega.MakeSegmentStoreStatefulSet(p)

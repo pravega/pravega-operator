@@ -148,7 +148,7 @@ var _ = Describe("PravegaCluster Status", func() {
 			})
 			It("should have updated timestamps", func() {
 				_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionPodsReady)
-				// TODO: check the timestamps
+				// check the timestamps
 				Ω(condition.LastUpdateTime).NotTo(Equal(""))
 				Ω(condition.LastTransitionTime).NotTo(Equal(""))
 			})
@@ -172,6 +172,9 @@ var _ = Describe("PravegaCluster Status", func() {
 			})
 			It("Checking ClusterInUpgradeFailedOrRollbackState should return false ", func() {
 				Ω(p.Status.IsClusterInUpgradeFailedOrRollbackState()).To(Equal(false))
+			})
+			It("Checking ClusterInRollbackFailedState should return false", func() {
+				Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(false))
 			})
 		})
 
@@ -231,7 +234,7 @@ var _ = Describe("PravegaCluster Status", func() {
 			Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(true))
 		})
 		It("should return rollback failed state to false using function", func() {
-			p.Status.SetErrorConditionTrue("someerr", "")
+			p.Status.SetErrorConditionTrue("some err", "")
 			Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(false))
 		})
 
@@ -258,6 +261,7 @@ var _ = Describe("PravegaCluster Status", func() {
 		It("should have Error condition with false status using function", func() {
 			Ω(p.Status.IsClusterInUpgradeFailedState()).To(Equal(false))
 		})
+
 		It("cluster in error state should return false", func() {
 			Ω(p.Status.IsClusterInErrorState()).To(Equal(false))
 		})

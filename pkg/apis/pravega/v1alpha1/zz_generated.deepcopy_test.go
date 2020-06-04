@@ -227,7 +227,11 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking for deepcopyobject for clusterlist with items", func() {
 			var clusterlist v1alpha1.PravegaClusterList
 			clusterlist.ResourceVersion = "v1alpha1"
-			clusterlist.Items = []v1alpha1.PravegaCluster{}
+			clusterlist.Items = []v1alpha1.PravegaCluster{
+				{
+					Spec: v1alpha1.ClusterSpec{},
+				},
+			}
 
 			clusterlist2 := clusterlist.DeepCopyObject()
 			Ω(clusterlist2).ShouldNot(BeNil())
