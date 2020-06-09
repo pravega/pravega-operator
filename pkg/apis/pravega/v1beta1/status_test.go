@@ -162,6 +162,8 @@ var _ = Describe("PravegaCluster Status", func() {
 				It("should have pods upgrade condition with true status", func() {
 					_, condition := p.Status.GetClusterCondition(v1beta1.ClusterConditionUpgrading)
 					Ω(condition.Status).To(Equal(corev1.ConditionTrue))
+					Ω(condition.Message).To(Equal("0"))
+					Ω(condition.Reason).To(Equal("UpdatingControllerReason"))
 				})
 				It("should have pods upgrade condition with true status using function", func() {
 					Ω(p.Status.IsClusterInUpgradingState()).To(Equal(true))
@@ -281,6 +283,8 @@ var _ = Describe("PravegaCluster Status", func() {
 				It("should have pods rollback condition with true status", func() {
 					_, condition := p.Status.GetClusterCondition(v1beta1.ClusterConditionRollback)
 					Ω(condition.Status).To(Equal(corev1.ConditionTrue))
+					Ω(condition.Message).To(Equal(""))
+					Ω(condition.Reason).To(Equal("UpgradeErrorReason"))
 				})
 				It("should have pods rollback condition with true status using function", func() {
 					Ω(p.Status.IsClusterInRollbackState()).To(Equal(true))

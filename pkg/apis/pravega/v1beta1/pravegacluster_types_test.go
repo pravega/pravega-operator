@@ -119,7 +119,25 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("Event size should not be zero", func() {
 
 			Ω(event.Size()).ShouldNot(Equal(0))
+
 		})
 	})
+	/*Context("testing convert", func() {
 
+		//var dst v1beta1.PravegaCluster
+		//var src v1alpha1.PravegaCluster
+
+		src := v1alpha1.PravegaCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+		}
+		dst := v1beta1.PravegaCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+		}
+		src.WithDefaults()
+		dst.ConvertFrom(&src)
+	})*/
 })

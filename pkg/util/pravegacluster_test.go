@@ -19,7 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestFinalizer(t *testing.T) {
+func TestPravegacluster(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Pravegacluster")
 }
@@ -34,8 +34,6 @@ var _ = Describe("pravegacluster", func() {
 			result2 = IsVersionBelow07("0.6.0")
 			IsVersionBelow07("666")
 			IsVersionBelow07("")
-			input := []string{"0.4.0", "0.5.0"}
-			ContainsVersion(input, "0.4.0")
 
 		})
 		It("should return true for result2", func() {
@@ -62,19 +60,25 @@ var _ = Describe("pravegacluster", func() {
 	})
 
 	Context("IsOrphan", func() {
-		var result1, result2 bool
+		var result1, result2, result3, result4 bool
 		BeforeEach(func() {
 
 			result1 = IsOrphan("segment-store-4", 3)
 			result2 = IsOrphan("segment-store-2", 3)
-			IsOrphan("segmentstore", 1)
-			IsOrphan("segment-store-1ab", 1)
+			result3 = IsOrphan("segmentstore", 1)
+			result4 = IsOrphan("segment-store-1ab", 1)
 		})
 		It("should return true for result2", func() {
 			Ω(result1).To(Equal(true))
 		})
 		It("should return false for result1", func() {
 			Ω(result2).To(Equal(false))
+		})
+		It("should return false for result3", func() {
+			Ω(result3).To(Equal(false))
+		})
+		It("should return false for result4", func() {
+			Ω(result4).To(Equal(false))
 		})
 	})
 	Context("OverrideDefaultJVMOptions", func() {
@@ -100,27 +104,49 @@ var _ = Describe("pravegacluster", func() {
 			result = OverrideDefaultJVMOptions(jvmOpts, customOpts)
 			result1 = OverrideDefaultJVMOptions(jvmOpts, result1)
 			log.Printf("result is %v", result)
-			result = RemoveString(result, "-XX:+ExitOnOutOfMemoryError")
 
 		})
-		It("should return true for result", func() {
+		It("should contain string", func() {
 			Ω(len(result)).ShouldNot(Equal(0))
-			Ω(ContainsString(result, "-Xms1024m")).To(Equal(true))
+			Ω(result[0]).To(Equal("-Xms1024m"))
+			Ω(result1[0]).To(Equal("-Xms512m"))
 
 		})
-		It("should contain string ", func() {
-			Ω(ContainsString(result, "-Xms512m")).To(Equal(false))
+
+	})
+	Context("RemoveString", func() {
+		var opts []string
+		BeforeEach(func() {
+			opts = []string{
+				"abc-test",
+				"test1",
+			}
+			opts = RemoveString(opts, "abc-test")
+
 		})
-		It("should contain string ", func() {
-			Ω(ContainsString(result1, "-Xms512m")).To(Equal(true))
+		It("should return false for result", func() {
+			Ω(opts[0]).To(Equal("test1"))
 		})
-		It("should contain string ", func() {
-			Ω(ContainsString(result, "-yy:mem")).To(Equal(true))
+	})
+
+	Context("ContainsString", func() {
+		var result, result1 bool
+		BeforeEach(func() {
+			opts := []string{
+				"abc-test",
+				"test1",
+			}
+			result = ContainsString(opts, "abc-test")
+			result1 = ContainsString(opts, "abc-test1")
+
 		})
-		It("should contain string ", func() {
-			Ω(ContainsString(result, "-XX:+ExitOnOutOfMemoryError")).To(Equal(false))
+		It("should return true", func() {
+			Ω(result).To(Equal(true))
 		})
 
+		It("should return false", func() {
+			Ω(result1).To(Equal(false))
+		})
 	})
 	Context("PodAntiAffinity", func() {
 
@@ -151,54 +177,87 @@ var _ = Describe("pravegacluster", func() {
 
 		It("Min should be 10", func() {
 			Ω(Min(10, 20)).Should(Equal(int32(10)))
+		})
+		It("Min should be 20", func() {
 			Ω(Min(30, 20)).Should(Equal(int32(20)))
 		})
 
 	})
 
 	Context("podReady", func() {
+		var result, result1 bool
+		BeforeEach(func() {
+			testpod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
+				Status: v1.PodStatus{
+					Conditions: []v1.PodCondition{
+						{
+							Type:   v1.PodReady,
+							Status: v1.ConditionTrue,
+						},
+					}},
+			}
+			testpod1 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}}}
+			result = IsPodReady(testpod)
+			result1 = IsPodReady(testpod1)
+		})
+		It("pod ready should be true", func() {
+			Ω(result).To(Equal(true))
 
-		testpod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
-			Status: v1.PodStatus{
-				Conditions: []v1.PodCondition{
-					{
-						Type:   v1.PodReady,
-						Status: v1.ConditionTrue,
-					},
-				}},
-		}
-		testpod2 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default", Name: "test"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
-			Status: v1.PodStatus{
-				ContainerStatuses: []v1.ContainerStatus{
-					{
-						Name: "test",
-						State: v1.ContainerState{
-							Waiting: &v1.ContainerStateWaiting{
-								Reason: "CrashLoopBackOff",
+		})
+		It("pod ready should be false", func() {
+			Ω(result1).To(Equal(false))
+
+		})
+	})
+	Context("podFaulty", func() {
+		var result, result1 bool
+		BeforeEach(func() {
+			testpod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default", Name: "test"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
+				Status: v1.PodStatus{
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "test",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: "CrashLoopBackOff",
+								},
 							},
 						},
-					},
-				}},
-		}
-		testpod3 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default", Name: "test"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
-			Status: v1.PodStatus{
-				ContainerStatuses: []v1.ContainerStatus{
-					{
-						Name:  "test",
-						State: v1.ContainerState{},
-					},
-				}},
-		}
-		testpod1 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}}}
-		fault, _ := IsPodFaulty(testpod2)
-		fault1, _ := IsPodFaulty(testpod3)
-		It("pod ready should be true", func() {
-			Ω(IsPodReady(testpod)).To(Equal(true))
-			Ω(IsPodReady(testpod1)).To(Equal(false))
-			Ω(GetPodVersion(testpod)).To(Equal(""))
-			Ω(fault).To(Equal(true))
-			Ω(fault1).To(Equal(false))
+					}},
+			}
+			testpod1 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default", Name: "test"}, Spec: v1.PodSpec{Containers: []v1.Container{{Image: "testimage"}}},
+				Status: v1.PodStatus{
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name:  "test",
+							State: v1.ContainerState{},
+						},
+					}},
+			}
+			result, _ = IsPodFaulty(testpod)
+			result1, _ = IsPodFaulty(testpod1)
+		})
+		It("pod faulty should be true", func() {
+			Ω(result).To(Equal(true))
 
+		})
+		It("pod faulty should be false", func() {
+			Ω(result1).To(Equal(false))
+
+		})
+	})
+	Context("GetPodVersion", func() {
+		var out string
+		BeforeEach(func() {
+			annotationsMap := map[string]string{
+				"pravega.version": "0.7.0",
+			}
+
+			testpod := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Namespace: "default", Annotations: annotationsMap}}
+			out = GetPodVersion(testpod)
+		})
+		It("should return correct version", func() {
+			Ω(out).To(Equal("0.7.0"))
 		})
 	})
 
