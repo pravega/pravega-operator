@@ -48,7 +48,7 @@ spec:
       volumes:
       - name: webhook-cert
         secret:
-          secretName: {{ template "pravega-operator.name" . }}-selfsigned-cert-tls
+          secretName: {{ template "pravega-operator.fullname" . }}-selfsigned-cert-tls
       - name: versions-volume
         configMap:
           name: supported-versions-map

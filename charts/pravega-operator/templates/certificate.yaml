@@ -1,7 +1,7 @@
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Issuer
 metadata:
-  name: {{ template "pravega-operator.name" . }}-selfsigned-cert
+  name: {{ template "pravega-operator.fullname" . }}-selfsigned-cert
   namespace: {{ .Release.Namespace }}
   labels:
 {{ include "pravega-operator.commonLabels" . | indent 4 }}
@@ -10,13 +10,13 @@ spec:
   selfSigned: {}
 {{- else }}
   ca:
-    secretName: {{ template "pravega-operator.name" . }}-key-pair
+    secretName: {{ template "pravega-operator.fullname" . }}-key-pair
 {{- end }}
 ---
 apiVersion: certmanager.k8s.io/v1alpha1
 kind: Certificate
 metadata:
-  name: {{ template "pravega-operator.name" . }}-selfsigned-cert
+  name: {{ template "pravega-operator.fullname" . }}-selfsigned-cert
   namespace: {{ .Release.Namespace }}
   labels:
 {{ include "pravega-operator.commonLabels" . | indent 4 }}
@@ -24,20 +24,20 @@ spec:
   isCA: true
   duration: 8760h
   renewBefore: 360h
-  secretName: {{ template "pravega-operator.name" . }}-selfsigned-cert-tls
+  secretName: {{ template "pravega-operator.fullname" . }}-selfsigned-cert-tls
   commonName: pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local
   dnsNames:
     - pravega-webhook-svc
     - pravega-webhook-svc.{{ .Release.Namespace }}.svc.cluster.local
     - pravega-webhook-svc.{{ .Release.Namespace }}.svc
   issuerRef:
-    name: {{ template "pravega-operator.name" . }}-selfsigned-cert
+    name: {{ template "pravega-operator.fullname" . }}-selfsigned-cert
 ---
 {{- if not .Values.webhookCert.selfsigned }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "pravega-operator.name" . }}-key-pair
+  name: {{ template "pravega-operator.fullname" . }}-key-pair
   namespace: {{ .Release.Namespace }}
 type: kubernetes.io/tls
 data:
