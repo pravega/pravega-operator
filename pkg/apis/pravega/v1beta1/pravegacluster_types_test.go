@@ -110,34 +110,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		})
 	})
 	Context("checking event generation utility", func() {
-
 		BeforeEach(func() {
 			p.WithDefaults()
 		})
 		message := "upgrade failed"
 		event := p.NewEvent("UPGRADE_ERROR", v1beta1.UpgradeErrorReason, message, "Error")
 		It("Event size should not be zero", func() {
-
 			Ω(event.Size()).ShouldNot(Equal(0))
-
 		})
 	})
-	/*Context("testing convert", func() {
-
-		//var dst v1beta1.PravegaCluster
-		//var src v1alpha1.PravegaCluster
-
-		src := v1alpha1.PravegaCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "default",
-			},
-		}
-		dst := v1beta1.PravegaCluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "default",
-			},
-		}
-		src.WithDefaults()
-		dst.ConvertFrom(&src)
-	})*/
 })
