@@ -371,18 +371,27 @@ var _ = Describe("PravegaSegmentstore", func() {
 					_ = pravega.MakeSegmentStoreExternalServices(p)
 					Ω(err).Should(BeNil())
 				})
-				It("should create external service with default type", func() {
+			})
+			Context("Create External service with external service type and access type empty", func() {
+				BeforeEach(func() {
 					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
 					p.Spec.ExternalAccess.Type = ""
 					p.Spec.ExternalAccess.DomainName = "example"
+				})
+				It("should create external service", func() {
+
 					_ = pravega.MakeSegmentStoreExternalServices(p)
 					Ω(err).Should(BeNil())
 				})
-				It("should create the service with external service type set only in pravega spec", func() {
+			})
+			Context("Create External service with external service type empty and access type load balancer", func() {
+				BeforeEach(func() {
 					m := make(map[string]string)
 					p.Spec.Pravega.SegmentStoreServiceAnnotations = m
 					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
 					p.Spec.ExternalAccess.Type = corev1.ServiceTypeLoadBalancer
+				})
+				It("should create the service with external service type set only in pravega spec", func() {
 					_ = pravega.MakeSegmentStoreExternalServices(p)
 					Ω(err).Should(BeNil())
 
@@ -391,6 +400,5 @@ var _ = Describe("PravegaSegmentstore", func() {
 			})
 
 		})
-
 	})
 })

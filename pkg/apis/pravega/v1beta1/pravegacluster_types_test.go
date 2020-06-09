@@ -42,6 +42,9 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 
 		BeforeEach(func() {
 			changed = p.WithDefaults()
+			p.Spec.ExternalAccess.Type = "LoadBalancer"
+			p.Spec.ExternalAccess.DomainName = "example.com"
+			p.WithDefaults()
 		})
 
 		It("should return as changed", func() {
@@ -70,42 +73,52 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("IssecureController should return false", func() {
 			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
 		})
-		It("IssecureController should return false", func() {
-			p.Spec.TLS = nil
-			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
-		})
+
 		It("IsSecureSegmentStore should return false", func() {
-			Ω(p.Spec.TLS.IsSecureSegmentStore()).To(Equal(false))
-		})
-		It("IsSecureSegmentStore should return false", func() {
-			p.Spec.TLS = nil
 			Ω(p.Spec.TLS.IsSecureSegmentStore()).To(Equal(false))
 		})
 
 		It("IsCaBundlePresent should return false", func() {
 			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
 		})
-		It("IsCaBundlePresent should return false", func() {
-			p.Spec.TLS = nil
-			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
-		})
+
 		It("IsEnabled should return false", func() {
 			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
 		})
-		It("IsEnabled should return false", func() {
-			p.Spec.Authentication = nil
-			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
-		})
+
 		It("should set external access type and domain name to empty", func() {
-			p.Spec.ExternalAccess.Type = "LoadBalancer"
-			p.Spec.ExternalAccess.DomainName = "example.com"
-			p.WithDefaults()
 			Ω(string(p.Spec.ExternalAccess.Type)).Should(Equal(""))
 			Ω(p.Spec.ExternalAccess.DomainName).Should(Equal(""))
 		})
-		It("should set volume claim template", func() {
+	})
+	Context("Setting TLS and Autentication to nil", func() {
+		BeforeEach(func() {
 			p.Spec.Version = "0.6.0"
 			p.WithDefaults()
+			p.Spec.Authentication = nil
+			p.Spec.TLS = nil
+		})
+		It("IsEnabled should return false", func() {
+			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
+		})
+		It("IsCaBundlePresent should return false", func() {
+
+			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
+		})
+		It("IsSecureSegmentStore should return false", func() {
+			Ω(p.Spec.TLS.IsSecureSegmentStore()).To(Equal(false))
+		})
+		It("IssecureController should return false", func() {
+			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
+		})
+	})
+	Context("checking volume claim template is present", func() {
+		BeforeEach(func() {
+			p.Spec.Version = "0.6.0"
+			p.WithDefaults()
+		})
+		It("should set volume claim template", func() {
+
 			Ω(p.Spec.Pravega.CacheVolumeClaimTemplate).ShouldNot(BeNil())
 		})
 	})
