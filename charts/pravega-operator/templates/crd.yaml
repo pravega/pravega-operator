@@ -50,11 +50,7 @@ spec:
   version: v1beta1        
   versions:
   - name: v1beta1
-    {{- if .Release.IsUpgrade }}
     served: true
-    {{- else }}
-    served: false
-    {{- end }}
     storage: true
     schema:
       openAPIV3Schema:
@@ -314,7 +310,11 @@ spec:
                 format: int32
                 type: integer
   - name: v1alpha1
+    {{- if .Release.IsUpgrade }}
     served: true
+    {{- else }}
+    served: false
+    {{- end }}
     storage: false
     schema:
       openAPIV3Schema:
