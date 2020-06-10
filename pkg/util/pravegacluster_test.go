@@ -10,7 +10,6 @@
 package util
 
 import (
-	"log"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -103,7 +102,6 @@ var _ = Describe("pravegacluster", func() {
 
 			result = OverrideDefaultJVMOptions(jvmOpts, customOpts)
 			result1 = OverrideDefaultJVMOptions(jvmOpts, result1)
-			log.Printf("result is %v", result)
 
 		})
 		It("should contain string", func() {

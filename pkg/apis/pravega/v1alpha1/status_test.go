@@ -46,6 +46,7 @@ var _ = Describe("PravegaCluster Status", func() {
 		BeforeEach(func() {
 			p.Status.CurrentVersion = "0.4.4"
 			p.Status.Init()
+			p.Status.VersionHistory = []string{"0.6.0", "0.7.0"}
 			p.Status.AddToVersionHistory("0.5.0")
 		})
 		It("version should get update correctly", func() {
@@ -246,6 +247,8 @@ var _ = Describe("PravegaCluster Status", func() {
 		It("should have pods Error condition with true status", func() {
 			_, condition := p.Status.GetClusterCondition(v1alpha1.ClusterConditionError)
 			Ω(condition.Status).To(Equal(corev1.ConditionTrue))
+			Ω(condition.Message).To(Equal(" "))
+			Ω(condition.Reason).To(Equal("RollbackFailed"))
 
 		})
 	})
@@ -310,7 +313,7 @@ var _ = Describe("PravegaCluster Status", func() {
 			It("should have pods rollback condition with false status using function", func() {
 				Ω(p.Status.IsClusterInRollbackState()).To(Equal(false))
 			})
-			It("Checking GetlastCondition function and It should return nil n as cluster not in Rollback state", func() {
+			It("Checking GetlastCondition function and It should return nil as cluster not in Rollback state", func() {
 				condition := p.Status.GetLastCondition()
 				Ω(condition).To(BeNil())
 			})
