@@ -82,7 +82,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
 		})
 
-		It("IsEnabled should return false", func() {
+		It("Autentication Enabled should return false", func() {
 			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
 		})
 
@@ -98,11 +98,10 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			p.Spec.Authentication = nil
 			p.Spec.TLS = nil
 		})
-		It("IsEnabled should return false", func() {
+		It("Autentication Enabled should return false", func() {
 			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
 		})
 		It("IsCaBundlePresent should return false", func() {
-
 			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
 		})
 		It("IsSecureSegmentStore should return false", func() {
@@ -118,7 +117,6 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			p.WithDefaults()
 		})
 		It("should set volume claim template", func() {
-
 			Ω(p.Spec.Pravega.CacheVolumeClaimTemplate).ShouldNot(BeNil())
 		})
 	})

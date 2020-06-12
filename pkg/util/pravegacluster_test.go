@@ -26,20 +26,24 @@ func TestPravegacluster(t *testing.T) {
 var _ = Describe("pravegacluster", func() {
 
 	Context("IsVersionBelow07", func() {
-		var result1, result2 bool
+		var result1, result2, result3, result4 bool
 		BeforeEach(func() {
-
 			result1 = IsVersionBelow07("0.7.1")
 			result2 = IsVersionBelow07("0.6.0")
-			IsVersionBelow07("666")
-			IsVersionBelow07("")
-
+			result3 = IsVersionBelow07("666")
+			result4 = IsVersionBelow07("")
+		})
+		It("should return false for result1", func() {
+			Ω(result1).To(Equal(false))
 		})
 		It("should return true for result2", func() {
 			Ω(result2).To(Equal(true))
 		})
-		It("should return false for result1", func() {
-			Ω(result1).To(Equal(false))
+		It("should return false for result3", func() {
+			Ω(result3).To(Equal(false))
+		})
+		It("should return true for result4", func() {
+			Ω(result4).To(Equal(true))
 		})
 	})
 	Context("ContainsVersion fn", func() {

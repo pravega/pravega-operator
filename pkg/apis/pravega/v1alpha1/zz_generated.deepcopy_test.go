@@ -21,11 +21,11 @@ import (
 
 var _ = Describe("PravegaCluster DeepCopy", func() {
 	Context("with defaults", func() {
-		var str1, str2 string
-		var str3, str4 v1.PullPolicy
-
-		var p1, p2 *v1alpha1.PravegaCluster
-
+		var (
+			str1, str2 string
+			str3, str4 v1.PullPolicy
+			p1, p2     *v1alpha1.PravegaCluster
+		)
 		BeforeEach(func() {
 			p1 = &v1alpha1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
