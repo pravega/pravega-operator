@@ -74,16 +74,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("IsCaBundlePresent should return false", func() {
 			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
 		})
-
 		It("IsEnabled should return false", func() {
 			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
 		})
-
 		It("should set external access type and domain name to empty", func() {
 			Ω(string(p.Spec.ExternalAccess.Type)).Should(Equal(""))
 			Ω(p.Spec.ExternalAccess.DomainName).Should(Equal(""))
 		})
-
 	})
 	Context("Setting TLS and Autentication to nil", func() {
 		BeforeEach(func() {
@@ -96,7 +93,6 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.Authentication.IsEnabled()).To(Equal(false))
 		})
 		It("IsCaBundlePresent should return false", func() {
-
 			Ω(p.Spec.TLS.IsCaBundlePresent()).To(Equal(false))
 		})
 		It("IsSecureSegmentStore should return false", func() {
