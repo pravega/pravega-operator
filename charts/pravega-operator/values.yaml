@@ -1,28 +1,35 @@
-# Default values for pravega-operator.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+## Default values for pravega-operator.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
 
 image:
   repository: pravega/pravega-operator
   tag: 0.5.0
   pullPolicy: IfNotPresent
 
-# whether to create RBAC roles and bindings
+## Install RBAC roles and bindings.
 rbac:
   create: true
 
-# service account names and whether to create them
+## Service account names and whether to create it.
 serviceAccount:
   create: true
   name: pravega-operator
 
-# whether to create custom resource
+## Whether to create the CRD.
 crd:
   create: true
 
-# whether to enable test mode
+## Whether to enable test mode.
 testmode: false
 
-# specifies which namespace the Operator should watch for new resources
-# default: "" (to watch ALL namespaces)
+webhookCert:
+  ## Whether to use a new self-signed certificate.
+  selfsigned: true
+  ## If false, the following needs to be provided, and must match the CRD webhook CA:
+  #crt: <cert_crt>
+  #key: <cert_key>
+
+## Specifies which namespace the Operator should watch over.
+## An empty string means all namespaces.
 watchNamespace: ""

@@ -2,6 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "pravega-operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "pravega-operator.commonLabels" . | indent 4 }}
 spec:
   replicas: 1
   selector:
@@ -45,7 +48,7 @@ spec:
       volumes:
       - name: webhook-cert
         secret:
-          secretName: selfsigned-cert-tls
+          secretName: {{ template "pravega-operator.fullname" . }}-selfsigned-cert-tls
       - name: versions-volume
         configMap:
           name: supported-versions-map
