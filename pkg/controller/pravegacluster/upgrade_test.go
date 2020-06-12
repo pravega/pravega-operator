@@ -119,6 +119,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					Version: "0.5.0",
 				}
 				p.WithDefaults()
+				p.Spec.ExternalAccess.Enabled = true
 				client = fake.NewFakeClient(p)
 				r = &ReconcilePravegaCluster{client: client, scheme: s}
 				_, _ = r.Reconcile(req)
@@ -205,20 +206,72 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
+
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 					foundPravega.Spec.Version = "0.7.0"
+					foundPravega.Spec.Pravega.SegmentStoreReplicas = 4
 					foundPravega.Status.SetPodsReadyConditionTrue()
 					client.Update(context.TODO(), foundPravega)
 					_, _ = r.Reconcile(req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+
 				})
 
 				It("should set upgrade condition reason to UpgradingSegmentstoreReason and message to 0", func() {
 					_, upgradeCondition := foundPravega.Status.GetClusterCondition(pravegav1beta1.ClusterConditionUpgrading)
 					Ω(upgradeCondition.Reason).Should(Equal(pravegav1beta1.UpdatingSegmentstoreReason))
 					Ω(upgradeCondition.Message).Should(Equal("0"))
+				})
+			})
+			Context("Upgrade Segmentstore to empty version", func() {
+				var (
+					foundPravega *v1beta1.PravegaCluster
+				)
+				BeforeEach(func() {
+					foundPravega = &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					foundPravega.Status.TargetVersion = ""
+
+					foundPravega.Status.SetPodsReadyConditionTrue()
+					client.Update(context.TODO(), foundPravega)
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+
+				})
+				It("should set upgrade condition reason and message to empty", func() {
+					_, upgradeCondition := foundPravega.Status.GetClusterCondition(pravegav1beta1.ClusterConditionUpgrading)
+					Ω(upgradeCondition.Reason).Should(Equal(""))
+					Ω(upgradeCondition.Message).Should(Equal(""))
+				})
+				It("should set the upgrade condition to false", func() {
+					Ω(foundPravega.Status.IsClusterInUpgradingState()).To(Equal(false))
+				})
+			})
+			Context("checking upgrade completion", func() {
+				var (
+					foundPravega *v1beta1.PravegaCluster
+				)
+				BeforeEach(func() {
+					foundPravega = &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					foundPravega.Status.TargetVersion = "0.7.0"
+					foundPravega.Status.SetUpgradingConditionTrue("", "")
+					foundPravega.Status.SetPodsReadyConditionTrue()
+					foundPravega.Status.CurrentVersion = "0.7.0"
+					client.Update(context.TODO(), foundPravega)
+					_, _ = r.Reconcile(req)
+					foundPravega = &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+				})
+
+				It("should set the target version to empty", func() {
+					Ω(foundPravega.Status.TargetVersion).To(BeEquivalentTo(""))
+				})
+				It("should set the upgrade condition to false", func() {
+					Ω(foundPravega.Status.IsClusterInUpgradingState()).To(Equal(false))
 				})
 			})
 		})
