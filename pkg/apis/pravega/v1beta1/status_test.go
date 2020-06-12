@@ -234,11 +234,6 @@ var _ = Describe("PravegaCluster Status", func() {
 				It("should return rollback failed state to true using function", func() {
 					Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(true))
 				})
-				It("should return rollback failed state to false using function", func() {
-					p.Status.SetErrorConditionTrue("some err", "")
-					Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(false))
-				})
-
 				It("should have pods Error condition with true status using function", func() {
 					Ω(p.Status.IsClusterInErrorState()).To(Equal(true))
 				})
@@ -247,7 +242,10 @@ var _ = Describe("PravegaCluster Status", func() {
 					Ω(condition.Status).To(Equal(corev1.ConditionTrue))
 					Ω(condition.Message).To(Equal(" "))
 					Ω(condition.Reason).To(Equal("RollbackFailed"))
-
+				})
+				It("should return rollback failed state to false using function", func() {
+					p.Status.SetErrorConditionTrue("some err", "")
+					Ω(p.Status.IsClusterInRollbackFailedState()).To(Equal(false))
 				})
 			})
 			Context("set pod Error condition to be false", func() {
