@@ -143,21 +143,18 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should create a config-map with empty tier2", func() {
 					p.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{}
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					cm := pravega.MakeSegmentstoreConfigMap(p)
+					Ω(cm.Data["TIER2_STORAGE"]).To(Equal(""))
 					Ω(err).Should(BeNil())
 				})
-
 				It("should create a stateful set", func() {
 					_ = pravega.MakeSegmentStoreStatefulSet(p)
 					Ω(err).Should(BeNil())
 				})
-
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
 				})
-
 			})
-
 		})
 
 		Context("With more than one SegmentStore replica", func() {
@@ -265,9 +262,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
 				})
-
 			})
-
 		})
 
 		Context("With HDFS as Tier2", func() {
@@ -275,7 +270,6 @@ var _ = Describe("PravegaSegmentstore", func() {
 				customReq *corev1.ResourceRequirements
 				err       error
 			)
-
 			BeforeEach(func() {
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
@@ -361,12 +355,10 @@ var _ = Describe("PravegaSegmentstore", func() {
 					_ = pravega.MakeSegmentstoreConfigMap(p)
 					Ω(err).Should(BeNil())
 				})
-
 				It("should create a stateful set", func() {
 					_ = pravega.MakeSegmentStoreStatefulSet(p)
 					Ω(err).Should(BeNil())
 				})
-
 				It("should set external access service type to LoadBalancer", func() {
 					_ = pravega.MakeSegmentStoreExternalServices(p)
 					Ω(err).Should(BeNil())
@@ -377,20 +369,23 @@ var _ = Describe("PravegaSegmentstore", func() {
 					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
 					p.Spec.ExternalAccess.Type = ""
 					p.Spec.ExternalAccess.DomainName = "example"
+
 				})
-				It("should create external service", func() {
-					_ = pravega.MakeSegmentStoreExternalServices(p)
+				It("should create external service with access type loadbalancer", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(string(svc[0].Spec.Type)).To(Equal("LoadBalancer"))
 					Ω(err).Should(BeNil())
 				})
 			})
-			Context("Create External service with external service type empty and access type load balancer", func() {
+			Context("Create External service with external service type empty", func() {
 				BeforeEach(func() {
 					m := make(map[string]string)
 					p.Spec.Pravega.SegmentStoreServiceAnnotations = m
 					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
 				})
-				It("should create the service with external service type set only in pravega spec", func() {
-					_ = pravega.MakeSegmentStoreExternalServices(p)
+				It("should create the service with external access type ClusterIP", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(string(svc[0].Spec.Type)).To(Equal("ClusterIP"))
 					Ω(err).Should(BeNil())
 				})
 			})

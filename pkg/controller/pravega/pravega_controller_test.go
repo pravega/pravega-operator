@@ -142,18 +142,19 @@ var _ = Describe("Controller", func() {
 					p.Spec.Pravega.ControllerExternalServiceType = ""
 					p.Spec.ExternalAccess.Type = ""
 				})
-				It("should create the service", func() {
-					_ = pravega.MakeControllerService(p)
+				It("should create the service with external access type loadbalancer", func() {
+					svc := pravega.MakeControllerService(p)
+					Ω(string(svc.Spec.Type)).To(Equal("LoadBalancer"))
 					Ω(err).Should(BeNil())
 				})
 			})
-			Context("Controller with external service type empty and external access type load balancer", func() {
+			Context("Controller with external service type empty", func() {
 				BeforeEach(func() {
 					p.Spec.Pravega.ControllerExternalServiceType = ""
-					p.Spec.ExternalAccess.Type = corev1.ServiceTypeLoadBalancer
 				})
-				It("should create the service", func() {
-					_ = pravega.MakeControllerService(p)
+				It("should create the service with external access type clusterIP", func() {
+					svc := pravega.MakeControllerService(p)
+					Ω(string(svc.Spec.Type)).To(Equal("ClusterIP"))
 					Ω(err).Should(BeNil())
 				})
 			})
