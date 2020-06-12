@@ -373,7 +373,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should create external service with access type loadbalancer", func() {
 					svc := pravega.MakeSegmentStoreExternalServices(p)
-					Ω(string(svc[0].Spec.Type)).To(Equal("LoadBalancer"))
+					Ω(svc[0].Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
 					Ω(err).Should(BeNil())
 				})
 			})
@@ -385,7 +385,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should create the service with external access type ClusterIP", func() {
 					svc := pravega.MakeSegmentStoreExternalServices(p)
-					Ω(string(svc[0].Spec.Type)).To(Equal("ClusterIP"))
+					Ω(svc[0].Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
 					Ω(err).Should(BeNil())
 				})
 			})

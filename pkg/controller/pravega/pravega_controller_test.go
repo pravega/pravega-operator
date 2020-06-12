@@ -144,7 +144,7 @@ var _ = Describe("Controller", func() {
 				})
 				It("should create the service with external access type loadbalancer", func() {
 					svc := pravega.MakeControllerService(p)
-					Ω(string(svc.Spec.Type)).To(Equal("LoadBalancer"))
+					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
 					Ω(err).Should(BeNil())
 				})
 			})
@@ -154,7 +154,7 @@ var _ = Describe("Controller", func() {
 				})
 				It("should create the service with external access type clusterIP", func() {
 					svc := pravega.MakeControllerService(p)
-					Ω(string(svc.Spec.Type)).To(Equal("ClusterIP"))
+					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
 					Ω(err).Should(BeNil())
 				})
 			})
