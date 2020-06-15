@@ -9,12 +9,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: {{ template "pravega-operator.fullname" . }}
+{{ include "pravega-operator.selectorLabels" . | indent 6 }}
   template:
     metadata:
       labels:
-        name: {{ template "pravega-operator.fullname" . }}
-        component: pravega-operator
+{{ include "pravega-operator.selectorLabels" . | indent 8 }}
     spec:
       automountServiceAccountToken: true
       serviceAccountName: {{ .Values.serviceAccount.name }}

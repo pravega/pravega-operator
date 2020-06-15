@@ -2,12 +2,16 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "pravega-components.fullname" . }}
+  name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "pravega.commonLabels" . | indent 4 }}
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ template "pravega-components.fullname" . }}
+  name: {{ .Values.serviceAccount.name }}
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

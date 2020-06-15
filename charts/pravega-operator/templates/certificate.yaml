@@ -1,4 +1,4 @@
-apiVersion: certmanager.k8s.io/v1alpha1
+apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
   name: {{ template "pravega-operator.fullname" . }}-selfsigned-cert
@@ -13,7 +13,7 @@ spec:
     secretName: {{ template "pravega-operator.fullname" . }}-key-pair
 {{- end }}
 ---
-apiVersion: certmanager.k8s.io/v1alpha1
+apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
   name: {{ template "pravega-operator.fullname" . }}-selfsigned-cert

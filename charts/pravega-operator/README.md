@@ -9,6 +9,8 @@ This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-op
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3+
+  - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
+  - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Installing the Chart
 

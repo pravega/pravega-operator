@@ -2,8 +2,9 @@ apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: {{ template "pravega.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: "pravega-cluster"
+{{ include "pravega.commonLabels" . | indent 4 }}
 spec:
   {{- if .Values.tls }}
   tls:
