@@ -97,7 +97,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(9090),
+							Command: util.ReadinessHealthcheckCommand(10080),
 						},
 					},
 					// Controller pods start fast. We give it up to 1 minute to become ready.

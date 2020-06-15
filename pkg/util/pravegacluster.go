@@ -64,6 +64,10 @@ func HealthcheckCommand(port int32) []string {
 	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
 }
 
+func ReadinessHealthcheckCommand(port int32) []string {
+	return []string{"/bin/sh", "-c", fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json'", port)}
+}
+
 // Min returns the smaller of x or y.
 func Min(x, y int32) int32 {
 	if x > y {
