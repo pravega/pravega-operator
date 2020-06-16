@@ -24,8 +24,22 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
+{{/*
+Common labels
+*/}}
 {{- define "pravega-operator.commonLabels" -}}
-app.kubernetes.io/name: "{{ template "pravega-operator.name" . }}"
-app.kubernetes.io/version: "{{ .Chart.AppVersion }}"
+{{ include "pravega-operator.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
 {{- end -}}
+
+{{/*
+Selector labels
+*/}}
+{{- define "pravega-operator.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "pravega-operator.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
