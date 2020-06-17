@@ -175,6 +175,12 @@ var _ = Describe("pravegacluster", func() {
 		})
 
 	})
+	Context("ReadinessHealthcheckCommand()", func() {
+		out := ReadinessHealthcheckCommand(1234)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+	})
 	Context("Min()", func() {
 
 		It("Min should be 10", func() {
