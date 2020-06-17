@@ -101,7 +101,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 						},
 					},
 					// Controller pods start fast. We give it up to 1 minute to become ready.
-					InitialDelaySeconds: 60,
+					InitialDelaySeconds: 20,
 					TimeoutSeconds:      10,
 					SuccessThreshold:    3,
 				},
