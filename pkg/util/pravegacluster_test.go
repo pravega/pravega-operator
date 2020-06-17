@@ -175,8 +175,8 @@ var _ = Describe("pravegacluster", func() {
 		})
 
 	})
-	Context("ReadinessHealthcheckCommand()", func() {
-		out := ReadinessHealthcheckCommand(1234)
+	Context("ControllerReadinessCheck()", func() {
+		out := ControllerReadinessCheck(1234)
 		It("Should not be Empty", func() {
 			Ω(len(out)).ShouldNot(Equal(0))
 		})

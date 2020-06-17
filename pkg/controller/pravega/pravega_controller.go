@@ -97,12 +97,13 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.ReadinessHealthcheckCommand(10080),
+							Command: util.ControllerReadinessCheck(10080),
 						},
 					},
 					// Controller pods start fast. We give it up to 1 minute to become ready.
-					PeriodSeconds:    5,
-					FailureThreshold: 12,
+					InitialDelaySeconds: 60,
+					TimeoutSeconds:      10,
+					SuccessThreshold:    3,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -130,7 +131,6 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 			},
 		},
 	}
-
 	if p.Spec.Pravega.ControllerServiceAccountName != "" {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
