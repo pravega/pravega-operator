@@ -13,7 +13,7 @@
 In case you dont have a cert-manager, Install the cert-manager from the following link:-
 
 https://cert-manager.io/docs/installation/kubernetes/
-  
+
 Installing the secrets:-
 ```
 $ kubectl create -f deploy/secret.yaml
@@ -24,7 +24,7 @@ $ kubectl create -f deploy/webhook.yaml
 ```
 Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
 ```
-$ kubectl create -f  deploy/version_map.yaml 
+$ kubectl create -f  deploy/version_map.yaml
 ```
 Register the Pravega cluster custom resource definition (CRD).
 ```
@@ -61,9 +61,9 @@ containers:
 
 Pravega requires a long term storage provider known as longtermStorage.
 
-Check out the available [options for longtermStorage](longtermstorage.md) and how to configure it.
+Check out the available [options for longtermStorage](https://github.com/pravega/pravega-operator/wiki/LongTermStorage) and how to configure it.
 
-In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](longtermstorage.md#use-nfs-as-longtermstorage).
+In this example we are going to use a `pravega-tier2` PVC using [NFS as the storage backend](https://github.com/pravega/pravega-operator/wiki/LongTermStorage#use-nfs-as-longtermstorage).
 
 ### Install the Pravega cluster manually
 
