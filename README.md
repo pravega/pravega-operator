@@ -79,7 +79,7 @@ https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
 
 Pravega requires a long term storage provider known as longtermStorage.
 
-Check out the available [options for long term storage](doc/longtermstorage.md) and how to configure it.
+Check out the available [options for long term storage](https://github.com/pravega/pravega-operator/wiki/LongTermStorage) and how to configure it.
 
 For demo purposes, you can quickly install a toy NFS server.
 
