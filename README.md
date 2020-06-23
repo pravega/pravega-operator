@@ -157,7 +157,7 @@ And the `REST` management interface is available at:
 http://<pravega-name>-pravega-controller.<namespace>:10080/
 ```
 
-Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
+Check out the [external access documentation](https://github.com/pravega/pravega-operator/wiki/Enable-external-access) if your clients need to connect to Pravega from outside Kubernetes.
 
 ### Scale a Pravega cluster
 
