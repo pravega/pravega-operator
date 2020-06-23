@@ -9,7 +9,6 @@ This document explains how to configure Pravega
     * [NFS](tier2.md#use-NFS-as-Tier2)
     * [Google Filestore Storage](tier2.md#use-google-filestore-storage-as-tier-2)
 * [Tune Pravega Configuration](pravega-options.md)
-* [Tune Bookkeeper Configuration](https://github.com/pravega/pravega-operator/wiki/Bookkeeper-Configuration)
 * [Enable TLS](tls.md)
 * [Enable Authentication](auth.md)
 * [Enable external access](external-access.md)
