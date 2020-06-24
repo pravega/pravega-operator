@@ -9,6 +9,8 @@ This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-op
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3+
+  - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
+  - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Installing the Chart
 
@@ -44,4 +46,7 @@ The following table lists the configurable parameters of the Pravega operator ch
 | `serviceAccount.create` | Create service account | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
 | `testmode` | Enable test mode | `false` |
+| `webhookCert.selfsigned` | Whether to use self-signed certificates | true |
+| `webhookCert.crt` | Certificate provided by the CA, if self-signed certificates are not to be used | |
+| `webhookCert.key` | Private key provided by the CA, if self-signed certificates are not to be used | |
 | `watchNamespace` | Namespaces to be watched  | `""` |

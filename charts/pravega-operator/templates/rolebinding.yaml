@@ -9,6 +9,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: {{ .Values.serviceAccount.name }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ template "pravega-operator.fullname" . }}
