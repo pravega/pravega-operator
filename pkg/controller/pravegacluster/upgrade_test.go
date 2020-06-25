@@ -543,6 +543,49 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
+		Context("syncSegmentStoreVersionTo07", func() {
+			var (
+				err          error
+				foundPravega *v1beta1.PravegaCluster
+				client       client.Client
+				sts, sts1    *appsv1.StatefulSet
+			)
+			BeforeEach(func() {
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				_, _ = r.Reconcile(req)
+				foundPravega = &v1beta1.PravegaCluster{}
+				r.Reconcile(req)
+				sts = &appsv1.StatefulSet{}
+				p.Spec.Version = "0.7.0"
+				p.WithDefaults()
+				sts = pravega.MakeSegmentStoreStatefulSet(p)
+				client.Create(context.TODO(), sts)
+				_, _ = r.Reconcile(req)
+				_ = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: p.Namespace}, sts)
+				_ = r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, foundPravega)
+				sts.Status.ReadyReplicas = 5
+				*sts.Spec.Replicas = 5
+				r.client.Update(context.TODO(), sts)
+				foundPravega.Spec.Version = "0.5.0"
+				p.Spec.Version = "0.5.0"
+				p.WithDefaults()
+				sts1 = pravega.MakeSegmentStoreStatefulSet(p)
+				client.Create(context.TODO(), sts1)
+				sts1.Status.ReadyReplicas = 2
+				*sts1.Spec.Replicas = 2
+				r.client.Update(context.TODO(), sts1)
+				r.client.Update(context.TODO(), foundPravega)
+
+				_, err = r.syncSegmentStoreVersionTo07(foundPravega)
+				foundPravega.Status.TargetVersion = "0.5.0"
+
+			})
+			It("Error should be nil", func() {
+				Ω(err).Should(BeNil())
+			})
+
+		})
 
 		Context("checkUpdatedPods with faulty and non-faultypod", func() {
 			var (
