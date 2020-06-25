@@ -24,11 +24,13 @@ crd:
 testmode: false
 
 webhookCert:
-  ## Whether to use a new self-signed certificate.
-  selfsigned: true
-  ## If false, the following needs to be provided, and must match the CRD webhook CA:
-  #crt: <cert_crt>
-  #key: <cert_key>
+  crt:
+  key:
+  ## Whether to generate the certificate or not.
+  generate: false
+  ## If false, the name of the pre-existing certificate needs to be provided.
+  certName: selfsigned-cert
+  secretName: selfsigned-cert-tls
 
 ## Specifies which namespace the Operator should watch over.
 ## An empty string means all namespaces.
