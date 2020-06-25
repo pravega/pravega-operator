@@ -576,15 +576,11 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				*sts1.Spec.Replicas = 2
 				r.client.Update(context.TODO(), sts1)
 				r.client.Update(context.TODO(), foundPravega)
-
 				_, err = r.syncSegmentStoreVersionTo07(foundPravega)
-				foundPravega.Status.TargetVersion = "0.5.0"
-
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
-
 		})
 
 		Context("checkUpdatedPods with faulty and non-faultypod", func() {
