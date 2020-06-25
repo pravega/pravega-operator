@@ -307,7 +307,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				Ω(err).Should(BeNil())
 			})
 			It("Error should be not nil when the target version is not equal to current version", func() {
-				foundPravega.Status.SetUpgradingConditionTrue("UpgradeBookeeper", "0")
+				foundPravega.Status.SetUpgradingConditionTrue("UpgradeController", "0")
 				foundPravega.Status.TargetVersion = "0.7.1"
 				foundPravega.Status.CurrentVersion = "0.6.1"
 				r.client.Update(context.TODO(), foundPravega)
@@ -437,7 +437,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			It("Error should be nil", func() {
 				Ω(err).ShouldNot(BeNil())
 			})
-			It("Error should be nil", func() {
+			It("Error should not be nil", func() {
 				Ω(strings.ContainsAny(err1.Error(), "could not obtain outdated pod")).Should(Equal(true))
 			})
 		})
@@ -621,15 +621,16 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				pod1 = append(pod1, testpod1)
 				result2, err1 = r.checkUpdatedPods(pod1, "0.7.1")
 			})
-			It("It should return false", func() {
+			It("It should return false and non nil error", func() {
 				Ω(strings.ContainsAny(err.Error(), "failed because of CrashLoopBackOff")).Should(Equal(true))
-				Ω(err1).Should(BeNil())
 				Ω(result1).Should(Equal(false))
+			})
+			It("It should return false and  nil error", func() {
+				Ω(err1).Should(BeNil())
 				Ω(result2).Should(Equal(false))
 			})
 		})
 	})
-
 	var _ = Describe("Rollback Test", func() {
 		var (
 			req reconcile.Request
@@ -903,7 +904,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 						r.client.Update(context.TODO(), foundPravega)
 						result = r.rollbackConditionFor07(foundPravega, sts)
 					})
-					It("Error should not be nil", func() {
+					It("It should return true", func() {
 						Ω(result).To(Equal(true))
 					})
 				})
