@@ -46,7 +46,9 @@ The following table lists the configurable parameters of the Pravega operator ch
 | `serviceAccount.create` | Create service account | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
 | `testmode` | Enable test mode | `false` |
-| `webhookCert.selfsigned` | Whether to use self-signed certificates | true |
-| `webhookCert.crt` | Certificate provided by the CA, if self-signed certificates are not to be used | |
-| `webhookCert.key` | Private key provided by the CA, if self-signed certificates are not to be used | |
+| `webhookCert.crt` | tls.crt value corresponding to the certificate | |
+| `webhookCert.key` | tls.key value corresponding to the certificate | |
+| `webhookCert.generate` | Whether to generate the certificate and the issuer (set to false while using self-signed certificates) | `false` |
+| `webhookCert.certName` | Name of the certificate, if generate is set to false | `selfsigned-cert` |
+| `webhookCert.secretName` | Name of the secret created by the certificate, if generate is set to false | `selfsigned-cert-tls` |
 | `watchNamespace` | Namespaces to be watched  | `""` |
