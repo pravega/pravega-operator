@@ -10,9 +10,9 @@ Starting Operator version `0.4.3` we also support major version upgrades for Pra
 # Upgrade Guide
 
 ## Upgrading till 0.4.4
-Till version 0.4.4, Pravega operator can be upgraded by modifying the image tag using kubectl edit, patch or apply...
+Till version 0.4.4, Pravega operator can be upgraded by providing the location to the new charts
 
-`$ kubectl edit <operator deployment name>`
+`$ helm upgrade <operator release name> <location of new charts>`
 
 The upgrade is handled as a [rolling update](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/) by Kubernetes and results in a new operator pod being created and the old one being terminated.
 
@@ -87,13 +87,20 @@ See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/cus
 
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade.Also, Bookkeeper operator config map should contain the bookkeeper versions of the installed bookkeeper.
 
-4. Additionally, modify the version map present at this location (https://github.com/pravega/pravega-operator/blob/master/tools/manifest_files/version_map.yaml), to include the pravega version installed.
+4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (you can refer to the manifest [here](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) to create a self-signed certificate in the default namespace). You would need to provide the name of the certificate (webhookCert.certName), the name of the secret created by this certificate (webhookCert.secretName), the tls.crt (webhookCert.crt) and tls.key (webhookCert.key)  inside the corresponding fields in the values.yaml file of the charts for the 0.5.0 operator. The values tls.crt and tls.key are contained in the secret which is created by the certificate (say `selfsigned-cert-tls`) and can be obtained using the following command
+```
+kubectl get secret selfsigned-cert-tls -o yaml | grep tls.
+```
+
+5. Execute the script `pre-upgrade.sh` inside the `scripts` folder. This script patches the `pravega-webhook-svc` with the required annotations and labels.
 
 
 ### Triggering the upgrade
 
-The upgrade to Operator 0.5.0, can be triggered using the script `operatorUpgrade.sh` under `tools` folder.
-This script patches the Pravega Cluster CRD and creates necessary K8s artifacts, needed by 0.5.0 Operator, prior to triggering the upgrade by updating the image tag in Operator deployment.
+The upgrade to Operator 0.5.0 can be triggered using the following command
+```
+helm upgrade <operator release name> <location of 0.5.0 charts> --set webhookCert.crt=<tls.crt> --set webhookCert.generate=false --set webhookCert.certName=<cert-name> --set webhookCert.secretName=<secret-name>
+```
 
 ### How to check for successful upgrade completion
 
