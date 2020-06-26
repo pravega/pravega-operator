@@ -82,14 +82,13 @@ For upgrading Operator to version 0.5.0, the following must be true:
 See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#webhook-conversion
 
 2. Cert-Manager or some other certificate management solution must be deployed for managing webhook service certificates. The upgrade trigger script assume user has [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) installed but any other cert management solution can also be used and script would need to be modified accordingly.
-
-  Installing cert-manager: https://cert-manager.io/docs/installation/kubernetes/
+Installing cert-manager: https://cert-manager.io/docs/installation/kubernetes/
 
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade.Also, Bookkeeper operator config map should contain the bookkeeper versions of the installed bookkeeper.
 
-4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (you can refer to the manifest [here](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) to create a self-signed certificate in the default namespace). You would need to provide the name of the certificate (webhookCert.certName), the name of the secret created by this certificate (webhookCert.secretName), the tls.crt (webhookCert.crt) and tls.key (webhookCert.key)  inside the corresponding fields in the values.yaml file of the charts for the 0.5.0 operator. The values tls.crt and tls.key are contained in the secret which is created by the certificate (say `selfsigned-cert-tls`) and can be obtained using the following command
+4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (you can refer to the manifest [here](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) to create a self-signed certificate in the default namespace). You would need to provide the name of the certificate (webhookCert.certName), the name of the secret created by this certificate (webhookCert.secretName), the tls.crt (webhookCert.crt) and tls.key (webhookCert.key)  inside the corresponding fields in the values.yaml file of the charts for the 0.5.0 operator at the time of operator upgrade. The values tls.crt and tls.key are contained in the secret which is created by the certificate and can be obtained using the following command
 ```
-kubectl get secret selfsigned-cert-tls -o yaml | grep tls.
+kubectl get secret <secret-name> -o yaml | grep tls.
 ```
 
 5. Execute the script `pre-upgrade.sh` inside the `scripts` folder. This script patches the `pravega-webhook-svc` with the required annotations and labels.

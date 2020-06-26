@@ -48,22 +48,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc](
-https://cert-manager.io/docs/installation/kubernetes/)
-
-Then use Helm to quickly deploy a Pravega operator with the release name `foo`.
-
-```
-$ helm install foo charts/pravega-operator
-```
-
-Verify that the Pravega Operator is running.
-
-```
-$ kubectl get deploy
-NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-foo-pravega-operator     1         1         1            1           17s
-```
+We recommend using helm to deploy a Pravega Operator. Check out the [helm installation](charts/pravega-operator/README.md) document for instructions.
 
 #### Deploying in Test Mode
  The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
