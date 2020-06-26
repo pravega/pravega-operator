@@ -10,9 +10,9 @@ Starting Operator version `0.4.3` we also support major version upgrades for Pra
 # Upgrade Guide
 
 ## Upgrading till 0.4.4
-Till version 0.4.4, Pravega operator can be upgraded by providing the location to the new charts
+Till version 0.4.4, Pravega operator can be upgraded by providing the location to the new operator charts
 
-`$ helm upgrade <operator release name> <location of new charts>`
+`$ helm upgrade <operator release name> <location of new operator charts>`
 
 The upgrade is handled as a [rolling update](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/) by Kubernetes and results in a new operator pod being created and the old one being terminated.
 
@@ -86,7 +86,8 @@ Installing cert-manager: https://cert-manager.io/docs/installation/kubernetes/
 
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade.Also, Bookkeeper operator config map should contain the bookkeeper versions of the installed bookkeeper.
 
-4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (you can refer to the manifest [here](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) to create a self-signed certificate in the default namespace). You would need to provide the name of the certificate (webhookCert.certName), the name of the secret created by this certificate (webhookCert.secretName), the tls.crt (webhookCert.crt) and tls.key (webhookCert.key)  inside the corresponding fields in the values.yaml file of the charts for the 0.5.0 operator at the time of operator upgrade. The values tls.crt and tls.key are contained in the secret which is created by the certificate and can be obtained using the following command
+4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (you can refer to the manifest [here](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) to create a self-signed certificate in the default namespace).
+> The name of the certificate (webhookCert.certName), the name of the secret created by this certificate (webhookCert.secretName), the tls.crt (webhookCert.crt) and tls.key (webhookCert.key) need to be specified against the corresponding fields in the values.yaml file, or can be provided with the install command as show [here](#installing-the-chart). The values tls.crt and tls.key are contained in the secret which is created by the certificate and can be obtained using the following command
 ```
 kubectl get secret <secret-name> -o yaml | grep tls.
 ```
