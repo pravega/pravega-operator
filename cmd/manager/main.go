@@ -11,12 +11,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	//"github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
 
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
@@ -24,6 +25,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
+
 	log "github.com/sirupsen/logrus"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -31,6 +33,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
@@ -55,6 +58,7 @@ func printVersion() {
 
 func main() {
 	flag.Parse()
+	logf.SetLogger(logf.ZapLogger(false))
 
 	printVersion()
 
@@ -76,6 +80,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Become the leader before proceeding
+	leader.Become(context.TODO(), "pravega-operator-lock")
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
