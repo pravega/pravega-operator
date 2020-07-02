@@ -18,14 +18,12 @@ import (
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
-
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
-
 	log "github.com/sirupsen/logrus"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
