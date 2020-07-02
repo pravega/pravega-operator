@@ -48,7 +48,6 @@ var _ = Describe("Controller", func() {
 		Context("Empty Controller Service Type", func() {
 			var (
 				customReq *corev1.ResourceRequirements
-				err       error
 			)
 
 			BeforeEach(func() {
@@ -94,6 +93,7 @@ var _ = Describe("Controller", func() {
 						CacheVolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{
 							VolumeName: "abc",
 						},
+						DebugLogging: true,
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -109,32 +109,26 @@ var _ = Describe("Controller", func() {
 				p.WithDefaults()
 			})
 
-			Context("First reconcile", func() {
-				It("shouldn't error", func() {
-					Ω(err).Should(BeNil())
-				})
-			})
-
 			Context("Controller", func() {
 
 				It("should create a pod disruption budget", func() {
-					_ = pravega.MakeControllerPodDisruptionBudget(p)
-					Ω(err).Should(BeNil())
+					pdb := pravega.MakeControllerPodDisruptionBudget(p)
+					Ω(pdb.Name).Should(Equal(p.PdbNameForController()))
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeControllerConfigMap(p)
-					Ω(err).Should(BeNil())
+					cm := pravega.MakeControllerConfigMap(p)
+					Ω(cm.Data["log.level"]).Should(Equal("DEBUG"))
 				})
 
 				It("should create the deployment", func() {
-					_ = pravega.MakeControllerDeployment(p)
-					Ω(err).Should(BeNil())
+					deploy := pravega.MakeControllerDeployment(p)
+					Ω(*deploy.Spec.Replicas).Should(Equal(int32(2)))
 				})
 
 				It("should create the service", func() {
-					_ = pravega.MakeControllerService(p)
-					Ω(err).Should(BeNil())
+					svc := pravega.MakeControllerService(p)
+					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
 				})
 			})
 			Context("Controller with external service type and external access type empty", func() {
@@ -145,7 +139,6 @@ var _ = Describe("Controller", func() {
 				It("should create the service with external access type loadbalancer", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
-					Ω(err).Should(BeNil())
 				})
 			})
 			Context("Controller with external service type empty", func() {
@@ -155,7 +148,6 @@ var _ = Describe("Controller", func() {
 				It("should create the service with external access type clusterIP", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
-					Ω(err).Should(BeNil())
 				})
 			})
 		})
@@ -163,7 +155,6 @@ var _ = Describe("Controller", func() {
 		Context("Controller Svc Type Load Balancer", func() {
 			var (
 				customReq *corev1.ResourceRequirements
-				err       error
 			)
 
 			BeforeEach(func() {
@@ -225,37 +216,28 @@ var _ = Describe("Controller", func() {
 				p.WithDefaults()
 			})
 
-			Context("First reconcile", func() {
-				It("shouldn't error", func() {
-					Ω(err).Should(BeNil())
-				})
-			})
-
 			Context("Controller", func() {
 
 				It("should create a pod disruption budget", func() {
-					_ = pravega.MakeControllerPodDisruptionBudget(p)
-					Ω(err).Should(BeNil())
+					pdb := pravega.MakeControllerPodDisruptionBudget(p)
+					Ω(pdb.Spec.Selector.MatchLabels).To(Equal(p.LabelsForController()))
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeControllerConfigMap(p)
-					Ω(err).Should(BeNil())
+					cm := pravega.MakeControllerConfigMap(p)
+					Ω(cm.Data["ZK_URL"]).To(Equal(p.Spec.ZookeeperUri))
 				})
 
 				It("should create the deployment", func() {
-					_ = pravega.MakeControllerDeployment(p)
-					Ω(err).Should(BeNil())
+					deploy := pravega.MakeControllerDeployment(p)
+					Ω(deploy.Name).To(Equal(p.DeploymentNameForController()))
 				})
 
 				It("should create the service", func() {
-					_ = pravega.MakeControllerService(p)
-					Ω(err).Should(BeNil())
+					svc := pravega.MakeControllerService(p)
+					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
 				})
-
 			})
-
 		})
-
 	})
 })

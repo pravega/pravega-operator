@@ -214,6 +214,9 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"WAIT_FOR":               p.Spec.ZookeeperUri,
 	}
 
+	if p.Spec.Pravega.DebugLogging {
+		configData["log.level"] = "DEBUG"
+	}
 	configMap := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
