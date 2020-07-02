@@ -1,7 +1,7 @@
 kind: ConfigMap
 apiVersion: v1
 metadata:
-  name: bk-config-map
+  name: bookkeeper-configmap
 data:
   # Configuration values can be set as key-value properties
   PRAVEGA_CLUSTER_NAME: pravega

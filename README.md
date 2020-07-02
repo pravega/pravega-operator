@@ -92,7 +92,7 @@ where:
 - **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
 
 
-Check out the [Pravega Helm Chart](charts/pravega) for more a complete list of installation parameters.
+Check out the [Pravega Helm Chart](charts/pravega) for the complete list of configurable parameters.
 
 Verify that the cluster instances and its components are being created.
 

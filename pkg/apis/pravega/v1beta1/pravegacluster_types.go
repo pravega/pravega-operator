@@ -45,7 +45,7 @@ const (
 	DefaultZookeeperUri = "zk-client:2181"
 
 	// DefaultBookkeeperUri is the default ZooKeeper URI in the form of "hostname:port"
-	DefaultBookkeeperUri = "pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181"
+	DefaultBookkeeperUri = "bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181"
 
 	// DefaultServiceType is the default service type for external access
 	DefaultServiceType = corev1.ServiceTypeLoadBalancer
@@ -123,9 +123,9 @@ type ClusterSpec struct {
 	// BookkeeperUri specifies the hostname/IP address and port in the format
 	// "hostname:port".
 	// comma delimited list of BK server URLs
-	//pravega-bookie-0.pravega-bookie-headless.default:3181,
-	//pravega-bookie-1.pravega-bookie-headless.default:3181,
-	//pravega-bookie-2.pravega-bookie-headless.default:3181
+	// bookkeeper-bookie-0.bookkeeper-bookie-headless.default:3181,
+	// bookkeeper-bookie-1.bookkeeper-bookie-headless.default:3181,
+	// bookkeeper-bookie-2.bookkeeper-bookie-headless.default:3181
 	BookkeeperUri string `json:"bookkeeperUri"`
 
 	// Pravega configuration
