@@ -54,11 +54,11 @@ spec:
 ...
   pravega:
     options:
-      controller.auth.enabled: "true"
-      controller.auth.userPasswordFile: "/etc/auth-passwd-volume/userdata.txt"
-      controller.auth.tokenSigningKey: "secret"
-      autoScale.authEnabled: "true"
-      autoScale.tokenSigningKey: "secret"
+      controller.security.auth.enable: "true"
+      controller.security.pwdAuthHandler.accountsDb.location: "/etc/auth-passwd-volume/userdata.txt"
+      controller.security.auth.delegationToken.signingKey.basis: "secret"
+      autoScale.controller.connect.security.auth.enable: "true"
+      autoScale.security.auth.token.signingKey.basis: "secret"
       pravega.client.auth.token: "YWRtaW46MTExMV9hYWFh"
       pravega.client.auth.method: "Basic"
 

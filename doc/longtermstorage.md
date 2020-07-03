@@ -133,7 +133,7 @@ Pravega can also use an S3-compatible storage backend such as [Dell EMC ECS](htt
     ```
     ...
     spec:
-    longtermStorage:
+      longtermStorage:
         ecs:
           configUri: http://10.247.10.52:9020?namespace=pravega
           bucket: "shared"
@@ -169,7 +169,7 @@ Refer to the steps below to add ECS server certificate or CA's certificate into 
     $ kubectl create -f ecs-tls.yaml
     ```
 
-3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section. 
+3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section.
     ```
     ...
     kind: "PravegaCluster"

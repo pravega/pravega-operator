@@ -44,26 +44,26 @@ Create a single node Bookkeeper Cluster using the [BookKeeper Operator](https://
 spec:
   replicas: 1
   storage:
-      ledgerVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
+    ledgerVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 10Gi
 
-      journalVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
+    journalVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 10Gi
 
-      indexVolumeClaimTemplate:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "standard"
-        resources:
-          requests:
-            storage: 10Gi
+    indexVolumeClaimTemplate:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 10Gi
 ```
 
 ### Pravega
@@ -76,7 +76,7 @@ spec:
     segmentStoreReplicas: 1
 
     options:
-      bookkeeper.bkAckQuorumSize: "1"
-      bookkeeper.bkWriteQuorumSize: "1"
-      bookkeeper.bkEnsembleSize: "1"
+      bookkeeper.ack.quorum.size: "1"
+      bookkeeper.write.quorum.size: "1"
+      bookkeeper.ensemble.size: "1"
 ```
