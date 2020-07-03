@@ -94,7 +94,7 @@ jobs:
         - helm repo add jetstack https://charts.jetstack.io
         - helm repo update
         - helm install --name cert-manager  --namespace cert-manager  --version v0.14.1  jetstack/cert-manager --wait
-        - kubectl create -f deploy/secret.yaml
+        - kubectl create -f deploy/certificate.yaml
         - kubectl create -f deploy/webhook.yaml
         - kubectl create -f test/e2e/resources/crd.yaml
         # Show Pravega dependencies

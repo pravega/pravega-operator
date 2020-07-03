@@ -13,10 +13,10 @@
 In case you dont have a cert-manager, Install the cert-manager from the following link:-
 
 https://cert-manager.io/docs/installation/kubernetes/
-  
+
 Installing the secrets:-
 ```
-$ kubectl create -f deploy/secret.yaml
+$ kubectl create -f deploy/certificate.yaml
 ```
 Insalling the webhook
 ```
@@ -24,7 +24,7 @@ $ kubectl create -f deploy/webhook.yaml
 ```
 Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
 ```
-$ kubectl create -f  deploy/version_map.yaml 
+$ kubectl create -f  deploy/version_map.yaml
 ```
 Register the Pravega cluster custom resource definition (CRD).
 ```
@@ -73,7 +73,7 @@ Once the operator is installed, you can use the following YAML template to insta
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
-  name: "example"
+  name: "pravega"
 spec:
   version: 0.7.0
   zookeeperUri: [ZOOKEEPER_HOST]:2181
@@ -113,7 +113,7 @@ Verify that the cluster instances and its components are being created.
 ```
 $ kubectl get PravegaCluster
 NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-example   0.7.0     4                 0               25s
+pravega   0.7.0     4                 0               25s
 ```
 
 ### Uninstall the Pravega cluster manually

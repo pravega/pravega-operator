@@ -1,7 +1,7 @@
 apiVersion: cert-manager.io/v1alpha2
 kind: Issuer
 metadata:
-  name: test-selfsigned
+  name: selfsigned-issuer
   namespace: default
 spec:
   selfSigned: {}
@@ -19,4 +19,4 @@ spec:
     - pravega-webhook-svc.default.svc.cluster.local
     - pravega-webhook-svc.default.svc
   issuerRef:
-    name: test-selfsigned
+    name: selfsigned-issuer
