@@ -5,4 +5,4 @@ metadata:
 data:
   # Configuration values can be set as key-value properties
   PRAVEGA_CLUSTER_NAME: pravega
-  WAIT_FOR: zk-client:2181
+  WAIT_FOR: zookeeper-client:2181

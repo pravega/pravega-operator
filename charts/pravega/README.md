@@ -44,8 +44,8 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
-| `zookeeperUri` | Zookeeper client service URI | `zk-client:2181` |
-| `bookkeeperUri` | Bookkeeper headless service URI | `pravega-bk-bookie-headless:3181` |
+| `zookeeperUri` | Zookeeper client service URI | `zookeeper-client:2181` |
+| `bookkeeperUri` | Bookkeeper headless service URI | `bookkeeper-bookie-headless:3181` |
 | `externalAccess.enabled` | Enable external access | `false` |
 | `externalAccess.type` | External access service type, if external access is enabled (LoadBalancer/NodePort) | `LoadBalancer` |
 | `externalAccess.domainName` | External access domain name, if external access is enabled  | |

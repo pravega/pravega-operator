@@ -42,7 +42,7 @@ var Mgr manager.Manager
 
 const (
 	// DefaultZookeeperUri is the default ZooKeeper URI in the form of "hostname:port"
-	DefaultZookeeperUri = "zk-client:2181"
+	DefaultZookeeperUri = "zookeeper-client:2181"
 
 	// DefaultBookkeeperUri is the default ZooKeeper URI in the form of "hostname:port"
 	DefaultBookkeeperUri = "bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181"
@@ -90,7 +90,7 @@ func (p *PravegaCluster) WithDefaults() (changed bool) {
 type ClusterSpec struct {
 	// ZookeeperUri specifies the hostname/IP address and port in the format
 	// "hostname:port".
-	// By default, the value "zk-client:2181" is used, that corresponds to the
+	// By default, the value "zookeeper-client:2181" is used, that corresponds to the
 	// default Zookeeper service created by the Pravega Zookkeeper operator
 	// available at: https://github.com/pravega/zookeeper-operator
 	ZookeeperUri string `json:"zookeeperUri"`
