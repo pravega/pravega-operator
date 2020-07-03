@@ -15,8 +15,8 @@ authentication:
   ## passwordAuthSecret is ignored if authentication is disabled
   passwordAuthSecret:
 
-zookeeperUri: zk-client:2181
-bookkeeperUri: pravega-bk-bookie-headless:3181
+zookeeperUri: zookeeper-client:2181
+bookkeeperUri: bookkeeper-bookie-headless:3181
 
 externalAccess:
   enabled: false
@@ -30,8 +30,8 @@ image:
 
 hooks:
   image:
-    repository: bitnami/kubectl
-    tag: 1.16.3
+    repository: lachlanevenson/k8s-kubectl
+    tag: v1.16.10
   backoffLimit: 10
 
 debugLogging: false

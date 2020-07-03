@@ -140,7 +140,7 @@ spec:
 apiVersion: "zookeeper.pravega.io/v1beta1"
 kind: "ZookeeperCluster"
 metadata:
-  name: "zk"
+  name: "zookeeper"
 spec:
   image:
     repository: "pravega/zookeeper"
