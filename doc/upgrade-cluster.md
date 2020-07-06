@@ -77,14 +77,14 @@ segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
 3. The cache should be configured at least 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty). This value is configured in the pravega options part of the manifest file
 ```
 options:
-  pravegaservice.cacheMaxSize: "11811160064"
+  pravegaservice.cache.size.max: "11811160064"
 ```
 
 To summarize the way in which the segmentstore pod memory is distributed:
 
 ```
 POD_MEM_LIMIT = JVM Heap + Direct Memory
-Direct Memory = pravegaservice.cacheMaxSize + 1GB/2GB (other uses)
+Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
 ```
 
 ## Upgrade process

@@ -9,9 +9,9 @@ All values must be expressed as Strings.
 spec:
   pravega:
     options:
-      metrics.enableStatistics: "true"
-      metrics.statsdHost: "telegraph.default"
-      metrics.statsdPort: "8125"
+      metrics.statistics.enable: "true"
+      metrics.statsD.connect.host: "telegraph.default"
+      metrics.statsD.connect.port: "8125"
 ...
 ```
 ### Pravega JVM Options
