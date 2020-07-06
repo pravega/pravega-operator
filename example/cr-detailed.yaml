@@ -71,7 +71,7 @@ spec:
       metrics.statistics.enable: "true"
       metrics.statsD.connect.host: "telegraph.default"
       metrics.statsD.connect.port: "8125"
-      # The mount dir for secrets is /etc/secret-volume
+      # The mount dir for tls secrets is /etc/secret-volume
       controller.security.tls.enable: "true"
       controller.security.tls.server.certificate.location: "/etc/secret-volume/controller01.pem"
       controller.security.tls.server.privateKey.location: "/etc/secret-volume/controller01.key.pem"
@@ -80,6 +80,14 @@ spec:
       pravegaservice.security.tls.enable: "true"
       pravegaservice.security.tls.server.certificate.location: "/etc/secret-volume/segmentStore01.pem"
       pravegaservice.security.tls.server.privateKey.location: "/etc/secret-volume/segmentStore01.key.pem"
+      # The mount dir for auth secrets is /etc/auth-passwd-volume
+      controller.security.auth.enable: "true"
+      controller.security.pwdAuthHandler.accountsDb.location: "/etc/auth-passwd-volume/userdata.txt"
+      controller.security.auth.delegationToken.signingKey.basis: "secret"
+      autoScale.controller.connect.security.auth.enable: "true"
+      autoScale.security.auth.token.signingKey.basis: "secret"
+      pravega.client.auth.token: "YWRtaW46MTExMV9hYWFh"
+      pravega.client.auth.method: "Basic"
 
     # Pass the JVM options to controller and segmentstore
     segmentStoreJVMOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
