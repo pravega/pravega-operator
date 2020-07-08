@@ -91,7 +91,7 @@ For upgrading Operator to version 0.5.0, the following must be true:
 1. The Kubernetes Server version must be at least 1.15, (WebhookConversion is a beta feature in Kubernetes 1.15)
 See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#webhook-conversion
 
-2. Cert-Manager or some other certificate management solution must be deployed for managing webhook service certificates. The upgrade trigger script assumes that the user has [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) installed but any other cert management solution can also be used and script would need to be modified accordingly.
+2. Cert-Manager v0.15.0+ or some other certificate management solution must be deployed for managing webhook service certificates. The upgrade trigger script assumes that the user has [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) installed but any other cert management solution can also be used and script would need to be modified accordingly.
 To install cert-manager check [this](https://cert-manager.io/docs/installation/kubernetes/).
 
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade. Also, Bookkeeper operator version map should contain the bookkeeper versions of the installed bookkeeper.
