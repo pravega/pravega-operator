@@ -20,7 +20,7 @@ deploy_cluster () {
 	# Installing the BookKeeper Cluster
 	helm install bookkeeper ../charts/bookkeeper --wait
 
-	# Install certificate
+	# Installing the issuer and certificate
 	set +ex
 	kubectl create -f ../deploy/certificate.yaml
 	set -ex
