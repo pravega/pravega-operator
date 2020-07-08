@@ -14,7 +14,7 @@ In case you dont have a cert-manager, Install the cert-manager v0.15.0+ from the
 
 https://cert-manager.io/docs/installation/kubernetes/
 
-Install the certificate
+Install the issuer and certificate
 ```
 $ kubectl create -f deploy/certificate.yaml
 ```
