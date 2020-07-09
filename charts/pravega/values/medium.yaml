@@ -1,46 +1,5 @@
-## Default values for pravega.
-## This is a YAML-formatted file.
-## Declare variables to be passed into your templates.
-
-version: 0.7.0
-
-tls: {}
-  # secret:
-  #   controller: "controller-pki"
-  #   segmentStore: "segmentstore-pki"
-  # caBundle: ""
-
-authentication:
-  enabled: false
-  ## passwordAuthSecret is ignored if authentication is disabled
-  passwordAuthSecret:
-
-zookeeperUri: zookeeper-client:2181
-bookkeeperUri: bookkeeper-bookie-headless:3181
-
-externalAccess:
-  enabled: false
-  ## type and domainName are ignored if external access is disabled
-  type: LoadBalancer
-  domainName:
-
-image:
-  repository: pravega/pravega
-  pullPolicy: IfNotPresent
-
-hooks:
-  image:
-    repository: lachlanevenson/k8s-kubectl
-    tag: v1.16.10
-  backoffLimit: 10
-
-debugLogging: false
-
-serviceAccount:
-  name: pravega-components
-
 controller:
-  replicas: 1
+  replicas: 2
   resources:
     requests:
       cpu: 500m
@@ -56,57 +15,24 @@ controller:
   jvmOptions: []
 
 segmentStore:
-  replicas: 1
+  replicas: 2
   secret: {}
     # name:
     # path:
   env:
   resources:
     requests:
-      cpu: 1000m
-      memory: 4Gi
-    limits:
       cpu: 2000m
-      memory: 4Gi
+      memory: 8Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-  jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
-
-storage:
-
-  longtermStorage:
-    ## configure the long term storage backend type
-    ## accepted values : filesystem/ecs/hdfs
-    ## default option is filesystem
-    type: filesystem
-
-    ## fileSystem is used to configure a pre-created Persistent Volume Claim
-    ## as the long term storage backend
-    ## this is the default longtermStorage type
-    filesystem:
-      pvc: pravega-tier2
-
-    ## ecs is used to configure a Dell EMC ECS system as the long term storage backend
-    ## considered only if storage.longtermStorage.type = ecs
-    ecs: {}
-      # configUri: https://object.ecstestdrive.com?namespace=namespace%26identity=user%26secretKey=password
-      # bucket: "bucket"
-      # prefix: "prefix"
-      # credentials: ecs-credentials
-
-    ## hdfs is used to configure an HDFS system as long term storage backend
-    ## considered only if storage.longtermStorage.type = hdfs
-    hdfs: {}
-      # uri: ""
-      # root: ""
-      # replicationFactor:
-
-  cache:
-    size: 20Gi
-    className: standard
+  jvmOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=4g"]
 
 options:
   ## If you add more Bookies to the cluster and you want to exploit them for IO, then you need increase this number. The Bookkeeper ensemble defines
@@ -130,7 +56,7 @@ options:
   ## Bookkeeper. We have tested that in a slow IO infrastructure like vSAN, this setting helps to protect the system from unstability.
   bookkeeper.write.outstanding.bytes.max: "33554432"
   ## In Pravega +0.7 we use an in-memory cache. We need to be sure that the size of the cache is always lower than the direct memory set in JVM options.
-  pravegaservice.cache.size.max: "1073741824"
+  pravegaservice.cache.size.max: "3221225472"
   pravegaservice.cache.time.seconds.max: "600"
   hdfs.block.size: "67108864"
   ## Despite AWS support team has suggested to set 1MB block sizes to write to Tier 2 to improve performance when using NFS, we found that a larger block
@@ -140,10 +66,10 @@ options:
   ## The number of containers depends on the Segment Stores in the cluster (or vice-versa). To distributed the load of Segment Containers across Segment
   ## Stores, we recommend to set 4 to 8 Segment Containers per Segment Store. Clearly, determining this number will depend on a provisioning decision.
   ## Note that both containerCount values should be always the same between the Segment Store and the Controller service.
-  pravegaservice.container.count: "8"
-  controller.container.count: "8"
+  pravegaservice.container.count: "16"
+  controller.container.count: "16"
   ## Increase the default Controller bucket count to distribute load across multiple instances.
-  controller.retention.bucket.count: "4"
+  controller.retention.bucket.count: "10"
   controller.service.asyncTaskPool.size: "20"
   controller.retention.thread.count: "4"
   log.level: "INFO"
