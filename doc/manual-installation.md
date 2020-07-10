@@ -10,19 +10,19 @@
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
 
-In case you dont have a cert-manager, Install the cert-manager from the following link:-
+In case you dont have a cert-manager, Install the cert-manager v0.15.0+ from the following link:-
 
 https://cert-manager.io/docs/installation/kubernetes/
 
-Installing the secrets:-
+Install the issuer and certificate
 ```
 $ kubectl create -f deploy/certificate.yaml
 ```
-Insalling the webhook
+Install the webhook
 ```
 $ kubectl create -f deploy/webhook.yaml  
 ```
-Insalling the version map for pravega-operator which contains the list of supported upgrade paths for the pravega cluster
+Install the version map for pravega-operator which contains the list of supported versions and supported upgrade paths for the pravega cluster
 ```
 $ kubectl create -f  deploy/version_map.yaml
 ```
