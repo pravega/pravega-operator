@@ -52,7 +52,8 @@ The following table lists the configurable parameters of the Pravega operator ch
 | `rbac.create` | Create RBAC resources | `true` |
 | `serviceAccount.create` | Create service account | `true` |
 | `serviceAccount.name` | Name for the service account | `pravega-operator` |
-| `testmode` | Enable test mode | `false` |
+| `testmode.enabled` | Enable test mode | `false` |
+| `testmode.version` | Major version number of the alternate pravega image we want the operator to deploy, if test mode is enabled | `""` |
 | `webhookCert.crt` | tls.crt value corresponding to the certificate | |
 | `webhookCert.key` | tls.key value corresponding to the certificate | |
 | `webhookCert.generate` | Whether to generate the certificate and the issuer (set to false while using self-signed certificates) | `false` |
