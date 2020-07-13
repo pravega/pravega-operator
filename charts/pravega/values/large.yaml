@@ -35,40 +35,18 @@ segmentStore:
   jvmOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
 
 options:
-  ## If you add more Bookies to the cluster and you want to exploit them for IO, then you need increase this number. The Bookkeeper ensemble defines
-  ## the number of Bookies that should be available or healthy to allow Bookkeeper to work. In production, we recommend this value to be:
-  ## bookkeeper.ensemble.size = bookieReplicas - F,
-  ## where F is the number of Bookie failures we can tolerate to continue working. For instance, if we instantiate 6 Bookies and we want to tolerate
-  ## up to F = 2 failures, then the bookkeeper.ensemble.size = 4.
   bookkeeper.ensemble.size: "3"
-  ## By default, we want to keep 3 replicas of the data in Bookkeeper to ensure durability.
   bookkeeper.write.quorum.size: "3"
-  ## By default, we set bookkeeper.write.quorum.size == bookkeeper.ack.quorum.size, so we wait for the ACK of all the Bookies on a write to proceed to the next one. This
-  ## has been proven as a factor that makes Pravega much more stable in the long run for IO heavy workloads, at the cost of sacrificing performance.
-  ## If we set bkWriteQuorumSize > bkAckQuorumSize, we can improve performance, but a temporarily "slow" Bookie may lead to OOM errors at both the
-  ## Segment Store or Bookkeeper sides, given that Pravega continues to write to the "slow" Bookie at the same pace as for the "fast" ones. For more
-  ## context, please see: https://github.com/pravega/pravega/issues/4058 and https://github.com/pravega/pravega/issues/4057
   bookkeeper.ack.quorum.size: "3"
-  ## We need to increase this timeout to tolerate environments in which Tier 1 storage gets really saturated and Bookkeeper exhibits high latency. If
-  ## not, an IO workload that saturates Bookkeeper can induce the Segment Store into an state of unstability.
   bookkeeper.write.timeout.milliseconds: "60000"
-  ## This parameter will start inducing the max delay to Tier 1 operations if the Segment Store reaches 32MB of queued data waiting to be written to
-  ## Bookkeeper. We have tested that in a slow IO infrastructure like vSAN, this setting helps to protect the system from unstability.
   bookkeeper.write.outstanding.bytes.max: "33554432"
-  ## In Pravega +0.7 we use an in-memory cache. We need to be sure that the size of the cache is always lower than the direct memory set in JVM options.
   pravegaservice.cache.size.max: "11811160064"
   pravegaservice.cache.time.seconds.max: "600"
   hdfs.block.size: "67108864"
-  ## Despite AWS support team has suggested to set 1MB block sizes to write to Tier 2 to improve performance when using NFS, we found that a larger block
-  ## size significantly improves the throughput of a single segment against EFS.
   writer.flush.threshold.bytes: "67108864"
   writer.flush.size.bytes.max: "67108864"
-  ## The number of containers depends on the Segment Stores in the cluster (or vice-versa). To distributed the load of Segment Containers across Segment
-  ## Stores, we recommend to set 4 to 8 Segment Containers per Segment Store. Clearly, determining this number will depend on a provisioning decision.
-  ## Note that both containerCount values should be always the same between the Segment Store and the Controller service.
   pravegaservice.container.count: "48"
   controller.container.count: "48"
-  ## Increase the default Controller bucket count to distribute load across multiple instances.
   controller.retention.bucket.count: "10"
   controller.service.asyncTaskPool.size: "20"
   controller.retention.thread.count: "4"
