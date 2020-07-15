@@ -54,20 +54,20 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `debugLogging` | Enable debug logging | `false` |
 | `serviceAccount.name` | Service account to be used | `pravega-components` |
 | `controller.replicas` | Number of controller replicas | `1` |
-| `controller.resources.requests.cpu` | CPU requests for controller | `1000m` |
+| `controller.resources.requests.cpu` | CPU requests for controller | `500m` |
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
-| `controller.resources.limits.cpu` | CPU limits for controller | `2000m` |
-| `controller.resources.limits.memory` | Memory limits for controller | `3Gi` |
+| `controller.resources.limits.cpu` | CPU limits for controller | `1000m` |
+| `controller.resources.limits.memory` | Memory limits for controller | `2Gi` |
 | `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
-| `controller.jvmOptions` | JVM Options for controller | `[]` |
+| `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
 | `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |
-| `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `3Gi` |
+| `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `4Gi` |
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
-| `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `5Gi` |
+| `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |

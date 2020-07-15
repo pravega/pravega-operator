@@ -1,44 +1,3 @@
-## Default values for pravega.
-## This is a YAML-formatted file.
-## Declare variables to be passed into your templates.
-
-version: 0.7.0
-
-tls: {}
-  # secret:
-  #   controller: "controller-pki"
-  #   segmentStore: "segmentstore-pki"
-  # caBundle: ""
-
-authentication:
-  enabled: false
-  ## passwordAuthSecret is ignored if authentication is disabled
-  passwordAuthSecret:
-
-zookeeperUri: zookeeper-client:2181
-bookkeeperUri: bookkeeper-bookie-headless:3181
-
-externalAccess:
-  enabled: false
-  ## type and domainName are ignored if external access is disabled
-  type: LoadBalancer
-  domainName:
-
-image:
-  repository: pravega/pravega
-  pullPolicy: IfNotPresent
-
-hooks:
-  image:
-    repository: lachlanevenson/k8s-kubectl
-    tag: v1.16.10
-  backoffLimit: 10
-
-debugLogging: false
-
-serviceAccount:
-  name: pravega-components
-
 controller:
   replicas: 1
   resources:
@@ -74,39 +33,6 @@ segmentStore:
     type:
     annotations: {}
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
-
-storage:
-
-  longtermStorage:
-    ## configure the long term storage backend type
-    ## accepted values : filesystem/ecs/hdfs
-    ## default option is filesystem
-    type: filesystem
-
-    ## fileSystem is used to configure a pre-created Persistent Volume Claim
-    ## as the long term storage backend
-    ## this is the default longtermStorage type
-    filesystem:
-      pvc: pravega-tier2
-
-    ## ecs is used to configure a Dell EMC ECS system as the long term storage backend
-    ## considered only if storage.longtermStorage.type = ecs
-    ecs: {}
-      # configUri: https://object.ecstestdrive.com?namespace=namespace%26identity=user%26secretKey=password
-      # bucket: "bucket"
-      # prefix: "prefix"
-      # credentials: ecs-credentials
-
-    ## hdfs is used to configure an HDFS system as long term storage backend
-    ## considered only if storage.longtermStorage.type = hdfs
-    hdfs: {}
-      # uri: ""
-      # root: ""
-      # replicationFactor:
-
-  cache:
-    size: 20Gi
-    className: standard
 
 options:
   bookkeeper.ensemble.size: "3"
