@@ -20,8 +20,13 @@ serviceAccount:
 crd:
   create: true
 
-## Whether to enable test mode.
-testmode: false
+testmode:
+  ## Whether to enable test mode.
+  enabled: false
+  ## version of pravega that you wish to deploy
+  ## mention the major version number
+  ## eg. enter 0.8.0 if u wish to deploy version 0.8.0-2500.efe501a
+  version: ""
 
 webhookCert:
   crt:

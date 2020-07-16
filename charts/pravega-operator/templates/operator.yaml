@@ -27,7 +27,7 @@ spec:
           name: metrics
         command:
         - pravega-operator
-        {{- if .Values.testmode }}
+        {{- if .Values.testmode.enabled }}
         args: [-test]
         {{- end }}
         env:
