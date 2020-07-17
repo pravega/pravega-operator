@@ -65,13 +65,15 @@ func HealthcheckCommand(port int32) []string {
 }
 
 func ControllerReadinessCheck(port int32, authflag bool, tlsflag bool) []string {
-	if authflag == true {
+	if authflag == true && tlsflag == true {
 		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401", port)}
+	}
+	if authflag == true {
+		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -u testauth:testauth -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401", port)}
 	}
 	if tlsflag == true {
 		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep '_system'", port)}
 	}
-
 	return []string{"/bin/sh", "-c", fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'", port)}
 }
 
