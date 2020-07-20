@@ -63,7 +63,13 @@ data:
     set -e
     sleep 30
 
-    if [ -z "$(kubectl api-resources | grep pravegaclusters)" ]; then
+    if [ -z "$(kubectl api-resources | grep PravegaCluster)" ]; then
+        exit 1
+    fi
+
+    replicas=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega-operator.fullname" . }} -o jsonpath='{.status.replicas}'`
+    readyReplicas=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega-operator.fullname" . }} -o jsonpath='{.status.readyReplicas}'
+    if [ $readyReplicas != $replicas ]; then
         exit 1
     fi
 ---
