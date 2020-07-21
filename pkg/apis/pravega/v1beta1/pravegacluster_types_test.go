@@ -52,7 +52,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		})
 
 		It("should set zookeeper uri", func() {
-			Ω(p.Spec.ZookeeperUri).Should(Equal("zk-client:2181"))
+			Ω(p.Spec.ZookeeperUri).Should(Equal("zookeeper-client:2181"))
 		})
 
 		It("should set external access", func() {

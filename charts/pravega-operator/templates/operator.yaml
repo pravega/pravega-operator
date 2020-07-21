@@ -9,11 +9,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-{{ include "pravega-operator.selectorLabels" . | indent 6 }}
+      name: {{ template "pravega-operator.fullname" . }}
   template:
     metadata:
       labels:
-{{ include "pravega-operator.selectorLabels" . | indent 8 }}
+        name: {{ template "pravega-operator.fullname" . }}
+        component: pravega-operator
     spec:
       automountServiceAccountToken: true
       serviceAccountName: {{ .Values.serviceAccount.name }}
@@ -26,7 +27,7 @@ spec:
           name: metrics
         command:
         - pravega-operator
-        {{- if .Values.testmode }}
+        {{- if .Values.testmode.enabled }}
         args: [-test]
         {{- end }}
         env:
@@ -47,7 +48,11 @@ spec:
       volumes:
       - name: webhook-cert
         secret:
-          secretName: {{ template "pravega-operator.fullname" . }}-selfsigned-cert-tls
+          {{- if .Values.webhookCert.generate }}
+          secretName: {{ template "pravega-operator.fullname" . }}-cert-tls
+          {{- else }}
+          secretName: {{ .Values.webhookCert.secretName }}
+          {{- end }}
       - name: versions-volume
         configMap:
           name: supported-versions-map

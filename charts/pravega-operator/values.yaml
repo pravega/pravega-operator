@@ -4,7 +4,7 @@
 
 image:
   repository: pravega/pravega-operator
-  tag: 0.5.0
+  tag: 0.5.1
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings.
@@ -20,15 +20,22 @@ serviceAccount:
 crd:
   create: true
 
-## Whether to enable test mode.
-testmode: false
+testmode:
+  ## Whether to enable test mode.
+  enabled: false
+  ## version of pravega that you wish to deploy
+  ## mention the major version number
+  ## eg. enter 0.8.0 if u wish to deploy version 0.8.0-2500.efe501a
+  version: ""
 
 webhookCert:
-  ## Whether to use a new self-signed certificate.
-  selfsigned: true
-  ## If false, the following needs to be provided, and must match the CRD webhook CA:
-  #crt: <cert_crt>
-  #key: <cert_key>
+  crt:
+  key:
+  ## Whether to generate the certificate or not.
+  generate: false
+  ## If false, the name of the pre-existing certificate needs to be provided.
+  certName: selfsigned-cert
+  secretName: selfsigned-cert-tls
 
 ## Specifies which namespace the Operator should watch over.
 ## An empty string means all namespaces.

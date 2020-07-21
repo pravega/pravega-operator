@@ -68,6 +68,19 @@ Note:
 1. A Rollback to only the last stable cluster version is supported at this point.
 2. Changing the cluster spec version to the previous cluster version, when cluster is not in `UpgradeFailed` state, will not trigger a rollback.
 
+## Rollback via Helm
+
+The following command prints the historical revisions of a particular helm release
+```
+$ helm history <release-name>
+```
+
+Rollback can be triggered via helm using the following command
+```
+$ helm rollback <cluster release name> <revision number>
+```
+Rollback will be successfully triggered only if the previous revision number is provided.
+
 ## Rollback Implementation
 
 When Rollback is triggered the cluster moves into ClusterCondition `RollbackInProgress`.

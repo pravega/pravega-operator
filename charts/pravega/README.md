@@ -10,7 +10,7 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
 
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3+
-  - An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
+  - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Pravega Operator. You can install it using its own [Helm chart](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator)
 
@@ -44,8 +44,8 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
-| `zookeeperUri` | Zookeeper client service URI | `zk-client:2181` |
-| `bookkeeperUri` | Bookkeeper headless service URI | `pravega-bk-bookie-headless:3181` |
+| `zookeeperUri` | Zookeeper client service URI | `zookeeper-client:2181` |
+| `bookkeeperUri` | Bookkeeper headless service URI | `bookkeeper-bookie-headless:3181` |
 | `externalAccess.enabled` | Enable external access | `false` |
 | `externalAccess.type` | External access service type, if external access is enabled (LoadBalancer/NodePort) | `LoadBalancer` |
 | `externalAccess.domainName` | External access domain name, if external access is enabled  | |
@@ -54,20 +54,20 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `debugLogging` | Enable debug logging | `false` |
 | `serviceAccount.name` | Service account to be used | `pravega-components` |
 | `controller.replicas` | Number of controller replicas | `1` |
-| `controller.resources.requests.cpu` | CPU requests for controller | `1000m` |
+| `controller.resources.requests.cpu` | CPU requests for controller | `500m` |
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
-| `controller.resources.limits.cpu` | CPU limits for controller | `2000m` |
-| `controller.resources.limits.memory` | Memory limits for controller | `3Gi` |
+| `controller.resources.limits.cpu` | CPU limits for controller | `1000m` |
+| `controller.resources.limits.memory` | Memory limits for controller | `2Gi` |
 | `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
-| `controller.jvmOptions` | JVM Options for controller | `[]` |
+| `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
 | `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |
-| `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `3Gi` |
+| `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `4Gi` |
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
-| `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `5Gi` |
+| `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |

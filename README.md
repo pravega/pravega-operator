@@ -39,7 +39,7 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 - Kubernetes 1.15+
 - Helm 3+
-- An existing Apache Zookeeper 3.5 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
+- An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper operator](https://github.com/pravega/zookeeper-operator)
 - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
 
 ## Quickstart
@@ -48,30 +48,14 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to install cert-manager : [link to cert-manager install doc](
-https://cert-manager.io/docs/installation/kubernetes/)
-
-Then use Helm to quickly deploy a Pravega operator with the release name `foo`.
-
-```
-$ helm install foo charts/pravega-operator
-```
-
-Verify that the Pravega Operator is running.
-
-```
-$ kubectl get deploy
-NAME                     DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-foo-pravega-operator     1         1         1            1           17s
-```
+We recommend using helm to deploy a Pravega Operator. Check out the [helm installation](charts/pravega-operator/README.md) document for instructions.
 
 #### Deploying in Test Mode
  The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
 
-For upgrading the pravega operator refer this link
-https://github.com/pravega/pravega-operator/wiki/Operator-Upgrades
+For upgrading the pravega operator check the document [operator-upgrade](doc/operator-upgrade.md)
 
 ### Install a sample Pravega cluster
 
@@ -103,12 +87,12 @@ $ helm install bar charts/pravega --set zookeeperUri=[ZOOKEEPER_HOST] --set book
 
 where:
 
-- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zk-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zk-0:2181,zk-1:2181,zk-2:2181`).
-- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `pravega-bk-bookie-0.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-1.pravega-bk-bookie-headless.default.svc.cluster.local:3181,pravega-bk-bookie-2.pravega-bk-bookie-headless.default.svc.cluster.local:3181`).
+- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
+- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
 - **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
 
 
-Check out the [Pravega Helm Chart](charts/pravega) for more a complete list of installation parameters.
+Check out the [Pravega Helm Chart](charts/pravega) for the complete list of configurable parameters.
 
 Verify that the cluster instances and its components are being created.
 

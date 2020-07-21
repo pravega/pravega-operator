@@ -15,11 +15,11 @@ kind: "PravegaCluster"
 metadata:
   name: "pravega"
 spec:
-  zookeeperUri: zk-client:2181
+  zookeeperUri: zookeeper-client:2181
   externalAccess:
     enabled: true
     type: LoadBalancer
-  bookkeeperUri: "pravega-bookie-0.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-1.pravega-bookie-headless.default.svc.cluster.local:3181,pravega-bookie-2.pravega-bookie-headless.default.svc.cluster.local:3181"
+  bookkeeperUri: "bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181"
   pravega:
     controllerReplicas: 1
     segmentStoreReplicas: 3

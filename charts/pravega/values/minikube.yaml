@@ -1,0 +1,26 @@
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  jvmOptions: []
+
+segmentStore:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 500m
+      memory: 2Gi
+  jvmOptions: []
+
+options:
+  bookkeeper.ack.quorum.size: "1"
+  bookkeeper.write.quorum.size: "1"
+  bookkeeper.ensemble.size: "1"

@@ -34,12 +34,12 @@ spec:
 ...
   pravega:
     options:
-      controller.auth.tlsEnabled: "true"
-      controller.auth.tlsCertFile: "/etc/secret-volume/controller01.pem"
-      controller.auth.tlsKeyFile: "/etc/secret-volume/controller01.key.pem"
-      pravegaservice.enableTls: "true"
-      pravegaservice.certFile: "/etc/secret-volume/segmentStore01.pem"
-      pravegaservice.keyFile: "/etc/secret-volume/segmentStore01.key.pem"
+      controller.security.tls.enable: "true"
+      controller.security.tls.server.certificate.location: "/etc/secret-volume/controller01.pem"
+      controller.security.tls.server.privateKey.location: "/etc/secret-volume/controller01.key.pem"
+      pravegaservice.security.tls.enable: "true"
+      pravegaservice.security.tls.server.certificate.location: "/etc/secret-volume/segmentStore01.pem"
+      pravegaservice.security.tls.server.privateKey.location: "/etc/secret-volume/segmentStore01.key.pem"
 ...
 ```
 

@@ -1,7 +1,8 @@
 apiVersion: v2
 name: pravega-operator
 description: Pravega Operator Helm chart for Kubernetes
-version: 0.1.0
+version: 0.5.1
+appVersion: 0.5.1
 keywords:
 - pravega
 - storage
