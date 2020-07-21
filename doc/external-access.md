@@ -264,5 +264,5 @@ pravega:
     segmentStoreLoadBalancerIP: "10.243.39.103"
     segmentStoreExternalTrafficPolicy: "cluster"
     segmentStoreSvcAnnotations:
-      metallb.universe.tf/allow-shared-ip: "pravega-ss"
+      metallb.universe.tf/allow-shared-ip: "shared-ss-ip"
 ```
