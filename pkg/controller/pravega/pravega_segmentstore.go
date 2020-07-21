@@ -12,7 +12,6 @@ package pravega
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -451,7 +450,6 @@ func generateDNSAnnotationForSvc(domainName string, podName string) (dnsAnnotati
 
 func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
-	var temp int32 = 0
 	serviceType := getSSServiceType(p)
 	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
@@ -461,10 +459,6 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 		if annotationValue != "" {
 			annotationMap = cloneMap(p.Spec.Pravega.SegmentStoreServiceAnnotations)
 			annotationMap[externalDNSAnnotationKey] = annotationValue
-		}
-		log.Printf("prabhaker = %v, value = %v", annotationMap, annotationValue)
-		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
-			temp = i
 		}
 		service = &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -482,26 +476,26 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "server",
+						Port:       12345,
 						Protocol:   "TCP",
-						Port:       12345 + temp,
 						TargetPort: intstr.FromInt(12345),
 					},
 				},
+				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
 				Selector: map[string]string{
 					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", p.StatefulSetNameForSegmentstore(), i),
 				},
 			},
 		}
-		if p.Spec.Pravega.SegmentStoreExternalTrafficPolicy == "cluster" {
+		if strings.EqualFold(p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, "cluster") == true {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
 		} else {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
 		}
 		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
+			service.Spec.Ports[0].Port = 12345 + i
 			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
 		}
-		log.Printf("prabhu75 = %v, value = %v", p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, service.Spec.ExternalTrafficPolicy)
-		log.Printf("krishna = %v", service.Spec.Ports)
 		services[i] = service
 	}
 	return services

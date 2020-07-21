@@ -143,6 +143,8 @@ http://<pravega-name>-pravega-controller.<namespace>:10080/
 
 Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
+Check out the [exposing segmentStore service on single I/P address ](doc/external-access.md#exposing-segmentstore-service-on-single-ip address-and--different-ports) if your clients need to connect to Pravega Segment store on the same I/P address from outside Kubernetes.
+
 ### Scale a Pravega cluster
 
 You can scale Pravega components independently by modifying their corresponding field in the Pravega resource spec. You can either `kubectl edit` the cluster or `kubectl patch` it. If you edit it, update the number of replicas for BookKeeper, Controller, and/or Segment Store and save the updated spec.

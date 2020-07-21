@@ -38,7 +38,7 @@ spec:
     conversionReviewVersions: ["v1beta1", "v1alpha1"]
     strategy: Webhook
     webhookClientConfig:
-       caBundle: {{ .Values.webhookCert.crt }} 
+       caBundle: {{ .Values.webhookCert.crt }}
        service:
           name: pravega-webhook-svc
           namespace: {{ .Release.Namespace }}
@@ -267,6 +267,10 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  segmentStoreLoadBalancerIP:
+                    type: string
+                  segmentStoreExternalTrafficPolicy:
+                    type: string
           status:
             type: object
             description: PravegaCluster Status defines the observed state of PravegaCluster
