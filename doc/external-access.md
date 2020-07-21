@@ -238,7 +238,7 @@ IP:                       10.100.200.183
 LoadBalancer Ingress:     10.247.108.104
 . . .
 ```
-5. Exposing Segmentstore Service on single IP address and Different ports
+# Exposing Segmentstore Service on single IP address and Different ports
 
 For Exposing SegmentStoreservices on the same I/P address we will use MetalLB,
 MetalLB hooks into Kubernetes cluster, and provides a network load-balancer implementation. In short, it allows to create Kubernetes services of type “LoadBalancer” in clusters that don’t run on a cloud provider and thus cannot simply hook into paid products to provide load-balancers.
