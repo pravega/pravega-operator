@@ -72,15 +72,6 @@ data:
     if [ -z "$(kubectl api-resources | grep PravegaCluster)" ]; then
         exit 1
     fi
-
-    readyReplicas=`kubectl get deployment {{ template "pravega-operator.fullname" . }} \
-      -n {{ .Release.Namespace }} \
-      -o jsonpath='{.status.readyReplicas}'`
-    echo "PravegaCluster readyReplicas: $readyReplicas"
-
-    if [ -z $readyReplicas ] || [ $readyReplicas -le 0 ]; then
-        exit 1
-    fi
 ---
 
 apiVersion: batch/v1
