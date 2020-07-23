@@ -48,6 +48,7 @@ spec:
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
     {{- end }}
     {{- if .Values.segmentStore.service.annotations }}
+    segmentStoreSvcAnnotations:
 {{ toYaml .Values.segmentStore.service.annotations | indent 6}}
     {{- end }}
     {{- end }}
