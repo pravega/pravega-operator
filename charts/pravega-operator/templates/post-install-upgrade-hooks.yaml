@@ -84,7 +84,7 @@ metadata:
     "helm.sh/hook-weight": "2"
     "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
 spec:
-  backoffLimit: 3
+  backoffLimit: {{ .Values.hooks.backoffLimit }}
   template:
     metadata:
       name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
