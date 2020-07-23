@@ -70,6 +70,8 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
+| `segmentStore.service.segmentStoreLoadBalancerIP` |It is used to provide a Load LoadBalancerIP | |
+| `segmentStore.service.segmentStoreExternalTrafficPolicy` | It is used to provide segmentStoreExternalTrafficPolicy  |  |  
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |

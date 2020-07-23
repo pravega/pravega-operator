@@ -6,7 +6,7 @@ metadata:
   labels:
 {{ include "pravega.commonLabels" . | indent 4 }}
 spec:
-  {{- if .Values.tls }}
+ {{- if .Values.tls }}
   tls:
     static:
       controllerSecret: {{ .Values.tls.secret.controller }}
@@ -33,6 +33,10 @@ spec:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
+    {{- if .Values.segmentStore.service.segmentStoreLoadBalancerIP }}
+    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.segmentStoreLoadBalancerIP  }}
+    {{- end }}
+    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.segmentStoreExternalTrafficPolicy }}
     {{- if .Values.controller.service.type }}
     controllerExtServiceType: {{ .Values.controller.service.type }}
     {{- end }}
@@ -43,7 +47,8 @@ spec:
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
     {{- end }}
     {{- if .Values.segmentStore.service.annotations }}
-    segmentStoreSvcAnnotations: {{ .Values.segmentStore.service.annotations }}
+    segmentStoreSvcAnnotations:
+      {{ toYaml .Values.segmentStore.service.annotations | indent 6}}
     {{- end }}
     {{- end }}
     image:
