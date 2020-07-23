@@ -37,34 +37,30 @@ spec:
     controllerExtServiceType: {{ .Values.controller.service.type }}
     {{- end }}
     {{- if .Values.controller.service.annotations }}
-    controllerSvcAnnotations: {{ .Values.controller.service.annotations }}
+    controllerSvcAnnotations:
+{{ toYaml .Values.controller.service.annotations | indent 6 }}
     {{- end }}
     {{- if .Values.segmentStore.service.type }}
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
     {{- end }}
     {{- if .Values.segmentStore.service.annotations }}
-    segmentStoreSvcAnnotations: {{ .Values.segmentStore.service.annotations }}
+    segmentStoreSvcAnnotations:
+{{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
     {{- end }}
     {{- end }}
     image:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
+    {{- if .Values.controller.resources }}
     controllerResources:
-      requests:
-        memory: {{ .Values.controller.resources.requests.memory | quote }}
-        cpu: {{ .Values.controller.resources.requests.cpu | quote }}
-      limits:
-        memory: {{ .Values.controller.resources.limits.memory | quote }}
-        cpu: {{ .Values.controller.resources.limits.cpu | quote }}
+{{ toYaml .Values.controller.resources | indent 6 }}
+    {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
+    {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
-      requests:
-        memory: {{ .Values.segmentStore.resources.requests.memory | quote }}
-        cpu: {{ .Values.segmentStore.resources.requests.cpu | quote }}
-      limits:
-        memory: {{ .Values.segmentStore.resources.limits.memory | quote }}
-        cpu: {{ .Values.segmentStore.resources.limits.cpu | quote }}
+{{ toYaml .Values.segmentStore.resources | indent 6 }}
+    {{- end }}
     {{- if .Values.segmentStore.env }}
     segmentStoreEnvVars: {{ .Values.segmentStore.env }}
     {{- end }}
