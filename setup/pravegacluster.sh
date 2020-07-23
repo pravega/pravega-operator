@@ -35,12 +35,14 @@ deploy_cluster () {
 }
 
 destroy_cluster(){
+	set +ex
 	helm uninstall pravega
 	helm uninstall bookkeeper
 	helm uninstall zookeeper
 	helm uninstall pravega-operator
 	helm uninstall bookkeeper-operator
 	helm uninstall zookeeper-operator
+	set -ex
 }
 
 if [ $1 == "deploy" ]; then
