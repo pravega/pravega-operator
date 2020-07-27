@@ -76,6 +76,8 @@ spec:
                   static:
                     type: object
                     properties:
+                      caBundle:
+                        type: string
                       controllerSecret:
                         type: string
                       segmentStoreSecret:
