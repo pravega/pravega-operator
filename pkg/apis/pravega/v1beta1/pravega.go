@@ -152,7 +152,7 @@ type PravegaSpec struct {
 	SegmentStoreLoadBalancerIP string `json:"segmentStoreLoadBalancerIP,omitempty"`
 
 	// SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy it can have cluster or local
-	SegmentStoreExternalTrafficPolicy string`json:"segmentStoreExternalTrafficPolicy,omitempty"`
+	SegmentStoreExternalTrafficPolicy string `json:"segmentStoreExternalTrafficPolicy,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
