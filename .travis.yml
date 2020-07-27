@@ -25,7 +25,7 @@ jobs:
     - stage: unit
       name: Unit tests
       env:
-        - HELM_VERSION=v3.2.1
+        - HELM_VERSION=v2.12.0
         - DEP_VERSION=v0.5.0
       install:
         - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
@@ -45,7 +45,7 @@ jobs:
       env:
         - KUBECTL_VERSION=v1.15.0
         - OPERATOR_SDK_VERSION=v0.17.0
-        - HELM_VERSION=v3.2.1
+        - HELM_VERSION=v2.12.0
         - DEP_VERSION=v0.5.0
       install:
         - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
@@ -54,7 +54,6 @@ jobs:
         - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
         - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
       before_script:
-        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.15 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
         - sshpass -p pravega ssh -p 22 -o StrictHostKeyChecking=no root@147.75.94.155 
         - kubectl config view
         - kubectl config current-context
@@ -63,6 +62,7 @@ jobs:
         # Install Helm Tiller
         - kubectl create serviceaccount --namespace kube-system tiller
         - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+        - helm init --service-account tiller --wait
         # Install NFS provisioner
         - helm install stable/nfs-server-provisioner
         - kubectl -n default create -f test/e2e/resources/tier2.yaml
