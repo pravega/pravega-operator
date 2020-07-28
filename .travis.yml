@@ -54,7 +54,6 @@ jobs:
         - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
         - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
       before_script:
-        - export PACKET_TOKEN=qD8sD5RmExZFcRpQo2hBXi2FNyAFkA31
         - curl -Lo packet-cli  https://github.com/packethost/packet-cli/releases/download/0.0.7/packet-linux-amd64 && chmod +x packet-cli && sudo mv packet-cli /usr/local/bin/
         - ssh-keygen -f ~/.ssh/id_rsa -P ""
         - pub_key=`cat ~/.ssh/id_rsa.pub`
