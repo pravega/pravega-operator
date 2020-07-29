@@ -90,44 +90,18 @@ jobs:
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml\""
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo add jetstack https://charts.jetstack.io"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo update" 
-        - kubectl config view
-        - kubectl config current-context
-        - kubectl get nodes -o wide
-        - kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
-        # Install Helm Tiller
-        - kubectl create serviceaccount --namespace kube-system tiller
-        - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-        - helm init --service-account tiller --wait
-        # Install NFS provisioner
-        - helm install stable/nfs-server-provisioner
-        - kubectl -n default create -f test/e2e/resources/tier2.yaml
-        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
-        # Install ZooKeeper
-        - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
-        - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 5s; replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; done
-        # Install Bookkeeper
-        - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
-        - sleep 30s
-        - kubectl -n default create -f test/e2e/resources/bk-version-map.yaml
-        - kubectl -n default create -f test/e2e/resources/bk-config-map.yaml
-        - kubectl -n default create -f test/e2e/resources/bk-cluster.yaml
-        - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done
-        # Install the ConfigMap for version dependency
-        - kubectl -n default create -f deploy/version_map.yaml
-        - kubectl apply -f "https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml"
-        - helm repo add jetstack https://charts.jetstack.io
-        - helm repo update
-        - helm install --name cert-manager  --namespace cert-manager  --version v0.14.1  jetstack/cert-manager --wait
-        - kubectl create -f deploy/certificate.yaml
-        - kubectl create -f deploy/webhook.yaml
-        - kubectl create -f test/e2e/resources/crd.yaml
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create namespace cert-manager;helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.14.1 --wait" 
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/certificate.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/webhook.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/crd.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/"
         # Show Pravega dependencies
         - kubectl -n default get pod,pvc,svc -o wide
       script:
         # ping stdout every 5 minutes or Travis kills build
         # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
         - while sleep 5m; do kubectl get pods; done &
-        - make test-e2e
+        - sh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/prvega-operator;make test-e2e"
         # kill background echo loop
         - echo "killing while sleep loop" && kill %1
       after_script:
