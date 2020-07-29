@@ -65,10 +65,19 @@ func HealthcheckCommand(port int32) []string {
 }
 
 func ControllerReadinessCheck(port int32, authflag bool) []string {
+	// This is to check the readiness of controller in case auth is Enabled
+	// here we are using login credential as testtls:testtls which should
+	// not be used as auth credential and we depend on controller giving us
+	// 401 error which means controller is properly configured with auth
+	// it checks both cases when tls is enabled as well as tls dissabled
+	// with auth enabled
 	if authflag == true {
 		return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 || (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) ||  (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) || (curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 )", port, port, port, port)}
 	}
-	return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)}
+	// This is to check the readiness in case auth is not enabled
+	// and it covers both the cases with tls enabled and tls dissabled
+	// along with auth dissabled
+	return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)}
 }
 
 // Min returns the smaller of x or y.
