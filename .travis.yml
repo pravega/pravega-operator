@@ -86,11 +86,11 @@ jobs:
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bookkeeper.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
         - sleep 30s
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-version-map.yaml"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-config-map.yaml"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-cluster.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-version-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-config-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-cluster.yaml"
  
         - kubectl config view
         - kubectl config current-context
