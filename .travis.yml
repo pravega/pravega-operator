@@ -78,8 +78,8 @@ jobs:
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm install test estable/nfs-server-provisioner;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q \"Bound\"; do sleep 1; done"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q \"Bound\"; do sleep 1; done"
          
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
