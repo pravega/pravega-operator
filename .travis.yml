@@ -69,7 +69,7 @@ jobs:
         - echo " clsuter id is $CLUSTER_ID"
         - CLUSTER_IP=`packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
         - echo "Cluster IP is $CLUSTER_IP"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "git clone https://github.com/pravega/pravega-operator.git; git checkout issue-cncf-cluster"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP ./root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
         - kubectl config view
         - kubectl config current-context
