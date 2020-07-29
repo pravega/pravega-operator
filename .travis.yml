@@ -24,14 +24,6 @@ jobs:
 
     - stage: unit
       name: Unit tests
-      env:
-        - HELM_VERSION=v2.12.0
-        - DEP_VERSION=v0.5.0
-      install:
-        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
-        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
-      before_script:
-        - helm init --client-only
       script:
         - make test-unit
       after_success:
@@ -85,13 +77,21 @@ jobs:
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 $(cat JOIN)
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm install test estable/nfs-server-provisioner;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q \"Bound\"; do sleep 1; done"
+         
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
         - sleep 30s
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-version-map.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-config-map.yaml"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-cluster.yaml"
- 
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f deploy/version_map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml\""
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo add jetstack https://charts.jetstack.io"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo update" 
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide
