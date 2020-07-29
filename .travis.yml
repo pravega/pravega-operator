@@ -84,6 +84,14 @@ jobs:
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 $(cat JOIN)
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 $(cat JOIN)
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bookkeeper.yaml"
+        - sleep 30s
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-version-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-config-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f test/e2e/resources/bk-cluster.yaml"
+ 
         - kubectl config view
         - kubectl config current-context
         - kubectl get nodes -o wide
