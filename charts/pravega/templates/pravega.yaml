@@ -6,7 +6,7 @@ metadata:
   labels:
 {{ include "pravega.commonLabels" . | indent 4 }}
 spec:
- {{- if .Values.tls }}
+  {{- if .Values.tls }}
   tls:
     static:
       controllerSecret: {{ .Values.tls.secret.controller }}
@@ -49,7 +49,7 @@ spec:
     {{- end }}
     {{- if .Values.segmentStore.service.annotations }}
     segmentStoreSvcAnnotations:
-{{ toYaml .Values.segmentStore.service.annotations | indent 6}}
+{{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
     {{- end }}
     {{- end }}
     image:

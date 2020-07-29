@@ -487,7 +487,7 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 				},
 			},
 		}
-		if strings.EqualFold(p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, "cluster") == true {
+		if strings.EqualFold(p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, "Cluster") == true {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
 		} else {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal

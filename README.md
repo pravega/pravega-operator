@@ -143,7 +143,7 @@ http://<pravega-name>-pravega-controller.<namespace>:10080/
 
 Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
-Check out the [exposing Segmentstore service on single I/P address ](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same I/P address from outside Kubernetes.
+Check out the [exposing Segmentstore service on single IP address ](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
 
 ### Scale a Pravega cluster
 

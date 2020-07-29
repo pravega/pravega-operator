@@ -240,12 +240,12 @@ LoadBalancer Ingress:     10.247.108.104
 ```
 # Exposing Segmentstore Service on single IP address and Different ports
 
-For Exposing SegmentStoreservices on the same I/P address we will use MetalLB,
+For Exposing SegmentStoreservices on the same I/P address we will use MetalLB.
 MetalLB hooks into Kubernetes cluster, and provides a network load-balancer implementation. In short, it allows to create Kubernetes services of type “LoadBalancer” in clusters that don’t run on a cloud provider and thus cannot simply hook into paid products to provide load-balancers.
 
 By default, Services do not share an IP address, for providing same IP address to all the services we need to set the following configurations while creating the External Service:
 
-1) Provide annotation key as metallb.universe.tf/allow-shared-ip for all the services.
+1) Provide annotation key as **metallb.universe.tf/allow-shared-ip** for all the services.
 
 2) All the services which want to share the IP address need to have the same value for the above annotation, for example "shared-ss-ip".
 

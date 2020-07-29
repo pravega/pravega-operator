@@ -148,7 +148,7 @@ type PravegaSpec struct {
 	// Annotations to be added to the external service
 	SegmentStoreServiceAnnotations map[string]string `json:"segmentStoreSvcAnnotations"`
 
-	// Specifying this I/P would insure we use same I/P address for all the ss services
+	// Specifying this IP would ensure we use same IP address for all the ss services
 	SegmentStoreLoadBalancerIP string `json:"segmentStoreLoadBalancerIP,omitempty"`
 
 	// SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy it can have cluster or local
