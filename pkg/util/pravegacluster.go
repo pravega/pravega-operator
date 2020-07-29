@@ -64,17 +64,11 @@ func HealthcheckCommand(port int32) []string {
 	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
 }
 
-func ControllerReadinessCheck(port int32, authflag bool, tlsflag bool) []string {
-	if authflag == true && tlsflag == true {
-		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401", port)}
-	}
+func ControllerReadinessCheck(port int32, authflag bool) []string {
 	if authflag == true {
-		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -u testauth:testauth -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401", port)}
+		return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 || (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) ||  (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) || (curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 )", port, port, port, port)}
 	}
-	if tlsflag == true {
-		return []string{"/bin/sh", "-c", fmt.Sprintf("curl -v -k -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep '_system'", port)}
-	}
-	return []string{"/bin/sh", "-c", fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'", port)}
+	return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)}
 }
 
 // Min returns the smaller of x or y.

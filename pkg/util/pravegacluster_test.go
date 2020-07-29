@@ -176,19 +176,11 @@ var _ = Describe("pravegacluster", func() {
 
 	})
 	Context("ControllerReadinessCheck()", func() {
-		out := ControllerReadinessCheck(1234, true, true)
+		out := ControllerReadinessCheck(1234, true)
 		It("Should not be Empty", func() {
 			Ω(len(out)).ShouldNot(Equal(0))
 		})
-		out = ControllerReadinessCheck(1234, true, false)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
-		})
-		out = ControllerReadinessCheck(1234, false, true)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
-		})
-		out = ControllerReadinessCheck(1234, false, false)
+		out = ControllerReadinessCheck(1234, false)
 		It("Should not be Empty", func() {
 			Ω(len(out)).ShouldNot(Equal(0))
 		})

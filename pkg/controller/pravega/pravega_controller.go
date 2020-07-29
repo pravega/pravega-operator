@@ -97,7 +97,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.ControllerReadinessCheck(10080, p.Spec.Authentication.IsEnabled(), p.Spec.TLS.IsSecureController()),
+							Command: util.ControllerReadinessCheck(10080, p.Spec.Authentication.IsEnabled()),
 						},
 					},
 					// Controller pods start fast. We give it up to 20 seconds to become ready.
