@@ -9,12 +9,14 @@
 SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
-REPO=tristan1900/$(PROJECT_NAME)
+REPO=testzkop/$(PROJECT_NAME)
 VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
 GIT_SHA=$(shell git rev-parse --short HEAD)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
 GOOS=linux
 GOARCH=amd64
+DOCKER_TEST_PASS=testzkop@123
+DOCKER_TEST_USER=testzkop
 
 .PHONY: all  build check clean test
 
