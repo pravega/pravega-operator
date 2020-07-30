@@ -64,11 +64,11 @@ func HealthcheckCommand(port int32) []string {
 	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
 }
 
-//This functions check for the readiness of the controller in the following cases
-//1) Auth and TLS Enabled- in this case we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
+//This function check for the readiness of the controller in the following cases
+//1) Auth and TLS Enabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
 //2) Auth Enabled and TLS Disabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
-//3) Auth Disabled and Tls Enabled- in this case we check if the controller is able to create scopes or not by checking if _system scope is present or not
-//4) Auth and TLs Disabled- in this case we check if the controller is able to create scopes or not by checking if _system scope is present or not
+//3) Auth Disabled and TLS Enabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
+//4) Auth and TLS Disabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
 func ControllerReadinessCheck(port int32, authflag bool) []string {
 	// This is to check the readiness of controller in case auth is Enabled
 	// here we are using login credential as testtls:testtls which should
