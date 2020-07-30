@@ -450,20 +450,16 @@ func generateDNSAnnotationForSvc(domainName string, podName string) (dnsAnnotati
 
 func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
-
 	serviceType := getSSServiceType(p)
 	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
-
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		ssPodName := p.ServiceNameForSegmentStore(i)
 		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
 		annotationValue := generateDNSAnnotationForSvc(p.Spec.ExternalAccess.DomainName, ssPodName)
-
 		if annotationValue != "" {
 			annotationMap = cloneMap(p.Spec.Pravega.SegmentStoreServiceAnnotations)
 			annotationMap[externalDNSAnnotationKey] = annotationValue
 		}
-
 		service = &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Service",
@@ -490,6 +486,15 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 					appsv1.StatefulSetPodNameLabel: fmt.Sprintf("%s-%d", p.StatefulSetNameForSegmentstore(), i),
 				},
 			},
+		}
+		if strings.EqualFold(p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, "Cluster") == true {
+			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
+		} else {
+			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
+		}
+		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
+			service.Spec.Ports[0].Port = 12345 + i
+			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
 		}
 		services[i] = service
 	}

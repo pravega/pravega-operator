@@ -73,6 +73,8 @@ segmentStore:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
+    segmentStoreLoadBalancerIP:
+    segmentStoreExternalTrafficPolicy: Local
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
 
 storage:

@@ -76,6 +76,8 @@ spec:
                   static:
                     type: object
                     properties:
+                      caBundle:
+                        type: string
                       controllerSecret:
                         type: string
                       segmentStoreSecret:
@@ -264,6 +266,10 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  segmentStoreLoadBalancerIP:
+                    type: string
+                  segmentStoreExternalTrafficPolicy:
+                    type: string
           status:
             type: object
             description: PravegaCluster Status defines the observed state of PravegaCluster
