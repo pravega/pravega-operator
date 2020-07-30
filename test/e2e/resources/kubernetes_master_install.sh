@@ -31,7 +31,3 @@ kubectl get nodes
 kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
 kubectl get nodes 
 sudo apt-get install binutils bison gcc -y
-bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-source /root/.gvm/scripts/gvm
-gvm install go1.13.8 --binary
-gvm use go1.13.8 --default
