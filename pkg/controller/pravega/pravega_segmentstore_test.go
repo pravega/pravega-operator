@@ -262,6 +262,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
 				})
+
 			})
 		})
 
@@ -375,6 +376,24 @@ var _ = Describe("PravegaSegmentstore", func() {
 					svc := pravega.MakeSegmentStoreExternalServices(p)
 					Ω(svc[0].Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
 					Ω(err).Should(BeNil())
+				})
+			})
+			Context("Create External service with SegmentStoreExternalTrafficPolicy as cluster", func() {
+				BeforeEach(func() {
+					p.Spec.Pravega.SegmentStoreExternalTrafficPolicy = "cluster"
+				})
+				It("should create external service with ExternalTrafficPolicy type cluster", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.ExternalTrafficPolicy).To(Equal(corev1.ServiceExternalTrafficPolicyTypeCluster))
+				})
+			})
+			Context("Create External service with LoadBalancerIP", func() {
+				BeforeEach(func() {
+					p.Spec.Pravega.SegmentStoreLoadBalancerIP = "10.240.12.18"
+				})
+				It("should create external service with LoadBalancerIP", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.LoadBalancerIP).To(Equal("10.240.12.18"))
 				})
 			})
 			Context("Create External service with external service type empty", func() {
