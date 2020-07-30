@@ -101,7 +101,7 @@ jobs:
         # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
         - while sleep 5m; do echo hello; done &
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;make test-e2e"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
         # kill background echo loop
         - echo "killing while sleep loop" && kill %1
       after_script:
