@@ -33,6 +33,10 @@ spec:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
+    {{- if .Values.segmentStore.service.segmentStoreLoadBalancerIP }}
+    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.segmentStoreLoadBalancerIP  }}
+    {{- end }}
+    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.segmentStoreExternalTrafficPolicy }}
     {{- if .Values.controller.service.type }}
     controllerExtServiceType: {{ .Values.controller.service.type }}
     {{- end }}
