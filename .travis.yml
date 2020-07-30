@@ -100,7 +100,7 @@ jobs:
         # ping stdout every 5 minutes or Travis kills build
         # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
         - while sleep 5m; do echo hello; done &
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;make test-e2e"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "export DOCKER_TEST_USER;export DOCKER_TEST_PASS;cd /root/pravega-operator;make test-e2e"
         # kill background echo loop
         - echo "killing while sleep loop" && kill %1
       after_script:
