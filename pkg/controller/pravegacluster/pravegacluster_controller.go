@@ -159,13 +159,34 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 }
 
 func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
-	zkFinalizer := "cleanUpZookeeper"
-	if util.ContainsString(p.ObjectMeta.Finalizers, zkFinalizer) {
-		p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, zkFinalizer)
-		if err = r.client.Update(context.TODO(), p); err != nil {
-			return fmt.Errorf("failed to remove Zk Finalizer from Pravega object (%s): %v", p.Name, err)
+	if p.DeletionTimestamp.IsZero() {
+		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
+			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
+			}
 		}
-		log.Printf("ZK Finalizer removed from Pravega CR.")
+	} else {
+		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
+			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
+			if err = r.client.Update(context.TODO(), p); err != nil {
+				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
+			}
+			if err = r.cleanUpZookeeperMeta(p); err != nil {
+				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1beta1.PravegaCluster) (err error) {
+	if err = pravegav1beta1.WaitForClusterToTerminate(r.client, p); err != nil {
+		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
+	}
+
+	if err = util.DeleteAllZnodes(p.Spec.ZookeeperUri, p.Name); err != nil {
+		return fmt.Errorf("failed to delete zookeeper znodes for (%s): %v", p.Name, err)
 	}
 	return nil
 }
