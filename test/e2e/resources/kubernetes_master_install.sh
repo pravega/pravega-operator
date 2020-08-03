@@ -5,6 +5,11 @@ echo "update done"
 sudo apt install docker.io -y
 echo "docker install"
 sudo systemctl enable --now docker
+sudo apt-get install nfs-common -y
+sudo rm /lib/systemd/system/nfs-common.service
+sudo systemctl daemon-reload
+sudo systemctl start nfs-common
+sudo systemctl status nfs-common
 apt-get update && apt-get install -y \
   apt-transport-https ca-certificates curl software-properties-common gnupg2 
 echo "installed certs"

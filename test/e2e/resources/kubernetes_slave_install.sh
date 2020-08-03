@@ -2,6 +2,11 @@
 
 sudo apt-get update
 echo "update done"
+sudo apt-get install nfs-common -y
+sudo rm /lib/systemd/system/nfs-common.service
+sudo systemctl daemon-reload
+sudo systemctl start nfs-common
+sudo systemctl status nfs-common
 sudo apt install docker.io -y
 echo "docker install"
 sudo systemctl enable --now docker
