@@ -29,7 +29,6 @@ func testCreateRecreateCluster(t *testing.T) {
 			ctx.Cleanup()
 		}
 	}()
-
 	namespace, err := ctx.GetNamespace()
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
@@ -45,10 +44,17 @@ func testCreateRecreateCluster(t *testing.T) {
 	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
 	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// A workaround for issue 93
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	defaultCluster = pravega_e2eutil.NewDefaultCluster(namespace)
@@ -72,6 +78,8 @@ func testCreateRecreateCluster(t *testing.T) {
 	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	// A workaround for issue 93
 	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
+
 }
