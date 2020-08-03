@@ -33,6 +33,10 @@ func testCreateRecreateCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
+	// A workaround for issue 93
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
+
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
 
