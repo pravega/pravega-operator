@@ -33,9 +33,8 @@ func testUpgradeCluster(t *testing.T) {
 	namespace, err := ctx.GetNamespace()
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
-        err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
-        g.Expect(err).NotTo(HaveOccurred())
-
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
 
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
