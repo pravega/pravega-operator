@@ -15,8 +15,8 @@ GIT_SHA=$(shell git rev-parse --short HEAD)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
 GOOS=linux
 GOARCH=amd64
-DOCKER_TEST_PASS=testzkop@123
-DOCKER_TEST_USER=testzkop
+DOCKER_TEST_PASS=testpravegaop
+DOCKER_TEST_USER=testpravegaop
 
 .PHONY: all  build check clean test
 
