@@ -9,7 +9,7 @@
 SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
-REPO=testzkop/$(PROJECT_NAME)
+REPO=testpravegaop/$(PROJECT_NAME)
 VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
 GIT_SHA=$(shell git rev-parse --short HEAD)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
