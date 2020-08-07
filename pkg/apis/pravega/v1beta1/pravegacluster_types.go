@@ -1072,7 +1072,7 @@ func (p *PravegaCluster) PravegaTargetImage() (string, error) {
 }
 
 // Wait for pods in cluster to be terminated
-func WaitForClusterToTerminate(kubeClient client.Client, p *PravegaCluster) (err error) {
+func (p *PravegaCluster) WaitForClusterToTerminate(kubeClient client.Client) (err error) {
 	listOptions := &client.ListOptions{
 		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()),
 	}

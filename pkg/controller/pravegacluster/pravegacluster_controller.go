@@ -181,7 +181,7 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 }
 
 func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1beta1.PravegaCluster) (err error) {
-	if err = pravegav1beta1.WaitForClusterToTerminate(r.client, p); err != nil {
+	if err = p.WaitForClusterToTerminate(r.client); err != nil {
 		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
 	}
 

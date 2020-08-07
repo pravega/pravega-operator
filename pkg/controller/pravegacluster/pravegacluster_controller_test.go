@@ -352,6 +352,32 @@ var _ = Describe("PravegaCluster Controller", func() {
 						Ω(err).Should(MatchError("services \"example-pravega-segment-store-0\" not found"))
 					})
 				})
+
+				Context("reconcileFinalizers", func() {
+					BeforeEach(func() {
+						p.WithDefaults()
+						client.Update(context.TODO(), p)
+						_, err = r.Reconcile(req)
+						now := metav1.Now()
+						p.SetDeletionTimestamp(&now)
+						client.Update(context.TODO(), p)
+						_, err = r.Reconcile(req)
+					})
+					It("should not give error", func() {
+						Ω(err).Should(BeNil())
+					})
+				})
+
+				Context("cleanUpZookeeperMeta", func() {
+					BeforeEach(func() {
+						p.WithDefaults()
+						err = r.cleanUpZookeeperMeta(p)
+					})
+					It("should give error", func() {
+						Ω(err).ShouldNot(BeNil())
+					})
+				})
+
 			})
 		})
 
