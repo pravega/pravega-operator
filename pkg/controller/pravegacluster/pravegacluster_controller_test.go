@@ -357,14 +357,14 @@ var _ = Describe("PravegaCluster Controller", func() {
 					BeforeEach(func() {
 						p.WithDefaults()
 						client.Update(context.TODO(), p)
-						_, err = r.Reconcile(req)
+						err = r.reconcileFinalizers(p)
 						now := metav1.Now()
 						p.SetDeletionTimestamp(&now)
 						client.Update(context.TODO(), p)
-						_, err = r.Reconcile(req)
+						err = r.reconcileFinalizers(p)
 					})
-					It("should not give error", func() {
-						Ω(err).Should(BeNil())
+					It("should give error due to failure in connecting to zookeeper", func() {
+						Expect(err).To(HaveOccurred())
 					})
 				})
 
