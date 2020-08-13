@@ -5,7 +5,7 @@ Starting Operator version `0.4.3` we also support major version upgrades for Pra
 
   `0.4.3 --> 0.5.0`
 
-  `0.4.4 -->0.5.0`
+  `0.4.4 --> 0.5.0`
 
 # Upgrade Guide
 
