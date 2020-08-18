@@ -14,7 +14,9 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
+	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
+	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 )
 
 func testWebhook(t *testing.T) {
@@ -34,6 +36,34 @@ func testWebhook(t *testing.T) {
 
 	// A workaround for issue 93
 	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	b := &bkapi.BookkeeperCluster{}
+	b.WithDefaults()
+	b.Name = "bookkeeper"
+	b, err = pravega_e2eutil.GetbkCluster(t, f, ctx, b)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	err = pravega_e2eutil.BKDeleteCluster(t, f, ctx, b)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	z := &zkapi.ZookeeperCluster{}
+	z.WithDefaults()
+	z.Name = "zookeeper"
+	z, err = pravega_e2eutil.GetzkCluster(t, f, ctx, z)
+	g.Expect(err).NotTo(HaveOccurred())
+	err = pravega_e2eutil.ZKDeleteCluster(t, f, ctx, z)
+
+	z, err = pravega_e2eutil.ZKCreateCluster(t, f, ctx, z)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	err = pravega_e2eutil.WaitForZookeeperClusterToBecomeReady(t, f, ctx, z, 1)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	b, err = pravega_e2eutil.BKCreateCluster(t, f, ctx, b)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	err = pravega_e2eutil.WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//Test webhook with an unsupported Pravega cluster version
@@ -70,9 +100,5 @@ func testWebhook(t *testing.T) {
 	doCleanup = false
 
 	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 }

@@ -13,6 +13,7 @@ package apis
 import (
 	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 )
 
 func init() {
@@ -20,4 +21,6 @@ func init() {
 	AddToSchemes = append(AddToSchemes, v1beta1.SchemeBuilder.AddToScheme)
 
 	AddToSchemes = append(AddToSchemes, bkapi.SchemeBuilder.AddToScheme)
+
+	AddToSchemes = append(AddToSchemes, zkapi.SchemeBuilder.AddToScheme)
 }

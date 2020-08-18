@@ -16,15 +16,16 @@ import (
 	"testing"
 	"time"
 
+	framework "github.com/operator-framework/operator-sdk/pkg/test"
+	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var (
@@ -55,6 +56,51 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return pravega, nil
 }
 
+func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+	t.Logf("creating zookeeper cluster: %s", z.Name)
+	err := f.Client.Create(goctx.TODO(), z, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	zookeeper := &zkapi.ZookeeperCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created zookeeper cluster: %s", z.Name)
+	return zookeeper, nil
+}
+
+func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+	t.Logf("creating bookkeeper cluster: %s", b.Name)
+	b.Spec.EnvVars = "bookkeeper-configmap"
+	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	bookkeeper := &bkapi.BookkeeperCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created bookkeeper cluster: %s", b.Name)
+	return bookkeeper, nil
+}
+
+// DeleteCluster deletes the PravegaCluster CR specified by cluster spec
+func BKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
+	t.Logf("deleting bookkeeper cluster: %s", b.Name)
+	err := f.Client.Delete(goctx.TODO(), b)
+	if err != nil {
+		return fmt.Errorf("failed to delete CR: %v", err)
+	}
+
+	t.Logf("deleted bookkeeper cluster: %s", b.Name)
+	return nil
+}
+
 // DeleteCluster deletes the PravegaCluster CR specified by cluster spec
 func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("deleting pravega cluster: %s", p.Name)
@@ -64,6 +110,18 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	}
 
 	t.Logf("deleted pravega cluster: %s", p.Name)
+	return nil
+}
+
+// DeleteCluster deletes the ZookeeperCluster CR specified by cluster spec
+func ZKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
+	t.Logf("deleting zookeeper cluster: %s", z.Name)
+	err := f.Client.Delete(goctx.TODO(), z)
+	if err != nil {
+		return fmt.Errorf("failed to delete CR: %v", err)
+	}
+
+	t.Logf("deleted pravega cluster: %s", z.Name)
 	return nil
 }
 
@@ -87,6 +145,26 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
 	return pravega, nil
+}
+
+// GetCluster returns the latest PravegaCluster CR
+func GetbkCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+	bookkeeper := &bkapi.BookkeeperCluster{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	return bookkeeper, nil
+}
+
+// GetCluster returns the latest PravegaCluster CR
+func GetzkCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+	zookeeper := &zkapi.ZookeeperCluster{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	return zookeeper, nil
 }
 
 // WaitForClusterToBecomeReady will wait until all cluster pods are ready
@@ -113,6 +191,60 @@ func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *fram
 	}
 
 	t.Logf("pravega cluster ready: %s", p.Name)
+	return nil
+}
+
+// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster, size int) error {
+	t.Logf("waiting for cluster pods to become ready: %s", b.Name)
+
+	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
+		cluster, err := GetbkCluster(t, f, ctx, b)
+		if err != nil {
+			return false, err
+		}
+
+		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+
+		_, condition := cluster.Status.GetClusterCondition(bkapi.ClusterConditionPodsReady)
+		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("bookkeeper cluster ready: %s", b.Name)
+	return nil
+}
+
+// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster, size int) error {
+	t.Logf("waiting for cluster pods to become ready: %s", z.Name)
+
+	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
+		cluster, err := GetzkCluster(t, f, ctx, z)
+		if err != nil {
+			return false, err
+		}
+
+		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+
+		_, condition := cluster.Status.GetClusterCondition(zkapi.ClusterConditionPodsReady)
+		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("zookeeper cluster ready: %s", z.Name)
 	return nil
 }
 
@@ -205,6 +337,124 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	}
 
 	t.Logf("pravega cluster terminated: %s", p.Name)
+	return nil
+}
+
+// WaitForClusterToTerminate will wait until all cluster pods are terminated
+func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
+	t.Logf("waiting for zookeeper cluster to terminate: %s", z.Name)
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app": z.GetName()}).String(),
+	}
+
+	// Wait for Pods to terminate
+	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
+		podList, err := f.KubeClient.CoreV1().Pods(z.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Wait for PVCs to terminate
+	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(z.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range pvcList.Items {
+			pvc := &pvcList.Items[i]
+			names = append(names, pvc.Name)
+		}
+		t.Logf("waiting for pvc to terminate (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("zookeeper cluster terminated: %s", z.Name)
+	return nil
+}
+
+// WaitForClusterToTerminate will wait until all cluster pods are terminated
+func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
+	t.Logf("waiting for Bookkeeper cluster to terminate: %s", b.Name)
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app": b.GetName()}).String(),
+	}
+
+	// Wait for Pods to terminate
+	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
+		podList, err := f.KubeClient.CoreV1().Pods(b.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	// Wait for PVCs to terminate
+	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(b.Namespace).List(listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range pvcList.Items {
+			pvc := &pvcList.Items[i]
+			names = append(names, pvc.Name)
+		}
+		t.Logf("waiting for pvc to terminate (%v)", names)
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("bookkeeper cluster terminated: %s", b.Name)
 	return nil
 }
 

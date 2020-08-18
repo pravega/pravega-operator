@@ -24,14 +24,6 @@ jobs:
 
     - stage: unit
       name: Unit tests
-      env:
-        - HELM_VERSION=v2.12.0
-        - DEP_VERSION=v0.5.0
-      install:
-        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
-        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
-      before_script:
-        - helm init --client-only
       script:
         - make test-unit
       after_success:
@@ -45,69 +37,70 @@ jobs:
       env:
         - KUBECTL_VERSION=v1.15.0
         - OPERATOR_SDK_VERSION=v0.17.0
-        - HELM_VERSION=v2.12.0
-        - DEP_VERSION=v0.5.0
         - CLUSTER_NAME="pravega-operator-travis-$(date +'%Y%m%d%H%M%S')"
-        - CLUSTER_ZONE=us-west-2
-        - CLUSTER_SIZE=3
-        - CLUSTER_NODE_TYPE=m5.xlarge
-        - CLUSTER_NODE_GROUP=standard-workers
-      install:
-        - pip install --upgrade --user awscli
-        - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-        - curl -Lo dep https://github.com/golang/dep/releases/download/$DEP_VERSION/dep-linux-amd64 && chmod +x dep && sudo mv dep /usr/local/bin/
-        - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/
-        - curl -Lo helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-$HELM_VERSION-linux-amd64.tar.gz && tar xfz helm.tar.gz && sudo mv linux-amd64/{helm,tiller} /usr/local/bin/
-      before_script:
-        - curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/latest_release/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-        - sudo mv /tmp/eksctl /usr/local/bin
-        - eksctl version
-        - aws configure set default.region $CLUSTER_ZONE
-        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-        - travis_wait 20 eksctl create cluster --name $CLUSTER_NAME --version 1.15 --nodegroup-name $CLUSTER_NODE_GROUP  --node-type $CLUSTER_NODE_TYPE --nodes $CLUSTER_SIZE
-        - kubectl config view
-        - kubectl config current-context
-        - kubectl get nodes -o wide
-        - kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$GOOGLE_SERVICE_ACCOUNT
-        # Install Helm Tiller
-        - kubectl create serviceaccount --namespace kube-system tiller
-        - kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
-        - helm init --service-account tiller --wait
-        # Install NFS provisioner
-        - helm install stable/nfs-server-provisioner
-        - kubectl -n default create -f test/e2e/resources/tier2.yaml
-        - JSONPATH='{.status.phase}'; until kubectl get pvc pravega-tier2 -o jsonpath="$JSONPATH" 2>&1 | grep -q "Bound"; do sleep 1; done
-        # Install ZooKeeper
-        - kubectl -n default create -f test/e2e/resources/zookeeper.yaml
-        - JSONPATH1='{.spec.replicas}'; JSONPATH2='{.status.readyReplicas}'; replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; while [ "$replicas" != "$ready" ]; do sleep 5s; replicas=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH1);ready=$(kubectl get zookeepercluster zk -o jsonpath=$JSONPATH2); echo "REPLICAS=$replicas, READY=$ready"; done
-        # Install Bookkeeper
-        - kubectl -n default create -f test/e2e/resources/bookkeeper.yaml
-        - sleep 30s
-        - kubectl -n default create -f test/e2e/resources/bk-version-map.yaml
-        - kubectl -n default create -f test/e2e/resources/bk-config-map.yaml
-        - kubectl -n default create -f test/e2e/resources/bk-cluster.yaml
-        - JPATH1='{.spec.replicas}'; JPATH2='{.status.readyReplicas}'; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1);bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; while [ "$bk_replicas" != "$bk_ready" ]; do sleep 1; bk_replicas=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH1); bk_ready=$(kubectl get bookkeepercluster pravega -o jsonpath=$JPATH2); echo "REPLICAS=$bk_replicas, READY=$bk_ready"; done
-        # Install the ConfigMap for version dependency
-        - kubectl -n default create -f deploy/version_map.yaml
-        - kubectl apply -f "https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml"
-        - helm repo add jetstack https://charts.jetstack.io
-        - helm repo update
-        - helm install --name cert-manager  --namespace cert-manager  --version v0.14.1  jetstack/cert-manager --wait
-        - kubectl create -f deploy/certificate.yaml
-        - kubectl create -f deploy/webhook.yaml
-        - kubectl create -f test/e2e/resources/crd.yaml
-        # Show Pravega dependencies
-        - kubectl -n default get pod,pvc,svc -o wide
       script:
+        - curl -Lo packet-cli  https://github.com/packethost/packet-cli/releases/download/0.0.7/packet-linux-amd64 && chmod +x packet-cli && sudo mv packet-cli /usr/local/bin/
+        - ssh-keygen -f ~/.ssh/id_rsa -P ""
+        - pub_key=`cat ~/.ssh/id_rsa.pub`
+        - echo " publc key is $pub_key"
+        - echo "packet-cli ssh-key create --key  \"$(cat ~/.ssh/id_rsa.pub)\"  --label \"pravega\""
+        - packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
+        - packet-cli device create  -H  $CLUSTER_NAME  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1 
+        - packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME | awk '{print $2}'
+        - CLUSTER_ID=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME | awk '{print $2}' | tr -d ' '`
+        - echo "cluster id is $CLUSTER_ID"
+        - packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        - packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        - sleep 300
+        - CLUSTER_IP=`packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
+        - echo "Cluster IP is $CLUSTER_IP"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP /root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
+        - CLUSTER_ID1=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
+        - CLUSTER_IP1=`packet-cli device get -i $CLUSTER_ID1 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
+        - CLUSTER_ID2=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $2}' | tr -d ' '`
+        - CLUSTER_IP2=`packet-cli device get -i $CLUSTER_ID2 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 /root/pravega-operator/test/e2e/resources/kubernetes_slave_install.sh
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 /root/pravega-operator/test/e2e/resources/kubernetes_slave_install.sh 
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP 'kubeadm token create --print-join-command | head -2' >JOIN
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 $(cat JOIN)
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 $(cat JOIN)
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://kubernetes-charts.storage.googleapis.com;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
+         
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
+        - sleep 30s
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-version-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-config-map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-cluster.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/deploy/version_map.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml\""
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo add jetstack https://charts.jetstack.io"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo update" 
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create namespace cert-manager;helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.14.1 --wait" 
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/certificate.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/webhook.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/crd.yaml"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/"
+        # Show Pravega dependencies
         # ping stdout every 5 minutes or Travis kills build
         # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
-        - while sleep 5m; do kubectl get pods; done &
-        - make test-e2e
+        - while sleep 5m; do echo hello; done &
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
         # kill background echo loop
         - echo "killing while sleep loop" && kill %1
       after_script:
-        - eksctl delete cluster --name $CLUSTER_NAME
+        - SSHKEY=`packet-cli ssh-key get | grep "pravega-travis" | awk '{print $2}' | tr -d ' '`
+        - echo y | packet-cli ssh-key delete -i $SSHKEY
+        - echo y | packet-cli device  delete -i $CLUSTER_ID
+        - echo y | packet-cli device  delete -i $CLUSTER_ID1
+        - echo y | packet-cli device  delete -i $CLUSTER_ID2
 
     - stage: deploy
       name: Push Docker image

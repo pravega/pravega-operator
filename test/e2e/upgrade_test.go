@@ -33,6 +33,9 @@ func testUpgradeCluster(t *testing.T) {
 	namespace, err := ctx.GetNamespace()
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
+	// A workaround for issue 93
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// A workaround for issue 93
 	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
@@ -41,8 +44,8 @@ func testUpgradeCluster(t *testing.T) {
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	initialVersion := "0.6.1"
-	upgradeVersion := "0.7.0"
+	initialVersion := "0.7.0"
+	upgradeVersion := "0.7.1"
 	cluster.Spec.Version = initialVersion
 	cluster.Spec.Pravega.Image = &api.ImageSpec{
 		Repository: "pravega/pravega",
@@ -88,7 +91,4 @@ func testUpgradeCluster(t *testing.T) {
 	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
 }
