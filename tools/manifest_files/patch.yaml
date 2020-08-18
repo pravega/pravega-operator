@@ -12,7 +12,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         - name: OPERATOR_NAME
-          value: foo-pravega-operator 
+          value: foo-pravega-operator
         image: pravega/pravega-operator:latest
         imagePullPolicy: Always
         name: foo-pravega-operator
@@ -35,5 +35,4 @@ spec:
           secretName: selfsigned-cert-tls
       - name: versions-volume
         configMap:
-          name: supported-upgrade-paths 
-
+          name: supported-versions-map 
