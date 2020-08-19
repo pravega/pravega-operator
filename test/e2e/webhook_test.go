@@ -37,18 +37,20 @@ func testWebhook(t *testing.T) {
 	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	//Test webhook with an unsupported Pravega cluster version
-	pravega := &api.PravegaCluster{}
-	pravega.Name = "pravega"
-	pravega.Namespace = namespace
-	pravega.WithDefaults()
-	pravega.Spec.Version = "99.0.0"
-	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
-	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
+	/*
+		//Test webhook with an unsupported Pravega cluster version
+		pravega := &api.PravegaCluster{}
+		pravega.Name = "pravega"
+		pravega.Namespace = namespace
+		pravega.WithDefaults()
+		pravega.Spec.Version = "99.0.0"
+		_, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
+		g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
+		g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
+	*/
 
 	// Test webhook with a supported Pravega cluster version
-	pravega = &api.PravegaCluster{}
+	pravega := &api.PravegaCluster{}
 	pravega.Name = "pravega"
 	pravega.Namespace = namespace
 	pravega.WithDefaults()
