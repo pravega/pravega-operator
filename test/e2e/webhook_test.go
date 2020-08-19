@@ -39,8 +39,8 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	b := &bkapi.BookkeeperCluster{}
-	b.WithDefaults()
 	b.Name = "bookkeeper"
+	b.Namespace = "default"
 	b, err = pravega_e2eutil.GetbkCluster(t, f, ctx, b)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -48,8 +48,8 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	z := &zkapi.ZookeeperCluster{}
-	z.WithDefaults()
 	z.Name = "zookeeper"
+	z.Namespace = "default"
 	z, err = pravega_e2eutil.GetzkCluster(t, f, ctx, z)
 	g.Expect(err).NotTo(HaveOccurred())
 	err = pravega_e2eutil.ZKDeleteCluster(t, f, ctx, z)
