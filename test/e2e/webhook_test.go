@@ -34,26 +34,27 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
-
 	b := &bkapi.BookkeeperCluster{}
 	b.Name = "bookkeeper"
 	b.Namespace = "default"
-	b, err = pravega_e2eutil.GetbkCluster(t, f, ctx, b)
+	err = pravega_e2eutil.BKDeleteCluster(t, f, ctx, b)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.BKDeleteCluster(t, f, ctx, b)
+	err = pravega_e2eutil.WaitForBKClusterToTerminate(t, f, ctx, b)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	z := &zkapi.ZookeeperCluster{}
 	z.Name = "zookeeper"
 	z.Namespace = "default"
-	z, err = pravega_e2eutil.GetzkCluster(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
 	err = pravega_e2eutil.ZKDeleteCluster(t, f, ctx, z)
+	g.Expect(err).NotTo(HaveOccurred())
 
+	err = pravega_e2eutil.WaitForZKClusterToTerminate(t, f, ctx, z)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	z.WithDefaults()
+	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
+	z.Spec.Replicas = 1
 	z, err = pravega_e2eutil.ZKCreateCluster(t, f, ctx, z)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -64,6 +65,10 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// A workaround for issue 93
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//Test webhook with an unsupported Pravega cluster version

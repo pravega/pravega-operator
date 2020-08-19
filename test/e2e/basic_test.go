@@ -35,10 +35,6 @@ func testCreateRecreateCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
-
 	b := &bkapi.BookkeeperCluster{}
 	b.WithDefaults()
 	b.Name = "bookkeeper"
@@ -73,6 +69,10 @@ func testCreateRecreateCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// A workaround for issue 93
+	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
