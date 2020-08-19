@@ -42,6 +42,8 @@ var (
 // CreateCluster creates a PravegaCluster CR with the desired spec
 func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
+	p.Spec.ZookeeperUri = "zookeeper-client:2181"
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -75,6 +77,7 @@ func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
+	b.Spec.ZookeeperUri = "zookeeper-client:2181"
 	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
