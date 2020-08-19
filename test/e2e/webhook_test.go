@@ -14,7 +14,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
@@ -37,25 +36,17 @@ func testWebhook(t *testing.T) {
 	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	/*
-		//Test webhook with an unsupported Pravega cluster version
-		pravega := &api.PravegaCluster{}
-		pravega.Name = "pravega"
-		pravega.Namespace = namespace
-		pravega.WithDefaults()
-		pravega.Spec.Version = "99.0.0"
-		_, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
-		g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-		g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
-	*/
+	//Test webhook with an unsupported Pravega cluster version
+	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0.0")
+	invalidVersion.WithDefaults()
+	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
+	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
+	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Test webhook with a supported Pravega cluster version
-	pravega := &api.PravegaCluster{}
-	pravega.Name = "pravega"
-	pravega.Namespace = namespace
-	pravega.WithDefaults()
-	pravega.Spec.Version = "0.5.0"
-	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
+	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
+	validVersion.WithDefaults()
+	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	podSize := 2
