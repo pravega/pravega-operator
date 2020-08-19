@@ -39,6 +39,65 @@ var (
 	VerificationTimeout  = time.Minute * 5
 )
 
+func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+	b := &bkapi.BookkeeperCluster{}
+	b.WithDefaults()
+	b.Name = "bookkeeper"
+	b.Namespace = namespace
+	err := BKDeleteCluster(t, f, ctx, b)
+	if err != nil {
+		return err
+	}
+
+	err = WaitForBKClusterToTerminate(t, f, ctx, b)
+	if err != nil {
+		return err
+	}
+
+	z := &zkapi.ZookeeperCluster{}
+	z.WithDefaults()
+	z.Name = "zookeeper"
+	z.Namespace = namespace
+
+	err = ZKDeleteCluster(t, f, ctx, z)
+	if err != nil {
+		return err
+	}
+
+	err = WaitForZKClusterToTerminate(t, f, ctx, z)
+	if err != nil {
+		return err
+	}
+
+	z.WithDefaults()
+	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
+	z.Spec.Replicas = 1
+	z, err = ZKCreateCluster(t, f, ctx, z)
+	if err != nil {
+		return err
+	}
+
+	err = WaitForZookeeperClusterToBecomeReady(t, f, ctx, z, 1)
+	if err != nil {
+		return err
+	}
+	b, err = BKCreateCluster(t, f, ctx, b)
+	if err != nil {
+		return err
+	}
+	err = WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
+	if err != nil {
+		return err
+	}
+	// A workaround for issue 93
+	err = RestartTier2(t, f, ctx, namespace)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CreateCluster creates a PravegaCluster CR with the desired spec
 func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)

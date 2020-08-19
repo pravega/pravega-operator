@@ -14,9 +14,8 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
-	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 )
 
 func testWebhook(t *testing.T) {
@@ -34,54 +33,27 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
-	b := &bkapi.BookkeeperCluster{}
-	b.Name = "bookkeeper"
-	b.Namespace = "default"
-	err = pravega_e2eutil.BKDeleteCluster(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForBKClusterToTerminate(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	z := &zkapi.ZookeeperCluster{}
-	z.Name = "zookeeper"
-	z.Namespace = "default"
-	err = pravega_e2eutil.ZKDeleteCluster(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForZKClusterToTerminate(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	z.WithDefaults()
-	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
-	z.Spec.Replicas = 1
-	z, err = pravega_e2eutil.ZKCreateCluster(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForZookeeperClusterToBecomeReady(t, f, ctx, z, 1)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	b, err = pravega_e2eutil.BKCreateCluster(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	//creating the setup for running the test
+	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//Test webhook with an unsupported Pravega cluster version
-	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0.0")
-	invalidVersion.WithDefaults()
-	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
+	pravega := &api.PravegaCluster{}
+	pravega.Name = "pravega"
+	pravega.Namespace = namespace
+	pravega.WithDefaults()
+	pravega.Spec.Version = "99.0.0"
+	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
 	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
 	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Test webhook with a supported Pravega cluster version
-	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
-	validVersion.WithDefaults()
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
+	pravega = &api.PravegaCluster{}
+	pravega.Name = "pravega"
+	pravega.Namespace = namespace
+	pravega.WithDefaults()
+	pravega.Spec.Version = "0.5.0"
+	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	podSize := 2

@@ -15,9 +15,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
-	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 )
 
 func testScaleCluster(t *testing.T) {
@@ -35,41 +33,8 @@ func testScaleCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
 
-	b := &bkapi.BookkeeperCluster{}
-	b.Name = "bookkeeper"
-	b.Namespace = "default"
-	err = pravega_e2eutil.BKDeleteCluster(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForBKClusterToTerminate(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	z := &zkapi.ZookeeperCluster{}
-	z.Name = "zookeeper"
-	z.Namespace = "default"
-	err = pravega_e2eutil.ZKDeleteCluster(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForZKClusterToTerminate(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	z.WithDefaults()
-	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
-	z.Spec.Replicas = 1
-	z, err = pravega_e2eutil.ZKCreateCluster(t, f, ctx, z)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForZookeeperClusterToBecomeReady(t, f, ctx, z, 1)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	b, err = pravega_e2eutil.BKCreateCluster(t, f, ctx, b)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+	//creating the setup for running the test
+	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
