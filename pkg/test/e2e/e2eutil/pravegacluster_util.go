@@ -115,6 +115,7 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return pravega, nil
 }
 
+// ZKCreateCluster creates a ZookeeperCluster CR with the desired spec
 func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	t.Logf("creating zookeeper cluster: %s", z.Name)
 	err := f.Client.Create(goctx.TODO(), z, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
@@ -131,6 +132,7 @@ func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return zookeeper, nil
 }
 
+// BKCreateCluster creates a BookkeeperCluster CR with the desired spec
 func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
@@ -149,7 +151,7 @@ func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return bookkeeper, nil
 }
 
-// DeleteCluster deletes the PravegaCluster CR specified by cluster spec
+// BKDeleteCluster deletes the BookkeeperCluster CR specified by cluster spec
 func BKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
 	t.Logf("deleting bookkeeper cluster: %s", b.Name)
 	err := f.Client.Delete(goctx.TODO(), b)
@@ -173,7 +175,7 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-// DeleteCluster deletes the ZookeeperCluster CR specified by cluster spec
+// ZKDeleteCluster deletes the ZookeeperCluster CR specified by cluster spec
 func ZKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
 	t.Logf("deleting zookeeper cluster: %s", z.Name)
 	err := f.Client.Delete(goctx.TODO(), z)
@@ -181,7 +183,7 @@ func ZKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
 
-	t.Logf("deleted pravega cluster: %s", z.Name)
+	t.Logf("deleted zookeeper cluster: %s", z.Name)
 	return nil
 }
 
@@ -207,8 +209,8 @@ func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 	return pravega, nil
 }
 
-// GetCluster returns the latest PravegaCluster CR
-func GetbkCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+// GetBKCluster returns the latest BookkeeperCluster CR
+func GetBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	bookkeeper := &bkapi.BookkeeperCluster{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
 	if err != nil {
@@ -217,8 +219,8 @@ func GetbkCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	return bookkeeper, nil
 }
 
-// GetCluster returns the latest PravegaCluster CR
-func GetzkCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+// GetZKCluster returns the latest ZookeeperCluster CR
+func GetZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	zookeeper := &zkapi.ZookeeperCluster{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
 	if err != nil {
@@ -254,7 +256,7 @@ func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *fram
 	return nil
 }
 
-// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+// WaitForBooClusterToBecomeReady will wait until all Bookkeeper cluster pods are ready
 func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster, size int) error {
 	t.Logf("waiting for cluster pods to become ready: %s", b.Name)
 
@@ -281,7 +283,7 @@ func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework,
 	return nil
 }
 
-// WaitForClusterToBecomeReady will wait until all cluster pods are ready
+// WaitForZookeeperClusterToBecomeReady will wait until all zookeeper cluster pods are ready
 func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster, size int) error {
 	t.Logf("waiting for cluster pods to become ready: %s", z.Name)
 
@@ -400,7 +402,7 @@ func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framew
 	return nil
 }
 
-// WaitForClusterToTerminate will wait until all cluster pods are terminated
+// WaitForZKClusterToTerminate will wait until all zookeeper cluster pods are terminated
 func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
 	t.Logf("waiting for zookeeper cluster to terminate: %s", z.Name)
 
@@ -459,7 +461,7 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 	return nil
 }
 
-// WaitForClusterToTerminate will wait until all cluster pods are terminated
+// WaitForBKClusterToTerminate will wait until all Bookkeeper cluster pods are terminated
 func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
 	t.Logf("waiting for Bookkeeper cluster to terminate: %s", b.Name)
 
