@@ -115,7 +115,7 @@ The upgrade to Operator 0.5.0 can be triggered using the following command
 helm upgrade <operator release name> <location of 0.5.0 charts> --set webhookCert.crt=<tls.crt> --set webhookCert.generate=false --set webhookCert.certName=<cert-name> --set webhookCert.secretName=<secret-name>
 ```
 
-Once the upgrade completes and the following command stops returning a response instead of throwing an error message
+Once the upgrade completes and the following command starts returning a response instead of throwing an error message (this might take around 7 to 10 minutes after the operator upgrade has been done)
 ```
 kubectl describe PravegaCluster
 ```
