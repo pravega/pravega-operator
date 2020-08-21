@@ -39,13 +39,13 @@ echo "Adding required annotations and labels to the BookkeeperCluster resource t
 kubectl annotate BookkeeperCluster $name meta.helm.sh/release-name=$bkname -n $namespace --overwrite
 kubectl annotate BookkeeperCluster $name meta.helm.sh/release-namespace=$namespace -n $namespace --overwrite
 kubectl label BookkeeperCluster $name app.kubernetes.io/managed-by=Helm -n $namespace --overwrite
-kubectl annotate ConfigMap pravega-config meta.helm.sh/release-name=$bkname -n $namespace --overwrite
-kubectl annotate ConfigMap pravega-config meta.helm.sh/release-namespace=$namespace -n $namespace --overwrite
-kubectl label ConfigMap pravega-config app.kubernetes.io/managed-by=Helm -n $namespace --overwrite
+kubectl annotate ConfigMap $name-configmap meta.helm.sh/release-name=$bkname -n $namespace --overwrite
+kubectl annotate ConfigMap $name-configmap meta.helm.sh/release-namespace=$namespace -n $namespace --overwrite
+kubectl label ConfigMap $name-configmap app.kubernetes.io/managed-by=Helm -n $namespace --overwrite
 
 helm repo add pravega https://charts.pravega.io
 helm repo update
 echo "Upgrading the pravega charts"
 helm upgrade $pname pravega/pravega --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set bookkeeperUri="$name-bookie-headless:3181"
 echo "Installing the bookkeeper charts"
-helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181"
+helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set pravegaClusterName=$name
