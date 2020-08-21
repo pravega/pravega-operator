@@ -190,7 +190,4 @@ Status:
     Type:                  RollbackInProgress
 ```
 
-When a rollback failure happens, manual intervention would be required to resolve this.
-After checking and solving the root cause of failure, to bring the cluster back to a stable state, a user can upgrade to:
-1. The version to which a user initially intended to upgrade.(when upgrade failure was noticed)
-2. To any other supported version based versions of all pods in the cluster.
+When a rollback failure happens, the operator cannot recover the cluster from this failed state and manual intervention would be required to resolve this.
