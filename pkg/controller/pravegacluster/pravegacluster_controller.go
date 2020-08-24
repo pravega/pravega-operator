@@ -173,7 +173,14 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
 			}
 			if err = r.cleanUpZookeeperMeta(p); err != nil {
-				return fmt.Errorf("failed to clean up metadata (%s): %v", p.Name, err)
+				// emit an event for zk metadata cleanup failure
+				message := fmt.Sprintf("failed to cleanup pravega metadata from zookeeper (znode path: /pravega/%s): %v", p.Name, err)
+				event := p.NewApplicationEvent("ZKMETA_CLEANUP_ERROR", "ZK Metadata Cleanup Failed", message, "Error")
+				pubErr := r.client.Create(context.TODO(), event)
+				if pubErr != nil {
+					log.Printf("Error publishing zk metadata cleanup failure event to k8s. %v", pubErr)
+				}
+				return fmt.Errorf(message)
 			}
 		}
 	}

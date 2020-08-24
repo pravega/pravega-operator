@@ -64,7 +64,6 @@ func ListSubTreeBFS(conn *zk.Conn, root string) (*list.List, error) {
 	queue := list.New()
 	tree := list.New()
 	queue.PushBack(root)
-	// tree.PushBack(root)
 
 	for {
 		if queue.Len() == 0 {

@@ -1078,7 +1078,6 @@ func (p *PravegaCluster) WaitForClusterToTerminate(kubeClient client.Client) (er
 	}
 	err = wait.Poll(5*time.Second, 2*time.Minute, func() (done bool, err error) {
 		podList := &corev1.PodList{}
-		// podList, err := kubeClient.Pods(p.Namespace).List(listOptions)
 		err = kubeClient.List(context.TODO(), podList, listOptions)
 		if err != nil {
 			return false, err
@@ -1116,6 +1115,33 @@ func (p *PravegaCluster) NewEvent(name string, reason string, message string, ev
 			Namespace:       p.GetNamespace(),
 			ResourceVersion: p.GetResourceVersion(),
 			UID:             p.GetUID(),
+		},
+		Reason:              reason,
+		Message:             message,
+		FirstTimestamp:      now,
+		LastTimestamp:       now,
+		Type:                eventType,
+		ReportingController: operatorName,
+		ReportingInstance:   os.Getenv("POD_NAME"),
+	}
+	return &event
+}
+
+func (p *PravegaCluster) NewApplicationEvent(name string, reason string, message string, eventType string) *corev1.Event {
+	now := metav1.Now()
+	operatorName, _ := k8s.GetOperatorName()
+	generateName := name + "-"
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: generateName,
+			Namespace:    p.Namespace,
+			Labels:       p.LabelsForPravegaCluster(),
+		},
+		InvolvedObject: corev1.ObjectReference{
+			APIVersion: "app.k8s.io/v1beta1",
+			Kind:       "Application",
+			Name:       "pravega-cluster",
+			Namespace:  p.GetNamespace(),
 		},
 		Reason:              reason,
 		Message:             message,

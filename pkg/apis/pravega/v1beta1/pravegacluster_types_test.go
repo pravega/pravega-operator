@@ -224,6 +224,11 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("Event size should not be zero", func() {
 			Ω(event.Size()).ShouldNot(Equal(0))
 		})
+
+		event = p.NewApplicationEvent("UPGRADE_ERROR", v1beta1.UpgradeErrorReason, message, "Error")
+		It("Event size should not be zero", func() {
+			Ω(event.Size()).ShouldNot(Equal(0))
+		})
 	})
 
 	Context("WaitForClusterToTerminate", func() {
