@@ -33,44 +33,45 @@ func testUpgradeCluster(t *testing.T) {
 	namespace, err := ctx.GetNamespace()
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
-	// A workaround for issue 93
-	err = pravega_e2eutil.RestartTier2(t, f, ctx, namespace)
+
+	//creating the setup for running the test
+	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	initialVersion := "0.7.0"
-	upgradeVersion := "0.7.1"
+	initialVersion := "0.6.1"
+	upgradeVersion := "0.7.0"
 	cluster.Spec.Version = initialVersion
 	cluster.Spec.Pravega.Image = &api.ImageSpec{
 		Repository: "pravega/pravega",
 	}
 
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, cluster)
+	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 2 pods:  1 controller, 1 segment store
 	podSize := 2
-	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
+	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(pravega.Status.CurrentVersion).To(Equal(initialVersion))
 
 	pravega.Spec.Version = upgradeVersion
 
-	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WaitForClusterToUpgrade(t, f, ctx, pravega, upgradeVersion)
+	err = pravega_e2eutil.WaitForPravegaClusterToUpgrade(t, f, ctx, pravega, upgradeVersion)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
+	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	g.Expect(pravega.Spec.Version).To(Equal(upgradeVersion))
@@ -78,13 +79,13 @@ func testUpgradeCluster(t *testing.T) {
 	g.Expect(pravega.Status.TargetVersion).To(Equal(""))
 
 	// Delete cluster
-	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 }

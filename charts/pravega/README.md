@@ -9,7 +9,7 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
 ## Prerequisites
 
   - Kubernetes 1.15+ with Beta APIs
-  - Helm 3+
+  - Helm 3.2.1+
   - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Pravega Operator. You can install it using its own [Helm chart](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator)
