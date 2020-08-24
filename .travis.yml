@@ -48,12 +48,12 @@ jobs:
         - echo " publc key is $pub_key"
         - echo "packet-cli ssh-key create --key  \"$(cat ~/.ssh/id_rsa.pub)\"  --label \"pravega\""
         - packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
-        - packet-cli device create  -H  $CLUSTER_NAME  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f sjc1
+        - packet-cli device create  -H  $CLUSTER_NAME  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         - packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME | awk '{print $2}'
         - CLUSTER_ID=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME | awk '{print $2}' | tr -d ' '`
         - echo "cluster id is $CLUSTER_ID"
-        - packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f sjc1
-        - packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f sjc1
+        - packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        - packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         - sleep 300
         - CLUSTER_IP=`packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
         - echo "Cluster IP is $CLUSTER_IP"
