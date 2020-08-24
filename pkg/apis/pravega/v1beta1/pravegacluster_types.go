@@ -17,6 +17,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
@@ -29,10 +30,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -1067,6 +1071,33 @@ func (p *PravegaCluster) PravegaTargetImage() (string, error) {
 	return fmt.Sprintf("%s:%s", p.Spec.Pravega.Image.Repository, p.Status.TargetVersion), nil
 }
 
+// Wait for pods in cluster to be terminated
+func (p *PravegaCluster) WaitForClusterToTerminate(kubeClient client.Client) (err error) {
+	listOptions := &client.ListOptions{
+		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()),
+	}
+	err = wait.Poll(5*time.Second, 2*time.Minute, func() (done bool, err error) {
+		podList := &corev1.PodList{}
+		err = kubeClient.List(context.TODO(), podList, listOptions)
+		if err != nil {
+			return false, err
+		}
+
+		var names []string
+		for i := range podList.Items {
+			pod := &podList.Items[i]
+			names = append(names, pod.Name)
+		}
+
+		if len(names) != 0 {
+			return false, nil
+		}
+		return true, nil
+	})
+
+	return err
+}
+
 func (p *PravegaCluster) NewEvent(name string, reason string, message string, eventType string) *corev1.Event {
 	now := metav1.Now()
 	operatorName, _ := k8s.GetOperatorName()
@@ -1084,6 +1115,33 @@ func (p *PravegaCluster) NewEvent(name string, reason string, message string, ev
 			Namespace:       p.GetNamespace(),
 			ResourceVersion: p.GetResourceVersion(),
 			UID:             p.GetUID(),
+		},
+		Reason:              reason,
+		Message:             message,
+		FirstTimestamp:      now,
+		LastTimestamp:       now,
+		Type:                eventType,
+		ReportingController: operatorName,
+		ReportingInstance:   os.Getenv("POD_NAME"),
+	}
+	return &event
+}
+
+func (p *PravegaCluster) NewApplicationEvent(name string, reason string, message string, eventType string) *corev1.Event {
+	now := metav1.Now()
+	operatorName, _ := k8s.GetOperatorName()
+	generateName := name + "-"
+	event := corev1.Event{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: generateName,
+			Namespace:    p.Namespace,
+			Labels:       p.LabelsForPravegaCluster(),
+		},
+		InvolvedObject: corev1.ObjectReference{
+			APIVersion: "app.k8s.io/v1beta1",
+			Kind:       "Application",
+			Name:       "pravega-cluster",
+			Namespace:  p.GetNamespace(),
 		},
 		Reason:              reason,
 		Message:             message,
