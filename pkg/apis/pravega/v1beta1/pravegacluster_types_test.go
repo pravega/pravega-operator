@@ -17,6 +17,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestV1beta1(t *testing.T) {
@@ -220,6 +223,30 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		event := p.NewEvent("UPGRADE_ERROR", v1beta1.UpgradeErrorReason, message, "Error")
 		It("Event size should not be zero", func() {
 			Ω(event.Size()).ShouldNot(Equal(0))
+		})
+	})
+
+	Context("WaitForClusterToTerminate", func() {
+		var (
+			client client.Client
+			err    error
+			p1     *v1beta1.PravegaCluster
+		)
+
+		BeforeEach(func() {
+			p1 = &v1beta1.PravegaCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+			}
+			p1.WithDefaults()
+			s := scheme.Scheme
+			s.AddKnownTypes(v1beta1.SchemeGroupVersion, p1)
+			client = fake.NewFakeClient(p1)
+			err = p1.WaitForClusterToTerminate(client)
+		})
+		It("should  be nil", func() {
+			Ω(err).Should(BeNil())
 		})
 	})
 })
