@@ -5,6 +5,7 @@ go 1.13
 require (
 	4d63.com/gochecknoinits v0.0.0-20200108094044-eb73b47b9fc4 // indirect
 	github.com/hashicorp/go-version v1.1.0
+	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/operator-framework/operator-sdk v0.17.0
@@ -12,8 +13,9 @@ require (
 	github.com/pravega/zookeeper-operator v0.2.8
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
+	github.com/securego/gosec v0.0.0-20200401082031-e946c8c39989 // indirect
 	github.com/sirupsen/logrus v1.5.0
-	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
+	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9 // indirect
 	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	k8s.io/api v0.17.5
 	k8s.io/apimachinery v0.17.5

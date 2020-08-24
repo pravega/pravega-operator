@@ -44,7 +44,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	b.WithDefaults()
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
-	err := BKDeleteCluster(t, f, ctx, b)
+	err := DeleteBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.Name = "zookeeper"
 	z.Namespace = namespace
 
-	err = ZKDeleteCluster(t, f, ctx, z)
+	err = DeleteZKCluster(t, f, ctx, z)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.WithDefaults()
 	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
 	z.Spec.Replicas = 1
-	z, err = ZKCreateCluster(t, f, ctx, z)
+	z, err = CreateZKCluster(t, f, ctx, z)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	if err != nil {
 		return err
 	}
-	b, err = BKCreateCluster(t, f, ctx, b)
+	b, err = CreateBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
 	}
@@ -98,8 +98,8 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	return nil
 }
 
-// CreateCluster creates a PravegaCluster CR with the desired spec
-func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+// CreatePravegaCluster creates a PravegaCluster CR with the desired spec
+func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
@@ -115,8 +115,8 @@ func CreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return pravega, nil
 }
 
-// ZKCreateCluster creates a ZookeeperCluster CR with the desired spec
-func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+// CreateZKCluster creates a ZookeeperCluster CR with the desired spec
+func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	t.Logf("creating zookeeper cluster: %s", z.Name)
 	err := f.Client.Create(goctx.TODO(), z, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
@@ -132,8 +132,8 @@ func ZKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return zookeeper, nil
 }
 
-// BKCreateCluster creates a BookkeeperCluster CR with the desired spec
-func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+// CreateBKCluster creates a BookkeeperCluster CR with the desired spec
+func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
@@ -151,8 +151,8 @@ func BKCreateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return bookkeeper, nil
 }
 
-// BKDeleteCluster deletes the BookkeeperCluster CR specified by cluster spec
-func BKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
+// DeleteBKCluster deletes the BookkeeperCluster CR specified by cluster spec
+func DeleteBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
 	t.Logf("deleting bookkeeper cluster: %s", b.Name)
 	err := f.Client.Delete(goctx.TODO(), b)
 	if err != nil {
@@ -163,8 +163,8 @@ func BKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return nil
 }
 
-// DeleteCluster deletes the PravegaCluster CR specified by cluster spec
-func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+// DeletePravegaCluster deletes the PravegaCluster CR specified by cluster spec
+func DeletePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("deleting pravega cluster: %s", p.Name)
 	err := f.Client.Delete(goctx.TODO(), p)
 	if err != nil {
@@ -175,8 +175,8 @@ func DeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-// ZKDeleteCluster deletes the ZookeeperCluster CR specified by cluster spec
-func ZKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
+// DeleteZKCluster deletes the ZookeeperCluster CR specified by cluster spec
+func DeleteZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
 	t.Logf("deleting zookeeper cluster: %s", z.Name)
 	err := f.Client.Delete(goctx.TODO(), z)
 	if err != nil {
@@ -187,8 +187,8 @@ func ZKDeleteCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	return nil
 }
 
-// UpdateCluster updates the PravegaCluster CR
-func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+// UpdatePravegaCluster updates the PravegaCluster CR
+func UpdatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("updating pravega cluster: %s", p.Name)
 	err := f.Client.Update(goctx.TODO(), p)
 	if err != nil {
@@ -199,8 +199,8 @@ func UpdateCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return nil
 }
 
-// GetCluster returns the latest PravegaCluster CR
-func GetCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+// GetPravegaCluster returns the latest PravegaCluster CR
+func GetPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	pravega := &api.PravegaCluster{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
@@ -229,12 +229,12 @@ func GetZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	return zookeeper, nil
 }
 
-// WaitForClusterToBecomeReady will wait until all cluster pods are ready
-func WaitForClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+// WaitForPravegaClusterToBecomeReady will wait until all cluster pods are ready
+func WaitForPravegaClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	t.Logf("waiting for cluster pods to become ready: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, f, ctx, p)
 		if err != nil {
 			return false, err
 		}
@@ -261,7 +261,7 @@ func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework,
 	t.Logf("waiting for cluster pods to become ready: %s", b.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetbkCluster(t, f, ctx, b)
+		cluster, err := GetBKCluster(t, f, ctx, b)
 		if err != nil {
 			return false, err
 		}
@@ -288,7 +288,7 @@ func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, 
 	t.Logf("waiting for cluster pods to become ready: %s", z.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetzkCluster(t, f, ctx, z)
+		cluster, err := GetZKCluster(t, f, ctx, z)
 		if err != nil {
 			return false, err
 		}
@@ -310,12 +310,12 @@ func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, 
 	return nil
 }
 
-// WaitForClusterToUpgrade will wait until all pods are upgraded
-func WaitForClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
+// WaitForPravegaClusterToUpgrade will wait until all pods are upgraded
+func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
 	t.Logf("waiting for cluster to upgrade: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
-		cluster, err := GetCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, f, ctx, p)
 		if err != nil {
 			return false, err
 		}
@@ -344,8 +344,8 @@ func WaitForClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framewor
 	return nil
 }
 
-// WaitForClusterToTerminate will wait until all cluster pods are terminated
-func WaitForClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+// WaitForPravegaClusterToTerminate will wait until all cluster pods are terminated
+func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
 
 	listOptions := metav1.ListOptions{

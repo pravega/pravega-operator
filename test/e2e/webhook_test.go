@@ -39,36 +39,36 @@ func testWebhook(t *testing.T) {
 	//Test webhook with an unsupported Pravega cluster version
 	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0.0")
 	invalidVersion.WithDefaults()
-	_, err = pravega_e2eutil.CreateCluster(t, f, ctx, invalidVersion)
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidVersion)
 	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
 	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Test webhook with a supported Pravega cluster version
 	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
 	validVersion.WithDefaults()
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, validVersion)
+	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, validVersion)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	podSize := 2
-	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Try to upgrade to a non-supported version
-	pravega, err = pravega_e2eutil.GetCluster(t, f, ctx, pravega)
+	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	pravega.Spec.Version = "99.0.0"
-	err = pravega_e2eutil.UpdateCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
 	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
 
 	// Delete cluster
-	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 }

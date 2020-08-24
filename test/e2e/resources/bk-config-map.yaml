@@ -4,5 +4,5 @@ metadata:
   name: bookkeeper-configmap
 data:
   # Configuration values can be set as key-value properties
-  PRAVEGA_CLUSTER_NAME: pravega-cluster
+  PRAVEGA_CLUSTER_NAME: pravega
   WAIT_FOR: zookeeper-client:2181

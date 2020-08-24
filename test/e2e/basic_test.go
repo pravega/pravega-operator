@@ -40,21 +40,21 @@ func testCreateRecreateCluster(t *testing.T) {
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
 
-	pravega, err := pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
+	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
 	podSize := 2
-	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//creating the setup for running the test
@@ -64,21 +64,21 @@ func testCreateRecreateCluster(t *testing.T) {
 	defaultCluster = pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
 
-	pravega, err = pravega_e2eutil.CreateCluster(t, f, ctx, defaultCluster)
+	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WaitForClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.DeleteCluster(t, f, ctx, pravega)
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 
-	err = pravega_e2eutil.WaitForClusterToTerminate(t, f, ctx, pravega)
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 }
