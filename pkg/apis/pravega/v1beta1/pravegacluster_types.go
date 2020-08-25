@@ -550,7 +550,7 @@ func (dst *PravegaCluster) updateControllerReferences(ownerRefs []metav1.OwnerRe
 }
 
 func createConfigMap(p *v1alpha1.PravegaCluster) error {
-	cmName := "pravega-config"
+	cmName := fmt.Sprintf("%s-configmap", p.Name)
 	cfgMap := &corev1.ConfigMap{}
 	err := Mgr.GetClient().Get(context.TODO(),
 		types.NamespacedName{Name: cmName, Namespace: p.Namespace}, cfgMap)
@@ -605,12 +605,19 @@ func (p *PravegaCluster) migrateBookkeeper(srcObj *v1alpha1.PravegaCluster) erro
 	}
 
 	log.Printf("Created Bookkeeper CR by name %s", b.Name)
-	err = migrateConfigMap(srcObj, b)
+	configmap := fmt.Sprintf("%s-configmap", srcObj.Name)
+	err = migrateConfigMap(srcObj, b, configmap)
 	if err != nil {
-		log.Fatalf("Error releasing BK CM %v", err)
+		log.Fatalf("Error releasing BK CM %s %v", configmap, err)
 		return err
 	}
-	log.Print("Migrated Bookkeeper ConfigMap.")
+	configmap = nameForBookie(srcObj.Name)
+	err = migrateConfigMap(srcObj, b, configmap)
+	if err != nil {
+		log.Fatalf("Error releasing BK CM %s %v", configmap, err)
+		return err
+	}
+	log.Print("Migrated Bookkeeper ConfigMaps.")
 
 	err = migratePVC(srcObj, b)
 	if err != nil {
@@ -666,9 +673,8 @@ func migrateSTS(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
 	return nil
 }
 
-func migrateConfigMap(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) error {
+func migrateConfigMap(p *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster, name string) error {
 	configmap := &corev1.ConfigMap{}
-	name := nameForBookie(p.Name)
 	err := Mgr.GetClient().Get(context.TODO(),
 		types.NamespacedName{Name: name, Namespace: p.Namespace}, configmap)
 	if err != nil {
@@ -822,7 +828,7 @@ func specCopy(srcObj *v1alpha1.PravegaCluster, b *bkapi.BookkeeperCluster) {
 
 	b.Spec.ZookeeperUri = srcObj.Spec.ZookeeperUri
 	// name of config-map having pravega configuration
-	b.Spec.EnvVars = "pravega-config"
+	b.Spec.EnvVars = fmt.Sprintf("%s-configmap", srcObj.Name)
 	b.Spec.Version = srcObj.Spec.Version
 }
 

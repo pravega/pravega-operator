@@ -115,6 +115,22 @@ The upgrade to Operator 0.5.0 can be triggered using the following command
 helm upgrade <operator release name> <location of 0.5.0 charts> --set webhookCert.crt=<tls.crt> --set webhookCert.generate=false --set webhookCert.certName=<cert-name> --set webhookCert.secretName=<secret-name>
 ```
 
+Once the upgrade completes and the following command starts returning a response instead of throwing an error message (this might take around 7 to 10 minutes after the operator upgrade has been done)
+```
+kubectl describe PravegaCluster
+```
+Execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
+```
+./post-upgrade.sh <PravegaCluster resource name> <PravegaCluster release name> <BookkeeperCluster release name> <version> <namespace> <zookeeper svc name>
+```
+This script patches the `PravegaCluster` and `BookkeeperCluster` resources with the required annotations and labels, and updates their corresponding helm releases. This script needs the following arguments
+1. Name of the PravegaCluster or BookkeeperCluster resource (check the output of `kubectl get PravegaCluster` to obtain this name).
+2. Name of the release that has been created for the v1alpha1 PravegaCluster resource (check the output of `helm ls` to obtain this name).
+3. Name of the release that needs to be created for the BookkeeperCluster resource.
+4. Version of the PravegaCluster or BookkeeperCluster resources (check the output of `kubectl get PravegaCluster` to obtain the version number).
+5. Namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
+6. Name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
+
 #### Upgrade manually
 
 To manually trigger the upgrade to Operator 0.5.0, run the script `operatorUpgrade.sh` under [tools](https://github.com/pravega/pravega-operator/blob/master/tools) folder. This script patches the Pravega Cluster CRD and creates necessary K8s artifacts, needed by 0.5.0 Operator, prior to triggering the upgrade by updating the image tag in Operator deployment.
