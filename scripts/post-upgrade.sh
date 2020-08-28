@@ -1,9 +1,9 @@
 #! /bin/bash
 set -ex
 
-if [[ "$#" -lt 4 || "$#" -gt 6 ]]; then
+if [[ "$#" -lt 4 || "$#" -gt 7 ]]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./post-upgrade.sh <pravegacluster name> <pravega-release-name> <bookkeeper-release-name> <version> <namespace> <zk-svc-name>"
+	Usage: "./post-upgrade.sh <pravegacluster name> <pravega-release-name> <bookkeeper-release-name> <version> <namespace> <zk-svc-name> <bk-replicas>"
 	exit 1
 fi
 
@@ -13,6 +13,7 @@ bkname=$3
 version=$4
 namespace=${5:-default}
 zksvc=${6:-zookeeper-client}
+replicas=${7:-3}
 
 echo "Checking that the PravegaCluster resource is in ready state"
 kubectl describe PravegaCluster $name -n $namespace
@@ -46,6 +47,6 @@ kubectl label ConfigMap $name-configmap app.kubernetes.io/managed-by=Helm -n $na
 helm repo add pravega https://charts.pravega.io
 helm repo update
 echo "Upgrading the pravega charts"
-helm upgrade $pname pravega/pravega --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set bookkeeperUri="$name-bookie-headless:3181"
+helm upgrade $pname pravega/pravega --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set bookkeeperUri="$name-bookie-headless:3181" --reuse-values
 echo "Installing the bookkeeper charts"
-helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set pravegaClusterName=$name
+helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set pravegaClusterName=$name --set replicas=$replicas --set options.journalDirectories="/bk/journal" --set options.ledgerDirectories="/bk/ledgers"
