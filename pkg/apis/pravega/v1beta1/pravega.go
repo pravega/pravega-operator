@@ -92,7 +92,7 @@ type PravegaSpec struct {
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
-  // +optional
+	// +optional
 	Options map[string]string `json:"options"`
 
 	// ControllerJvmOptions is the JVM options for controller. It will be passed to the JVM
@@ -337,11 +337,11 @@ type FileSystemSpec struct {
 // ECSSpec contains the connection details to a Dell EMC ECS system
 type ECSSpec struct {
 	// +optional
-	ConfigUri   string `json:"configUri"`
-  // +optional
-	Bucket      string `json:"bucket"`
+	ConfigUri string `json:"configUri"`
 	// +optional
-	Prefix      string `json:"prefix"`
+	Bucket string `json:"bucket"`
+	// +optional
+	Prefix string `json:"prefix"`
 	// +optional
 	Credentials string `json:"credentials"`
 }
@@ -349,9 +349,9 @@ type ECSSpec struct {
 // HDFSSpec contains the connection details to an HDFS system
 type HDFSSpec struct {
 	// +optional
-	Uri               string `json:"uri"`
+	Uri string `json:"uri"`
 	// +optional
-	Root              string `json:"root"`
+	Root string `json:"root"`
 	// +optional
-	ReplicationFactor int32  `json:"replicationFactor"`
+	ReplicationFactor int32 `json:"replicationFactor"`
 }
