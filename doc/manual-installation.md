@@ -28,7 +28,7 @@ $ kubectl create -f  deploy/version_map.yaml
 ```
 Register the Pravega cluster custom resource definition (CRD).
 ```
-$ kubectl create -f deploy/crds/crd.yaml
+$ kubectl create -f deploy/crds//pravega.pravega.io_pravegaclusters.yaml
 ```
 Create the operator role, role binding and service account.
 ```

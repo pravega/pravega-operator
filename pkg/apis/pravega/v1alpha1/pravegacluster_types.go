@@ -53,9 +53,15 @@ type PravegaClusterList struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// Generate CRD using kubebuilder
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=pravega
 
 // PravegaCluster is the Schema for the pravegaclusters API
-// +k8s:openapi-gen=true
 type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -77,11 +83,13 @@ type ClusterSpec struct {
 	// By default, the value "zookeeper-client:2181" is used, that corresponds to the
 	// default Zookeeper service created by the Pravega Zookkeeper operator
 	// available at: https://github.com/pravega/zookeeper-operator
+	// +optional
 	ZookeeperUri string `json:"zookeeperUri"`
 
 	// ExternalAccess specifies whether or not to allow external access
 	// to clients and the service type to use to achieve it
 	// By default, external access is not enabled
+	// +optional
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
 
 	// TLS is the Pravega security configuration that is passed to the Pravega processes.
@@ -102,12 +110,15 @@ type ClusterSpec struct {
 	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
 	//
 	// If version is not set, default is "0.4.0".
+	// +optional
 	Version string `json:"version"`
 
 	// Bookkeeper configuration
+	// +optional
 	Bookkeeper *BookkeeperSpec `json:"bookkeeper"`
 
 	// Pravega configuration
+	// +optional
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
@@ -167,6 +178,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 type ExternalAccess struct {
 	// Enabled specifies whether or not external access is enabled
 	// By default, external access is not enabled
+	// +optional
 	Enabled bool `json:"enabled"`
 
 	// Type specifies the service type to achieve external access.
@@ -223,6 +235,7 @@ func (tp *TLSPolicy) IsCaBundlePresent() bool {
 type AuthenticationParameters struct {
 	// Enabled specifies whether or not authentication is enabled
 	// By default, authentication is not enabled
+	// +optional
 	Enabled bool `json:"enabled"`
 
 	// name of Secret containing Password based Authentication Parameters like username, password and acl
@@ -239,10 +252,12 @@ func (ap *AuthenticationParameters) IsEnabled() bool {
 
 // ImageSpec defines the fields needed for a Docker repository image
 type ImageSpec struct {
+	// +optional
 	Repository string `json:"repository"`
 
 	// Deprecated: Use `spec.Version` instead
 	Tag string `json:"tag,omitempty"`
 
+	// +optional
 	PullPolicy v1.PullPolicy `json:"pullPolicy"`
 }

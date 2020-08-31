@@ -12,7 +12,7 @@ package v1alpha1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -58,17 +58,21 @@ const (
 type BookkeeperSpec struct {
 	// Image defines the BookKeeper Docker image to use.
 	// By default, "pravega/bookkeeper" will be used.
+	// +optional
 	Image *BookkeeperImageSpec `json:"image"`
 
 	// Replicas defines the number of BookKeeper replicas.
 	// Minimum is 3. Defaults to 3.
+	// +optional
 	Replicas int32 `json:"replicas"`
 
 	// Storage configures the storage for BookKeeper
+	// +optional
 	Storage *BookkeeperStorageSpec `json:"storage"`
 
 	// AutoRecovery indicates whether or not BookKeeper auto recovery is enabled.
 	// Defaults to true.
+	// +optional
 	AutoRecovery *bool `json:"autoRecovery"`
 
 	// ServiceAccountName configures the service account used on BookKeeper instances
@@ -81,11 +85,13 @@ type BookkeeperSpec struct {
 	// Options is the Bookkeeper configuration that is to override the bk_server.conf
 	// in bookkeeper. Some examples can be found here
 	// https://github.com/apache/bookkeeper/blob/master/docker/README.md
+	// +optional
 	Options map[string]string `json:"options"`
 
 	// JVM is the JVM options for bookkeeper. It will be passed to the JVM for performance tuning.
 	// If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
+	// +optional
 	BookkeeperJVMOptions *BookkeeperJVMOptions `json:"bookkeeperJVMOptions"`
 }
 
@@ -149,7 +155,7 @@ func (s *BookkeeperSpec) withDefaults() (changed bool) {
 
 // BookkeeperImageSpec defines the fields needed for a BookKeeper Docker image
 type BookkeeperImageSpec struct {
-	ImageSpec
+	ImageSpec `json:"imageSpec,omitempty"`
 }
 
 func (s *BookkeeperImageSpec) withDefaults() (changed bool) {
@@ -169,10 +175,14 @@ func (s *BookkeeperImageSpec) withDefaults() (changed bool) {
 }
 
 type BookkeeperJVMOptions struct {
-	MemoryOpts    []string `json:"memoryOpts"`
-	GcOpts        []string `json:"gcOpts"`
+	// +optional
+	MemoryOpts []string `json:"memoryOpts"`
+	// +optional
+	GcOpts []string `json:"gcOpts"`
+	// +optional
 	GcLoggingOpts []string `json:"gcLoggingOpts"`
-	ExtraOpts     []string `json:"extraOpts"`
+	// +optional
+	ExtraOpts []string `json:"extraOpts"`
 }
 
 func (s *BookkeeperJVMOptions) withDefaults() (changed bool) {
@@ -204,16 +214,19 @@ type BookkeeperStorageSpec struct {
 	// LedgerVolumeClaimTemplate is the spec to describe PVC for the BookKeeper ledger
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
+	// +optional
 	LedgerVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"ledgerVolumeClaimTemplate"`
 
 	// JournalVolumeClaimTemplate is the spec to describe PVC for the BookKeeper journal
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
+	// +optional
 	JournalVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"journalVolumeClaimTemplate"`
 
 	// IndexVolumeClaimTemplate is the spec to describe PVC for the BookKeeper index
 	// This field is optional. If no PVC spec and there is no default storage class,
 	// stateful containers will use emptyDir as volume
+	// +optional
 	IndexVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"indexVolumeClaimTemplate"`
 }
 

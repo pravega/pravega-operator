@@ -69,43 +69,54 @@ const (
 type PravegaSpec struct {
 	// ControllerReplicas defines the number of Controller replicas.
 	// Defaults to 1.
+	// +kubebuilder:validation:Minimum=1
+	// +optional
 	ControllerReplicas int32 `json:"controllerReplicas"`
 
 	// SegmentStoreReplicas defines the number of Segment Store replicas.
 	// Defaults to 1.
+	// +kubebuilder:validation:Minimum=1
+	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
 	// DebugLogging indicates whether or not debug level logging is enabled.
 	// Defaults to false.
+	// +optional
 	DebugLogging bool `json:"debugLogging"`
 
 	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega" will be used.
+	// +optional
 	Image *ImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
+  // +optional
 	Options map[string]string `json:"options"`
 
 	// ControllerJvmOptions is the JVM options for controller. It will be passed to the JVM
 	// for performance tuning. If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
+	// +optional
 	ControllerJvmOptions []string `json:"controllerjvmOptions"`
 
 	// SegmentStoreJVMOptions is the JVM options for Segmentstore. It will be passed to the JVM
 	// for performance tuning. If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
+	// +optional
 	SegmentStoreJVMOptions []string `json:"segmentStoreJVMOptions"`
 
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
 	// This field is optional. If no PVC spec, stateful containers will use
 	// emptyDir as volume
+	// +optional
 	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate,omitempty"`
 
 	// LongTermStorage is the configuration of Pravega's tier 2 storage. If no configuration
 	// is provided, it will assume that a PersistentVolumeClaim called "pravega-longterm"
 	// is present and it will use it as Tier 2
+	// +optional
 	LongTermStorage *LongTermStorageSpec `json:"longtermStorage"`
 
 	// ControllerServiceAccountName configures the service account used on controller instances.
@@ -130,6 +141,7 @@ type PravegaSpec struct {
 
 	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
 	// either as an environment variable or by mounting it to a volume
+	// +optional
 	SegmentStoreSecret *SegmentStoreSecret `json:"segmentStoreSecret"`
 
 	// Type specifies the service type to achieve external access.
@@ -138,6 +150,7 @@ type PravegaSpec struct {
 	ControllerExternalServiceType v1.ServiceType `json:"controllerExtServiceType,omitempty"`
 
 	// Annotations to be added to the external service
+	// +optional
 	ControllerServiceAnnotations map[string]string `json:"controllerSvcAnnotations"`
 
 	// Type specifies the service type to achieve external access.
@@ -146,6 +159,7 @@ type PravegaSpec struct {
 	SegmentStoreExternalServiceType v1.ServiceType `json:"segmentStoreExtServiceType,omitempty"`
 
 	// Annotations to be added to the external service
+	// +optional
 	SegmentStoreServiceAnnotations map[string]string `json:"segmentStoreSvcAnnotations"`
 
 	// Specifying this IP would ensure we use same IP address for all the ss services
@@ -251,12 +265,14 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 // SegmentStoreSecret defines the configuration of the secret for the Segment Store
 type SegmentStoreSecret struct {
 	// Secret specifies the name of Secret which needs to be configured
+	// +optional
 	Secret string `json:"secret"`
 
 	// Path to the volume where the secret will be mounted
 	// This value is considered only when the secret is provided
 	// If this value is provided, the secret is mounted to a Volume
 	// else the secret is exposed as an Environment Variable
+	// +optional
 	MountPath string `json:"mountPath"`
 }
 
@@ -314,20 +330,28 @@ func (s *LongTermStorageSpec) withDefaults() (changed bool) {
 
 // FileSystemSpec contains the reference to a PVC.
 type FileSystemSpec struct {
+	// +optional
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim"`
 }
 
 // ECSSpec contains the connection details to a Dell EMC ECS system
 type ECSSpec struct {
+	// +optional
 	ConfigUri   string `json:"configUri"`
+  // +optional
 	Bucket      string `json:"bucket"`
+	// +optional
 	Prefix      string `json:"prefix"`
+	// +optional
 	Credentials string `json:"credentials"`
 }
 
 // HDFSSpec contains the connection details to an HDFS system
 type HDFSSpec struct {
+	// +optional
 	Uri               string `json:"uri"`
+	// +optional
 	Root              string `json:"root"`
+	// +optional
 	ReplicationFactor int32  `json:"replicationFactor"`
 }
