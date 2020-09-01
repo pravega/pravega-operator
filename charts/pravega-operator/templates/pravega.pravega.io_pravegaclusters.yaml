@@ -957,18 +957,6 @@ spec:
               currentVersion:
                 description: CurrentVersion is the current cluster version
                 type: string
-              members:
-                description: Members is the Pravega members in the cluster
-                properties:
-                  ready:
-                    items:
-                      type: string
-                    type: array
-                  unready:
-                    items:
-                      type: string
-                    type: array
-                type: object
               readyReplicas:
                 description: ReadyReplicas is the number of ready replicas in the
                   cluster
@@ -988,7 +976,7 @@ spec:
                 type: array
             type: object
         type: object
-    served: true
+    served: false
     storage: false
   - name: v1beta1
     schema:
@@ -1473,18 +1461,6 @@ spec:
               currentVersion:
                 description: CurrentVersion is the current cluster version
                 type: string
-              members:
-                description: Members is the Pravega members in the cluster
-                properties:
-                  ready:
-                    items:
-                      type: string
-                    type: array
-                  unready:
-                    items:
-                      type: string
-                    type: array
-                type: object
               readyReplicas:
                 description: ReadyReplicas is the number of ready replicas in the
                   cluster

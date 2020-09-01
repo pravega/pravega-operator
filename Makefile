@@ -72,6 +72,7 @@ check-license:
 manifests: controller-gen
 			$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=deploy/crds
 			$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=charts/pravega-operator/templates
+			$(CONTROLLER_GEN) crd paths="./..." output:crd:artifacts:config=test/e2e/resources
 
 controller-gen:
 ifeq (, $(shell which controller-gen))
