@@ -25,7 +25,7 @@ local temp_string_for_dns=pravega-webhook-svc.${namespace}
 
 sed -i "s/pravega-webhook-svc.default/${temp_string_for_dns}"/ ./manifest_files/secret.yaml
 
-#Installing the secrets 
+#Installing the secrets
 kubectl apply -f  ./manifest_files/secret.yaml
 
 #reverting the changes back in the secret.yaml file
@@ -65,9 +65,11 @@ sed -i "s/value:.*/value: $op_name "/ ./manifest_files/patch.yaml
 
 sed -i "/imagePullPolicy:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/patch.yaml
 
+kubectl delete cm pravega-operator-lock
+
 #updating the operator using patch file
 kubectl patch deployment $op_name --namespace ${namespace} --type merge --patch "$(cat ./manifest_files/patch.yaml)"
 
 }
 
-UpgradingToPoperator $1 $2 $3 
+UpgradingToPoperator $1 $2 $3

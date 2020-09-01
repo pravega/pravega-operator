@@ -47,6 +47,6 @@ kubectl label ConfigMap $name-configmap app.kubernetes.io/managed-by=Helm -n $na
 helm repo add pravega https://charts.pravega.io
 helm repo update
 echo "Upgrading the pravega charts"
-helm upgrade $pname pravega/pravega --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set bookkeeperUri="$name-bookie-headless:3181" --reuse-values
+helm upgrade $pname pravega/pravega --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set bookkeeperUri="$name-bookie-headless:3181" -n $namespace --reuse-values
 echo "Installing the bookkeeper charts"
-helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set pravegaClusterName=$name --set replicas=$replicas --set options.journalDirectories="/bk/journal" --set options.ledgerDirectories="/bk/ledgers"
+helm install $bkname pravega/bookkeeper --version=$version --set fullnameOverride=$name --set zookeeperUri="$zksvc:2181" --set pravegaClusterName=$name --set replicas=$replicas --set options.journalDirectories="/bk/journal" --set options.ledgerDirectories="/bk/ledgers" -n $namespace
