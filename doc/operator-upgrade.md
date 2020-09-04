@@ -121,7 +121,7 @@ kubectl describe PravegaCluster
 ```
 Execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
 ```
-./post-upgrade.sh <PravegaCluster resource name> <PravegaCluster release name> <BookkeeperCluster release name> <version> <namespace> <zookeeper svc name>
+./post-upgrade.sh <PravegaCluster resource name> <PravegaCluster release name> <BookkeeperCluster release name> <version> <namespace> <zookeeper svc name> <bookkeeper replica count>
 ```
 This script patches the `PravegaCluster` and `BookkeeperCluster` resources with the required annotations and labels, and updates their corresponding helm releases. This script needs the following arguments
 1. Name of the PravegaCluster or BookkeeperCluster resource (check the output of `kubectl get PravegaCluster` to obtain this name).
@@ -130,6 +130,7 @@ This script patches the `PravegaCluster` and `BookkeeperCluster` resources with 
 4. Version of the PravegaCluster or BookkeeperCluster resources (check the output of `kubectl get PravegaCluster` to obtain the version number).
 5. Namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
 6. Name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
+7. Number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is 3).
 
 #### Upgrade manually
 
