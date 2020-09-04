@@ -68,8 +68,10 @@ type ClusterStatus struct {
 // ready and unready node membership lists
 type MembersStatus struct {
 	// +optional
+	// +nullable
 	Ready []string `json:"ready"`
 	// +optional
+	// +nullable
 	Unready []string `json:"unready"`
 }
 

@@ -1,0 +1,2584 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: pravegaclusters.pravega.pravega.io
+spec:
+  group: pravega.pravega.io
+  names:
+    kind: PravegaCluster
+    listKind: PravegaClusterList
+    plural: pravegaclusters
+    shortNames:
+    - pravega
+    singular: pravegacluster
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PravegaCluster is the Schema for the pravegaclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSpec defines the desired state of PravegaCluster
+            properties:
+              authentication:
+                description: 'Authentication can be enabled for authorizing all communication
+                  from clients to controller and segment store See the following file
+                  for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  enabled:
+                    description: Enabled specifies whether or not authentication is
+                      enabled By default, authentication is not enabled
+                    type: boolean
+                  passwordAuthSecret:
+                    description: name of Secret containing Password based Authentication
+                      Parameters like username, password and acl optional - used only
+                      by PasswordAuthHandler for authentication
+                    type: string
+                type: object
+              bookkeeper:
+                description: Bookkeeper configuration
+                properties:
+                  autoRecovery:
+                    description: AutoRecovery indicates whether or not BookKeeper
+                      auto recovery is enabled. Defaults to true.
+                    type: boolean
+                  bookkeeperJVMOptions:
+                    description: JVM is the JVM options for bookkeeper. It will be
+                      passed to the JVM for performance tuning. If this field is not
+                      specified, the operator will use a set of default options that
+                      is good enough for general deployment.
+                    properties:
+                      extraOpts:
+                        items:
+                          type: string
+                        type: array
+                      gcLoggingOpts:
+                        items:
+                          type: string
+                        type: array
+                      gcOpts:
+                        items:
+                          type: string
+                        type: array
+                      memoryOpts:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  image:
+                    description: Image defines the BookKeeper Docker image to use.
+                      By default, "pravega/bookkeeper" will be used.
+                    properties:
+                      imageSpec:
+                        description: ImageSpec defines the fields needed for a Docker
+                          repository image
+                        properties:
+                          pullPolicy:
+                            description: PullPolicy describes a policy for if/when
+                              to pull a container image
+                            type: string
+                          repository:
+                            type: string
+                          tag:
+                            description: 'Deprecated: Use `spec.Version` instead'
+                            type: string
+                        type: object
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: Options is the Bookkeeper configuration that is to
+                      override the bk_server.conf in bookkeeper. Some examples can
+                      be found here https://github.com/apache/bookkeeper/blob/master/docker/README.md
+                    type: object
+                  replicas:
+                    description: Replicas defines the number of BookKeeper replicas.
+                      Minimum is 3. Defaults to 3.
+                    format: int32
+                    type: integer
+                  resources:
+                    description: BookieResources specifies the request and limit of
+                      resources that bookie can have. BookieResources includes CPU
+                      and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  serviceAccountName:
+                    description: ServiceAccountName configures the service account
+                      used on BookKeeper instances
+                    type: string
+                  storage:
+                    description: Storage configures the storage for BookKeeper
+                    properties:
+                      indexVolumeClaimTemplate:
+                        description: IndexVolumeClaimTemplate is the spec to describe
+                          PVC for the BookKeeper index This field is optional. If
+                          no PVC spec and there is no default storage class, stateful
+                          containers will use emptyDir as volume
+                        properties:
+                          accessModes:
+                            description: 'AccessModes contains the desired access
+                              modes the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                            items:
+                              type: string
+                            type: array
+                          dataSource:
+                            description: This field requires the VolumeSnapshotDataSource
+                              alpha feature gate to be enabled and currently VolumeSnapshot
+                              is the only supported data source. If the provisioner
+                              can support VolumeSnapshot data source, it will create
+                              a new volume and data will be restored to the volume
+                              at the same time. If the provisioner does not support
+                              VolumeSnapshot data source, volume will not be created
+                              and the failure will be reported as an event. In the
+                              future, we plan to support more data source types and
+                              the behavior of the provisioner may change.
+                            properties:
+                              apiGroup:
+                                description: APIGroup is the group for the resource
+                                  being referenced. If APIGroup is not specified,
+                                  the specified Kind must be in the core API group.
+                                  For any other third-party types, APIGroup is required.
+                                type: string
+                              kind:
+                                description: Kind is the type of resource being referenced
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                          resources:
+                            description: 'Resources represents the minimum resources
+                              the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                            type: object
+                          selector:
+                            description: A label query over volumes to consider for
+                              binding.
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: A label selector requirement is a selector
+                                    that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: operator represents a key's relationship
+                                        to a set of values. Valid operators are In,
+                                        NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: values is an array of string values.
+                                        If the operator is In or NotIn, the values
+                                        array must be non-empty. If the operator is
+                                        Exists or DoesNotExist, the values array must
+                                        be empty. This array is replaced during a
+                                        strategic merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: matchLabels is a map of {key,value} pairs.
+                                  A single {key,value} in the matchLabels map is equivalent
+                                  to an element of matchExpressions, whose key field
+                                  is "key", the operator is "In", and the values array
+                                  contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                          storageClassName:
+                            description: 'Name of the StorageClass required by the
+                              claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                            type: string
+                          volumeMode:
+                            description: volumeMode defines what type of volume is
+                              required by the claim. Value of Filesystem is implied
+                              when not included in claim spec. This is a beta feature.
+                            type: string
+                          volumeName:
+                            description: VolumeName is the binding reference to the
+                              PersistentVolume backing this claim.
+                            type: string
+                        type: object
+                      journalVolumeClaimTemplate:
+                        description: JournalVolumeClaimTemplate is the spec to describe
+                          PVC for the BookKeeper journal This field is optional. If
+                          no PVC spec and there is no default storage class, stateful
+                          containers will use emptyDir as volume
+                        properties:
+                          accessModes:
+                            description: 'AccessModes contains the desired access
+                              modes the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                            items:
+                              type: string
+                            type: array
+                          dataSource:
+                            description: This field requires the VolumeSnapshotDataSource
+                              alpha feature gate to be enabled and currently VolumeSnapshot
+                              is the only supported data source. If the provisioner
+                              can support VolumeSnapshot data source, it will create
+                              a new volume and data will be restored to the volume
+                              at the same time. If the provisioner does not support
+                              VolumeSnapshot data source, volume will not be created
+                              and the failure will be reported as an event. In the
+                              future, we plan to support more data source types and
+                              the behavior of the provisioner may change.
+                            properties:
+                              apiGroup:
+                                description: APIGroup is the group for the resource
+                                  being referenced. If APIGroup is not specified,
+                                  the specified Kind must be in the core API group.
+                                  For any other third-party types, APIGroup is required.
+                                type: string
+                              kind:
+                                description: Kind is the type of resource being referenced
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                          resources:
+                            description: 'Resources represents the minimum resources
+                              the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                            type: object
+                          selector:
+                            description: A label query over volumes to consider for
+                              binding.
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: A label selector requirement is a selector
+                                    that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: operator represents a key's relationship
+                                        to a set of values. Valid operators are In,
+                                        NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: values is an array of string values.
+                                        If the operator is In or NotIn, the values
+                                        array must be non-empty. If the operator is
+                                        Exists or DoesNotExist, the values array must
+                                        be empty. This array is replaced during a
+                                        strategic merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: matchLabels is a map of {key,value} pairs.
+                                  A single {key,value} in the matchLabels map is equivalent
+                                  to an element of matchExpressions, whose key field
+                                  is "key", the operator is "In", and the values array
+                                  contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                          storageClassName:
+                            description: 'Name of the StorageClass required by the
+                              claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                            type: string
+                          volumeMode:
+                            description: volumeMode defines what type of volume is
+                              required by the claim. Value of Filesystem is implied
+                              when not included in claim spec. This is a beta feature.
+                            type: string
+                          volumeName:
+                            description: VolumeName is the binding reference to the
+                              PersistentVolume backing this claim.
+                            type: string
+                        type: object
+                      ledgerVolumeClaimTemplate:
+                        description: LedgerVolumeClaimTemplate is the spec to describe
+                          PVC for the BookKeeper ledger This field is optional. If
+                          no PVC spec and there is no default storage class, stateful
+                          containers will use emptyDir as volume
+                        properties:
+                          accessModes:
+                            description: 'AccessModes contains the desired access
+                              modes the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                            items:
+                              type: string
+                            type: array
+                          dataSource:
+                            description: This field requires the VolumeSnapshotDataSource
+                              alpha feature gate to be enabled and currently VolumeSnapshot
+                              is the only supported data source. If the provisioner
+                              can support VolumeSnapshot data source, it will create
+                              a new volume and data will be restored to the volume
+                              at the same time. If the provisioner does not support
+                              VolumeSnapshot data source, volume will not be created
+                              and the failure will be reported as an event. In the
+                              future, we plan to support more data source types and
+                              the behavior of the provisioner may change.
+                            properties:
+                              apiGroup:
+                                description: APIGroup is the group for the resource
+                                  being referenced. If APIGroup is not specified,
+                                  the specified Kind must be in the core API group.
+                                  For any other third-party types, APIGroup is required.
+                                type: string
+                              kind:
+                                description: Kind is the type of resource being referenced
+                                type: string
+                              name:
+                                description: Name is the name of resource being referenced
+                                type: string
+                            required:
+                            - kind
+                            - name
+                            type: object
+                          resources:
+                            description: 'Resources represents the minimum resources
+                              the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                            properties:
+                              limits:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Limits describes the maximum amount
+                                  of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                              requests:
+                                additionalProperties:
+                                  anyOf:
+                                  - type: integer
+                                  - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                description: 'Requests describes the minimum amount
+                                  of compute resources required. If Requests is omitted
+                                  for a container, it defaults to Limits if that is
+                                  explicitly specified, otherwise to an implementation-defined
+                                  value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                                type: object
+                            type: object
+                          selector:
+                            description: A label query over volumes to consider for
+                              binding.
+                            properties:
+                              matchExpressions:
+                                description: matchExpressions is a list of label selector
+                                  requirements. The requirements are ANDed.
+                                items:
+                                  description: A label selector requirement is a selector
+                                    that contains values, a key, and an operator that
+                                    relates the key and values.
+                                  properties:
+                                    key:
+                                      description: key is the label key that the selector
+                                        applies to.
+                                      type: string
+                                    operator:
+                                      description: operator represents a key's relationship
+                                        to a set of values. Valid operators are In,
+                                        NotIn, Exists and DoesNotExist.
+                                      type: string
+                                    values:
+                                      description: values is an array of string values.
+                                        If the operator is In or NotIn, the values
+                                        array must be non-empty. If the operator is
+                                        Exists or DoesNotExist, the values array must
+                                        be empty. This array is replaced during a
+                                        strategic merge patch.
+                                      items:
+                                        type: string
+                                      type: array
+                                  required:
+                                  - key
+                                  - operator
+                                  type: object
+                                type: array
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: matchLabels is a map of {key,value} pairs.
+                                  A single {key,value} in the matchLabels map is equivalent
+                                  to an element of matchExpressions, whose key field
+                                  is "key", the operator is "In", and the values array
+                                  contains only "value". The requirements are ANDed.
+                                type: object
+                            type: object
+                          storageClassName:
+                            description: 'Name of the StorageClass required by the
+                              claim. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                            type: string
+                          volumeMode:
+                            description: volumeMode defines what type of volume is
+                              required by the claim. Value of Filesystem is implied
+                              when not included in claim spec. This is a beta feature.
+                            type: string
+                          volumeName:
+                            description: VolumeName is the binding reference to the
+                              PersistentVolume backing this claim.
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              externalAccess:
+                description: ExternalAccess specifies whether or not to allow external
+                  access to clients and the service type to use to achieve it By default,
+                  external access is not enabled
+                properties:
+                  domainName:
+                    description: Domain Name to be used for External Access This value
+                      is ignored if External Access is disabled
+                    type: string
+                  enabled:
+                    description: Enabled specifies whether or not external access
+                      is enabled By default, external access is not enabled
+                    type: boolean
+                  type:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                type: object
+              pravega:
+                description: Pravega configuration
+                properties:
+                  cacheVolumeClaimTemplate:
+                    description: CacheVolumeClaimTemplate is the spec to describe
+                      PVC for the Pravega cache. This field is optional. If no PVC
+                      spec, stateful containers will use emptyDir as volume
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: This field requires the VolumeSnapshotDataSource
+                          alpha feature gate to be enabled and currently VolumeSnapshot
+                          is the only supported data source. If the provisioner can
+                          support VolumeSnapshot data source, it will create a new
+                          volume and data will be restored to the volume at the same
+                          time. If the provisioner does not support VolumeSnapshot
+                          data source, volume will not be created and the failure
+                          will be reported as an event. In the future, we plan to
+                          support more data source types and the behavior of the provisioner
+                          may change.
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec. This is a beta feature.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                  controllerExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  controllerReplicas:
+                    description: ControllerReplicas defines the number of Controller
+                      replicas. Defaults to 1.
+                    format: int32
+                    type: integer
+                  controllerResources:
+                    description: ControllerResources specifies the request and limit
+                      of resources that controller can have. ControllerResources includes
+                      CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  controllerServiceAccountName:
+                    description: ControllerServiceAccountName configures the service
+                      account used on controller instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  controllerSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                  controllerjvmOptions:
+                    description: ControllerJvmOptions is the JVM options for controller.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  debugLogging:
+                    description: DebugLogging indicates whether or not debug level
+                      logging is enabled. Defaults to false.
+                    type: boolean
+                  image:
+                    description: Image defines the Pravega Docker image to use. By
+                      default, "pravega/pravega" will be used.
+                    properties:
+                      imageSpec:
+                        description: ImageSpec defines the fields needed for a Docker
+                          repository image
+                        properties:
+                          pullPolicy:
+                            description: PullPolicy describes a policy for if/when
+                              to pull a container image
+                            type: string
+                          repository:
+                            type: string
+                          tag:
+                            description: 'Deprecated: Use `spec.Version` instead'
+                            type: string
+                        type: object
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: 'Options is the Pravega configuration that is passed
+                      to the Pravega processes as JAVA_OPTS. See the following file
+                      for a complete list of options: https://github.com/pravega/pravega/blob/master/config/config.properties'
+                    type: object
+                  segmentStoreExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  segmentStoreJVMOptions:
+                    description: SegmentStoreJVMOptions is the JVM options for Segmentstore.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  segmentStoreReplicas:
+                    description: SegmentStoreReplicas defines the number of Segment
+                      Store replicas. Defaults to 1.
+                    format: int32
+                    type: integer
+                  segmentStoreResources:
+                    description: SegmentStoreResources specifies the request and limit
+                      of resources that segmentStore can have. SegmentStoreResources
+                      includes CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  segmentStoreServiceAccountName:
+                    description: SegmentStoreServiceAccountName configures the service
+                      account used on segment store instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  segmentStoreSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                  tier2:
+                    description: Tier2 is the configuration of Pravega's tier 2 storage.
+                      If no configuration is provided, it will assume that a PersistentVolumeClaim
+                      called "pravega-tier2" is present and it will use it as Tier
+                      2
+                    properties:
+                      ecs:
+                        description: Ecs is used to configure a Dell EMC ECS system
+                          as a Tier 2 backend
+                        properties:
+                          bucket:
+                            type: string
+                          configUri:
+                            type: string
+                          credentials:
+                            type: string
+                          prefix:
+                            type: string
+                        type: object
+                      filesystem:
+                        description: FileSystem is used to configure a pre-created
+                          Persistent Volume Claim as Tier 2 backend. It is default
+                          Tier 2 mode.
+                        properties:
+                          persistentVolumeClaim:
+                            description: PersistentVolumeClaimVolumeSource references
+                              the user's PVC in the same namespace. This volume finds
+                              the bound PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
+                              is, essentially, a wrapper around another type of volume
+                              that is owned by someone else (the system).
+                            properties:
+                              claimName:
+                                description: 'ClaimName is the name of a PersistentVolumeClaim
+                                  in the same namespace as the pod using this volume.
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                                type: string
+                              readOnly:
+                                description: Will force the ReadOnly setting in VolumeMounts.
+                                  Default false.
+                                type: boolean
+                            required:
+                            - claimName
+                            type: object
+                        type: object
+                      hdfs:
+                        description: Hdfs is used to configure an HDFS system as a
+                          Tier 2 backend
+                        properties:
+                          replicationFactor:
+                            format: int32
+                            type: integer
+                          root:
+                            type: string
+                          uri:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              tls:
+                description: 'TLS is the Pravega security configuration that is passed
+                  to the Pravega processes. See the following file for a complete
+                  list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  static:
+                    description: Static TLS means keys/certs are generated by the
+                      user and passed to an operator.
+                    properties:
+                      caBundle:
+                        type: string
+                      controllerSecret:
+                        type: string
+                      segmentStoreSecret:
+                        type: string
+                    type: object
+                type: object
+              version:
+                description: "Version is the expected version of the Pravega cluster.
+                  The pravega-operator will eventually make the Pravega cluster version
+                  equal to the expected version. \n The version must follow the [semver](
+                  http://semver.org) format, for example \"3.2.13\". Only Pravega
+                  released versions are supported: https://github.com/pravega/pravega/releases
+                  \n If version is not set, default is \"0.4.0\"."
+                type: string
+              zookeeperUri:
+                description: 'ZookeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". By default, the value "zookeeper-client:2181"
+                  is used, that corresponds to the default Zookeeper service created
+                  by the Pravega Zookkeeper operator available at: https://github.com/pravega/zookeeper-operator'
+                type: string
+            type: object
+          status:
+            description: ClusterStatus defines the observed state of PravegaCluster
+            properties:
+              conditions:
+                description: Conditions list all the applied conditions
+                items:
+                  description: ClusterCondition shows the current condition of a Pravega
+                    cluster. Comply with k8s API conventions
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of Pravega cluster condition.
+                      type: string
+                  type: object
+                type: array
+              currentReplicas:
+                description: CurrentReplicas is the number of current replicas in
+                  the cluster
+                format: int32
+                type: integer
+              currentVersion:
+                description: CurrentVersion is the current cluster version
+                type: string
+              members:
+                description: Members is the Pravega members in the cluster
+                properties:
+                  ready:
+                    items:
+                      type: string
+                    type: array
+                  unready:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              readyReplicas:
+                description: ReadyReplicas is the number of ready replicas in the
+                  cluster
+                format: int32
+                type: integer
+              replicas:
+                description: Replicas is the number of desired replicas in the cluster
+                format: int32
+                type: integer
+              targetVersion:
+                description: TargetVersion is the version the cluster upgrading to.
+                  If the cluster is not upgrading, TargetVersion is empty.
+                type: string
+              versionHistory:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: false
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: PravegaCluster is the Schema for the pravegaclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSpec defines the desired state of PravegaCluster
+            properties:
+              authentication:
+                description: 'Authentication can be enabled for authorizing all communication
+                  from clients to controller and segment store See the following file
+                  for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  enabled:
+                    description: Enabled specifies whether or not authentication is
+                      enabled By default, authentication is not enabled
+                    type: boolean
+                  passwordAuthSecret:
+                    description: name of Secret containing Password based Authentication
+                      Parameters like username, password and acl optional - used only
+                      by PasswordAuthHandler for authentication
+                    type: string
+                type: object
+              bookkeeperUri:
+                description: BookkeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". comma delimited list of BK server
+                  URLs bookkeeper-bookie-0.bookkeeper-bookie-headless.default:3181,
+                  bookkeeper-bookie-1.bookkeeper-bookie-headless.default:3181, bookkeeper-bookie-2.bookkeeper-bookie-headless.default:3181
+                type: string
+              externalAccess:
+                description: ExternalAccess specifies whether or not to allow external
+                  access to clients and the service type to use to achieve it By default,
+                  external access is not enabled
+                properties:
+                  domainName:
+                    description: Domain Name to be used for External Access This value
+                      is ignored if External Access is disabled
+                    type: string
+                  enabled:
+                    description: Enabled specifies whether or not external access
+                      is enabled By default, external access is not enabled
+                    type: boolean
+                  type:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                type: object
+              pravega:
+                description: Pravega configuration
+                properties:
+                  cacheVolumeClaimTemplate:
+                    description: CacheVolumeClaimTemplate is the spec to describe
+                      PVC for the Pravega cache. This field is optional. If no PVC
+                      spec, stateful containers will use emptyDir as volume
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          type: string
+                        type: array
+                      dataSource:
+                        description: This field requires the VolumeSnapshotDataSource
+                          alpha feature gate to be enabled and currently VolumeSnapshot
+                          is the only supported data source. If the provisioner can
+                          support VolumeSnapshot data source, it will create a new
+                          volume and data will be restored to the volume at the same
+                          time. If the provisioner does not support VolumeSnapshot
+                          data source, volume will not be created and the failure
+                          will be reported as an event. In the future, we plan to
+                          support more data source types and the behavior of the provisioner
+                          may change.
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec. This is a beta feature.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                  controllerExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  controllerReplicas:
+                    description: ControllerReplicas defines the number of Controller
+                      replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  controllerResources:
+                    description: ControllerResources specifies the request and limit
+                      of resources that controller can have. ControllerResources includes
+                      CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  controllerServiceAccountName:
+                    description: ControllerServiceAccountName configures the service
+                      account used on controller instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  controllerSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                  controllerjvmOptions:
+                    description: ControllerJvmOptions is the JVM options for controller.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  debugLogging:
+                    description: DebugLogging indicates whether or not debug level
+                      logging is enabled. Defaults to false.
+                    type: boolean
+                  image:
+                    description: Image defines the Pravega Docker image to use. By
+                      default, "pravega/pravega" will be used.
+                    properties:
+                      pullPolicy:
+                        description: PullPolicy describes a policy for if/when to
+                          pull a container image
+                        type: string
+                      repository:
+                        type: string
+                    type: object
+                  longtermStorage:
+                    description: LongTermStorage is the configuration of Pravega's
+                      tier 2 storage. If no configuration is provided, it will assume
+                      that a PersistentVolumeClaim called "pravega-longterm" is present
+                      and it will use it as Tier 2
+                    properties:
+                      ecs:
+                        description: Ecs is used to configure a Dell EMC ECS system
+                          as a Tier 2 backend
+                        properties:
+                          bucket:
+                            type: string
+                          configUri:
+                            type: string
+                          credentials:
+                            type: string
+                          prefix:
+                            type: string
+                        type: object
+                      filesystem:
+                        description: FileSystem is used to configure a pre-created
+                          Persistent Volume Claim as Tier 2 backend. It is default
+                          Tier 2 mode.
+                        properties:
+                          persistentVolumeClaim:
+                            description: PersistentVolumeClaimVolumeSource references
+                              the user's PVC in the same namespace. This volume finds
+                              the bound PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
+                              is, essentially, a wrapper around another type of volume
+                              that is owned by someone else (the system).
+                            properties:
+                              claimName:
+                                description: 'ClaimName is the name of a PersistentVolumeClaim
+                                  in the same namespace as the pod using this volume.
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                                type: string
+                              readOnly:
+                                description: Will force the ReadOnly setting in VolumeMounts.
+                                  Default false.
+                                type: boolean
+                            required:
+                            - claimName
+                            type: object
+                        type: object
+                      hdfs:
+                        description: Hdfs is used to configure an HDFS system as a
+                          Tier 2 backend
+                        properties:
+                          replicationFactor:
+                            format: int32
+                            type: integer
+                          root:
+                            type: string
+                          uri:
+                            type: string
+                        type: object
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: 'Options is the Pravega configuration that is passed
+                      to the Pravega processes as JAVA_OPTS. See the following file
+                      for a complete list of options: https://github.com/pravega/pravega/blob/master/config/config.properties'
+                    type: object
+                  segmentStoreEnvVars:
+                    description: Provides the name of the configmap created by the
+                      user to provide additional key-value pairs that need to be configured
+                      into the ss pod as environmental variables
+                    type: string
+                  segmentStoreExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  segmentStoreExternalTrafficPolicy:
+                    description: SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy
+                      it can have cluster or local
+                    type: string
+                  segmentStoreJVMOptions:
+                    description: SegmentStoreJVMOptions is the JVM options for Segmentstore.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  segmentStoreLoadBalancerIP:
+                    description: Specifying this IP would ensure we use same IP address
+                      for all the ss services
+                    type: string
+                  segmentStoreReplicas:
+                    description: SegmentStoreReplicas defines the number of Segment
+                      Store replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  segmentStoreResources:
+                    description: SegmentStoreResources specifies the request and limit
+                      of resources that segmentStore can have. SegmentStoreResources
+                      includes CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  segmentStoreSecret:
+                    description: SegmentStoreSecret specifies whether or not any secret
+                      needs to be configured into the ss pod either as an environment
+                      variable or by mounting it to a volume
+                    properties:
+                      mountPath:
+                        description: Path to the volume where the secret will be mounted
+                          This value is considered only when the secret is provided
+                          If this value is provided, the secret is mounted to a Volume
+                          else the secret is exposed as an Environment Variable
+                        type: string
+                      secret:
+                        description: Secret specifies the name of Secret which needs
+                          to be configured
+                        type: string
+                    type: object
+                  segmentStoreServiceAccountName:
+                    description: SegmentStoreServiceAccountName configures the service
+                      account used on segment store instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  segmentStoreSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                type: object
+              tls:
+                description: 'TLS is the Pravega security configuration that is passed
+                  to the Pravega processes. See the following file for a complete
+                  list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  static:
+                    description: Static TLS means keys/certs are generated by the
+                      user and passed to an operator.
+                    properties:
+                      caBundle:
+                        type: string
+                      controllerSecret:
+                        type: string
+                      segmentStoreSecret:
+                        type: string
+                    type: object
+                type: object
+              version:
+                description: "Version is the expected version of the Pravega cluster.
+                  The pravega-operator will eventually make the Pravega cluster version
+                  equal to the expected version. \n The version must follow the [semver](
+                  http://semver.org) format, for example \"3.2.13\". Only Pravega
+                  released versions are supported: https://github.com/pravega/pravega/releases
+                  \n If version is not set, default is \"0.4.0\"."
+                type: string
+              zookeeperUri:
+                description: 'ZookeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". By default, the value "zookeeper-client:2181"
+                  is used, that corresponds to the default Zookeeper service created
+                  by the Pravega Zookkeeper operator available at: https://github.com/pravega/zookeeper-operator'
+                type: string
+            type: object
+          status:
+            description: ClusterStatus defines the observed state of PravegaCluster
+            properties:
+              conditions:
+                description: Conditions list all the applied conditions
+                items:
+                  description: ClusterCondition shows the current condition of a Pravega
+                    cluster. Comply with k8s API conventions
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of Pravega cluster condition.
+                      type: string
+                  type: object
+                type: array
+              currentReplicas:
+                description: CurrentReplicas is the number of current replicas in
+                  the cluster
+                format: int32
+                type: integer
+              currentVersion:
+                description: CurrentVersion is the current cluster version
+                type: string
+              members:
+                description: Members is the Pravega members in the cluster
+                properties:
+                  ready:
+                    items:
+                      type: string
+                    type: array
+                  unready:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              readyReplicas:
+                description: ReadyReplicas is the number of ready replicas in the
+                  cluster
+                format: int32
+                type: integer
+              replicas:
+                description: Replicas is the number of desired replicas in the cluster
+                format: int32
+                type: integer
+              targetVersion:
+                description: TargetVersion is the version the cluster upgrading to.
+                  If the cluster is not upgrading, TargetVersion is empty.
+                type: string
+              versionHistory:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: PravegaCluster is the Schema for the pravegaclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSpec defines the desired state of PravegaCluster
+            properties:
+              authentication:
+                description: 'Authentication can be enabled for authorizing all communication
+                  from clients to controller and segment store See the following file
+                  for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  enabled:
+                    description: Enabled specifies whether or not authentication is
+                      enabled By default, authentication is not enabled
+                    type: boolean
+                  passwordAuthSecret:
+                    description: name of Secret containing Password based Authentication
+                      Parameters like username, password and acl optional - used only
+                      by PasswordAuthHandler for authentication
+                    type: string
+                type: object
+              bookkeeperUri:
+                description: BookkeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". comma delimited list of BK server
+                  URLs bookkeeper-bookie-0.bookkeeper-bookie-headless.default:3181,
+                  bookkeeper-bookie-1.bookkeeper-bookie-headless.default:3181, bookkeeper-bookie-2.bookkeeper-bookie-headless.default:3181
+                type: string
+              externalAccess:
+                description: ExternalAccess specifies whether or not to allow external
+                  access to clients and the service type to use to achieve it By default,
+                  external access is not enabled
+                properties:
+                  domainName:
+                    description: Domain Name to be used for External Access This value
+                      is ignored if External Access is disabled
+                    type: string
+                  enabled:
+                    description: Enabled specifies whether or not external access
+                      is enabled By default, external access is not enabled
+                    type: boolean
+                  type:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                type: object
+              pravega:
+                description: Pravega configuration
+                properties:
+                  cacheVolumeClaimTemplate:
+                    description: CacheVolumeClaimTemplate is the spec to describe
+                      PVC for the Pravega cache. This field is optional. If no PVC
+                      spec, stateful containers will use emptyDir as volume
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          enum:
+                            - ReadWriteOnce
+                            - ReadOnlyMany
+                            - ReadWriteMany
+                          type: string
+                        type: array
+                      dataSource:
+                        description: This field requires the VolumeSnapshotDataSource
+                          alpha feature gate to be enabled and currently VolumeSnapshot
+                          is the only supported data source. If the provisioner can
+                          support VolumeSnapshot data source, it will create a new
+                          volume and data will be restored to the volume at the same
+                          time. If the provisioner does not support VolumeSnapshot
+                          data source, volume will not be created and the failure
+                          will be reported as an event. In the future, we plan to
+                          support more data source types and the behavior of the provisioner
+                          may change.
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  enum:
+                                    - In
+                                    - NotIn
+                                    - Exists
+                                    - DoesNotExist
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec. This is a beta feature.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                  controllerExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  controllerReplicas:
+                    description: ControllerReplicas defines the number of Controller
+                      replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  controllerResources:
+                    description: ControllerResources specifies the request and limit
+                      of resources that controller can have. ControllerResources includes
+                      CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  controllerServiceAccountName:
+                    description: ControllerServiceAccountName configures the service
+                      account used on controller instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  controllerSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                  controllerjvmOptions:
+                    description: ControllerJvmOptions is the JVM options for controller.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  debugLogging:
+                    description: DebugLogging indicates whether or not debug level
+                      logging is enabled. Defaults to false.
+                    type: boolean
+                  image:
+                    description: Image defines the Pravega Docker image to use. By
+                      default, "pravega/pravega" will be used.
+                    properties:
+                      pullPolicy:
+                        description: PullPolicy describes a policy for if/when to
+                          pull a container image
+                        enum:
+                          - Always
+                          - Never
+                          - IfNotPresent
+                        type: string
+                      repository:
+                        type: string
+                    type: object
+                  longtermStorage:
+                    description: LongTermStorage is the configuration of Pravega's
+                      tier 2 storage. If no configuration is provided, it will assume
+                      that a PersistentVolumeClaim called "pravega-longterm" is present
+                      and it will use it as Tier 2
+                    properties:
+                      ecs:
+                        description: Ecs is used to configure a Dell EMC ECS system
+                          as a Tier 2 backend
+                        properties:
+                          bucket:
+                            type: string
+                          configUri:
+                            type: string
+                          credentials:
+                            type: string
+                          prefix:
+                            type: string
+                        type: object
+                      filesystem:
+                        description: FileSystem is used to configure a pre-created
+                          Persistent Volume Claim as Tier 2 backend. It is default
+                          Tier 2 mode.
+                        properties:
+                          persistentVolumeClaim:
+                            description: PersistentVolumeClaimVolumeSource references
+                              the user's PVC in the same namespace. This volume finds
+                              the bound PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
+                              is, essentially, a wrapper around another type of volume
+                              that is owned by someone else (the system).
+                            properties:
+                              claimName:
+                                description: 'ClaimName is the name of a PersistentVolumeClaim
+                                  in the same namespace as the pod using this volume.
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                                type: string
+                              readOnly:
+                                description: Will force the ReadOnly setting in VolumeMounts.
+                                  Default false.
+                                type: boolean
+                            required:
+                            - claimName
+                            type: object
+                        type: object
+                      hdfs:
+                        description: Hdfs is used to configure an HDFS system as a
+                          Tier 2 backend
+                        properties:
+                          replicationFactor:
+                            format: int32
+                            type: integer
+                          root:
+                            type: string
+                          uri:
+                            type: string
+                        type: object
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: 'Options is the Pravega configuration that is passed
+                      to the Pravega processes as JAVA_OPTS. See the following file
+                      for a complete list of options: https://github.com/pravega/pravega/blob/master/config/config.properties'
+                    type: object
+                  segmentStoreEnvVars:
+                    description: Provides the name of the configmap created by the
+                      user to provide additional key-value pairs that need to be configured
+                      into the ss pod as environmental variables
+                    type: string
+                  segmentStoreExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    enum:
+                      - ClusterIP
+                      - NodePort
+                      - LoadBalancer
+                      - ExternalName
+                    type: string
+                  segmentStoreExternalTrafficPolicy:
+                    description: SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy
+                      it can have cluster or local
+                    enum:
+                      - Local
+                      - Cluster
+                    type: string
+                  segmentStoreJVMOptions:
+                    description: SegmentStoreJVMOptions is the JVM options for Segmentstore.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  segmentStoreLoadBalancerIP:
+                    description: Specifying this IP would ensure we use same IP address
+                      for all the ss services
+                    type: string
+                  segmentStoreReplicas:
+                    description: SegmentStoreReplicas defines the number of Segment
+                      Store replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  segmentStoreResources:
+                    description: SegmentStoreResources specifies the request and limit
+                      of resources that segmentStore can have. SegmentStoreResources
+                      includes CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  segmentStoreSecret:
+                    description: SegmentStoreSecret specifies whether or not any secret
+                      needs to be configured into the ss pod either as an environment
+                      variable or by mounting it to a volume
+                    properties:
+                      mountPath:
+                        description: Path to the volume where the secret will be mounted
+                          This value is considered only when the secret is provided
+                          If this value is provided, the secret is mounted to a Volume
+                          else the secret is exposed as an Environment Variable
+                        type: string
+                      secret:
+                        description: Secret specifies the name of Secret which needs
+                          to be configured
+                        type: string
+                    type: object
+                  segmentStoreServiceAccountName:
+                    description: SegmentStoreServiceAccountName configures the service
+                      account used on segment store instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  segmentStoreSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                type: object
+              tls:
+                description: 'TLS is the Pravega security configuration that is passed
+                  to the Pravega processes. See the following file for a complete
+                  list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  static:
+                    description: Static TLS means keys/certs are generated by the
+                      user and passed to an operator.
+                    properties:
+                      caBundle:
+                        type: string
+                      controllerSecret:
+                        type: string
+                      segmentStoreSecret:
+                        type: string
+                    type: object
+                type: object
+              version:
+                description: "Version is the expected version of the Pravega cluster.
+                  The pravega-operator will eventually make the Pravega cluster version
+                  equal to the expected version. \n The version must follow the [semver](
+                  http://semver.org) format, for example \"3.2.13\". Only Pravega
+                  released versions are supported: https://github.com/pravega/pravega/releases
+                  \n If version is not set, default is \"0.4.0\"."
+                type: string
+              zookeeperUri:
+                description: 'ZookeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". By default, the value "zookeeper-client:2181"
+                  is used, that corresponds to the default Zookeeper service created
+                  by the Pravega Zookkeeper operator available at: https://github.com/pravega/zookeeper-operator'
+                type: string
+            type: object
+          status:
+            description: ClusterStatus defines the observed state of PravegaCluster
+            properties:
+              conditions:
+                description: Conditions list all the applied conditions
+                items:
+                  description: ClusterCondition shows the current condition of a Pravega
+                    cluster. Comply with k8s API conventions
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of Pravega cluster condition.
+                      type: string
+                  type: object
+                type: array
+              currentReplicas:
+                description: CurrentReplicas is the number of current replicas in
+                  the cluster
+                format: int32
+                type: integer
+              currentVersion:
+                description: CurrentVersion is the current cluster version
+                type: string
+              members:
+                description: Members is the Pravega members in the cluster
+                properties:
+                  ready:
+                    items:
+                      type: string
+                    type: array
+                  unready:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              readyReplicas:
+                description: ReadyReplicas is the number of ready replicas in the
+                  cluster
+                format: int32
+                type: integer
+              replicas:
+                description: Replicas is the number of desired replicas in the cluster
+                format: int32
+                type: integer
+              targetVersion:
+                description: TargetVersion is the version the cluster upgrading to.
+                  If the cluster is not upgrading, TargetVersion is empty.
+                type: string
+              versionHistory:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: PravegaCluster is the Schema for the pravegaclusters API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterSpec defines the desired state of PravegaCluster
+            properties:
+              authentication:
+                description: 'Authentication can be enabled for authorizing all communication
+                  from clients to controller and segment store See the following file
+                  for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  enabled:
+                    description: Enabled specifies whether or not authentication is
+                      enabled By default, authentication is not enabled
+                    type: boolean
+                  passwordAuthSecret:
+                    description: name of Secret containing Password based Authentication
+                      Parameters like username, password and acl optional - used only
+                      by PasswordAuthHandler for authentication
+                    type: string
+                type: object
+              bookkeeperUri:
+                description: BookkeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". comma delimited list of BK server
+                  URLs bookkeeper-bookie-0.bookkeeper-bookie-headless.default:3181,
+                  bookkeeper-bookie-1.bookkeeper-bookie-headless.default:3181, bookkeeper-bookie-2.bookkeeper-bookie-headless.default:3181
+                type: string
+              externalAccess:
+                description: ExternalAccess specifies whether or not to allow external
+                  access to clients and the service type to use to achieve it By default,
+                  external access is not enabled
+                properties:
+                  domainName:
+                    description: Domain Name to be used for External Access This value
+                      is ignored if External Access is disabled
+                    type: string
+                  enabled:
+                    description: Enabled specifies whether or not external access
+                      is enabled By default, external access is not enabled
+                    type: boolean
+                  type:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    enum:
+                      - ClusterIP
+                      - NodePort
+                      - LoadBalancer
+                      - ExternalName
+                    type: string
+                type: object
+              pravega:
+                description: Pravega configuration
+                properties:
+                  cacheVolumeClaimTemplate:
+                    description: CacheVolumeClaimTemplate is the spec to describe
+                      PVC for the Pravega cache. This field is optional. If no PVC
+                      spec, stateful containers will use emptyDir as volume
+                    properties:
+                      accessModes:
+                        description: 'AccessModes contains the desired access modes
+                          the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
+                        items:
+                          enum:
+                            - ReadWriteOnce
+                            - ReadOnlyMany
+                            - ReadWriteMany
+                          type: string
+                        type: array
+                      dataSource:
+                        description: This field requires the VolumeSnapshotDataSource
+                          alpha feature gate to be enabled and currently VolumeSnapshot
+                          is the only supported data source. If the provisioner can
+                          support VolumeSnapshot data source, it will create a new
+                          volume and data will be restored to the volume at the same
+                          time. If the provisioner does not support VolumeSnapshot
+                          data source, volume will not be created and the failure
+                          will be reported as an event. In the future, we plan to
+                          support more data source types and the behavior of the provisioner
+                          may change.
+                        properties:
+                          apiGroup:
+                            description: APIGroup is the group for the resource being
+                              referenced. If APIGroup is not specified, the specified
+                              Kind must be in the core API group. For any other third-party
+                              types, APIGroup is required.
+                            type: string
+                          kind:
+                            description: Kind is the type of resource being referenced
+                            type: string
+                          name:
+                            description: Name is the name of resource being referenced
+                            type: string
+                        required:
+                        - kind
+                        - name
+                        type: object
+                      resources:
+                        description: 'Resources represents the minimum resources the
+                          volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
+                      selector:
+                        description: A label query over volumes to consider for binding.
+                        properties:
+                          matchExpressions:
+                            description: matchExpressions is a list of label selector
+                              requirements. The requirements are ANDed.
+                            items:
+                              description: A label selector requirement is a selector
+                                that contains values, a key, and an operator that
+                                relates the key and values.
+                              properties:
+                                key:
+                                  description: key is the label key that the selector
+                                    applies to.
+                                  type: string
+                                operator:
+                                  description: operator represents a key's relationship
+                                    to a set of values. Valid operators are In, NotIn,
+                                    Exists and DoesNotExist.
+                                  enum:
+                                    - In
+                                    - NotIn
+                                    - Exists
+                                    - DoesNotExist
+                                  type: string
+                                values:
+                                  description: values is an array of string values.
+                                    If the operator is In or NotIn, the values array
+                                    must be non-empty. If the operator is Exists or
+                                    DoesNotExist, the values array must be empty.
+                                    This array is replaced during a strategic merge
+                                    patch.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              - operator
+                              type: object
+                            type: array
+                          matchLabels:
+                            additionalProperties:
+                              type: string
+                            description: matchLabels is a map of {key,value} pairs.
+                              A single {key,value} in the matchLabels map is equivalent
+                              to an element of matchExpressions, whose key field is
+                              "key", the operator is "In", and the values array contains
+                              only "value". The requirements are ANDed.
+                            type: object
+                        type: object
+                      storageClassName:
+                        description: 'Name of the StorageClass required by the claim.
+                          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1'
+                        type: string
+                      volumeMode:
+                        description: volumeMode defines what type of volume is required
+                          by the claim. Value of Filesystem is implied when not included
+                          in claim spec. This is a beta feature.
+                        type: string
+                      volumeName:
+                        description: VolumeName is the binding reference to the PersistentVolume
+                          backing this claim.
+                        type: string
+                    type: object
+                  controllerExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  controllerReplicas:
+                    description: ControllerReplicas defines the number of Controller
+                      replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  controllerResources:
+                    description: ControllerResources specifies the request and limit
+                      of resources that controller can have. ControllerResources includes
+                      CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  controllerServiceAccountName:
+                    description: ControllerServiceAccountName configures the service
+                      account used on controller instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  controllerSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                  controllerjvmOptions:
+                    description: ControllerJvmOptions is the JVM options for controller.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  debugLogging:
+                    description: DebugLogging indicates whether or not debug level
+                      logging is enabled. Defaults to false.
+                    type: boolean
+                  image:
+                    description: Image defines the Pravega Docker image to use. By
+                      default, "pravega/pravega" will be used.
+                    properties:
+                      pullPolicy:
+                        description: PullPolicy describes a policy for if/when to
+                          pull a container image
+                        enum:
+                          - Always
+                          - Never
+                          - IfNotPresent
+                        type: string
+                      repository:
+                        type: string
+                    type: object
+                  longtermStorage:
+                    description: LongTermStorage is the configuration of Pravega's
+                      tier 2 storage. If no configuration is provided, it will assume
+                      that a PersistentVolumeClaim called "pravega-longterm" is present
+                      and it will use it as Tier 2
+                    properties:
+                      ecs:
+                        description: Ecs is used to configure a Dell EMC ECS system
+                          as a Tier 2 backend
+                        properties:
+                          bucket:
+                            type: string
+                          configUri:
+                            type: string
+                          credentials:
+                            type: string
+                          prefix:
+                            type: string
+                        type: object
+                      filesystem:
+                        description: FileSystem is used to configure a pre-created
+                          Persistent Volume Claim as Tier 2 backend. It is default
+                          Tier 2 mode.
+                        properties:
+                          persistentVolumeClaim:
+                            description: PersistentVolumeClaimVolumeSource references
+                              the user's PVC in the same namespace. This volume finds
+                              the bound PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
+                              is, essentially, a wrapper around another type of volume
+                              that is owned by someone else (the system).
+                            properties:
+                              claimName:
+                                description: 'ClaimName is the name of a PersistentVolumeClaim
+                                  in the same namespace as the pod using this volume.
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims'
+                                type: string
+                              readOnly:
+                                description: Will force the ReadOnly setting in VolumeMounts.
+                                  Default false.
+                                type: boolean
+                            required:
+                            - claimName
+                            type: object
+                        type: object
+                      hdfs:
+                        description: Hdfs is used to configure an HDFS system as a
+                          Tier 2 backend
+                        properties:
+                          replicationFactor:
+                            format: int32
+                            type: integer
+                          root:
+                            type: string
+                          uri:
+                            type: string
+                        type: object
+                    type: object
+                  options:
+                    additionalProperties:
+                      type: string
+                    description: 'Options is the Pravega configuration that is passed
+                      to the Pravega processes as JAVA_OPTS. See the following file
+                      for a complete list of options: https://github.com/pravega/pravega/blob/master/config/config.properties'
+                    type: object
+                  segmentStoreEnvVars:
+                    description: Provides the name of the configmap created by the
+                      user to provide additional key-value pairs that need to be configured
+                      into the ss pod as environmental variables
+                    type: string
+                  segmentStoreExtServiceType:
+                    description: Type specifies the service type to achieve external
+                      access. Options are "LoadBalancer" and "NodePort". By default,
+                      if external access is enabled, it will use "LoadBalancer"
+                    type: string
+                  segmentStoreExternalTrafficPolicy:
+                    description: SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy
+                      it can have cluster or local
+                    type: string
+                  segmentStoreJVMOptions:
+                    description: SegmentStoreJVMOptions is the JVM options for Segmentstore.
+                      It will be passed to the JVM for performance tuning. If this
+                      field is not specified, the operator will use a set of default
+                      options that is good enough for general deployment.
+                    items:
+                      type: string
+                    type: array
+                  segmentStoreLoadBalancerIP:
+                    description: Specifying this IP would ensure we use same IP address
+                      for all the ss services
+                    type: string
+                  segmentStoreReplicas:
+                    description: SegmentStoreReplicas defines the number of Segment
+                      Store replicas. Defaults to 1.
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  segmentStoreResources:
+                    description: SegmentStoreResources specifies the request and limit
+                      of resources that segmentStore can have. SegmentStoreResources
+                      includes CPU and memory resources
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute
+                          resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute
+                          resources required. If Requests is omitted for a container,
+                          it defaults to Limits if that is explicitly specified, otherwise
+                          to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                  segmentStoreSecret:
+                    description: SegmentStoreSecret specifies whether or not any secret
+                      needs to be configured into the ss pod either as an environment
+                      variable or by mounting it to a volume
+                    properties:
+                      mountPath:
+                        description: Path to the volume where the secret will be mounted
+                          This value is considered only when the secret is provided
+                          If this value is provided, the secret is mounted to a Volume
+                          else the secret is exposed as an Environment Variable
+                        type: string
+                      secret:
+                        description: Secret specifies the name of Secret which needs
+                          to be configured
+                        type: string
+                    type: object
+                  segmentStoreServiceAccountName:
+                    description: SegmentStoreServiceAccountName configures the service
+                      account used on segment store instances. If not specified, Kubernetes
+                      will automatically assign the default service account in the
+                      namespace
+                    type: string
+                  segmentStoreSvcAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the external service
+                    type: object
+                type: object
+              tls:
+                description: 'TLS is the Pravega security configuration that is passed
+                  to the Pravega processes. See the following file for a complete
+                  list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+                properties:
+                  static:
+                    description: Static TLS means keys/certs are generated by the
+                      user and passed to an operator.
+                    properties:
+                      caBundle:
+                        type: string
+                      controllerSecret:
+                        type: string
+                      segmentStoreSecret:
+                        type: string
+                    type: object
+                type: object
+              version:
+                description: "Version is the expected version of the Pravega cluster.
+                  The pravega-operator will eventually make the Pravega cluster version
+                  equal to the expected version. \n The version must follow the [semver](
+                  http://semver.org) format, for example \"3.2.13\". Only Pravega
+                  released versions are supported: https://github.com/pravega/pravega/releases
+                  \n If version is not set, default is \"0.4.0\"."
+                type: string
+              zookeeperUri:
+                description: 'ZookeeperUri specifies the hostname/IP address and port
+                  in the format "hostname:port". By default, the value "zookeeper-client:2181"
+                  is used, that corresponds to the default Zookeeper service created
+                  by the Pravega Zookkeeper operator available at: https://github.com/pravega/zookeeper-operator'
+                type: string
+            type: object
+          status:
+            description: ClusterStatus defines the observed state of PravegaCluster
+            properties:
+              conditions:
+                description: Conditions list all the applied conditions
+                items:
+                  description: ClusterCondition shows the current condition of a Pravega
+                    cluster. Comply with k8s API conventions
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of Pravega cluster condition.
+                      type: string
+                  type: object
+                type: array
+              currentReplicas:
+                description: CurrentReplicas is the number of current replicas in
+                  the cluster
+                format: int32
+                type: integer
+              currentVersion:
+                description: CurrentVersion is the current cluster version
+                type: string
+              members:
+                description: Members is the Pravega members in the cluster
+                properties:
+                  ready:
+                    items:
+                      type: string
+                    nullable: true
+                    type: array
+                  unready:
+                    items:
+                      type: string
+                    nullable: true
+                    type: array
+                type: object
+              readyReplicas:
+                description: ReadyReplicas is the number of ready replicas in the
+                  cluster
+                format: int32
+                type: integer
+              replicas:
+                description: Replicas is the number of desired replicas in the cluster
+                format: int32
+                type: integer
+              targetVersion:
+                description: TargetVersion is the version the cluster upgrading to.
+                  If the cluster is not upgrading, TargetVersion is empty.
+                type: string
+              versionHistory:
+                items:
+                  type: string
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
