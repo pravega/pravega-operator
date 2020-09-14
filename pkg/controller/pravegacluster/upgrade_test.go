@@ -752,7 +752,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
 
-				It("should set rollback condition reason to UpdatingController and message to 0", func() {
+				It("should set rollback condition reason to UpdatingSegmentStore and message to 0", func() {
 					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1beta1.ClusterConditionRollback)
 					Ω(rollbackCondition.Reason).Should(Equal(pravegav1beta1.UpdatingSegmentstoreReason))
 					Ω(rollbackCondition.Message).Should(Equal("0"))
@@ -770,7 +770,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
 
-				It("should set rollback condition reason to UpdatingCOntroller and message to 0", func() {
+				It("should set rollback condition reason to UpdatingController and message to 0", func() {
 					_, rollbackCondition := foundPravega.Status.GetClusterCondition(pravegav1beta1.ClusterConditionRollback)
 					Ω(rollbackCondition.Reason).Should(Equal(pravegav1beta1.UpdatingControllerReason))
 					Ω(rollbackCondition.Message).Should(Equal("0"))
