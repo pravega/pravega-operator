@@ -69,13 +69,13 @@ const (
 type PravegaSpec struct {
 	// ControllerReplicas defines the number of Controller replicas.
 	// Defaults to 1.
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	ControllerReplicas int32 `json:"controllerReplicas"`
 
 	// SegmentStoreReplicas defines the number of Segment Store replicas.
 	// Defaults to 1.
-	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Minimum=0
 	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
