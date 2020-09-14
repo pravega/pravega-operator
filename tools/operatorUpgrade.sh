@@ -5,7 +5,7 @@ echo "Running pre-upgrade script for upgrading pravega operator from version 0.4
 
 if [ "$#" -ne 3 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo/image-tag>"
+	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo:image-tag>"
 	exit 1
 fi
 
@@ -25,7 +25,7 @@ local temp_string_for_dns=pravega-webhook-svc.${namespace}
 
 sed -i "s/pravega-webhook-svc.default/${temp_string_for_dns}"/ ./manifest_files/secret.yaml
 
-#Installing the secrets 
+#Installing the secrets
 kubectl apply -f  ./manifest_files/secret.yaml
 
 #reverting the changes back in the secret.yaml file
@@ -45,9 +45,9 @@ kubectl apply -f  ./manifest_files/version_map.yaml
 
 cabundle=`kubectl get ValidatingWebhookConfiguration pravega-webhook-config --namespace ${namespace} --output yaml | grep caBundle: | awk '{print $2}'`
 
-sed -i "s/caBundle.*/caBundle: $cabundle "/ ./manifest_files/crd.yaml
+sed -i "/webhookClientConfig:.*/{n;s/caBundle.*/caBundle: $cabundle/}" ./manifest_files/crd.yaml
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
+sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml
@@ -70,4 +70,4 @@ kubectl patch deployment $op_name --namespace ${namespace} --type merge --patch 
 
 }
 
-UpgradingToPoperator $1 $2 $3 
+UpgradingToPoperator $1 $2 $3
