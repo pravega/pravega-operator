@@ -59,8 +59,12 @@ type PravegaClusterList struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:shortName=pravega
-
+// +kubebuilder:resource:shortName=pk
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.currentVersion`,description="The current pravega version"
+// +kubebuilder:printcolumn:name="Desired Version",type=string,JSONPath=`.spec.version`,description="The desired pravega version"
+// +kubebuilder:printcolumn:name="Desired Members",type=integer,JSONPath=`.status.replicas`,description="The number of desired pravega members"
+// +kubebuilder:printcolumn:name="Ready Members",type=integer,JSONPath=`.status.readyReplicas`,description="The number of ready pravega members"
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // PravegaCluster is the Schema for the pravegaclusters API
 type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`

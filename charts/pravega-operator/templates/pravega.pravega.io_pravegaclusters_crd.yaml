@@ -4,6 +4,26 @@ kind: CustomResourceDefinition
 metadata:
   name: pravegaclusters.pravega.pravega.io
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .status.currentVersion
+    description: The current pravega version
+    name: Version
+    type: string
+  - JSONPath: .spec.version
+    description: The desired pravega version
+    name: Desired Version
+    type: string
+  - JSONPath: .status.replicas
+    description: The number of desired pravega members
+    name: Desired Members
+    type: integer
+  - JSONPath: .status.readyReplicas
+    description: The number of ready pravega members
+    name: Ready Members
+    type: integer
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: pravega.pravega.io
   names:
     kind: PravegaCluster
@@ -86,10 +106,10 @@ spec:
                       access. Options are "LoadBalancer" and "NodePort". By default,
                       if external access is enabled, it will use "LoadBalancer"
                     enum:
-                      - ClusterIP
-                      - NodePort
-                      - LoadBalancer
-                      - ExternalName
+                    - ClusterIP
+                    - NodePort
+                    - LoadBalancer
+                    - ExternalName
                     type: string
                 type: object
               pravega:
@@ -105,9 +125,9 @@ spec:
                           the volume should have. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1'
                         items:
                           enum:
-                            - ReadWriteOnce
-                            - ReadOnlyMany
-                            - ReadWriteMany
+                          - ReadWriteOnce
+                          - ReadOnlyMany
+                          - ReadWriteMany
                           type: string
                         type: array
                       dataSource:
@@ -186,10 +206,10 @@ spec:
                                     to a set of values. Valid operators are In, NotIn,
                                     Exists and DoesNotExist.
                                   enum:
-                                    - In
-                                    - NotIn
-                                    - Exists
-                                    - DoesNotExist
+                                  - In
+                                  - NotIn
+                                  - Exists
+                                  - DoesNotExist
                                   type: string
                                 values:
                                   description: values is an array of string values.
@@ -225,8 +245,8 @@ spec:
                           by the claim. Value of Filesystem is implied when not included
                           in claim spec. This is a beta feature.
                         enum:
-                          - Block
-                          - Filesystem
+                        - Block
+                        - Filesystem
                         type: string
                       volumeName:
                         description: VolumeName is the binding reference to the PersistentVolume
@@ -303,9 +323,9 @@ spec:
                         description: PullPolicy describes a policy for if/when to
                           pull a container image
                         enum:
-                          - Always
-                          - Never
-                          - IfNotPresent
+                        - Always
+                        - Never
+                        - IfNotPresent
                         type: string
                       repository:
                         type: string
@@ -822,8 +842,8 @@ spec:
                               required by the claim. Value of Filesystem is implied
                               when not included in claim spec. This is a beta feature.
                             enum:
-                              - Block
-                              - Filesystem
+                            - Block
+                            - Filesystem
                             type: string
                           volumeName:
                             description: VolumeName is the binding reference to the
@@ -953,8 +973,8 @@ spec:
                               required by the claim. Value of Filesystem is implied
                               when not included in claim spec. This is a beta feature.
                             enum:
-                              - Block
-                              - Filesystem
+                            - Block
+                            - Filesystem
                             type: string
                           volumeName:
                             description: VolumeName is the binding reference to the
@@ -1084,8 +1104,8 @@ spec:
                               required by the claim. Value of Filesystem is implied
                               when not included in claim spec. This is a beta feature.
                             enum:
-                              - Block
-                              - Filesystem
+                            - Block
+                            - Filesystem
                             type: string
                           volumeName:
                             description: VolumeName is the binding reference to the
@@ -1237,8 +1257,8 @@ spec:
                           by the claim. Value of Filesystem is implied when not included
                           in claim spec. This is a beta feature.
                         enum:
-                          - Block
-                          - Filesystem
+                        - Block
+                        - Filesystem
                         type: string
                       volumeName:
                         description: VolumeName is the binding reference to the PersistentVolume
