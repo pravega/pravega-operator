@@ -212,7 +212,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1beta1.Praveg
 		},
 	}
 
-	if p.Status.IsClusterInRollbackState() {
+	if p.Status.IsClusterInRollbackState() && p.Spec.Pravega.SegmentStoreReplicas > 1 {
 		startIndex := len(componentSyncFuncs) - 1
 		// update components in reverse order
 		for i := startIndex; i >= 0; i-- {
