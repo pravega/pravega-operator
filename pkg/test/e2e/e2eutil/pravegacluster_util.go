@@ -574,8 +574,8 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 
 func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("Checking External Access for pravega cluster: %s", p.Name)
-	t.Logf("Prabhaker %s", fmt.Sprintf("%s", p.Spec.Pravega.SegmentStoreExternalServiceType))
-	if strings.EqualFold(fmt.Sprintf("%s", p.Spec.Pravega.SegmentStoreExternalServiceType), "LoadBalancer") == false {
+	t.Logf("Prabhaker %s", fmt.Sprintf("%v", p.Spec.Pravega.SegmentStoreExternalServiceType))
+	if strings.EqualFold(fmt.Sprintf("%v", p.Spec.Pravega.SegmentStoreExternalServiceType), "LoadBalancer") == false {
 		return fmt.Errorf("External Access is not enabled")
 	}
 	t.Logf("pravega cluster External Acess Validated: %s", p.Name)
