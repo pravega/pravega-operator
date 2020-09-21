@@ -12,6 +12,7 @@ package e2e
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
@@ -42,6 +43,8 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 
 	pravega, err := pravega_e2eutil.CreatePravegaClusterForExternalAccess(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
+
+	time.Sleep(2 * time.Minute)
 
 	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
