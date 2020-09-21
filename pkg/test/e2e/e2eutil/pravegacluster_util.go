@@ -575,12 +575,12 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("Checking External Access for pravega cluster: %s", p.Name)
 
-	pravega := &api.PravegaCluster{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	service := &corev1.ServiceType{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: "pravega-pravega-segment-store-0" }, service)
 	if err != nil {
-		return fmt.Errorf("failed to obtain created CR: %v", err)
+		return fmt.Errorf("failed to get service: %v", err)
 	}
-	t.Logf("prabhaker %v", fmt.Sprintf("%v", pravega.Spec.Pravega.SegmentStoreExternalServiceType))
+	t.Logf("prabhaker %v", fmt.Sprintf("%v", service))
 	if strings.EqualFold(fmt.Sprintf("%v", pravega.Spec.Pravega.SegmentStoreExternalServiceType), "LoadBalancer") == false {
 		return fmt.Errorf("External Access is not enabled")
 	}
