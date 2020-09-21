@@ -48,7 +48,7 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
+	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
