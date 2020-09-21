@@ -19,14 +19,23 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
 To install the chart with the release name `my-release`:
 
 ```
-$ helm install my-release pravega
+$ helm repo add pravega https://charts.pravega.io
+$ helm repo update
+$ helm install my-release pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
+where:
+- **[VERSION]** can be any stable release version for pravega from 0.5.0 onwards.
+- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
+- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
+- **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name (`pravega-tier2` if you created the PVC using the manifest provided).
 
 The command deploys pravega on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
+>Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk charts should be used instead of the pravega charts
+
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the pravega cluster `my-release`:
 
 ```
 $ helm uninstall my-release

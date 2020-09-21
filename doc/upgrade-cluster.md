@@ -22,8 +22,8 @@ Your Pravega cluster should be in a healthy state. You can check your cluster he
 
 ```
 $ kubectl get PravegaCluster
-NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-pravega   0.4.0     7                 7               11m
+NAME          VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+bar-pravega   0.4.0     7                 7               11m
 ```
 
 ## Valid Upgrade Paths
@@ -34,11 +34,11 @@ To understand the valid upgrade paths for a pravega cluster, refer to the [versi
 
 ### Upgrading via Helm
 
-The upgrade can be triggered via helm using the following command
+The upgrade of the pravega cluster with release name `bar` from a version `x` to `y` can be triggered via helm using the following command
 ```
-$ helm upgrade <pravega cluster release name> <location of modified charts> --reuse-values --timeout 600s
+$ helm upgrade bar pravega/pravega --version=y --set version=y --reuse-values --timeout 600s
 ```
-By specifying the `--reuse-values` option, the values of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new values of these parameters.
+Note: By specifying the `--reuse-values` option, the values of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new values of these parameters. Also, by skipping the `reuse-values` flag, the values of all parameters are reset to their default values specified in the charts published for version `y`.
 
 ### Upgrading manually
 
@@ -146,16 +146,16 @@ You can monitor your upgrade process by listing the Pravega clusters. If a desir
 
 ```
 $ kubectl get PravegaCluster
-NAME      VERSION   DESIRED VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-pravega   0.4.0     0.5.0             5                 4               1h
+NAME          VERSION   DESIRED VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+bar-pravega   0.4.0     0.5.0             5                 4               1h
 ```
 
 When the upgrade process has finished, the version will be updated.
 
 ```
 $ kubectl get PravegaCluster
-NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-pravega   0.5.0     5                 5               1h
+NAME          VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+bar-pravega   0.5.0     5                 5               1h
 ```
 
 The command `kubectl describe` can be used to track progress of the upgrade.
@@ -196,7 +196,7 @@ Status:
     Type:                  PodsReady
     Last Transition Time:  2019-04-01T19:43:08+02:00
     Last Update Time:      2019-04-01T19:43:08+02:00
-    Message:               failed to sync segmentstore version. pod pravega-pravega-segmentstore-0 is restarting
+    Message:               failed to sync segmentstore version. pod bar-pravega-pravega-segmentstore-0 is restarting
     Reason:                UpgradeFailed
     Status:                True
     Type:                  Error
@@ -204,12 +204,12 @@ Status:
   Current Version:         0.4.0
   Members:
     Ready:
-      pravega-pravega-controller-64ff87fc49-kqp9k
-      pravega-pravega-segmentstore-1
-      pravega-pravega-segmentstore-2
-      pravega-pravega-segmentstore-3
+      bar-pravega-pravega-controller-64ff87fc49-kqp9k
+      bar-pravega-pravega-segmentstore-1
+      bar-pravega-pravega-segmentstore-2
+      bar-pravega-pravega-segmentstore-3
     Unready:
-      pravega-pravega-segmentstore-0
+      bar-pravega-pravega-segmentstore-0
   Ready Replicas:  4
   Replicas:        5
 ```
@@ -219,16 +219,15 @@ You can also find useful information at the operator logs.
 ```
 ...
 INFO[5884] syncing cluster version from 0.4.0 to 0.5.0-1
-INFO[5885] Reconciling PravegaCluster default/pravega
-INFO[5886] updating statefulset (pravega-pravega-segmentstore) template image to 'adrianmo/pravega:0.5.0-1'
-INFO[5896] Reconciling PravegaCluster default/pravega
-INFO[5897] statefulset (pravega-bookie) status: 0 updated, 4 ready, 4 target
-INFO[5897] upgrading pod: pravega-pravega-segmentstore-0
-INFO[5899] Reconciling PravegaCluster default/pravega
-INFO[5900] statefulset (pravega-pravega-segmentstore) status: 1 updated, 3 ready, 4 target
-INFO[5929] Reconciling PravegaCluster default/pravega
-INFO[5930] statefulset (pravega-pravega-segmentstore) status: 1 updated, 3 ready, 4 target
-INFO[5930] error syncing cluster version, upgrade failed. failed to sync segmentstore version. pod pravega-pravega-segmentstore-0 is restarting
+INFO[5885] Reconciling PravegaCluster default/bar-pravega
+INFO[5886] updating statefulset (bar-pravega-pravega-segmentstore) template image to 'pravega/pravega:0.5.0-1'
+INFO[5896] Reconciling PravegaCluster default/bar-pravega
+INFO[5897] upgrading pod: bar-pravega-pravega-segmentstore-0
+INFO[5899] Reconciling PravegaCluster default/bar-pravega
+INFO[5900] statefulset (bar-pravega-pravega-segmentstore) status: 1 updated, 3 ready, 4 target
+INFO[5929] Reconciling PravegaCluster default/bar-pravega
+INFO[5930] statefulset (bar-pravega-pravega-segmentstore) status: 1 updated, 3 ready, 4 target
+INFO[5930] error syncing cluster version, upgrade failed. failed to sync segmentstore version. pod bar-pravega-pravega-segmentstore-0 is restarting
 ...
 ```
 

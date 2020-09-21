@@ -9,9 +9,15 @@ spec:
   {{- if .Values.tls }}
   tls:
     static:
+      {{- if .Values.tls.secret.controller }}
       controllerSecret: {{ .Values.tls.secret.controller }}
+      {{- end }}
+      {{- if .Values.tls.secret.segmentStore }}
       segmentStoreSecret: {{ .Values.tls.secret.segmentStore }}
+      {{- end }}
+      {{- if .Values.tls.caBundle }}
       caBundle: {{ .Values.tls.caBundle }}
+      {{- end }}
   {{- end }}
   authentication:
     enabled: {{ .Values.authentication.enabled }}
@@ -86,20 +92,26 @@ spec:
 {{ toYaml .Values.segmentStore.jvmOptions | indent 6 }}
     {{- end }}
     debugLogging: {{ .Values.debugLogging }}
+    {{- if .Values.storage.cache }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.storage.cache.className }}
       storageClassName: {{ .Values.storage.cache.className }}
+      {{- end }}
+      {{- if .Values.storage.cache.size }}
       resources:
         requests:
           storage: {{ .Values.storage.cache.size }}
+      {{- end }}
+    {{- end }}
     longtermStorage:
-      {{- if eq .Values.storage.longtermStorage.type "ecs"}}
+      {{- if eq (default .Values.storage.longtermStorage.type "filesystem") "ecs" }}
       ecs:
         configUri: {{ .Values.storage.longtermStorage.ecs.configUri }}
         bucket: {{ .Values.storage.longtermStorage.ecs.bucket }}
         prefix: {{ .Values.storage.longtermStorage.ecs.prefix }}
         credentials: {{ .Values.storage.longtermStorage.ecs.credentials }}
-      {{- else if eq .Values.storage.longtermStorage.type "hdfs"}}
+      {{- else if eq (default .Values.storage.longtermStorage.type "filesystem") "hdfs"}}
       hdfs:
         uri: {{ .Values.storage.longtermStorage.hdfs.uri }}
         root: {{ .Values.storage.longtermStorage.hdfs.root }}
@@ -107,7 +119,7 @@ spec:
       {{- else }}
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ .Values.storage.longtermStorage.filesystem.pvc }}
+          claimName: {{ default "pravega-tier2" .Values.storage.longtermStorage.filesystem.pvc }}
       {{- end }}
     {{- if .Values.options }}
     options:
