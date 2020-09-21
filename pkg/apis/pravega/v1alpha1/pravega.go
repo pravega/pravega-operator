@@ -12,7 +12,7 @@ package v1alpha1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -69,43 +69,52 @@ const (
 type PravegaSpec struct {
 	// ControllerReplicas defines the number of Controller replicas.
 	// Defaults to 1.
+	// +optional
 	ControllerReplicas int32 `json:"controllerReplicas"`
 
 	// SegmentStoreReplicas defines the number of Segment Store replicas.
 	// Defaults to 1.
+	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
 	// DebugLogging indicates whether or not debug level logging is enabled.
 	// Defaults to false.
+	// +optional
 	DebugLogging bool `json:"debugLogging"`
 
 	// Image defines the Pravega Docker image to use.
 	// By default, "pravega/pravega" will be used.
+	// +optional
 	Image *PravegaImageSpec `json:"image"`
 
 	// Options is the Pravega configuration that is passed to the Pravega processes
 	// as JAVA_OPTS. See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/config/config.properties
+	// +optional
 	Options map[string]string `json:"options"`
 
 	// ControllerJvmOptions is the JVM options for controller. It will be passed to the JVM
 	// for performance tuning. If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
+	// +optional
 	ControllerJvmOptions []string `json:"controllerjvmOptions"`
 
 	// SegmentStoreJVMOptions is the JVM options for Segmentstore. It will be passed to the JVM
 	// for performance tuning. If this field is not specified, the operator will use a set of default
 	// options that is good enough for general deployment.
+	// +optional
 	SegmentStoreJVMOptions []string `json:"segmentStoreJVMOptions"`
 
 	// CacheVolumeClaimTemplate is the spec to describe PVC for the Pravega cache.
 	// This field is optional. If no PVC spec, stateful containers will use
 	// emptyDir as volume
+	// +optional
 	CacheVolumeClaimTemplate *v1.PersistentVolumeClaimSpec `json:"cacheVolumeClaimTemplate"`
 
 	// Tier2 is the configuration of Pravega's tier 2 storage. If no configuration
 	// is provided, it will assume that a PersistentVolumeClaim called "pravega-tier2"
 	// is present and it will use it as Tier 2
+	// +optional
 	Tier2 *Tier2Spec `json:"tier2"`
 
 	// ControllerServiceAccountName configures the service account used on controller instances.
@@ -130,6 +139,7 @@ type PravegaSpec struct {
 	ControllerExternalServiceType v1.ServiceType `json:"controllerExtServiceType,omitempty"`
 
 	// Annotations to be added to the external service
+	// +optional
 	ControllerServiceAnnotations map[string]string `json:"controllerSvcAnnotations"`
 
 	// Type specifies the service type to achieve external access.
@@ -138,6 +148,7 @@ type PravegaSpec struct {
 	SegmentStoreExternalServiceType v1.ServiceType `json:"segmentStoreExtServiceType,omitempty"`
 
 	// Annotations to be added to the external service
+	// +optional
 	SegmentStoreServiceAnnotations map[string]string `json:"segmentStoreSvcAnnotations"`
 }
 
@@ -239,7 +250,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 
 // PravegaImageSpec defines the fields needed for a Pravega Docker image
 type PravegaImageSpec struct {
-	ImageSpec
+	ImageSpec `json:"imageSpec,omitempty"`
 }
 
 func (s *PravegaImageSpec) withDefaults() (changed bool) {
@@ -290,20 +301,28 @@ func (s *Tier2Spec) withDefaults() (changed bool) {
 
 // FileSystemSpec contains the reference to a PVC.
 type FileSystemSpec struct {
+	// +optional
 	PersistentVolumeClaim *v1.PersistentVolumeClaimVolumeSource `json:"persistentVolumeClaim"`
 }
 
 // ECSSpec contains the connection details to a Dell EMC ECS system
 type ECSSpec struct {
-	ConfigUri   string `json:"configUri"`
-	Bucket      string `json:"bucket"`
-	Prefix      string `json:"prefix"`
+	// +optional
+	ConfigUri string `json:"configUri"`
+	// +optional
+	Bucket string `json:"bucket"`
+	// +optional
+	Prefix string `json:"prefix"`
+	// +optional
 	Credentials string `json:"credentials"`
 }
 
 // HDFSSpec contains the connection details to an HDFS system
 type HDFSSpec struct {
-	Uri               string `json:"uri"`
-	Root              string `json:"root"`
-	ReplicationFactor int32  `json:"replicationFactor"`
+	// +optional
+	Uri string `json:"uri"`
+	// +optional
+	Root string `json:"root"`
+	// +optional
+	ReplicationFactor int32 `json:"replicationFactor"`
 }

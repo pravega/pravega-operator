@@ -73,9 +73,20 @@ type PravegaClusterList struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// PravegaCluster is the Schema for the pravegaclusters API
 // +k8s:openapi-gen=true
+
+// Generate CRD using kubebuilder
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// +kubebuilder:resource:shortName=pk
+// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.currentVersion`,description="The current pravega version"
+// +kubebuilder:printcolumn:name="Desired Version",type=string,JSONPath=`.spec.version`,description="The desired pravega version"
+// +kubebuilder:printcolumn:name="Desired Members",type=integer,JSONPath=`.status.replicas`,description="The number of desired pravega members"
+// +kubebuilder:printcolumn:name="Ready Members",type=integer,JSONPath=`.status.readyReplicas`,description="The number of ready pravega members"
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
+// PravegaCluster is the Schema for the pravegaclusters API
 type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -97,16 +108,19 @@ type ClusterSpec struct {
 	// By default, the value "zookeeper-client:2181" is used, that corresponds to the
 	// default Zookeeper service created by the Pravega Zookkeeper operator
 	// available at: https://github.com/pravega/zookeeper-operator
+	// +optional
 	ZookeeperUri string `json:"zookeeperUri"`
 
 	// ExternalAccess specifies whether or not to allow external access
 	// to clients and the service type to use to achieve it
 	// By default, external access is not enabled
+	// +optional
 	ExternalAccess *ExternalAccess `json:"externalAccess"`
 
 	// TLS is the Pravega security configuration that is passed to the Pravega processes.
 	// See the following file for a complete list of options:
 	// https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md
+	// +optional
 	TLS *TLSPolicy `json:"tls,omitempty"`
 
 	// Authentication can be enabled for authorizing all communication from clients to controller and segment store
@@ -122,6 +136,7 @@ type ClusterSpec struct {
 	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
 	//
 	// If version is not set, default is "0.4.0".
+	// +optional
 	Version string `json:"version"`
 
 	// BookkeeperUri specifies the hostname/IP address and port in the format
@@ -130,9 +145,11 @@ type ClusterSpec struct {
 	// bookkeeper-bookie-0.bookkeeper-bookie-headless.default:3181,
 	// bookkeeper-bookie-1.bookkeeper-bookie-headless.default:3181,
 	// bookkeeper-bookie-2.bookkeeper-bookie-headless.default:3181
+	// +optional
 	BookkeeperUri string `json:"bookkeeperUri"`
 
 	// Pravega configuration
+	// +optional
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
@@ -201,6 +218,7 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 type ExternalAccess struct {
 	// Enabled specifies whether or not external access is enabled
 	// By default, external access is not enabled
+	// +optional
 	Enabled bool `json:"enabled"`
 
 	// Type specifies the service type to achieve external access.
@@ -257,6 +275,7 @@ func (tp *TLSPolicy) IsCaBundlePresent() bool {
 type AuthenticationParameters struct {
 	// Enabled specifies whether or not authentication is enabled
 	// By default, authentication is not enabled
+	// +optional
 	Enabled bool `json:"enabled"`
 
 	// name of Secret containing Password based Authentication Parameters like username, password and acl
@@ -273,7 +292,9 @@ func (ap *AuthenticationParameters) IsEnabled() bool {
 
 // ImageSpec defines the fields needed for a Docker repository image
 type ImageSpec struct {
-	Repository string            `json:"repository"`
+	// +optional
+	Repository string `json:"repository"`
+	// +optional
 	PullPolicy corev1.PullPolicy `json:"pullPolicy"`
 }
 

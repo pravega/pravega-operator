@@ -36,8 +36,9 @@ To understand the valid upgrade paths for a pravega cluster, refer to the [versi
 
 The upgrade can be triggered via helm using the following command
 ```
-$ helm upgrade <pravega cluster release name> <location of modified charts> --timeout 600s
+$ helm upgrade <pravega cluster release name> <location of modified charts> --reuse-values --timeout 600s
 ```
+By specifying the `--reuse-values` option, the values of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new values of these parameters.
 
 ### Upgrading manually
 
