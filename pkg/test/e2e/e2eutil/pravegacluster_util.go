@@ -121,7 +121,6 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 	t.Logf("creating pravega cluster with External Access: %s", p.Name)
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.ExternalAccess.Enabled = true
-	p.WithDefaults()
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
