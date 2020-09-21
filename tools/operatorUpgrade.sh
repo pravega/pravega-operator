@@ -5,7 +5,7 @@ echo "Running pre-upgrade script for upgrading pravega operator from version 0.4
 
 if [ "$#" -ne 3 ]; then
 	echo "Error : Invalid number of arguments"
-	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo/image-tag>"
+	Usage: "./operatorUpgrade.sh <pravega-operator deployment name> <pravega-operator deployment namespace> <pravega-operator new image-repo:image-tag>"
 	exit 1
 fi
 
@@ -45,9 +45,9 @@ kubectl apply -f  ./manifest_files/version_map.yaml
 
 cabundle=`kubectl get ValidatingWebhookConfiguration pravega-webhook-config --namespace ${namespace} --output yaml | grep caBundle: | awk '{print $2}'`
 
-sed -i "s/caBundle.*/caBundle: $cabundle "/ ./manifest_files/crd.yaml
+sed -i "/webhookClientConfig:.*/{n;s/caBundle.*/caBundle: $cabundle/}" ./manifest_files/crd.yaml
 
-sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/crd.yaml
+sed -i "s/namespace:.*/namespace: $namespace "/ ./manifest_files/crd.yaml
 
 #updating the crd for pravega-operator
 kubectl apply -f  ./manifest_files/crd.yaml

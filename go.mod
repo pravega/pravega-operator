@@ -15,7 +15,9 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
 	github.com/securego/gosec v0.0.0-20200401082031-e946c8c39989 // indirect
 	github.com/sirupsen/logrus v1.5.0
+	github.com/stripe/safesql v0.2.0 // indirect
 	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9 // indirect
+	github.com/walle/lll v1.0.1 // indirect
 	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	k8s.io/api v0.17.5
 	k8s.io/apimachinery v0.17.5
