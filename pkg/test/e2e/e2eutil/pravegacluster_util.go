@@ -119,6 +119,7 @@ func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 // CreatePravegaClusterForExternalAccess creates a PravegaCluster CR with the desired spec for ExternalAccess
 func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+	p.WithDefaults()
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.ExternalAccess.Enabled = true
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})

@@ -43,11 +43,6 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 	pravega, err := pravega_e2eutil.CreatePravegaClusterForExternalAccess(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
-	podSize := 2
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
 	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
