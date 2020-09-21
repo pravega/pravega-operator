@@ -44,7 +44,7 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 	pravega, err := pravega_e2eutil.CreatePravegaClusterForExternalAccess(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	time.Sleep(2 * time.Minute)
+	time.Sleep(1 * time.Minute)
 
 	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
