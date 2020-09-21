@@ -115,6 +115,26 @@ func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 	return pravega, nil
 }
 
+// CreatePravegaClusterForExternalAccess creates a PravegaCluster CR with the desired spec for ExternalAccess
+func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+	p.WithDefaults()
+	p.Spec.ExternalAccess.Enabled = true
+	p.WithDefaults()
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	pravega := &api.PravegaCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
 func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	t.Logf("creating zookeeper cluster: %s", z.Name)
