@@ -138,12 +138,12 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 
 // CreatePravegaClusterWithTls creates a PravegaCluster CR with the desired spec for tls
 func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+	t.Logf("creating pravega cluster with tls: %s", p.Name)
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
 	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
 	p.Spec.Pravega.Options = map[string]string{
-		"controller.auth.tlsEnabled":              "false",
+		"controller.auth.tlsEnabled":              "true",
 		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
 		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
 		"controller.auth.tlsTrustStore":           "/etc/secret-volume/ca-cert",
