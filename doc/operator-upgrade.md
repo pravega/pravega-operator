@@ -114,16 +114,16 @@ helm upgrade <pravega operator release name> pravega/pravega-operator --version=
 where:
 - `[cert-name]` is the name of the certificate that has been created
 - `[secret-name]` is the name of the secret created by the above certificate
-- `[tls.crt]` is contained in the above secret and can be obtained using the command `kubectl get secret <secret-name> -o yaml | grep tls.crt`
+- `[tls.crt]` is contained in the above secret and can be obtained using the command `kubectl get secret [secret-name] -o yaml | grep tls.crt`
 
 
 Once the upgrade completes and the following command starts returning a response instead of throwing an error message (this might take around 7 to 10 minutes after the operator upgrade has been done)
 ```
-kubectl describe PravegaCluster
+kubectl describe PravegaCluster <pravega cluster name>
 ```
 Execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
 ```
-./post-upgrade.sh <PravegaCluster resource name> <PravegaCluster release name> <BookkeeperCluster release name> <version> <namespace> <zookeeper svc name> <bookkeeper replica count>
+./post-upgrade.sh <pravega cluster name> <pravega release name> <bookkeeper release name> <version> <namespace> <zookeeper svc name> <bookkeeper replica count>
 ```
 This script patches the `PravegaCluster` and `BookkeeperCluster` resources with the required annotations and labels, and updates their corresponding helm releases. This script needs the following arguments
 1. Name of the PravegaCluster or BookkeeperCluster resource (check the output of `kubectl get PravegaCluster` to obtain this name).

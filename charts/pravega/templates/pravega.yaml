@@ -39,10 +39,12 @@ spec:
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
-    {{- if .Values.segmentStore.service.segmentStoreLoadBalancerIP }}
-    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.segmentStoreLoadBalancerIP  }}
+    {{- if .Values.segmentStore.service.loadBalancerIP }}
+    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.loadBalancerIP  }}
     {{- end }}
-    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.segmentStoreExternalTrafficPolicy }}
+    {{- if .Values.segmentStore.service.externalTrafficPolicy }}
+    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.externalTrafficPolicy }}
+    {{- end }}
     {{- if .Values.controller.service.type }}
     controllerExtServiceType: {{ .Values.controller.service.type }}
     {{- end }}
@@ -76,9 +78,7 @@ spec:
     {{- end }}
     {{- if .Values.segmentStore.secret }}
     segmentStoreSecret:
-      {{- if .Values.segmentStore.secret.name }}
       secret: {{ .Values.segmentStore.name }}
-      {{- end }}
       {{- if .Values.segmentStore.secret.path }}
       mountPath: {{ .Values.segmentStore.path }}
       {{- end }}
