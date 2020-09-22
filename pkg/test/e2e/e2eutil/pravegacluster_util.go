@@ -172,9 +172,11 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 		"autoScale.tokenSigningKey":               "secret",
 		"pravega.client.auth.token":               "YWRtaW46MTExMV9hYWFh",
 		"pravega.client.auth.method":              "Basic",
-		"segmentStoreJVMOptions":                  "[-Xmx2g, -XX:MaxDirectMemorySize=2g]",
-		"controllerjvmOptions":                    "[-XX:MaxDirectMemorySize=1g]",
 	}
+	p.Spec.Pravega.SegmentStoreJVMOptions[0] = "-Xmx2g"
+	p.Spec.Pravega.SegmentStoreJVMOptions[1] = "-XX:MaxDirectMemorySize=2g"
+	p.Spec.Pravega.ControllerJvmOptions[0] = "-XX:MaxDirectMemorySize=1g"
+
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
