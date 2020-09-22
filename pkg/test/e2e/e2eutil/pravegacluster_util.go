@@ -190,6 +190,62 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 	return pravega, nil
 }
 
+func CreatePravegaClusterWithAuth(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with tls: %s", p.Name)
+	p.WithDefaults()
+	p.Spec.Pravega.ControllerReplicas = 1
+	p.Spec.Pravega.SegmentStoreReplicas = 1
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.Authentication.Enabled = false
+	p.Spec.Authentication.PasswordAuthSecret = "password-auth"
+	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
+	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
+	p.Spec.Pravega.Options = map[string]string{
+		"pravegaservice.containerCount":           "4",
+		"pravegaservice.cacheMaxSize":             "1073741824",
+		"pravegaservice.zkSessionTimeoutMs":       "10000",
+		"attributeIndex.readBlockSize":            "1048576",
+		"readIndex.storageReadAlignment":          "1048576",
+		"durableLog.checkpointMinCommitCount":     "300",
+		"bookkeeper.bkAckQuorumSize":              "3",
+		"controller.auth.tlsEnabled":              "true",
+		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
+		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
+		"controller.auth.tlsTrustStore":           "/etc/secret-volume/ca-cert",
+		"controller.rest.tlsKeyStoreFile":         "/etc/secret-volume/controller01.jks",
+		"controller.rest.tlsKeyStorePasswordFile": "/etc/secret-volume/pass-secret-tls",
+		"controller.auth.userPasswordFile":        "/etc/auth-passwd-volume/pass-secret-tls-auth.txt",
+		"pravegaservice.enableTls":                "true",
+		"pravegaservice.certFile":                 "/etc/secret-volume/segmentstore01.pem",
+		"pravegaservice.keyFile":                  "/etc/secret-volume/segmentstore01.key.pem",
+		"autoScale.tlsEnabled":                    "true",
+		"autoScale.tlsCertFile":                   "/etc/secret-volume/ca-cert",
+		"bookkeeper.tlsEnabled":                   "true",
+		"bookkeeper.tlsTrustStorePath":            "empty",
+		"autoScale.validateHostName":              "true",
+		"autoScale.authEnabled":                   "true",
+		"controller.auth.tokenSigningKey":         "secret",
+		"autoScale.tokenSigningKey":               "secret",
+		"pravega.client.auth.token":               "YWRtaW46MTExMV9hYWFh",
+		"pravega.client.auth.method":              "Basic",
+	}
+	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
+	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
+
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	pravega := &api.PravegaCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
 func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	t.Logf("creating zookeeper cluster: %s", z.Name)
