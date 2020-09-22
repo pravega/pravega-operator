@@ -24,7 +24,7 @@ $ helm repo update
 $ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
 where:
-- **[RELEASE_NAME]** is the release name for the pravega chart. (Note: if the release name contains the string `pravega`, the pravega cluster name is the same as the release name, else the pravega cluster is named as `[RELEASE_NAME]-pravega`. This way of naming the cluster can be overridden by providing `--set fullnameOverride=[CLUSTER_NAME]` along with the helm install command. You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration), the default value for which is `pravega` and can be achieved by either providing the [RELEASE_NAME] as pravega or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. Otherwise, the default value of [CLUSTER_NAME] in the bookkeeper charts can be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
+- **[RELEASE_NAME]** is the release name for the pravega chart. (**[CLUSTER_NAME]** is the name of the pravega cluster so created. If [RELEASE_NAME] contains the string `pravega`, `[CLUSTER_NAME] = [RELEASE_NAME]`, else `[CLUSTER_NAME] = [RELEASE_NAME]-pravega`. The [CLUSTER_NAME] can however be overridden by providing `--set fullnameOverride=[CLUSTER_NAME]` along with the helm install command. **Note:** You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration), the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
 - **[VERSION]** can be any stable release version for pravega from 0.5.0 onwards.
 - **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
 - **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
@@ -32,7 +32,7 @@ where:
 
 This command deploys pravega on the Kubernetes cluster in its default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
->Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk charts should be used instead of the pravega charts
+>Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk chart should be used instead of the pravega chart
 
 ## Uninstalling the Chart
 
@@ -46,7 +46,7 @@ This command removes all the Kubernetes components associated with the chart and
 
 ## Configuration
 
-The following table lists the configurable parameters of the Pravega chart and their default values.
+The following table lists the configurable parameters of the pravega chart and their default values.
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
