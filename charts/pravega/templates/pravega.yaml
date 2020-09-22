@@ -78,9 +78,9 @@ spec:
     {{- end }}
     {{- if .Values.segmentStore.secret }}
     segmentStoreSecret:
-      secret: {{ .Values.segmentStore.name }}
+      secret: {{ .Values.segmentStore.secret.name }}
       {{- if .Values.segmentStore.secret.path }}
-      mountPath: {{ .Values.segmentStore.path }}
+      mountPath: {{ .Values.segmentStore.secret.path }}
       {{- end }}
     {{- end }}
     {{- if .Values.controller.jvmOptions }}
