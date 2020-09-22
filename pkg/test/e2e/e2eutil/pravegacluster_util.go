@@ -140,9 +140,18 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster with tls: %s", p.Name)
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.Authentication.Enabled = false
+	p.Spec.Authentication.PasswordAuthSecret = "password-auth"
 	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
 	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
 	p.Spec.Pravega.Options = map[string]string{
+		"pravegaservice.containerCount":           "4",
+		"pravegaservice.cacheMaxSize":             "1073741824",
+		"pravegaservice.zkSessionTimeoutMs":       "10000",
+		"attributeIndex.readBlockSize":            "1048576",
+		"readIndex.storageReadAlignment":          "1048576",
+		"durableLog.checkpointMinCommitCount":     "300",
+		"bookkeeper.bkAckQuorumSize":              "3",
 		"controller.auth.tlsEnabled":              "true",
 		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
 		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
@@ -157,6 +166,12 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 		"autoScale.tlsCertFile":                   "/etc/secret-volume/ca-cert",
 		"bookkeeper.tlsEnabled":                   "true",
 		"bookkeeper.tlsTrustStorePath":            "empty",
+		"autoScale.validateHostName":              "true",
+		"autoScale.authEnabled":                   "true",
+		"controller.auth.tokenSigningKey":         "secret",
+		"autoScale.tokenSigningKey":               "secret",
+		"pravega.client.auth.token":               "YWRtaW46MTExMV9hYWFh",
+		"pravega.client.auth.method":              "Basic",
 	}
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
