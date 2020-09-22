@@ -173,9 +173,8 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 		"pravega.client.auth.token":               "YWRtaW46MTExMV9hYWFh",
 		"pravega.client.auth.method":              "Basic",
 	}
-	p.Spec.Pravega.SegmentStoreJVMOptions[0] = "-Xmx2g"
-	p.Spec.Pravega.SegmentStoreJVMOptions[1] = "-XX:MaxDirectMemorySize=2g"
-	p.Spec.Pravega.ControllerJvmOptions[0] = "-XX:MaxDirectMemorySize=1g"
+	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
+	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
 
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
