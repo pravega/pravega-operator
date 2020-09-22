@@ -136,6 +136,42 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 	return pravega, nil
 }
 
+// CreatePravegaClusterWithTls creates a PravegaCluster CR with the desired spec for tls
+func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
+	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
+	p.Spec.Pravega.Options = map[string]string{
+		"controller.auth.tlsEnabled":              "false",
+		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
+		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
+		"controller.auth.tlsTrustStore":           "/etc/secret-volume/ca-cert",
+		"controller.rest.tlsKeyStoreFile":         "/etc/secret-volume/controller01.jks",
+		"controller.rest.tlsKeyStorePasswordFile": "/etc/secret-volume/pass-secret-tls",
+		"controller.auth.userPasswordFile":        "/etc/auth-passwd-volume/pass-secret-tls-auth.txt",
+		"pravegaservice.enableTls":                "true",
+		"pravegaservice.certFile":                 "/etc/secret-volume/segmentstore01.pem",
+		"pravegaservice.keyFile":                  "/etc/secret-volume/segmentstore01.key.pem",
+		"autoScale.tlsEnabled":                    "true",
+		"autoScale.tlsCertFile":                   "/etc/secret-volume/ca-cert",
+		"bookkeeper.tlsEnabled":                   "true",
+		"bookkeeper.tlsTrustStorePath":            "empty",
+	}
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	pravega := &api.PravegaCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
 func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	t.Logf("creating zookeeper cluster: %s", z.Name)

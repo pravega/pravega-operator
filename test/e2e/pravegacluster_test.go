@@ -61,7 +61,8 @@ func testPravegaCluster(t *testing.T) {
 		//"testScaleCluster":          testScaleCluster,
 		//"testUpgradeCluster":        testUpgradeCluster,
 		//"testWebhook":               testWebhook,
-		"testExternalCreateRecreateCluster": testExternalCreateRecreateCluster,
+		//"testExternalCreateRecreateCluster": testExternalCreateRecreateCluster,
+		"testCreatePravegaClusterWithTls": testCreatePravegaClusterWithTls,
 	}
 
 	for name, f := range testFuncs {
