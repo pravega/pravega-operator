@@ -85,7 +85,7 @@ $ kubectl create -f ./example/pvc-tier2.yaml
 
 #### Install a Pravega cluster
 
-To understand how to deploy a pravega cluster using helm, refer to [this](charts/zookeeper#installing-the-chart).
+To understand how to deploy a pravega cluster using helm, refer to [this](charts/pravega#installing-the-chart).
 
 Once the pravega cluster with release name `bar` has been created, use the following command to verify that the cluster instances and its components are being created.
 

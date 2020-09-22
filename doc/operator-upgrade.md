@@ -100,7 +100,10 @@ To install cert-manager check [this](https://cert-manager.io/docs/installation/k
 
 4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace).
 
-5. Execute the script `pre-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. This script patches the `pravega-webhook-svc` with the required annotations and labels.
+5. Execute the script `pre-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. This script patches the `pravega-webhook-svc` with the required annotations and labels. The format of the command is
+```
+./pre-upgrade.sh <pravega operator release name> <pravega operator namespace>
+```
 
 
 ### Triggering the upgrade
@@ -117,11 +120,11 @@ where:
 - `[tls.crt]` is contained in the above secret and can be obtained using the command `kubectl get secret [secret-name] -o yaml | grep tls.crt`
 
 
-Once the upgrade completes and the following command starts returning a response instead of throwing an error message (this might take around 7 to 10 minutes after the operator upgrade has been done)
+Wait for the upgrade to complete (which can be determined once the following command starts returning a response instead of throwing an error message). This might take around 7 to 10 minutes after the operator upgrade has been done.
 ```
 kubectl describe PravegaCluster <pravega cluster name>
 ```
-Execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
+Next, execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
 ```
 ./post-upgrade.sh <pravega cluster name> <pravega release name> <bookkeeper release name> <version> <namespace> <zookeeper svc name> <bookkeeper replica count>
 ```
@@ -132,7 +135,7 @@ This script patches the `PravegaCluster` and `BookkeeperCluster` resources with 
 4. Version of the PravegaCluster or BookkeeperCluster resources (check the output of `kubectl get PravegaCluster` to obtain the version number).
 5. Namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
 6. Name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
-7. Number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is 3).
+7. Number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is `3`).
 
 #### Upgrade manually
 
