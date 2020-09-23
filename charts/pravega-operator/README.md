@@ -24,7 +24,8 @@ $ helm repo update
 $ helm install [RELEASE_NAME] pravega/pravega-operator --version=[VERSION] --set webhookCert.crt=[TLS_CRT] --set webhookCert.generate=false --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
 ```
 where:
-- **[RELEASE_NAME]** is the release name for the pravega-operator chart. (**[RESOURCE_NAME]** is the name of the pravega-operator resource so created. If [RELEASE_NAME] contains the string `pravega-operator`, `[RESOURCE_NAME] = [RELEASE_NAME]`, else `[RESOURCE_NAME] = [RELEASE_NAME]-pravega-operator`. The [RESOURCE_NAME] can however be overridden by providing `--set fullnameOverride=[RESOURCE_NAME]` along with the helm install command)
+- **[RELEASE_NAME]** is the release name for the pravega-operator chart.
+  **[RESOURCE_NAME]** is the name of the pravega-operator resource so created. (If [RELEASE_NAME] contains the string `pravega-operator`, `[RESOURCE_NAME] = [RELEASE_NAME]`, else `[RESOURCE_NAME] = [RELEASE_NAME]-pravega-operator`. The [RESOURCE_NAME] can however be overridden by providing `--set fullnameOverride=[RESOURCE_NAME]` along with the helm install command)
 - **[VERSION]** can be any stable release version for pravega-operator from 0.5.0 onwards.
 - **[CERT_NAME]** is the name of the certificate created in the previous step
 - **[SECRET_NAME]** is the name of the secret created by the above certificate

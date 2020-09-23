@@ -125,13 +125,13 @@ statefulset.apps/bar-pravega-segmentstore       3         3         2m
 By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:
 
 ```
-tcp://<pravega cluster name>-pravega-controller.<namespace>:9090
+tcp://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:9090
 ```
 
 And the `REST` management interface is available at:
 
 ```
-http://<pravega cluster name>-pravega-controller.<namespace>:10080/
+http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
 ```
 
 Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
@@ -145,7 +145,7 @@ You can scale Pravega components independently by modifying their corresponding 
 Example of patching the Pravega resource to scale the Segment Store instances to 4.
 
 ```
-kubectl patch PravegaCluster <pravega cluster name> --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
+kubectl patch PravegaCluster [CLUSTER_NAME] --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
 ```
 
 ### Upgrade a Pravega cluster
@@ -155,7 +155,7 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 ### Uninstall the Pravega cluster
 
 ```
-$ helm uninstall <pravega cluster release name>
+$ helm uninstall [PRAVEGA_RELEASE_NAME]
 $ kubectl delete -f ./example/pvc-tier2.yaml
 ```
 
@@ -164,7 +164,7 @@ $ kubectl delete -f ./example/pvc-tier2.yaml
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
 ```
-$ helm uninstall <pravega operator release name>
+$ helm uninstall [PRAVEGA_OPERATOR_RELEASE_NAME]
 ```
 
 If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator.

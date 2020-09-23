@@ -34,18 +34,18 @@ To understand the valid upgrade paths for a pravega cluster, refer to the [versi
 
 ### Upgrading via Helm
 
-The upgrade of the pravega cluster with release name `bar` from a version `x` to `y` can be triggered via helm using the following command
+The upgrade of the pravega cluster from a version **[OLD_VERSION]** to **[NEW_VERSION]** can be triggered via helm using the following command
 ```
-$ helm upgrade bar pravega/pravega --version=y --set version=y --reuse-values --timeout 600s
+$ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --set version=[NEW_VERSION] --reuse-values --timeout 600s
 ```
-Note: By specifying the `--reuse-values` option, the values of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new values of these parameters. Also, by skipping the `reuse-values` flag, the values of all parameters are reset to their default values specified in the charts published for version `y`.
+**Note:** By specifying the `--reuse-values` option, the configuration of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new configuration for these parameters. Also, by skipping the `reuse-values` flag, the values of all parameters are reset to the default configuration that has been specified in the published charts for version [NEW_VERSION].
 
 ### Upgrading manually
 
 To initiate the upgrade process manually, a user has to update the `spec.version` field on the `PravegaCluster` custom resource. This can be done in three different ways using the `kubectl` command.
-1. `kubectl edit PravegaCluster <name>`, modify the `version` value in the YAML resource, save, and exit.
+1. `kubectl edit PravegaCluster [CLUSTER_NAME]`, modify the `version` value in the YAML resource, save, and exit.
 2. If you have the custom resource defined in a local YAML file, e.g. `pravega.yaml`, you can modify the `version` value, and reapply the resource with `kubectl apply -f pravega.yaml`.
-3. `kubectl patch PravegaCluster <name> --type='json' -p='[{"op": "replace", "path": "/spec/version", "value": "X.Y.Z"}]'`.
+3. `kubectl patch PravegaCluster [CLUSTER_NAME] --type='json' -p='[{"op": "replace", "path": "/spec/version", "value": "X.Y.Z"}]'`.
 
 After the `version` field is updated, the operator will detect the version change and it will trigger the upgrade process.
 
@@ -160,7 +160,7 @@ bar-pravega   0.5.0     5                 5               1h
 
 The command `kubectl describe` can be used to track progress of the upgrade.
 ```
-$ kubectl describe PravegaCluster pravega
+$ kubectl describe PravegaCluster bar-pravega
 ...
 Status:
   Conditions:
@@ -184,7 +184,7 @@ The `Reason` field in Upgrading Condition shows the component currently being up
 If upgrade has failed, please check the `Status` section to understand the reason for failure.
 
 ```
-$ kubectl describe PravegaCluster pravega
+$ kubectl describe PravegaCluster bar-pravega
 ...
 Status:
   Conditions:

@@ -24,7 +24,7 @@ Status: True
 Reason: UpgradeFailed
 Message: <Details of exception/cause of failure>
 ```
-After an Upgrade Failure the output of `kubectl describe pravegacluster <pravega cluster name>` would look like this (assuming name of pravega cluster is `bar-pravega`):
+After an Upgrade Failure the output of `kubectl describe pravegacluster [CLUSTER_NAME]` would look like this:
 
 ```
 $> kubectl describe pravegacluster bar-pravega
@@ -72,22 +72,22 @@ Note:
 
 The following command prints the historical revisions of a particular helm release
 ```
-$ helm history <pravega cluster release name>
+$ helm history [PRAVEGA_RELEASE_NAME]
 ```
 
 Rollback can be triggered via helm using the following command
 ```
-$ helm rollback <pravega cluster release name> <revision number>
+$ helm rollback [PRAVEGA_RELEASE_NAME] [REVISION_NUMBER]
 ```
-Rollback will be successfully triggered only if the previous revision number is provided.
-Note: Helm rollbacks are still an experimental feature and are not encouraged. We recommend using the manual way for cluster rollbacks.
+Rollback will be successfully triggered only if a [REVISION_NUMBER] corresponding to the previously deployed version is provided.
+**Note:** Helm rollbacks are still an experimental feature and are not encouraged. We strongly recommend using manual rollbacks.
 
 ## Rollback Implementation
 
 When Rollback is triggered the cluster moves into ClusterCondition `RollbackInProgress`.
 Once the Rollback completes, this condition is set to false.
 
-During a Rollback, the Cluster Status should look something like this (assuming name of pravega cluster is `bar-pravega`):
+During a Rollback, the Cluster Status should look something like this:
 ```
 $> kubectl describe pravegacluster bar-pravega
 . . .
