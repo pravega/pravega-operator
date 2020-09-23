@@ -201,13 +201,6 @@ func CreatePravegaClusterWithAuth(t *testing.T, f *framework.Framework, ctx *fra
 	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
 	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
 	p.Spec.Pravega.Options = map[string]string{
-		"pravegaservice.containerCount":           "4",
-		"pravegaservice.cacheMaxSize":             "1073741824",
-		"pravegaservice.zkSessionTimeoutMs":       "10000",
-		"attributeIndex.readBlockSize":            "1048576",
-		"readIndex.storageReadAlignment":          "1048576",
-		"durableLog.checkpointMinCommitCount":     "300",
-		"bookkeeper.bkAckQuorumSize":              "3",
 		"controller.auth.tlsEnabled":              "true",
 		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
 		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
@@ -244,6 +237,28 @@ func CreatePravegaClusterWithAuth(t *testing.T, f *framework.Framework, ctx *fra
 	}
 	t.Logf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
+}
+
+func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(map[string]string{"app": p.GetName()}).String(),
+	}
+	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+	pod := &corev1.Pod{}
+
+	for i := 0; i < size; i++ {
+		pod = &podList.Items[i]
+		t.Logf("podnameis %v", pod.Name)
+		err := f.Client.Delete(goctx.TODO(), pod)
+		if err != nil {
+			return fmt.Errorf("failed to delete pod: %v", err)
+		}
+		t.Logf("deleted pravega pod: %s", pod.Name)
+	}
+	return nil
 }
 
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
