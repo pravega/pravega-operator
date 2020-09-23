@@ -44,11 +44,11 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 ## Quickstart
 
-We recommend using our [helm charts](charts) for all installation and upgrades. The helm charts for pravega operator (version 0.4.5 onwards) and pravega cluster (version 0.5.0 onwards) are published in [https://charts.pravega.io](https://charts.pravega.io/). To add this repository to your Helm repos, use the following command
+We recommend using our [helm charts](charts) for all installation and upgrades (but not for rollbacks at the moment since helm rollbacks are still experimental). The helm charts for pravega operator (version 0.4.5 onwards) and pravega cluster (version 0.5.0 onwards) are published in [https://charts.pravega.io](https://charts.pravega.io/). To add this repository to your Helm repos, use the following command
 ```
 helm repo add pravega https://charts.pravega.io
 ```
-However there are manual deployment and upgrade options available as well.
+There are manual deployment, upgrade and rollback options available as well.
 
 ### Install the Operator
 
