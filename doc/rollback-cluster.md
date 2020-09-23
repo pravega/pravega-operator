@@ -80,6 +80,7 @@ Rollback can be triggered via helm using the following command
 $ helm rollback [PRAVEGA_RELEASE_NAME] [REVISION_NUMBER] --wait --timeout 600s
 ```
 Rollback will be successfully triggered only if a [REVISION_NUMBER] corresponding to the previously deployed version is provided.
+
 **Note:** Helm rollbacks are still an experimental feature and are not encouraged. We strongly recommend using manual rollbacks.
 
 ## Rollback Implementation
