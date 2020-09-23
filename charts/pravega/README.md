@@ -16,27 +16,39 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`:
+To install the pravega chart, use the following commands:
 
 ```
-$ helm install my-release pravega
+$ helm repo add pravega https://charts.pravega.io
+$ helm repo update
+$ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
+where:
+- **[RELEASE_NAME]** is the release name for the pravega chart.
+- **[CLUSTER_NAME]** is the name of the pravega cluster so created. (If [RELEASE_NAME] contains the string `pravega`, `[CLUSTER_NAME] = [RELEASE_NAME]`, else `[CLUSTER_NAME] = [RELEASE_NAME]-pravega`. The [CLUSTER_NAME] can however be overridden by providing `--set fullnameOverride=[CLUSTER_NAME]` along with the helm install command)
+  **Note:** You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration), the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
+- **[VERSION]** can be any stable release version for pravega from 0.5.0 onwards.
+- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
+- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
+- **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name (`pravega-tier2` if you created the PVC using the manifest provided).
 
-The command deploys pravega on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+This command deploys pravega on the Kubernetes cluster in its default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+
+>Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk chart should be used instead of the pravega chart
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the pravega chart, use the following command:
 
 ```
-$ helm uninstall my-release
+$ helm uninstall [RELEASE_NAME]
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
+This command removes all the Kubernetes components associated with the chart and deletes the release.
 
 ## Configuration
 
-The following table lists the configurable parameters of the Pravega chart and their default values.
+The following table lists the configurable parameters of the pravega chart and their default values.
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
@@ -70,8 +82,8 @@ The following table lists the configurable parameters of the Pravega chart and t
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
-| `segmentStore.service.segmentStoreLoadBalancerIP` |It is used to provide a LoadBalancerIP | |
-| `segmentStore.service.segmentStoreExternalTrafficPolicy` | It is used to provide segmentStoreExternalTrafficPolicy  |  |  
+| `segmentStore.service.loadBalancerIP` |It is used to provide a LoadBalancerIP for the segmentStore service | |
+| `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |

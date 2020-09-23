@@ -23,7 +23,7 @@ metadata:
   labels:
 {{ include "pravega-operator.commonLabels" . | indent 4 }}
   annotations:
-    cert-manager.io/inject-ca-from: default/selfsigned-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.certName }}
 webhooks:
 - clientConfig:
     service:

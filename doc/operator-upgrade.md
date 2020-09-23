@@ -7,24 +7,26 @@ Starting Operator version `0.4.3` we also support major version upgrades for Pra
 
   `0.4.4 --> 0.5.0`
 
+  `0.4.5 --> 0.5.0`
+
 # Upgrade Guide
 
-## Upgrading till 0.4.4
+## Upgrading till 0.4.5 or from 0.5.0 to above
 
 ### Trigger the upgrade via helm
 
-Pravega operator can be upgraded using the following command
+Pravega operator can be upgraded to a version **[VERSION]** using the following command
 
 ```
-$ helm upgrade <operator release name> <location of modified operator charts>
+$ helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=[VERSION]
 ```
 
 ### Trigger the upgrade manually
 
-Pravega operator can be upgraded manually by modifying the image tag using kubectl edit, patch or apply
+The pravega operator with deployment name **[DEPLOYMENT_NAME]** can be upgraded manually by modifying the image tag using kubectl edit, patch or apply
 
 ```
-$ kubectl edit <operator deployment name>
+$ kubectl edit [DEPLOYMENT_NAME]
 ```
 The upgrade is handled as a [rolling update](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/) by Kubernetes and results in a new operator pod being created and the old one being terminated.
 
@@ -37,7 +39,7 @@ Here is a list of changes and their impact:
 
 1. The Pravega Cluster CRD
 
-Till Operator `0.4.4`, the Pravega CR (version `v1alpha1`) includes Bookkeeper.
+Till Operator `0.4.5`, the Pravega CR (version `v1alpha1`) includes Bookkeeper.
 Starting version `0.5.0`, Pravega CR does **not** include Bookkeeper.
 Bookkeeper is moved out and is now a prerequisite for Pravega deployment.
 It can be installed separately either using [Bookkeeper-Operator](https://github.com/pravega/bookkeeper-operator) or some other means.
@@ -97,13 +99,11 @@ To install cert-manager check [this](https://cert-manager.io/docs/installation/k
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade. Also, Bookkeeper operator version map should contain the bookkeeper versions of the installed bookkeeper.
 
 4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace).
-> The name of the certificate (*webhookCert.certName*), the name of the secret created by this certificate (*webhookCert.secretName*), the tls.crt (*webhookCert.crt*) and tls.key (*webhookCert.key*) need to be specified against the corresponding fields in the values.yaml file, or can be provided with the upgrade command as shown [here](#triggering-the-upgrade).
-The values *tls.crt* and *tls.key* are contained in the secret which is created by the certificate and can be obtained using the following command
-```
-kubectl get secret <secret-name> -o yaml | grep tls.
-```
 
-5. Execute the script `pre-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. This script patches the `pravega-webhook-svc` with the required annotations and labels.
+5. Execute the script `pre-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. This script patches the `pravega-webhook-svc` with the required annotations and labels. The format of the command is
+```
+./pre-upgrade.sh [PRAVEGA_OPERATOR_RELEASE_NAME][PRAVEGA_OPERATOR_NAMESPACE]
+```
 
 
 ### Triggering the upgrade
@@ -112,25 +112,30 @@ kubectl get secret <secret-name> -o yaml | grep tls.
 
 The upgrade to Operator 0.5.0 can be triggered using the following command
 ```
-helm upgrade <operator release name> <location of 0.5.0 charts> --set webhookCert.crt=<tls.crt> --set webhookCert.generate=false --set webhookCert.certName=<cert-name> --set webhookCert.secretName=<secret-name>
+helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=0.5.0 --set webhookCert.crt=[TLS_CRT] --set webhookCert.generate=false --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
 ```
+where:
+- `[CERT_NAME]` is the name of the certificate that has been created
+- `[SECRET_NAME]` is the name of the secret created by the above certificate
+- `[TLS_CRT]` is contained in the above secret and can be obtained using the command `kubectl get secret [SECRET_NAME] -o yaml | grep tls.crt`
 
-Once the upgrade completes and the following command starts returning a response instead of throwing an error message (this might take around 7 to 10 minutes after the operator upgrade has been done)
+
+Wait for the upgrade to complete (which can be determined once the following command starts returning a response instead of throwing an error message). This might take around 7 to 10 minutes after the operator upgrade has been done.
 ```
-kubectl describe PravegaCluster
+kubectl describe PravegaCluster [CLUSTER_NAME]
 ```
-Execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
+Next, execute the script `post-upgrade.sh` inside the [scripts](https://github.com/pravega/pravega-operator/blob/master/scripts) folder. The format of the command is
 ```
-./post-upgrade.sh <PravegaCluster resource name> <PravegaCluster release name> <BookkeeperCluster release name> <version> <namespace> <zookeeper svc name> <bookkeeper replica count>
+./post-upgrade.sh [CLUSTER_NAME] [PRAVEGA_RELEASE_NAME] [BOOKKEEPER_RELEASE_NAME] [VERSION] [NAMESPACE] [ZOOKEEPER_SVC_NAME] [BOOKKEEPER_REPLICA_COUNT]
 ```
-This script patches the `PravegaCluster` and `BookkeeperCluster` resources with the required annotations and labels, and updates their corresponding helm releases. This script needs the following arguments
-1. Name of the PravegaCluster or BookkeeperCluster resource (check the output of `kubectl get PravegaCluster` to obtain this name).
-2. Name of the release that has been created for the v1alpha1 PravegaCluster resource (check the output of `helm ls` to obtain this name).
-3. Name of the release that needs to be created for the BookkeeperCluster resource.
-4. Version of the PravegaCluster or BookkeeperCluster resources (check the output of `kubectl get PravegaCluster` to obtain the version number).
-5. Namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
-6. Name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
-7. Number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is 3).
+This script patches the `PravegaCluster` and the newly created `BookkeeperCluster` resources with the required annotations and labels, and updates their corresponding helm releases. This script needs the following arguments
+1. **[CLUSTER_NAME]** is the name of the PravegaCluster or BookkeeperCluster (check the output of `kubectl get PravegaCluster` to obtain this name).
+2. **[PRAVEGA_RELEASE_NAME]** is the release name corresponding to the v1alpha1 PravegaCluster chart (check the output of `helm ls` to obtain this name).
+3. **[BOOKKEEPER_RELEASE_NAME]** is the name of the release that needs to be created for the BookkeeperCluster chart.
+4. **[VERSION]** is the version of the PravegaCluster or BookkeeperCluster resources (check the output of `kubectl get PravegaCluster` to obtain the version number).
+5. **[NAMESPACE]** is the namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
+6. **[ZOOKEEPER_SVC_NAME]** is the name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
+7. **[BOOKKEEPER_REPLICA_COUNT]** is the number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is `3`).
 
 #### Upgrade manually
 
