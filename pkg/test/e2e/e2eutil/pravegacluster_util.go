@@ -241,8 +241,9 @@ func CreatePravegaClusterWithAuth(t *testing.T, f *framework.Framework, ctx *fra
 
 func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
 	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{"app": p.GetName()}).String(),
+		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
 	}
+
 	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
 	if err != nil {
 		return err
