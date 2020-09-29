@@ -11,7 +11,9 @@ on:
     branches:
       - master
 env:
-  KUBECTL_VERSION: v1.15.0      
+  KUBECTL_VERSION: v1.15.0
+  OPERATOR_SDK_VERSION: v0.17.0
+  CLUSTER_NAME: pravega-operator-travis-${{date +'%Y%m%d%H%M%S'}}      
 # jobs to run
 jobs:
   check:
