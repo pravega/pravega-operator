@@ -5,24 +5,10 @@ The purpose of this script is to sequentially deploy all the dependencies (i.e. 
 ## Prerequisites
 
   - Kubernetes 1.15+ with Beta APIs
-  - Helm 3+
+  - Helm 3.2.1+
   - [Tier 2 Setup](https://github.com/pravega/pravega-operator#set-up-tier-2-storage)
   - Cert-Manager v0.15.0+
-  - Copy the necessary charts to the right location
-
-First clone the [Zookeeper Operator](https://github.com/pravega/zookeeper-operator) and [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator) repositories locally using :
-```
-git clone https://github.com/pravega/zookeeper-operator
-git clone https://github.com/pravega/bookkeeper-operator
-```
-
-Next, copy the contents of the charts directory from both these repositories inside the charts directory of this repository.
-```
-cp -r <path-to-zookeeper-operator-repo>/charts/ <path-to-pravega-operator-repo>/charts/.
-cp -r <path-to-bookkeeper-operator-repo>/charts/ <path-to-pravega-operator-repo>/charts/.
-```
-
-This will result in separate sub-directories for [zookeeper-operator](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper-operator), [zookeeper](https://github.com/pravega/zookeeper-operator/tree/master/charts/zookeeper), [bookkeeper-operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega-operator) and [bookkeeper](https://github.com/pravega/bookkeeper-operator/tree/master/charts/pravega) charts alongside the directories for [pravega-operator](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator) and [pravega](https://github.com/pravega/pravega-operator/tree/master/charts/pravega) charts inside the [charts](https://github.com/pravega/pravega-operator/tree/master/charts) directory.
+  - An Issuer and a Certificate (either self-signed or CA signed) for the Bookkeeper Operator (refer to [this](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
 We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to [install cert-manager](https://cert-manager.io/docs/installation/kubernetes/)
 
@@ -31,8 +17,11 @@ We use cert-manager for certificate management for webhook services in Kubernete
 To deploy the Pravega Cluster along with all the required dependencies, run the following command:
 
 ```
-$ ./pravegacluster.sh deploy
+$ ./pravegacluster.sh deploy [CERT_NAME] [SECRET_NAME]
 ```
+where:
+- **[CERT_NAME]** is the name of the bookkeeper operator certificate created as a prerequisite (this is an optional parameter and its default value is `selfsigned-cert-bk`)
+- **[SECRET_NAME]** is the name of the secret created by the above certificate (this is an optional parameter and its default value is `selfsigned-cert-tls-bk`)
 
 ## Undeploying the Pravega Cluster
 
