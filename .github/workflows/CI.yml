@@ -10,10 +10,10 @@ on:
   pull_request:
     branches:
       - master
+env:
+  KUBECTL_VERSION: v1.15.0      
 # jobs to run
 jobs:
-  env:
-    KUBECTL_VERSION: v1.15.0
   check:
     runs-on: ubuntu-latest
     steps:
