@@ -12,6 +12,8 @@ on:
       - master
 # jobs to run
 jobs:
+  env:
+    KUBECTL_VERSION: v1.15.0
   check:
     runs-on: ubuntu-latest
     steps:
