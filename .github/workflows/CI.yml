@@ -26,9 +26,9 @@ jobs:
     - name: Get output
       run: echo ${{ steps.date.outputs.date }}
     env:
-      KUBECTL_VERSION=v1.15.0
-      OPERATOR_SDK_VERSION=v0.17.0
-      CLUSTER_NAME=pravega-operator-travis
+      KUBECTL_VERSION: v1.15.0
+      OPERATOR_SDK_VERSION: v0.17.0
+      CLUSTER_NAME: pravega-operator-travis-${{ steps.date.outputs.date }}
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
     - name: Gofmt and License checks
