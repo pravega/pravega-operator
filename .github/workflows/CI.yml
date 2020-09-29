@@ -13,7 +13,7 @@ on:
 env:
   KUBECTL_VERSION: v1.15.0
   OPERATOR_SDK_VERSION: v0.17.0
-  PACKET_TOKEN: ${{ secrets.PACKET_TOKEN }
+  PACKET_TOKEN: ${{ secrets.PACKET_TOKEN }}
 # jobs to run
 jobs:
   check:
