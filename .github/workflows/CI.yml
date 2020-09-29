@@ -40,9 +40,7 @@ jobs:
       run: make test-unit
     - name: Codecov
       uses: codecov/codecov-action@v1.0.12
-    - name: Setup
     - run: curl -Lo packet-cli  https://github.com/packethost/packet-cli/releases/download/0.0.7/packet-linux-amd64 && chmod +x packet-cli && sudo mv packet-cli /usr/local/bin/
     - run: ssh-keygen -f ~/.ssh/id_rsa -P ""
     - run: pub_key=`cat ~/.ssh/id_rsa.pub`
     - run: echo " publc key is $pub_key"
-      
