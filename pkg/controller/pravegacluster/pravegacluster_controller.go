@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -350,12 +351,39 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 	}
 
 	if p.Spec.ExternalAccess.Enabled {
+		currentservice := &corev1.Service{}
 		services := pravega.MakeSegmentStoreExternalServices(p)
 		for _, service := range services {
 			controllerutil.SetControllerReference(p, service, r.scheme)
-			err = r.client.Create(context.TODO(), service)
-			if err != nil && !errors.IsAlreadyExists(err) {
-				return err
+			err := r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, currentservice)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					err = r.client.Create(context.TODO(), service)
+					if err != nil && !errors.IsAlreadyExists(err) {
+						return err
+					}
+				}
+			} else {
+				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
+				if !eq {
+					err := r.client.Delete(context.TODO(), currentservice)
+					if err != nil {
+						return err
+					}
+					err = r.client.Create(context.TODO(), service)
+					if err != nil && !errors.IsAlreadyExists(err) {
+						return err
+					}
+					pod := &corev1.Pod{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+					if err != nil {
+						return err
+					}
+					err = r.client.Delete(context.TODO(), pod)
+					if err != nil {
+						return err
+					}
+				}
 			}
 		}
 	}
