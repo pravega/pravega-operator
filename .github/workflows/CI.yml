@@ -37,8 +37,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Gofmt and License checks
       run: make check
-  #  - name: unit tests
-  #    run: make test-unit
+    - name: unit tests
+      run: make test-unit
     - name: Codecov
       uses: codecov/codecov-action@v1.0.12
     - name: Installing Packet-cli
@@ -50,7 +50,7 @@ jobs:
         echo "publc key is $pub_key"
         echo "packet-cli ssh-key create --key  \"$(cat ~/.ssh/id_rsa.pub)\"  --label \"pravega\""
         packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
-    - name: Creating nodes
+    - name: Creating nodes and running e2e
       run: |
         packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
@@ -83,3 +83,28 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://kubernetes-charts.storage.googleapis.com;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
+        sleep 30s
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-version-map.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-config-map.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk-cluster.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/deploy/version_map.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml\""
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo add jetstack https://charts.jetstack.io"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo update"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create namespace cert-manager;helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.14.1 --wait"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/certificate.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/webhook.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/crd.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
+    - name: Deleting cluster
+      if: ${{ always() }}
+      run: |
+        SSHKEY=`packet-cli ssh-key get | grep "pravega-travis" | awk '{print $2}' | tr -d ' '`
+        echo y | packet-cli ssh-key delete -i $SSHKEY
+        echo y | packet-cli device  delete -i $CLUSTER_ID
+        echo y | packet-cli device  delete -i $CLUSTER_ID1
+        echo y | packet-cli device  delete -i $CLUSTER_ID2
