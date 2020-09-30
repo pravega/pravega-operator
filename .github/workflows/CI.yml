@@ -49,7 +49,7 @@ jobs:
     - run: packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
     - run: packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
     - run: packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
-    - run: CLUSTER_ID=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' '`
+    - run: CLUSTER_ID=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
     - run: echo "cluster id is $CLUSTER_ID"
     - run: packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
     - run: packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
@@ -59,6 +59,8 @@ jobs:
     - run: while [ "$WORKER1_STATE" != "active" ]; do WORKER1_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' '`;sleep 30;done
     - run: WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`
     - run: while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
-    - run: CLUSTER_IP=`packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
+    - run: CLUSTER_IP=$(packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' ')
     - run: echo "Cluster IP is $CLUSTER_IP"
-    - run: ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
+    - run: ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-github-action"
+
+    
