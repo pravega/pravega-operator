@@ -108,7 +108,7 @@ storage:
 
   cache:
     size: 20Gi
-    className: standard
+    className:
 
 options:
   bookkeeper.ensemble.size: "3"
