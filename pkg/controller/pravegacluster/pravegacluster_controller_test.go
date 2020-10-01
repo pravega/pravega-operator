@@ -678,6 +678,74 @@ var _ = Describe("PravegaCluster Controller", func() {
 			})
 		})
 
+		Context("Custom spec with ExternalAccess and changing the domainName", func() {
+			var (
+				client     client.Client
+				err        error
+				domainName string
+			)
+
+			BeforeEach(func() {
+				domainName = "pravega.com."
+				p.Spec = v1beta1.ClusterSpec{
+					Version: "0.3.2-rc2",
+					ExternalAccess: &v1beta1.ExternalAccess{
+						Enabled:    true,
+						Type:       corev1.ServiceTypeClusterIP,
+						DomainName: domainName,
+					},
+					Pravega: &v1beta1.PravegaSpec{
+						ControllerReplicas:   2,
+						SegmentStoreReplicas: 3,
+					},
+				}
+				// equivalent of 1st reconcile
+				p.WithDefaults()
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
+				res, err = r.Reconcile(req)
+			})
+
+			Context("Pravega SegmentStore External Access", func() {
+				var foundSegmentStoreSvc1 *corev1.Service
+
+				BeforeEach(func() {
+					// 2nd reconcile
+					res, err = r.Reconcile(req)
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
+					domainName = "pravega1.com."
+					foundPravega := &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					foundPravega.Spec.ExternalAccess.DomainName = domainName
+					client.Update(context.TODO(), foundPravega)
+					// 4th reconcile
+					_, _ = r.Reconcile(req)
+
+					foundSegmentStoreSvc1 = &corev1.Service{}
+					nn1 := types.NamespacedName{
+						Name:      p.ServiceNameForSegmentStore(0),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
+				})
+
+				It("should create all segmentstore services", func() {
+					Ω(err).Should(BeNil())
+				})
+
+				It("should set only DNS name annotation", func() {
+					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
+					Ω(mapLength).To(Equal(1))
+
+					svcName1 := p.ServiceNameForSegmentStore(0) + "." + domainName
+					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName1))
+				})
+			})
+		})
+
 		Context("Custom spec with ExternalAccess with annotations and overridden Service Type", func() {
 			var (
 				client     client.Client

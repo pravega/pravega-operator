@@ -366,17 +366,17 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			} else {
 				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
 				if !eq {
-					pod := &corev1.Pod{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
-					if err != nil {
-						return err
-					}
 					err := r.client.Delete(context.TODO(), currentservice)
 					if err != nil {
 						return err
 					}
 					err = r.client.Create(context.TODO(), service)
 					if err != nil && !errors.IsAlreadyExists(err) {
+						return err
+					}
+					pod := &corev1.Pod{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+					if err != nil {
 						return err
 					}
 					err = r.client.Delete(context.TODO(), pod)
