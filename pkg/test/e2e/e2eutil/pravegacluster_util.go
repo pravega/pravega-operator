@@ -122,6 +122,9 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 	p.WithDefaults()
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.ExternalAccess.Enabled = true
+	p.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
+	p.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
+	p.Spec.Pravega.SegmentStoreReplicas = 1
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -699,7 +702,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 }
 
 func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("Checking External Access for pravega cluster: %s", p.Name)
+	t.Logf("Checking External Access for pravega cluster: %s", p)
 	pravega := &api.PravegaCluster{}
 	t.Logf("anisha %s", fmt.Sprintf("%v", pravega))
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
