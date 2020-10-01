@@ -40,7 +40,9 @@ spec:
     conversionReviewVersions: ["v1beta1", "v1alpha1"]
     strategy: Webhook
     webhookClientConfig:
+      {{- if .Release.IsUpgrade }}
       caBundle: {{ .Values.webhookCert.crt }}
+      {{- end }}
       service:
         name: pravega-webhook-svc
         namespace: {{ .Release.Namespace }}

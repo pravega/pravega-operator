@@ -27,6 +27,7 @@ webhooks:
       namespace: default
       path: /validate-pravega-pravega-io-v1beta1-pravegacluster
   name: pravegawebhook.pravega.io
+  failurePolicy: Fail
   rules:
   - apiGroups:
     - pravega.pravega.io

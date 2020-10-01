@@ -1,37 +1,47 @@
 #!/usr/bin/env bash
 set -ex
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -lt 1 ]; then
 	echo "Error : Invalid number of arguments"
 	echo "Usage: ./pravegacluster.sh [deploy/destroy]"
 	exit 1
 fi
 
+args=$#
+cert=${2:-selfsigned-cert-bk}
+secret=${3:-selfsigned-cert-tls-bk}
+
 deploy_cluster () {
+	# Adding and updating the pravega charts repo
+	helm repo add pravega https://charts.pravega.io
+	helm repo update
+
 	# Installing the Zookeeper Operator
-	helm install zookeeper-operator ../charts/zookeeper-operator --wait
+	helm install zookeeper-operator pravega/zookeeper-operator --wait
 
 	# Installing the Zookeeper Cluster
-	helm install zookeeper ../charts/zookeeper --wait
+	helm install zookeeper pravega/zookeeper --wait
 
 	# Installing the BookKeeper Operator
-	helm install bookkeeper-operator ../charts/bookkeeper-operator --wait
+	if [[ "$args" -gt 1 ]]; then
+		helm install bookkeeper-operator pravega/bookkeeper-operator --set webhookCert.certName=$cert --set webhookCert.secretName=$secret --wait
+	else
+		helm install bookkeeper-operator pravega/bookkeeper-operator --wait
+	fi
 
 	# Installing the BookKeeper Cluster
-	helm install bookkeeper ../charts/bookkeeper --wait
+	helm install bookkeeper pravega/bookkeeper --wait
 
 	# Installing the issuer and certificate
 	set +ex
 	kubectl create -f ../deploy/certificate.yaml
 	set -ex
-	tls=$(kubectl get secret selfsigned-cert-tls -o yaml | grep tls.crt)
-	crt=${tls/" tls.crt: "/}
 
 	# Installing the Pravega Operator
-	helm install pravega-operator ../charts/pravega-operator --set webhookCert.crt="$crt" --wait
+	helm install pravega-operator pravega/pravega-operator --wait
 
 	# Installing the Pravega Cluster
-	helm install pravega ../charts/pravega --wait
+	helm install pravega pravega/pravega --wait
 }
 
 destroy_cluster(){

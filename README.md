@@ -57,7 +57,7 @@ There are manual deployment, upgrade and rollback options available as well.
 To understand how to deploy a Pravega Operator using helm, refer to [this](charts/pravega-operator#installing-the-chart).
 
 #### Deploying in Test Mode
- The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
+ The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
 
@@ -74,6 +74,8 @@ Check out the available [options for long term storage](doc/longtermstorage.md) 
 For demo purposes, you can quickly install a toy NFS server.
 
 ```
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com
+$ helm repo update
 $ helm install stable/nfs-server-provisioner --generate-name
 ```
 

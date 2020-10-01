@@ -104,7 +104,9 @@ To install cert-manager check [this](https://cert-manager.io/docs/installation/k
 ```
 ./pre-upgrade.sh [PRAVEGA_OPERATOR_RELEASE_NAME][PRAVEGA_OPERATOR_NAMESPACE]
 ```
-
+where:
+- `[PRAVEGA_OPERATOR_RELEASE_NAME]` is the release name of the pravega operator deployment
+- `[PRAVEGA_OPERATOR_NAMESPACE]` is the namespace in which the pravega operator has been deployed (this is an optional parameter and its default value is `default`)
 
 ### Triggering the upgrade
 
@@ -112,7 +114,7 @@ To install cert-manager check [this](https://cert-manager.io/docs/installation/k
 
 The upgrade to Operator 0.5.0 can be triggered using the following command
 ```
-helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=0.5.0 --set webhookCert.crt=[TLS_CRT] --set webhookCert.generate=false --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
+helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=0.5.0 --set webhookCert.crt=[TLS_CRT] --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
 ```
 where:
 - `[CERT_NAME]` is the name of the certificate that has been created

@@ -98,11 +98,9 @@ spec:
       {{- if .Values.storage.cache.className }}
       storageClassName: {{ .Values.storage.cache.className }}
       {{- end }}
-      {{- if .Values.storage.cache.size }}
       resources:
         requests:
           storage: {{ .Values.storage.cache.size }}
-      {{- end }}
     {{- end }}
     longtermStorage:
       {{- if eq (default .Values.storage.longtermStorage.type "filesystem") "ecs" }}
