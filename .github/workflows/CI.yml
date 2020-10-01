@@ -69,9 +69,10 @@ jobs:
         while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         echo "::set-env name=CLUSTER_ID::$CLUSTER_ID"
         echo "::set-env name=CLUSTER_IP::$CLUSTER_IP"
+        ls
+        scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r pravega-operator.tar.gz  root@$CLUSTER_IP:/root/"
     - name: Setup k8
       run: |
-        scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r pravega-operator.tar.gz  root@$CLUSTER_IP:/root/"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;tar -xzvf /root/pravega-operator.tar.gz"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP /root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
         CLUSTER_ID1=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
