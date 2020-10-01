@@ -62,14 +62,14 @@ jobs:
         - while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         - CLUSTER_IP=`packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
         - echo "Cluster IP is $CLUSTER_IP"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP /root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
         - CLUSTER_ID1=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
         - CLUSTER_IP1=`packet-cli device get -i $CLUSTER_ID1 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
         - CLUSTER_ID2=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $2}' | tr -d ' '`
         - CLUSTER_IP2=`packet-cli device get -i $CLUSTER_ID2 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git"
-        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
+        - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-cncf-cluster"
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 /root/pravega-operator/test/e2e/resources/kubernetes_slave_install.sh
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 /root/pravega-operator/test/e2e/resources/kubernetes_slave_install.sh
         - ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP 'kubeadm token create --print-join-command | head -2' >JOIN
