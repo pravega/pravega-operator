@@ -73,8 +73,8 @@ segmentStore:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-    segmentStoreLoadBalancerIP:
-    segmentStoreExternalTrafficPolicy: Local
+    loadBalancerIP:
+    externalTrafficPolicy: Local
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
 
 storage:
@@ -108,7 +108,7 @@ storage:
 
   cache:
     size: 20Gi
-    className: standard
+    className:
 
 options:
   bookkeeper.ensemble.size: "3"
