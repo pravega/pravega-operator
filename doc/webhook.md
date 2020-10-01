@@ -29,7 +29,7 @@ an example of the additional permission
 - apiGroups:
   - admissionregistration.k8s.io
   resources:
-  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
   verbs:
   - '*'
 ```
