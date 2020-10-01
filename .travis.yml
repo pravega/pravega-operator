@@ -42,8 +42,7 @@ jobs:
         # ping stdout every 5 minutes or Travis kills build
         # ref: https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
         - while sleep 5m; do echo hello; done &
-        - cd ..
-        - tar -czvf pravega-operator.tar.gz pravega-operator
+        - cd .. && tar -czvf pravega-operator.tar.gz pravega-operator
         - curl -Lo packet-cli  https://github.com/packethost/packet-cli/releases/download/0.0.7/packet-linux-amd64 && chmod +x packet-cli && sudo mv packet-cli /usr/local/bin/
         - ssh-keygen -f ~/.ssh/id_rsa -P ""
         - pub_key=`cat ~/.ssh/id_rsa.pub`
