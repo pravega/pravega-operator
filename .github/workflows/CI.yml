@@ -50,7 +50,7 @@ jobs:
         echo "publc key is $pub_key"
         echo "packet-cli ssh-key create --key  \"$(cat ~/.ssh/id_rsa.pub)\"  --label \"pravega\""
         packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
-    - name: Creating nodes and running e2e
+    - name: Creating nodes
       run: |
         packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
@@ -66,6 +66,10 @@ jobs:
         while [ "$WORKER1_STATE" != "active" ]; do WORKER1_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         WORKER2_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' ')
         while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
+        echo "::set-env name=CLUSTER_ID::$CLUSTER_ID"
+        echo "::set-env name=CLUSTER_IP::$CLUSTER_IP"
+    - name: Setup k8
+      run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;sudo apt-get install git -y;git clone https://github.com/pravega/pravega-operator.git; cd pravega-operator;git checkout issue-github-action"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP /root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
         CLUSTER_ID1=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
@@ -80,6 +84,10 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 $(cat JOIN)
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 $(cat JOIN)
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
+        echo "::set-env name=CLUSTER_ID1::$CLUSTER_ID1"
+        echo "::set-env name=CLUSTER_ID2::$CLUSTER_ID2"
+    - name: Make setup before running e2e
+      run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://kubernetes-charts.storage.googleapis.com;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
@@ -97,6 +105,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/certificate.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/deploy/webhook.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/crd.yaml"
+    - name: Running e2e
+      run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
