@@ -95,6 +95,7 @@ spec:
                     description: Domain Name to be used for External Access This value
                       is ignored if External Access is disabled
                     type: string
+                    pattern: '.*\..*'
                   enabled:
                     description: Enabled specifies whether or not external access
                       is enabled By default, external access is not enabled
