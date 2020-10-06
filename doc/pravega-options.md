@@ -41,7 +41,7 @@ Default Controller JVM Options
 if Pravega version is greater or equal 0.4, then the followings are also added to the default Controller JVM Options
 ```
 "-XX:+UnlockExperimentalVMOptions",
-"-XX:+UseCGroupMemoryLimitForHeap",
+"-XX:+UseContainerSupport",
 "-XX:MaxRAMFraction=2"
 ```
 
@@ -56,7 +56,7 @@ Default Segmenstore JVM Options
 if Pravega version is greater or equal to 0.4, then the followings are also added to the default Segmenstore JVM Options
 ```
 "-XX:+UnlockExperimentalVMOptions",
-"-XX:+UseCGroupMemoryLimitForHeap",
+"-XX:+UseContainerSupport",
 "-XX:MaxRAMFraction=2"
 ```
 

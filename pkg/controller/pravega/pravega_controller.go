@@ -190,7 +190,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:+UseCGroupMemoryLimitForHeap",
+			"-XX:+UseContainerSupport",
 			"-XX:MaxRAMFraction=2",
 		)
 	}
