@@ -40,6 +40,13 @@ $ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --
 ```
 **Note:** By specifying the `--reuse-values` option, the configuration of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new configuration for these parameters. Also, by skipping the `reuse-values` flag, the values of all parameters are reset to the default configuration that has been specified in the published charts for version [NEW_VERSION].
 
+**Note:** If the operator version is 0.5.1 or below and we are upgrading pravega version to 0.9.0 or above, we have to set controller and segmentstore JVM options as follows.
+
+```
+$ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --set version=[NEW_VERSION] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'  --reuse-values --timeout 600s
+```
+Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
+
 ### Upgrading manually
 
 To initiate the upgrade process manually, a user has to update the `spec.version` field on the `PravegaCluster` custom resource. This can be done in three different ways using the `kubectl` command.
@@ -86,6 +93,12 @@ To summarize the way in which the segmentstore pod memory is distributed:
 ```
 POD_MEM_LIMIT = JVM Heap + Direct Memory
 Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
+```
+**Note:** If we are upgrading pravega version to 0.9 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
+```
+segmentStoreJVMOptions: ["-XX:+UseContainerSupport","-XX:+IgnoreUnrecognizedVMOptions"]
+
+controllerjvmOptions: ["-XX:+UseContainerSupport","-XX:+IgnoreUnrecognizedVMOptions"]
 ```
 
 ## Upgrade process
