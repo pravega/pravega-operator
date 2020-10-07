@@ -43,9 +43,9 @@ $ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --
 **Note:** If the operator version is 0.5.1 or below and we are upgrading pravega version to 0.9.0 or above, we have to set controller and segmentstore Jvm options as follows.
 
 ```
-$ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --set version=[NEW_VERSION] --set controller.jvmOptions[0]="-XX:+UseContainerSupport" --set controller.jvmOptions[1]="-XX:+IgnoreUnrecognizedVMOptions" --set segmentStore.jvmOptions[0]="-XX:+UseContainerSupport" --set segmentStore.jvmOptions[1]="-XX:+UseContainerSupport" --set segmentStore.jvmOptions[2]="-Xmx2g" --set segmentStore.jvmOptions[3]="-XX:MaxDirectMemorySize=2g" --reuse-values --timeout 600s
+$ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --set version=[NEW_VERSION] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'  --reuse-values --timeout 600s
 ```
-Based on the cluster flavours selected ,segementstore memory requirements needs to be adjusted.
+Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
 
 ### Upgrading manually
 
@@ -94,7 +94,7 @@ To summarize the way in which the segmentstore pod memory is distributed:
 POD_MEM_LIMIT = JVM Heap + Direct Memory
 Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
 ```
-**Note:** If we are upgrading pravega version to 0.9 or above using operators 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
+**Note:** If we are upgrading pravega version to 0.9 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
 ```
 segmentStoreJVMOptions: ["-XX:+UseContainerSupport","-XX:+IgnoreUnrecognizedVMOptions"]
 
