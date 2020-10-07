@@ -40,7 +40,7 @@ $ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --
 ```
 **Note:** By specifying the `--reuse-values` option, the configuration of all parameters are retained across upgrades. However if some values need to be modified during the upgrade, the `--set` flag can be used to specify the new configuration for these parameters. Also, by skipping the `reuse-values` flag, the values of all parameters are reset to the default configuration that has been specified in the published charts for version [NEW_VERSION].
 
-**Note:** If the operator version is 0.5.1 or below and we are upgrading pravega version to 0.9.0 or above, we have to set controller and segmentstore Jvm options as follows.
+**Note:** If the operator version is 0.5.1 or below and we are upgrading pravega version to 0.9.0 or above, we have to set controller and segmentstore JVM options as follows.
 
 ```
 $ helm upgrade [PRAVEGA_RELEASE_NAME] pravega/pravega --version=[NEW_VERSION] --set version=[NEW_VERSION] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'  --reuse-values --timeout 600s

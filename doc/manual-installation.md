@@ -116,7 +116,7 @@ NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
 pravega   0.7.0     4                 0               25s
 ```
 
-**Note:** If we are installing pravega version 0.9.0 or above using operators 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
+**Note:** If we are installing pravega version 0.9.0 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
 ```
 segmentStoreJVMOptions: ["-XX:+UseContainerSupport","-XX:+IgnoreUnrecognizedVMOptions"]
 
