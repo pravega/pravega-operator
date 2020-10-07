@@ -38,9 +38,9 @@ This command deploys pravega on the Kubernetes cluster in its default configurat
 
 >Note: If the operator version is 0.5.1 or below and pravega version is 0.9.0 or above, need to set the controller and segment store Jvm options as shown below.
 ```
-helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set controller.jvmOptions[0]="-XX:+UseContainerSupport" --set controller.jvmOptions[1]="-XX:+IgnoreUnrecognizedVMOptions" --set segmentStore.jvmOptions[0]="-XX:+UseContainerSupport" --set segmentStore.jvmOptions[1]="-XX:+UseContainerSupport" --set segmentStore.jvmOptions[2]="-Xmx2g" --set segmentStore.jvmOptions[3]="-XX:MaxDirectMemorySize=2g"
+helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set controller.jvmOptions[0]="-XX:+UseContainerSupport" --set controller.jvmOptions[1]="-XX:+IgnoreUnrecognizedVMOptions" --set segmentStore.jvmOptions[0]="-XX:+UseContainerSupport" --set segmentStore.jvmOptions[1]="-XX:+IgnoreUnrecognizedVMOptions" --set segmentStore.jvmOptions[2]="-Xmx2g" --set segmentStore.jvmOptions[3]="-XX:MaxDirectMemorySize=2g"
 ```
-Based on the cluster flavours selected ,segementstore memory requirements needs to be adjusted.
+Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
 
 
 ## Uninstalling the Chart
