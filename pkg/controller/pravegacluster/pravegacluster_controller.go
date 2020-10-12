@@ -369,7 +369,7 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 		if err != nil {
 			return err
 		}
-		err = r.restartPod(podList)
+		err = r.restartDeploymentPod(podList)
 		if err != nil {
 			return err
 		}
@@ -488,7 +488,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 		if err != nil {
 			return err
 		}
-		err = r.restartPod(podList)
+		err = r.restartStsPod(podList)
 		if err != nil {
 			return err
 		}
@@ -505,19 +505,46 @@ func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
 	return false
 }
 
-func (r *ReconcilePravegaCluster) restartPod(podList *corev1.PodList) error {
+func (r *ReconcilePravegaCluster) restartStsPod(podList *corev1.PodList) error {
 	for _, podItem := range podList.Items {
 		err := r.client.Delete(context.TODO(), &podItem)
 		if err != nil {
 			return err
 		} else {
+			start := time.Now()
 			pod := &corev1.Pod{}
 			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
+				}
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			}
+			start = time.Now()
 			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for !util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", podItem.ObjectMeta.Name)
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+		}
+	}
+	return nil
+}
+func (r *ReconcilePravegaCluster) restartDeploymentPod(podList *corev1.PodList) error {
+	for _, podItem := range podList.Items {
+		err := r.client.Delete(context.TODO(), &podItem)
+		if err != nil {
+			return err
+		} else {
+			start := time.Now()
+			pod := &corev1.Pod{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to delete controller pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
+				}
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			}
 		}
