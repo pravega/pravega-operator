@@ -383,13 +383,21 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 					if err != nil {
 						return err
 					}
+					start := time.Now()
 					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 					for err == nil && util.IsPodReady(pod) {
+						if time.Since(start) > 10*time.Minute {
+							return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", pod.Name)
+						}
 						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 						log.Printf("waiting for %v pod to be deleted", pod.Name)
 					}
+					start = time.Now()
 					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 					for err == nil && !util.IsPodReady(pod) {
+						if time.Since(start) > 10*time.Minute {
+							return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", pod.Name)
+						}
 						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 						log.Printf("waiting for %v pod to be in ready state", pod.Name)
 					}
