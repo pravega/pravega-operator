@@ -369,7 +369,7 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 		if err != nil {
 			return err
 		}
-		err = r.restartDeploymentPod(podList)
+		err = r.restartDeploymentPod(podList, p)
 		if err != nil {
 			return err
 		}
@@ -532,7 +532,7 @@ func (r *ReconcilePravegaCluster) restartStsPod(podList *corev1.PodList) error {
 	}
 	return nil
 }
-func (r *ReconcilePravegaCluster) restartDeploymentPod(podList *corev1.PodList) error {
+func (r *ReconcilePravegaCluster) restartDeploymentPod(podList *corev1.PodList, p *pravegav1beta1.PravegaCluster) error {
 	for _, podItem := range podList.Items {
 		err := r.client.Delete(context.TODO(), &podItem)
 		if err != nil {
@@ -546,6 +546,22 @@ func (r *ReconcilePravegaCluster) restartDeploymentPod(podList *corev1.PodList) 
 					return fmt.Errorf("failed to delete controller pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
 				}
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+			deploy := &appsv1.Deployment{}
+			name := p.DeploymentNameForController()
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+			if err != nil {
+				return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
+			}
+			start = time.Now()
+			for deploy.Status.ReadyReplicas != deploy.Status.Replicas {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to make controller pod ready for 10 mins ")
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+				if err != nil {
+					return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
+				}
 			}
 		}
 	}
