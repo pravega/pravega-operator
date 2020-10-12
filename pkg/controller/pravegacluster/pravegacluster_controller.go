@@ -511,8 +511,11 @@ func (r *ReconcilePravegaCluster) restartPod(podList *corev1.PodList) error {
 		if err != nil {
 			return err
 		} else {
-			time.Sleep(10 * time.Second)
 			pod := &corev1.Pod{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for util.IsPodReady(pod) {
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
 			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for !util.IsPodReady(pod) {
 				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
