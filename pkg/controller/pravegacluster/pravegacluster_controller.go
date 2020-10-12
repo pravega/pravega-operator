@@ -14,6 +14,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -316,11 +317,32 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 		return err
 	}
 
+	var eq bool = true
+	currentConfigMap := &corev1.ConfigMap{}
 	configMap := pravega.MakeControllerConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Create(context.TODO(), configMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: p.Namespace}, currentConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.client.Create(context.TODO(), configMap)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	} else {
+		currentConfigMap := &corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: configMap.Namespace, Name: configMap.Name}, currentConfigMap)
+		currentjavaOptsList := currentConfigMap.Data["JAVA_OPTS"]
+		for _, jvmopts := range p.Spec.Pravega.ControllerJvmOptions {
+			eq = strings.Contains(currentjavaOptsList, jvmopts)
+			if !eq {
+				err := r.client.Update(context.TODO(), configMap)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
 	}
 
 	deployment := pravega.MakeControllerDeployment(p)
@@ -328,6 +350,29 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 	err = r.client.Create(context.TODO(), deployment)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
+	}
+	if !eq {
+		currentDeployment := &appsv1.Deployment{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, currentDeployment)
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: deployment.Spec.Template.Labels,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to convert label selector: %v", err)
+		}
+		podList := &corev1.PodList{}
+		podlistOps := &client.ListOptions{
+			Namespace:     deployment.Namespace,
+			LabelSelector: selector,
+		}
+		err = r.client.List(context.TODO(), podList, podlistOps)
+		if err != nil {
+			return err
+		}
+		err = r.restartPod(podList)
+		if err != nil {
+			return err
+		}
 	}
 
 	service := pravega.MakeControllerService(p)
@@ -367,11 +412,32 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 		return err
 	}
 
+	var eq bool = true
+	currentConfigMap := &corev1.ConfigMap{}
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Create(context.TODO(), configMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: configMap.Name, Namespace: p.Namespace}, currentConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.client.Create(context.TODO(), configMap)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	} else {
+		currentConfigMap := &corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: configMap.Namespace, Name: configMap.Name}, currentConfigMap)
+		currentjavaOptsList := currentConfigMap.Data["JAVA_OPTS"]
+		for _, jvmopts := range p.Spec.Pravega.SegmentStoreJVMOptions {
+			eq = strings.Contains(currentjavaOptsList, jvmopts)
+			if !eq {
+				err := r.client.Update(context.TODO(), configMap)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
 	}
 
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
@@ -404,6 +470,29 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			}
 		}
 	}
+	if !eq {
+		currentSts := &appsv1.StatefulSet{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: statefulSet.Name, Namespace: statefulSet.Namespace}, currentSts)
+		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+			MatchLabels: statefulSet.Spec.Template.Labels,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to convert label selector: %v", err)
+		}
+		podList := &corev1.PodList{}
+		podlistOps := &client.ListOptions{
+			Namespace:     statefulSet.Namespace,
+			LabelSelector: selector,
+		}
+		err = r.client.List(context.TODO(), podList, podlistOps)
+		if err != nil {
+			return err
+		}
+		err = r.restartPod(podList)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -414,6 +503,23 @@ func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
 		}
 	}
 	return false
+}
+
+func (r *ReconcilePravegaCluster) restartPod(podList *corev1.PodList) error {
+	for _, podItem := range podList.Items {
+		err := r.client.Delete(context.TODO(), &podItem)
+		if err != nil {
+			return err
+		} else {
+			time.Sleep(10 * time.Second)
+			pod := &corev1.Pod{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for !util.IsPodReady(pod) {
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+		}
+	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaCluster) (err error) {
