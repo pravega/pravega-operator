@@ -889,7 +889,15 @@ func (p *PravegaCluster) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 	log.Printf("validate update %s", p.Name)
-	return p.validatePravegaVersion()
+	err := p.validatePravegaVersion()
+	if err != nil {
+		return err
+	}
+	err = p.validateConfigMap()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -992,6 +1000,64 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
 	}
 	log.Print("validatePravegaVersion:: No error found...returning...")
+	return nil
+}
+
+func (p *PravegaCluster) validateConfigMap() error {
+
+	configmap := &corev1.ConfigMap{}
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, configmap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return fmt.Errorf("failed to get configmap (%s): %v", configmap.Name, err)
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["controller.containerCount"]; ok {
+		checkstring := fmt.Sprintf("-Dcontroller.containerCount=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("controller.containerCount should not be changed ")
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["controller.container.count"]; ok {
+		checkstring := fmt.Sprintf("-Dcontroller.container.count=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("controller.container.count should not be changed ")
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.containerCount"]; ok {
+		checkstring := fmt.Sprintf("-Dpravegaservice.containerCount=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("pravegaservice.containerCount should not be changed ")
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.container.count"]; ok {
+		checkstring := fmt.Sprintf("-Dpravegaservice.container.count=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("pravegaservice.container.count should not be changed ")
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["bookkeeper.bkLedgerPath"]; ok {
+		checkstring := fmt.Sprintf("-Dbookkeeper.bkLedgerPath=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("bookkeeper.bkLedgerPath should not be changed ")
+		}
+	}
+	if val, ok := p.Spec.Pravega.Options["bookkeeper.ledger.path"]; ok {
+		checkstring := fmt.Sprintf("-Dbookkeeper.ledger.path=%v", val)
+		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !eq {
+			return fmt.Errorf("bookkeeper.ledger.path should not be changed ")
+		}
+	}
+	log.Print("validateConfigMap:: No error found...returning...")
 	return nil
 }
 

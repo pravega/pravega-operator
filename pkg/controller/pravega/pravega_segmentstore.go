@@ -12,6 +12,7 @@ package pravega
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -220,6 +221,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
+
+	sort.Strings(javaOpts)
+
 	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
 	configData := map[string]string{
 		"AUTHORIZATION_ENABLED": authEnabledStr,

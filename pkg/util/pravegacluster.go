@@ -12,6 +12,7 @@ package util
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -41,6 +42,15 @@ func IsVersionBelow07(ver string) bool {
 	}
 	result, _ := CompareVersions(ver, "0.7.0", "<")
 	if result {
+		return true
+	}
+	return false
+}
+
+func CompareConfigMap(cm1 *corev1.ConfigMap, cm2 *corev1.ConfigMap) bool {
+
+	eq := reflect.DeepEqual(cm1.Data, cm2.Data)
+	if eq {
 		return true
 	}
 	return false
