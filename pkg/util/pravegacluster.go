@@ -48,7 +48,6 @@ func IsVersionBelow07(ver string) bool {
 }
 
 func CompareConfigMap(cm1 *corev1.ConfigMap, cm2 *corev1.ConfigMap) bool {
-
 	eq := reflect.DeepEqual(cm1.Data, cm2.Data)
 	if eq {
 		return true

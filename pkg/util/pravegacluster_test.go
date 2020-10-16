@@ -14,6 +14,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -258,6 +259,48 @@ var _ = Describe("pravegacluster", func() {
 
 		})
 	})
+	Context("CompareConfigMap", func() {
+		var output1, output2 bool
+		BeforeEach(func() {
+			configData1 := map[string]string{
+				"TEST_DATA": "testdata",
+			}
+			configData2 := map[string]string{
+				"TEST_DATA": "testdata1",
+			}
+			configMap1 := &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				Data: configData1,
+			}
+			configMap2 := &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				Data: configData1,
+			}
+			configMap3 := &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				Data: configData2,
+			}
+			output1 = CompareConfigMap(configMap1, configMap2)
+			output2 = CompareConfigMap(configMap1, configMap3)
+		})
+
+		It("output1 should be true", func() {
+			Ω(output1).To(Equal(true))
+		})
+		It("output2 should be false", func() {
+			Ω(output2).To(Equal(false))
+		})
+	})
+
 	Context("GetPodVersion", func() {
 		var out string
 		BeforeEach(func() {
@@ -272,5 +315,4 @@ var _ = Describe("pravegacluster", func() {
 			Ω(out).To(Equal("0.7.0"))
 		})
 	})
-
 })
