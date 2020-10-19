@@ -11,6 +11,7 @@
 package e2e
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -41,6 +42,8 @@ func testCMUpgradeCluster(t *testing.T) {
 
 	cluster.WithDefaults()
 
+	cluster.Spec.Pravega.Options["pravegaservice.containerCount"] = "3"
+
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -63,6 +66,19 @@ func testCMUpgradeCluster(t *testing.T) {
 	//checking if the upgrade of options was successfull
 	err = pravega_e2eutil.WaitForCMPravegaClusterToUpgrade(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
+
+	// This is to get the latest Pravega cluster object
+	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	//updating pravega option
+	pravega.Spec.Pravega.Options["pravegaservice.containerCount"] = "10"
+
+	//updating pravegacluster
+	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
+
+	//should give an errors
+	g.Expect(strings.ContainsAny(err.Error(), "controller.containerCount should not be changed")).To(Equal(true))
 
 	// Delete cluster
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
