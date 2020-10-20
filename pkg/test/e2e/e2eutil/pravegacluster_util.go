@@ -19,6 +19,7 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	"github.com/pravega/pravega-operator/pkg/util"
 	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -156,6 +157,9 @@ func DeleteBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	t.Logf("deleting bookkeeper cluster: %s", b.Name)
 	err := f.Client.Delete(goctx.TODO(), b)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
 
@@ -168,6 +172,9 @@ func DeletePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 	t.Logf("deleting pravega cluster: %s", p.Name)
 	err := f.Client.Delete(goctx.TODO(), p)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
 
@@ -180,9 +187,11 @@ func DeleteZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	t.Logf("deleting zookeeper cluster: %s", z.Name)
 	err := f.Client.Delete(goctx.TODO(), z)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
-
 	t.Logf("deleted zookeeper cluster: %s", z.Name)
 	return nil
 }
@@ -341,6 +350,56 @@ func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *f
 	}
 
 	t.Logf("pravega cluster upgraded: %s", p.Name)
+	return nil
+}
+
+func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("waiting for cluster to upgrade post cm changes: %s", p.Name)
+
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
+	}
+
+	// Checking if all pods are getting restarted
+	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		name := pod.Name
+		t.Logf("waiting for pods to terminate, running pods (%v)", pod.Name)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		start := time.Now()
+		for util.IsPodReady(pod) {
+			if time.Since(start) > 5*time.Minute {
+				return fmt.Errorf("failed to delete Segmentstore pod (%s) for 5 mins ", name)
+			}
+			err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		}
+	}
+
+	//Checking if all pods are in ready state
+	podList, err = f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+
+	for i := range podList.Items {
+		pod := &podList.Items[i]
+		name := pod.Name
+		t.Logf("waiting for pods to terminate, running pods (%v)", pod.Name)
+		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		start := time.Now()
+		for !util.IsPodReady(pod) {
+			if time.Since(start) > 5*time.Minute {
+				return fmt.Errorf("failed to delete Segmentstore pod (%s) for 5 mins ", name)
+			}
+			err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		}
+	}
+
 	return nil
 }
 

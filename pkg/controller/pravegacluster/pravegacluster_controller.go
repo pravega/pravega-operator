@@ -129,6 +129,11 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 		return fmt.Errorf("failed to reconcile finalizers %v", err)
 	}
 
+	err = r.reconcileConfigMap(p)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile configMap %v", err)
+	}
+
 	err = r.deployCluster(p)
 	if err != nil {
 		return fmt.Errorf("failed to deploy cluster: %v", err)
@@ -181,6 +186,86 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 					log.Printf("Error publishing zk metadata cleanup failure event to k8s. %v", pubErr)
 				}
 				return fmt.Errorf(message)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
+
+	err = r.reconcileControllerConfigMap(p)
+	if err != nil {
+		return err
+	}
+
+	err = r.reconcileSegmentStoreConfigMap(p)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
+
+	currentConfigMap := &corev1.ConfigMap{}
+	configMap := pravega.MakeControllerConfigMap(p)
+	controllerutil.SetControllerReference(p, configMap, r.scheme)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.client.Create(context.TODO(), configMap)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	} else {
+		currentConfigMap := &corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
+		eq := util.CompareConfigMap(currentConfigMap, configMap)
+		if !eq {
+			err := r.client.Update(context.TODO(), configMap)
+			if err != nil {
+				return err
+			}
+			//restarting controller pods
+			err = r.restartDeploymentPod(p)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
+
+	currentConfigMap := &corev1.ConfigMap{}
+	configMap := pravega.MakeSegmentstoreConfigMap(p)
+	controllerutil.SetControllerReference(p, configMap, r.scheme)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.client.Create(context.TODO(), configMap)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	} else {
+		currentConfigMap := &corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
+		eq := util.CompareConfigMap(currentConfigMap, configMap)
+		if !eq {
+			err := r.client.Update(context.TODO(), configMap)
+			if err != nil {
+				return err
+			}
+			//restarting sts pods
+			err = r.restartStsPod(p)
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -316,13 +401,6 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 		return err
 	}
 
-	configMap := pravega.MakeControllerConfigMap(p)
-	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Create(context.TODO(), configMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
 	deployment := pravega.MakeControllerDeployment(p)
 	controllerutil.SetControllerReference(p, deployment, r.scheme)
 	err = r.client.Create(context.TODO(), deployment)
@@ -367,13 +445,6 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 		return err
 	}
 
-	configMap := pravega.MakeSegmentstoreConfigMap(p)
-	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Create(context.TODO(), configMap)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
-
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
 	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
 	if statefulSet.Spec.VolumeClaimTemplates != nil {
@@ -414,6 +485,114 @@ func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
 		}
 	}
 	return false
+}
+
+func (r *ReconcilePravegaCluster) restartStsPod(p *pravegav1beta1.PravegaCluster) error {
+
+	currentSts := &appsv1.StatefulSet{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstore(), Namespace: p.Namespace}, currentSts)
+	if err != nil {
+		return err
+	}
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: currentSts.Spec.Template.Labels,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to convert label selector: %v", err)
+	}
+	podList := &corev1.PodList{}
+	podlistOps := &client.ListOptions{
+		Namespace:     currentSts.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), podList, podlistOps)
+	if err != nil {
+		return err
+	}
+
+	for _, podItem := range podList.Items {
+		err := r.client.Delete(context.TODO(), &podItem)
+		if err != nil {
+			return err
+		} else {
+			start := time.Now()
+			pod := &corev1.Pod{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+			start = time.Now()
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for !util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", podItem.ObjectMeta.Name)
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *ReconcilePravegaCluster) restartDeploymentPod(p *pravegav1beta1.PravegaCluster) error {
+
+	currentDeployment := &appsv1.Deployment{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.DeploymentNameForController(), Namespace: p.Namespace}, currentDeployment)
+	if err != nil {
+		return err
+	}
+	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
+		MatchLabels: currentDeployment.Spec.Template.Labels,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to convert label selector: %v", err)
+	}
+	podList := &corev1.PodList{}
+	podlistOps := &client.ListOptions{
+		Namespace:     currentDeployment.Namespace,
+		LabelSelector: selector,
+	}
+	err = r.client.List(context.TODO(), podList, podlistOps)
+	if err != nil {
+		return err
+	}
+
+	for _, podItem := range podList.Items {
+		err := r.client.Delete(context.TODO(), &podItem)
+		if err != nil {
+			return err
+		} else {
+			start := time.Now()
+			pod := &corev1.Pod{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			for util.IsPodReady(pod) {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to delete controller pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			}
+			deploy := &appsv1.Deployment{}
+			name := p.DeploymentNameForController()
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+			if err != nil {
+				return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
+			}
+			start = time.Now()
+			for deploy.Status.ReadyReplicas != deploy.Status.Replicas {
+				if time.Since(start) > 10*time.Minute {
+					return fmt.Errorf("failed to make controller pod ready for 10 mins ")
+				}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+				if err != nil {
+					return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaCluster) (err error) {
