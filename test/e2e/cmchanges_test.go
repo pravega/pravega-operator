@@ -63,7 +63,7 @@ func testCMUpgradeCluster(t *testing.T) {
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	//checking if the upgrade of options was successfull
+	//checking if the upgrade of options was successful
 	err = pravega_e2eutil.WaitForCMPravegaClusterToUpgrade(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -77,7 +77,7 @@ func testCMUpgradeCluster(t *testing.T) {
 	//updating pravegacluster
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 
-	//should give an errors
+	//should give an error
 	g.Expect(strings.ContainsAny(err.Error(), "controller.containerCount should not be changed")).To(Equal(true))
 
 	// Delete cluster
