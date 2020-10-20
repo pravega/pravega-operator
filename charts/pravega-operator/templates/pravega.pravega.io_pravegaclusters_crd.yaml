@@ -36,17 +36,17 @@ spec:
   preserveUnknownFields: false
   subresources:
     status: {}
+  {{- if .Release.IsUpgrade }}
   conversion:
     conversionReviewVersions: ["v1beta1", "v1alpha1"]
     strategy: Webhook
     webhookClientConfig:
-      {{- if .Release.IsUpgrade }}
       caBundle: {{ .Values.webhookCert.crt }}
-      {{- end }}
       service:
         name: pravega-webhook-svc
         namespace: {{ .Release.Namespace }}
         path: /convert
+  {{- end }}
   version: v1beta1
   versions:
   - name: v1beta1

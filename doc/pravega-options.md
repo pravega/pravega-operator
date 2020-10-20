@@ -42,7 +42,7 @@ if Pravega version is greater or equal 0.4, then the followings are also added t
 ```
 "-XX:+UnlockExperimentalVMOptions",
 "-XX:+UseContainerSupport",
-"-XX:MaxRAMFraction=2"
+"-XX:MaxRAMPercentage=50"
 ```
 
 Default Segmenstore JVM Options
@@ -57,7 +57,7 @@ if Pravega version is greater or equal to 0.4, then the followings are also adde
 ```
 "-XX:+UnlockExperimentalVMOptions",
 "-XX:+UseContainerSupport",
-"-XX:MaxRAMFraction=2"
+"-XX:MaxRAMPercentage=50"
 ```
 
 ### SegmentStore Custom Configuration

@@ -35,14 +35,6 @@ spec:
   preserveUnknownFields: false
   subresources:
     status: {}
-  conversion:
-    conversionReviewVersions: ["v1beta1", "v1alpha1"]
-    strategy: Webhook
-    webhookClientConfig:
-      service:
-        name: pravega-webhook-svc
-        namespace: default
-        path: /convert
   version: v1beta1
   versions:
   - name: v1beta1

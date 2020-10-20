@@ -59,7 +59,7 @@ The following table lists the configurable parameters of the pravega chart and t
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `version` | Pravega version | `0.7.0` |
+| `version` | Pravega version | `0.8.0` |
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
