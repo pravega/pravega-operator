@@ -24,6 +24,9 @@ externalAccess:
   type: LoadBalancer
   domainName:
 
+securityContext: {}
+  #runAsUser: 0
+
 image:
   repository: pravega/pravega
   pullPolicy: IfNotPresent

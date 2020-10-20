@@ -99,3 +99,4 @@ The following table lists the configurable parameters of the pravega chart and t
 | `storage.cache.className` | Storage class for cache volume | `` |
 | `storage.cache.size` | Storage requests for cache volume | `20Gi` |
 | `options` | List of Pravega options | |
+| `securityContext.runAsUser` | The UID to run the entrypoint of the container process | `0` | 

@@ -36,6 +36,10 @@ spec:
     {{- end }}
     {{- end }}
   pravega:
+    {{- if .Values.securityContext }}
+    securityContext:
+      runAsUser: {{ .Values.securityContext.runAsUser }}
+    {{- end }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
