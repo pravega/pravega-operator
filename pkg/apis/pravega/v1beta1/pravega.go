@@ -169,10 +169,10 @@ type PravegaSpec struct {
 	// SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy it can have cluster or local
 	SegmentStoreExternalTrafficPolicy string `json:"segmentStoreExternalTrafficPolicy,omitempty"`
 
-	// SecurityContext holds security configuration that will be applied to a container
+	// SegmentStoreSecurityContext holds security configuration that will be applied to a container
 	SegmentStoreSecurityContext *corev1.PodSecurityContext `json:"segmentStoreSecurityContext,omitempty"`
 
-	// SecurityContext holds security configuration that will be applied to a container
+	// ControllerSecurityContext holds security configuration that will be applied to a container
 	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
 }
 
