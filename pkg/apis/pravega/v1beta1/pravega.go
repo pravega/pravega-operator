@@ -174,7 +174,6 @@ type PravegaSpec struct {
 
 	// SecurityContext holds security configuration that will be applied to a container
 	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
-
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
