@@ -11,6 +11,7 @@
 package pravega_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -107,6 +108,11 @@ var _ = Describe("Controller", func() {
 					},
 				}
 				p.WithDefaults()
+				no := int64(0)
+				securitycontext := corev1.PodSecurityContext{
+					RunAsUser: &no,
+				}
+				p.Spec.Pravega.ControllerSecurityContext = &securitycontext
 			})
 
 			Context("Controller", func() {
@@ -139,6 +145,10 @@ var _ = Describe("Controller", func() {
 				It("should create the service with external access type loadbalancer", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
+				})
+				It("should have runAsUser value as 0", func() {
+					podTemplate := pravega.MakeControllerPodTemplate(p)
+					Ω(fmt.Sprintf("%v", *podTemplate.Spec.SecurityContext.RunAsUser)).To(Equal("0"))
 				})
 			})
 			Context("Controller with external service type empty", func() {
