@@ -24,6 +24,12 @@ externalAccess:
   type: LoadBalancer
   domainName:
 
+segmentStoreSecurityContext: {}
+  #runAsUser: 0
+
+controllerSecurityContext: {}
+  #runAsUser: 0
+
 image:
   repository: pravega/pravega
   pullPolicy: IfNotPresent
