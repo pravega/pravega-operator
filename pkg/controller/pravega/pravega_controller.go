@@ -136,6 +136,10 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
+	if p.Spec.Pravega.ControllerSecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
+	}
+
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
 	return podSpec

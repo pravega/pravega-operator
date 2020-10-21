@@ -166,8 +166,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
-	if p.Spec.Pravega.SecurityContext != nil {
-		podSpec.SecurityContext = p.Spec.Pravega.SecurityContext
+	if p.Spec.Pravega.SegmentStoreSecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.Pravega.SegmentStoreSecurityContext
 	}
 
 	configureSegmentstoreSecret(&podSpec, p)

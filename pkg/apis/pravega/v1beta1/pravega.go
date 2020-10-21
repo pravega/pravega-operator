@@ -170,7 +170,11 @@ type PravegaSpec struct {
 	SegmentStoreExternalTrafficPolicy string `json:"segmentStoreExternalTrafficPolicy,omitempty"`
 
 	// SecurityContext holds security configuration that will be applied to a container
-	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	SegmentStoreSecurityContext *corev1.PodSecurityContext `json:"segmentStoreSecurityContext,omitempty"`
+
+	// SecurityContext holds security configuration that will be applied to a container
+	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
+
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {

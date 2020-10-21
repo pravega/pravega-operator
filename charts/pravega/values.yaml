@@ -24,7 +24,10 @@ externalAccess:
   type: LoadBalancer
   domainName:
 
-securityContext: {}
+segmentStoreSecurityContext: {}
+  #runAsUser: 0
+
+controllerSecurityContext: {}
   #runAsUser: 0
 
 image:
