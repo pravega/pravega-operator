@@ -216,7 +216,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
 			"-XX:+UseContainerSupport",
-			"-XX:MaxRAMFraction=2",
+			"-XX:MaxRAMPercentage=50.0",
 		)
 	}
 

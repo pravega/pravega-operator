@@ -35,12 +35,12 @@ sed -i "s|cert.*|cert-manager.io/inject-ca-from: $namespace/selfsigned-cert|" ./
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/webhook.yaml
 
-#Insalling the webhook
+#Installing the webhook
 kubectl apply -f ./manifest_files/webhook.yaml
 
 sed -i "s/namespace.*/namespace: $namespace "/ ./manifest_files/version_map.yaml
 
-#Insalling the version map for pravega-operator
+#Installing the version map for pravega-operator
 kubectl apply -f  ./manifest_files/version_map.yaml
 
 cabundle=`kubectl get ValidatingWebhookConfiguration pravega-webhook-config --namespace ${namespace} --output yaml | grep caBundle: | awk '{print $2}'`
@@ -65,6 +65,8 @@ sed -i "s/value:.*/value: $op_name "/ ./manifest_files/patch.yaml
 
 sed -i "/imagePullPolicy:.*/{n;s/name.*/name: $op_name/}" ./manifest_files/patch.yaml
 
+#deleting required resources
+kubectl delete mutatingwebhookconfiguration pravega-webhook-config
 kubectl delete cm pravega-operator-lock
 
 #updating the operator using patch file

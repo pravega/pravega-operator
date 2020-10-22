@@ -86,8 +86,8 @@ var _ = Describe("Controller", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
@@ -203,8 +203,8 @@ var _ = Describe("Controller", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
