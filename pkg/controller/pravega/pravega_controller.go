@@ -196,7 +196,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
 			"-XX:+UseContainerSupport",
-			"-XX:MaxRAMPercentage=50",
+			"-XX:MaxRAMPercentage=50.0",
 		)
 	}
 

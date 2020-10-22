@@ -90,8 +90,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
@@ -212,8 +212,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
@@ -316,8 +316,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
