@@ -11,6 +11,7 @@
 package pravega_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -89,8 +90,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
@@ -117,6 +118,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 					},
 				}
 				p.WithDefaults()
+				no := int64(0)
+				securitycontext := corev1.PodSecurityContext{
+					RunAsUser: &no,
+				}
+				p.Spec.Pravega.SegmentStoreSecurityContext = &securitycontext
 			})
 
 			Context("First reconcile", func() {
@@ -153,6 +159,10 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
+				})
+				It("should have runAsUser value as 0", func() {
+					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
+					Ω(fmt.Sprintf("%v", *podTemplate.Spec.SecurityContext.RunAsUser)).To(Equal("0"))
 				})
 			})
 		})
@@ -202,8 +212,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},
@@ -306,8 +316,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
-						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
-						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMFraction=1"},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
 							"dummy-key": "dummy-value",
 						},

@@ -12,7 +12,9 @@ The following LongTermStorage storage providers are supported:
 The following example uses an NFS volume provisioned by the [NFS Server Provisioner](https://github.com/kubernetes/charts/tree/master/stable/nfs-server-provisioner) helm chart to provide LongTermStorage storage.
 
 ```
-$ helm install stable/nfs-server-provisioner
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com
+$ helm repo update
+$ helm install stable/nfs-server-provisioner --generate-name
 ```
 
 Note that the `nfs-server-provisioner` is a toy NFS server and is ONLY intended as a demo and should NOT be used for production deployments.
@@ -20,7 +22,7 @@ Note that the `nfs-server-provisioner` is a toy NFS server and is ONLY intended 
 You can also connect to an existing NFS server by using [NFS Client Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner).
 
 ```
-helm install --set nfs.server=<address:x.x.x.x> --set nfs.path=</exported/path> --set storageClass.name=nfs --set nfs.mountOptions='{nolock,sec=sys,vers=4.0}' stable/nfs-client-provisioner
+helm install --set nfs.server=<address:x.x.x.x> --set nfs.path=</exported/path> --set storageClass.name=nfs --set nfs.mountOptions='{nolock,sec=sys,vers=4.0}' stable/nfs-client-provisioner --generate-name
 ```
 
 Verify that the `nfs` storage class is now available.
@@ -169,7 +171,7 @@ Refer to the steps below to add ECS server certificate or CA's certificate into 
     $ kubectl create -f ecs-tls.yaml
     ```
 
-3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section. 
+3. In Pravega manifest, add the secret name defined above into "tls/static/caBundle" section.
     ```
     ...
     kind: "PravegaCluster"

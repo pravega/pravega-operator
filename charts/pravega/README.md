@@ -36,6 +36,13 @@ This command deploys pravega on the Kubernetes cluster in its default configurat
 
 >Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk chart should be used instead of the pravega chart
 
+>Note: If the operator version is 0.5.1 or below and pravega version is 0.9.0 or above, need to set the controller and segment store JVM options as shown below.
+```
+helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
+```
+Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
+
+
 ## Uninstalling the Chart
 
 To uninstall/delete the pravega chart, use the following command:
@@ -52,7 +59,7 @@ The following table lists the configurable parameters of the pravega chart and t
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `version` | Pravega version | `0.7.0` |
+| `version` | Pravega version | `0.8.0` |
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
@@ -89,6 +96,8 @@ The following table lists the configurable parameters of the pravega chart and t
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |
 | `storage.longtermStorage.ecs` | Configuration to use a Dell EMC ECS system, if long term storage type is ecs | `{}` |
 | `storage.longtermStorage.hdfs` | Configuration to use an HDFS system, if long term storage type is hdfs | `{}` |
-| `storage.cache.className` | Storage class for cache volume | `standard` |
+| `storage.cache.className` | Storage class for cache volume | `` |
 | `storage.cache.size` | Storage requests for cache volume | `20Gi` |
 | `options` | List of Pravega options | |
+| `segmentStoreSecurityContext` | Holds pod-level security attributes and common container settings | `{}` |
+| `controllerSecurityContext` | Holds pod-level security attributes and common container settings | `{}` |

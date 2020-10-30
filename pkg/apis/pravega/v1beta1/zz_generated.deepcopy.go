@@ -371,6 +371,16 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.SegmentStoreSecurityContext != nil {
+		in, out := &in.SegmentStoreSecurityContext, &out.SegmentStoreSecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ControllerSecurityContext != nil {
+		in, out := &in.ControllerSecurityContext, &out.ControllerSecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

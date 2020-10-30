@@ -2,7 +2,7 @@
 ## This is a YAML-formatted file.
 ## Declare variables to be passed into your templates.
 
-version: 0.7.0
+version: 0.8.0
 
 tls: {}
   # secret:
@@ -23,6 +23,12 @@ externalAccess:
   ## type and domainName are ignored if external access is disabled
   type: LoadBalancer
   domainName:
+
+segmentStoreSecurityContext: {}
+  #runAsUser: 0
+
+controllerSecurityContext: {}
+  #runAsUser: 0
 
 image:
   repository: pravega/pravega
@@ -73,8 +79,8 @@ segmentStore:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-    segmentStoreLoadBalancerIP:
-    segmentStoreExternalTrafficPolicy: Local
+    loadBalancerIP:
+    externalTrafficPolicy: Local
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
 
 storage:
@@ -108,7 +114,7 @@ storage:
 
   cache:
     size: 20Gi
-    className: standard
+    className:
 
 options:
   bookkeeper.ensemble.size: "3"

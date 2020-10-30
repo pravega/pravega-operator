@@ -36,6 +36,14 @@ spec:
     {{- end }}
     {{- end }}
   pravega:
+    {{- if .Values.segmentStoreSecurityContext }}
+    segmentStoreSecurityContext:
+      runAsUser: {{ .Values.segmentStoreSecurityContext.runAsUser }}
+    {{- end }}
+    {{- if .Values.controllerSecurityContext }}
+    controllerSecurityContext:
+      runAsUser: {{ .Values.controllerSecurityContext.runAsUser }}
+    {{- end }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
@@ -98,11 +106,9 @@ spec:
       {{- if .Values.storage.cache.className }}
       storageClassName: {{ .Values.storage.cache.className }}
       {{- end }}
-      {{- if .Values.storage.cache.size }}
       resources:
         requests:
           storage: {{ .Values.storage.cache.size }}
-      {{- end }}
     {{- end }}
     longtermStorage:
       {{- if eq (default .Values.storage.longtermStorage.type "filesystem") "ecs" }}
