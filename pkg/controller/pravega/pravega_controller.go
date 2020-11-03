@@ -12,6 +12,7 @@ package pravega
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -135,6 +136,10 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
+	if p.Spec.Pravega.ControllerSecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
+	}
+
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
 	return podSpec
@@ -190,8 +195,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:+UseCGroupMemoryLimitForHeap",
-			"-XX:MaxRAMFraction=2",
+			"-XX:+UseContainerSupport",
+			"-XX:MaxRAMPercentage=50.0",
 		)
 	}
 
@@ -200,6 +205,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
+
+	sort.Strings(javaOpts)
 
 	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
 	configData := map[string]string{

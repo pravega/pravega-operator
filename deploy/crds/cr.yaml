@@ -1,20 +1,9 @@
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: pravega-tier2
-spec:
-  storageClassName: "nfs"
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 50Gi
----
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
   name: "pravega"
 spec:
+  version: 0.8.0
   zookeeperUri: zookeeper-client:2181
   externalAccess:
     enabled: true
@@ -31,7 +20,6 @@ spec:
           storage: 20Gi
     image:
       repository: pravega/pravega
-      tag: 0.7.0
       pullPolicy: IfNotPresent
     longtermStorage:
       filesystem:

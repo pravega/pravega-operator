@@ -10,6 +10,8 @@
 package v1beta1_test
 
 import (
+	"fmt"
+
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -46,6 +48,12 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			}
 			p1.WithDefaults()
 			p1.Status.Init()
+			no := int64(0)
+			securitycontext := corev1.PodSecurityContext{
+				RunAsUser: &no,
+			}
+			p1.Spec.Pravega.SegmentStoreSecurityContext = &securitycontext
+			p1.Spec.Pravega.ControllerSecurityContext = &securitycontext
 			temp := *p1.DeepCopy()
 			p2 = &temp
 			str1 = p1.Spec.Pravega.Image.Repository
@@ -128,7 +136,6 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking status conditions", func() {
 			Ω(p2.Status.Conditions[0].Reason).To(Equal(p1.Status.Conditions[0].Reason))
 		})
-
 		It("checking  version history", func() {
 			Ω(p2.Status.VersionHistory[0]).To(Equal("0.6.0"))
 		})
@@ -149,6 +156,12 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		})
 		It("checking  image  repository", func() {
 			Ω(p2.Spec.Pravega.Image.Repository).To(Equal("pravega/exmple"))
+		})
+		It("checking SegmentStoreSecurityContext", func() {
+			Ω(fmt.Sprintf("%v", *p2.Spec.Pravega.SegmentStoreSecurityContext.RunAsUser)).To(Equal("0"))
+		})
+		It("checking ControllerSecurityContext", func() {
+			Ω(fmt.Sprintf("%v", *p2.Spec.Pravega.ControllerSecurityContext.RunAsUser)).To(Equal("0"))
 		})
 
 		It("checking  pravega options", func() {

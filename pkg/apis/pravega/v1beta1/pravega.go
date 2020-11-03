@@ -13,6 +13,7 @@ package v1beta1
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -167,6 +168,12 @@ type PravegaSpec struct {
 
 	// SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy it can have cluster or local
 	SegmentStoreExternalTrafficPolicy string `json:"segmentStoreExternalTrafficPolicy,omitempty"`
+
+	// SegmentStoreSecurityContext holds security configuration that will be applied to a container
+	SegmentStoreSecurityContext *corev1.PodSecurityContext `json:"segmentStoreSecurityContext,omitempty"`
+
+	// ControllerSecurityContext holds security configuration that will be applied to a container
+	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
