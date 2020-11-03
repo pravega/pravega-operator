@@ -1,5 +1,6 @@
 #!/bin/sh
-
+echo "ClientAliveInterval 300" >> /etc/ssh/sshd_config
+service sshd restart
 sudo apt-get update
 echo "update done"
 sudo apt install docker.io -y
