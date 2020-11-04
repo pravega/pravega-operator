@@ -74,7 +74,7 @@ Check out the available [options for long term storage](doc/longtermstorage.md) 
 For demo purposes, you can quickly install a toy NFS server.
 
 ```
-$ helm repo add stable https://kubernetes-charts.storage.googleapis.com
+$ helm repo add stable https://charts.helm.sh/stable
 $ helm repo update
 $ helm install stable/nfs-server-provisioner --generate-name
 ```

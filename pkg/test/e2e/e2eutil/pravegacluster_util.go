@@ -614,9 +614,13 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	t.Log("restarting tier2 storage")
 	tier2 := NewTier2(namespace)
 
-	err := f.Client.Delete(goctx.TODO(), tier2)
-	if err != nil {
-		return fmt.Errorf("failed to delete tier2: %v", err)
+	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{})
+
+	if err == nil {
+		err := f.Client.Delete(goctx.TODO(), tier2)
+		if err != nil {
+			return fmt.Errorf("failed to delete tier2: %v", err)
+		}
 	}
 
 	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
