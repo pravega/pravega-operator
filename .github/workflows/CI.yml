@@ -96,7 +96,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://kubernetes-charts.storage.googleapis.com;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://charts.helm.sh/stable;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bookkeeper.yaml"
         sleep 30s
@@ -116,7 +116,9 @@ jobs:
 
     - name: Running e2e
       run: |
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e;exit"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk build testpravegaop/pravega-operator-testimages:pravegatest"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk push testpravegaop/pravega-operator-testimages:pravegatest"
+       ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk test local ./test/e2e --operator-namespace default --image testpravegaop/pravega-operator-testimages:pravegatest --go-test-flags "-v -timeout 0"
     - name: Deleting cluster
       if: ${{ always() }}
       run: |
