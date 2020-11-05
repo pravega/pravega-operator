@@ -23,7 +23,11 @@ metadata:
   labels:
 {{ include "pravega-operator.commonLabels" . | indent 4 }}
   annotations:
+    {{- if .Values.webhookCert.generate }}
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ template "pravega-operator.fullname" . }}-cert
+    {{- else }}
     cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ .Values.webhookCert.certName }}
+    {{- end }}
 webhooks:
 - clientConfig:
     service:

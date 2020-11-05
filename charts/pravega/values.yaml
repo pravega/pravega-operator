@@ -24,12 +24,6 @@ externalAccess:
   type: LoadBalancer
   domainName:
 
-segmentStoreSecurityContext: {}
-  #runAsUser: 0
-
-controllerSecurityContext: {}
-  #runAsUser: 0
-
 image:
   repository: pravega/pravega
   pullPolicy: IfNotPresent
@@ -54,6 +48,8 @@ controller:
     limits:
       cpu: 1000m
       memory: 2Gi
+  securityContext: {}
+    # runAsUser: 0
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for controller
@@ -74,13 +70,15 @@ segmentStore:
     limits:
       cpu: 2000m
       memory: 4Gi
+  securityContext: {}
+    # runAsUser: 0
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
     loadBalancerIP:
-    externalTrafficPolicy: Local
+    externalTrafficPolicy:
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
 
 storage:

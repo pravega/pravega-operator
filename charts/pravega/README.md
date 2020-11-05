@@ -77,6 +77,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
 | `controller.resources.limits.cpu` | CPU limits for controller | `1000m` |
 | `controller.resources.limits.memory` | Memory limits for controller | `2Gi` |
+| `controller.securityContext` | Holds pod-level security attributes and common container settings for controller | `{}` |
 | `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
@@ -87,9 +88,10 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.resources.requests.memory` | Memory requests for segmentStore | `4Gi` |
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
+| `segmentStore.securityContext` | Holds pod-level security attributes and common container settings for segmentStore | `{}` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
-| `segmentStore.service.loadBalancerIP` |It is used to provide a LoadBalancerIP for the segmentStore service | |
+| `segmentStore.service.loadBalancerIP` | It is used to provide a LoadBalancerIP for the segmentStore service | |
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
@@ -99,5 +101,3 @@ The following table lists the configurable parameters of the pravega chart and t
 | `storage.cache.className` | Storage class for cache volume | `` |
 | `storage.cache.size` | Storage requests for cache volume | `20Gi` |
 | `options` | List of Pravega options | |
-| `segmentStoreSecurityContext` | Holds pod-level security attributes and common container settings | `{}` |
-| `controllerSecurityContext` | Holds pod-level security attributes and common container settings | `{}` |
