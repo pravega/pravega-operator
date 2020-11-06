@@ -116,9 +116,10 @@ jobs:
 
     - name: Running e2e
       run: |
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk build testpravegaop/pravega-operator-testimages:pravegatest"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;docker push testpravegaop/pravega-operator-testimages:pravegatest"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk test local ./test/e2e --operator-namespace default --image testpravegaop/pravega-operator-testimages:pravegatest --go-test-flags \"-v -timeout 0\""
+        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk build testpravegaop/pravega-operator-testimages:pravegatest"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
+        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;docker push testpravegaop/pravega-operator-testimages:pravegatest"
+        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk test local ./test/e2e --operator-namespace default --image testpravegaop/pravega-operator-testimages:pravegatest --go-test-flags \"-v -timeout 0\""
     - name: Deleting cluster
       if: ${{ always() }}
       run: |
