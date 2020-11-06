@@ -1,3 +1,4 @@
+{{- $longTermStorageType := .Values.storage.longtermStorage.type | default "filesystem" -}}
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
@@ -36,13 +37,13 @@ spec:
     {{- end }}
     {{- end }}
   pravega:
-    {{- if .Values.segmentStoreSecurityContext }}
+    {{- if .Values.segmentStore.securityContext }}
     segmentStoreSecurityContext:
-      runAsUser: {{ .Values.segmentStoreSecurityContext.runAsUser }}
+      runAsUser: {{ .Values.segmentStore.securityContext.runAsUser }}
     {{- end }}
-    {{- if .Values.controllerSecurityContext }}
+    {{- if .Values.controller.securityContext }}
     controllerSecurityContext:
-      runAsUser: {{ .Values.controllerSecurityContext.runAsUser }}
+      runAsUser: {{ .Values.controller.securityContext.runAsUser }}
     {{- end }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
@@ -111,13 +112,13 @@ spec:
           storage: {{ .Values.storage.cache.size }}
     {{- end }}
     longtermStorage:
-      {{- if eq (default .Values.storage.longtermStorage.type "filesystem") "ecs" }}
+      {{- if eq $longTermStorageType "ecs" }}
       ecs:
         configUri: {{ .Values.storage.longtermStorage.ecs.configUri }}
         bucket: {{ .Values.storage.longtermStorage.ecs.bucket }}
         prefix: {{ .Values.storage.longtermStorage.ecs.prefix }}
         credentials: {{ .Values.storage.longtermStorage.ecs.credentials }}
-      {{- else if eq (default .Values.storage.longtermStorage.type "filesystem") "hdfs"}}
+      {{- else if eq $longTermStorageType "hdfs"}}
       hdfs:
         uri: {{ .Values.storage.longtermStorage.hdfs.uri }}
         root: {{ .Values.storage.longtermStorage.hdfs.root }}
@@ -125,7 +126,7 @@ spec:
       {{- else }}
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ default "pravega-tier2" .Values.storage.longtermStorage.filesystem.pvc }}
+          claimName: {{ .Values.storage.longtermStorage.filesystem.pvc | default "pravega-tier2" }}
       {{- end }}
     {{- if .Values.options }}
     options:
