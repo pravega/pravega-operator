@@ -160,7 +160,7 @@ spec:
       serviceAccountName: bookkeeper-operator
       containers:
         - name: bookkeeper-operator
-          image: pravega/bookkeeper-operator:latest
+          image: pravega/bookkeeper-operator:0.1.2
           ports:
           - containerPort: 60000
             name: metrics
