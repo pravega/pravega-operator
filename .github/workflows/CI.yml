@@ -30,7 +30,7 @@ jobs:
     - name: Get output
       run: echo ${{ steps.date.outputs.date }}
     - name: Set env
-      run: echo ::set-env name=CLUSTER_NAME::pravega-operator-travis-${{ steps.date.outputs.date }}
+      run: echo "CLUSTER_NAME=pravega-operator-travis-${{ steps.date.outputs.date }}" >> $GITHUB_ENV
     - name: Test
       run: echo $CLUSTER_NAME
     - name: Check out code into the Go module directory
@@ -67,8 +67,8 @@ jobs:
         while [ "$WORKER1_STATE" != "active" ]; do WORKER1_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         WORKER2_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' ')
         while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
-        echo "::set-env name=CLUSTER_ID::$CLUSTER_ID"
-        echo "::set-env name=CLUSTER_IP::$CLUSTER_IP"
+        echo "CLUSTER_ID=$CLUSTER_ID" >> $GITHUB_ENV
+        echo "CLUSTER_IP=$CLUSTER_IP" >> $GITHUB_ENV
         pwd;ls
         scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r pravega-operator.tar.gz  root@$CLUSTER_IP:/root/
     - name: Setup k8
@@ -90,8 +90,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP1 $(cat JOIN)
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP2 $(cat JOIN)
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl get nodes"
-        echo "::set-env name=CLUSTER_ID1::$CLUSTER_ID1"
-        echo "::set-env name=CLUSTER_ID2::$CLUSTER_ID2"
+        echo "CLUSTER_ID1=$CLUSTER_ID1" >> $GITHUB_ENV
+        echo "CLUSTER_ID2=$CLUSTER_ID2" >> $GITHUB_ENV
     - name: Make setup before running e2e
       run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
@@ -116,10 +116,7 @@ jobs:
 
     - name: Running e2e
       run: |
-        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk build testpravegaop/pravega-operator-testimages:pravegatest"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
-        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;docker push testpravegaop/pravega-operator-testimages:pravegatest"
-        #ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make login;operator-sdk test local ./test/e2e --operator-namespace default --image testpravegaop/pravega-operator-testimages:pravegatest --go-test-flags \"-v -timeout 0\""
     - name: Deleting cluster
       if: ${{ always() }}
       run: |
