@@ -72,6 +72,9 @@ segmentStore:
       memory: 4Gi
   securityContext: {}
     # runAsUser: 0
+    # sysctls:
+    #   - name: net.ipv4.tcp_retries2
+    #     value: "8"
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for segmentStore
