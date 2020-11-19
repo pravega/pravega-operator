@@ -4,6 +4,9 @@ go 1.13
 
 require (
 	4d63.com/gochecknoinits v0.0.0-20200108094044-eb73b47b9fc4 // indirect
+	dmitri.shuralyov.com/go/generated v0.0.0-20170818220700-b1254a446363 // indirect
+	github.com/alecthomas/gocyclo v0.0.0-20150208221726-aa8f8b160214 // indirect
+	github.com/gordonklaus/ineffassign v0.0.0-20201107091007-3b93a8888063 // indirect
 	github.com/hashicorp/go-version v1.1.0
 	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
 	github.com/onsi/ginkgo v1.12.0

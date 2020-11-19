@@ -15,7 +15,7 @@ import (
 	"sort"
 	"strings"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta2"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
+func MakeControllerDeployment(p *api.PravegaController) *appsv1.Deployment {
 	zero := int32(0)
 	timeout := int32(600)
 	return &appsv1.Deployment{
@@ -39,7 +39,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			ProgressDeadlineSeconds: &timeout,
-			Replicas:                &p.Spec.Pravega.ControllerReplicas,
+			Replicas:                &p.Spec.Replicas,
 			RevisionHistoryLimit:    &zero,
 			Template:                MakeControllerPodTemplate(p),
 			Selector: &metav1.LabelSelector{
@@ -49,7 +49,7 @@ func MakeControllerDeployment(p *api.PravegaCluster) *appsv1.Deployment {
 	}
 }
 
-func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
+func MakeControllerPodTemplate(p *api.PravegaController) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      p.LabelsForController(),
@@ -59,13 +59,13 @@ func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 	}
 }
 
-func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
+func makeControllerPodSpec(p *api.PravegaController) *corev1.PodSpec {
 	podSpec := &corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-controller",
-				Image:           p.PravegaImage(),
-				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
+				Image:           p.ControllerImage(),
+				ImagePullPolicy: p.Spec.Image.PullPolicy,
 				Args: []string{
 					"controller",
 				},
@@ -83,7 +83,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: p.ConfigMapNameForController(),
+								Name: p.ConfigMapName(),
 							},
 						},
 					},
@@ -94,7 +94,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 						MountPath: heapDumpDir,
 					},
 				},
-				Resources: *p.Spec.Pravega.ControllerResources,
+				Resources: *p.Spec.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -132,12 +132,12 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 			},
 		},
 	}
-	if p.Spec.Pravega.ControllerServiceAccountName != "" {
-		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
+	if p.Spec.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.ServiceAccountName
 	}
 
-	if p.Spec.Pravega.ControllerSecurityContext != nil {
-		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
+	if p.Spec.SecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.SecurityContext
 	}
 
 	configureControllerTLSSecrets(podSpec, p)
@@ -145,20 +145,20 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	return podSpec
 }
 
-func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaController) {
 	if p.Spec.TLS.IsSecureController() {
 		addSecretVolumeWithMount(podSpec, p, tlsVolumeName, p.Spec.TLS.Static.ControllerSecret, tlsVolumeName, tlsMountDir)
 	}
 }
 
-func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaController) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.PasswordAuthSecret != "" {
 		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.PasswordAuthSecret,
 			authVolumeName, authMountDir)
 	}
 }
 
-func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
+func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaController,
 	volumeName string, secretName string,
 	mountName string, mountDir string) {
 	vol := corev1.Volume{
@@ -177,7 +177,7 @@ func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
 	})
 }
 
-func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
+func MakeControllerConfigMap(p *api.PravegaController) *corev1.ConfigMap {
 	javaOpts := []string{
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
@@ -200,9 +200,9 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.ControllerJvmOptions)...)
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.JvmOptions)...)
 
-	for name, value := range p.Spec.Pravega.Options {
+	for name, value := range p.Spec.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
@@ -221,7 +221,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"WAIT_FOR":               p.Spec.ZookeeperUri,
 	}
 
-	if p.Spec.Pravega.DebugLogging {
+	if p.Spec.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}
 	configMap := &corev1.ConfigMap{
@@ -230,7 +230,7 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      p.ConfigMapNameForController(),
+			Name:      p.ConfigMapName(),
 			Labels:    p.LabelsForController(),
 			Namespace: p.Namespace,
 		},
@@ -239,22 +239,22 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	return configMap
 }
 
-func getControllerServiceType(pravegaCluster *api.PravegaCluster) (serviceType corev1.ServiceType) {
-	if pravegaCluster.Spec.Pravega.ControllerExternalServiceType == "" {
-		if pravegaCluster.Spec.ExternalAccess.Type == "" {
+func getControllerServiceType(PravegaController *api.PravegaController) (serviceType corev1.ServiceType) {
+	if PravegaController.Spec.ExternalServiceType == "" {
+		if PravegaController.Spec.ExternalAccess.Type == "" {
 			return api.DefaultServiceType
 		}
-		return pravegaCluster.Spec.ExternalAccess.Type
+		return PravegaController.Spec.ExternalAccess.Type
 	}
-	return pravegaCluster.Spec.Pravega.ControllerExternalServiceType
+	return PravegaController.Spec.ExternalServiceType
 }
 
-func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
+func MakeControllerService(p *api.PravegaController) *corev1.Service {
 	serviceType := corev1.ServiceTypeClusterIP
 	annotationMap := map[string]string{}
 	if p.Spec.ExternalAccess.Enabled {
 		serviceType = getControllerServiceType(p)
-		for k, v := range p.Spec.Pravega.ControllerServiceAnnotations {
+		for k, v := range p.Spec.ServiceAnnotations {
 			annotationMap[k] = v
 		}
 	}
@@ -287,7 +287,7 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	}
 }
 
-func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+func MakeControllerPodDisruptionBudget(p *api.PravegaController) *policyv1beta1.PodDisruptionBudget {
 	minAvailable := intstr.FromInt(1)
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{

@@ -15,7 +15,7 @@ import (
 	"sort"
 	"strings"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta2"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +42,7 @@ func MakeSegmentStoreStatefulSet(p *api.PravegaCluster) *appsv1.StatefulSet {
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName:         "pravega-segmentstore",
-			Replicas:            &p.Spec.Pravega.SegmentStoreReplicas,
+			Replicas:            &p.Spec.Replicas,
 			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.OnDeleteStatefulSetStrategyType,
@@ -70,8 +70,8 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
-	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
-	secret := p.Spec.Pravega.SegmentStoreSecret
+	configMapName := strings.TrimSpace(p.Spec.EnvVars)
+	secret := p.Spec.Secret
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -100,14 +100,14 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		})
 	}
 
-	environment = configureTier2Secrets(environment, p.Spec.Pravega)
+	environment = configureTier2Secrets(environment, p)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:            "pravega-segmentstore",
 				Image:           p.PravegaImage(),
-				ImagePullPolicy: p.Spec.Pravega.Image.PullPolicy,
+				ImagePullPolicy: p.Spec.Image.PullPolicy,
 				Args: []string{
 					"segmentstore",
 				},
@@ -120,7 +120,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				EnvFrom:      environment,
 				Env:          util.DownwardAPIEnv(),
 				VolumeMounts: MakeSegmentStoreVolumeMount(p),
-				Resources:    *p.Spec.Pravega.SegmentStoreResources,
+				Resources:    *p.Spec.Resources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
@@ -162,12 +162,12 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		},
 	}
 
-	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
-		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
+	if p.Spec.ServiceAccountName != "" {
+		podSpec.ServiceAccountName = p.Spec.ServiceAccountName
 	}
 
-	if p.Spec.Pravega.SegmentStoreSecurityContext != nil {
-		podSpec.SecurityContext = p.Spec.Pravega.SegmentStoreSecurityContext
+	if p.Spec.SecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.SecurityContext
 	}
 
 	configureSegmentstoreSecret(&podSpec, p)
@@ -176,7 +176,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	configureCaBundleSecret(&podSpec, p)
 
-	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
+	configureLTSFilesystem(&podSpec, p)
 
 	return podSpec
 }
@@ -220,9 +220,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		)
 	}
 
-	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.SegmentStoreJVMOptions)...)
+	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.JvmOptions)...)
 
-	for name, value := range p.Spec.Pravega.Options {
+	for name, value := range p.Spec.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
@@ -234,7 +234,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"CLUSTER_NAME":          p.Name,
 		"ZK_URL":                p.Spec.ZookeeperUri,
 		"JAVA_OPTS":             strings.Join(javaOpts, " "),
-		"CONTROLLER_URL":        p.PravegaControllerServiceURL(),
+		"CONTROLLER_URL":        p.PravegaControllerServiceURLForSegmentStore(),
 	}
 
 	// Wait for at least 3 Bookies to come up
@@ -244,11 +244,11 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		configData["K8_EXTERNAL_ACCESS"] = "true"
 	}
 
-	if p.Spec.Pravega.DebugLogging {
+	if p.Spec.DebugLogging {
 		configData["log.level"] = "DEBUG"
 	}
 
-	for k, v := range getTier2StorageOptions(p.Spec.Pravega) {
+	for k, v := range getTier2StorageOptions(p) {
 		configData[k] = v
 	}
 
@@ -273,47 +273,47 @@ func makeCacheVolumeClaimTemplate(p *api.PravegaCluster) []corev1.PersistentVolu
 				Name:      cacheVolumeName,
 				Namespace: p.Namespace,
 			},
-			Spec: *p.Spec.Pravega.CacheVolumeClaimTemplate,
+			Spec: *p.Spec.CacheVolumeClaimTemplate,
 		},
 	}
 }
 
-func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
-	if pravegaSpec.LongTermStorage.FileSystem != nil {
+func getTier2StorageOptions(p *api.PravegaCluster) map[string]string {
+	if p.Spec.LongTermStorage.FileSystem != nil {
 		return map[string]string{
 			"TIER2_STORAGE": "FILESYSTEM",
 			"NFS_MOUNT":     ltsFileMountPoint,
 		}
 	}
 
-	if pravegaSpec.LongTermStorage.Ecs != nil {
+	if p.Spec.LongTermStorage.Ecs != nil {
 		// EXTENDEDS3_ACCESS_KEY_ID & EXTENDEDS3_SECRET_KEY will come from secret storage
 		return map[string]string{
 			"TIER2_STORAGE":        "EXTENDEDS3",
-			"EXTENDEDS3_CONFIGURI": pravegaSpec.LongTermStorage.Ecs.ConfigUri,
-			"EXTENDEDS3_BUCKET":    pravegaSpec.LongTermStorage.Ecs.Bucket,
-			"EXTENDEDS3_PREFIX":    pravegaSpec.LongTermStorage.Ecs.Prefix,
+			"EXTENDEDS3_CONFIGURI": p.Spec.LongTermStorage.Ecs.ConfigUri,
+			"EXTENDEDS3_BUCKET":    p.Spec.LongTermStorage.Ecs.Bucket,
+			"EXTENDEDS3_PREFIX":    p.Spec.LongTermStorage.Ecs.Prefix,
 		}
 	}
 
-	if pravegaSpec.LongTermStorage.Hdfs != nil {
+	if p.Spec.LongTermStorage.Hdfs != nil {
 		return map[string]string{
 			"TIER2_STORAGE": "HDFS",
-			"HDFS_URL":      pravegaSpec.LongTermStorage.Hdfs.Uri,
-			"HDFS_ROOT":     pravegaSpec.LongTermStorage.Hdfs.Root,
+			"HDFS_URL":      p.Spec.LongTermStorage.Hdfs.Uri,
+			"HDFS_ROOT":     p.Spec.LongTermStorage.Hdfs.Root,
 		}
 	}
 
 	return make(map[string]string)
 }
 
-func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.PravegaSpec) []corev1.EnvFromSource {
-	if pravegaSpec.LongTermStorage.Ecs != nil {
+func configureTier2Secrets(environment []corev1.EnvFromSource, p *api.PravegaCluster) []corev1.EnvFromSource {
+	if p.Spec.LongTermStorage.Ecs != nil {
 		return append(environment, corev1.EnvFromSource{
 			Prefix: "EXTENDEDS3_",
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: pravegaSpec.LongTermStorage.Ecs.Credentials,
+					Name: p.Spec.LongTermStorage.Ecs.Credentials,
 				},
 			},
 		})
@@ -322,9 +322,9 @@ func configureTier2Secrets(environment []corev1.EnvFromSource, pravegaSpec *api.
 	return environment
 }
 
-func configureLTSFilesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpec) {
+func configureLTSFilesystem(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 
-	if pravegaSpec.LongTermStorage.FileSystem != nil {
+	if p.Spec.LongTermStorage.FileSystem != nil {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      ltsVolumeName,
 			MountPath: ltsFileMountPoint,
@@ -333,14 +333,14 @@ func configureLTSFilesystem(podSpec *corev1.PodSpec, pravegaSpec *api.PravegaSpe
 		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{
 			Name: ltsVolumeName,
 			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: pravegaSpec.LongTermStorage.FileSystem.PersistentVolumeClaim,
+				PersistentVolumeClaim: p.Spec.LongTermStorage.FileSystem.PersistentVolumeClaim,
 			},
 		})
 	}
 }
 
 func configureSegmentstoreSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
-	secret := p.Spec.Pravega.SegmentStoreSecret
+	secret := p.Spec.Secret
 	if strings.TrimSpace(secret.Secret) != "" && strings.TrimSpace(secret.MountPath) != "" {
 		vol := corev1.Volume{
 			Name: ssSecretVolumeName,
@@ -423,13 +423,13 @@ func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
 }
 
 func getSSServiceType(pravegaCluster *api.PravegaCluster) (serviceType corev1.ServiceType) {
-	if pravegaCluster.Spec.Pravega.SegmentStoreExternalServiceType == "" {
+	if pravegaCluster.Spec.ExternalServiceType == "" {
 		if pravegaCluster.Spec.ExternalAccess.Type == "" {
 			return api.DefaultServiceType
 		}
 		return pravegaCluster.Spec.ExternalAccess.Type
 	}
-	return pravegaCluster.Spec.Pravega.SegmentStoreExternalServiceType
+	return pravegaCluster.Spec.ExternalServiceType
 }
 
 func cloneMap(sourceMap map[string]string) (annotationMap map[string]string) {
@@ -459,13 +459,13 @@ func generateDNSAnnotationForSvc(domainName string, podName string) (dnsAnnotati
 func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	serviceType := getSSServiceType(p)
-	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
-	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
+	services := make([]*corev1.Service, p.Spec.Replicas)
+	for i := int32(0); i < p.Spec.Replicas; i++ {
 		ssPodName := p.ServiceNameForSegmentStore(i)
-		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
+		annotationMap := p.Spec.ServiceAnnotations
 		annotationValue := generateDNSAnnotationForSvc(p.Spec.ExternalAccess.DomainName, ssPodName)
 		if annotationValue != "" {
-			annotationMap = cloneMap(p.Spec.Pravega.SegmentStoreServiceAnnotations)
+			annotationMap = cloneMap(p.Spec.ServiceAnnotations)
 			annotationMap[externalDNSAnnotationKey] = annotationValue
 		}
 		service = &corev1.Service{
@@ -495,14 +495,14 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 				},
 			},
 		}
-		if strings.EqualFold(p.Spec.Pravega.SegmentStoreExternalTrafficPolicy, "Cluster") == true {
+		if strings.EqualFold(p.Spec.ExternalTrafficPolicy, "Cluster") == true {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeCluster
 		} else {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
 		}
-		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
+		if p.Spec.LoadBalancerIP != "" {
 			service.Spec.Ports[0].Port = 12345 + i
-			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
+			service.Spec.LoadBalancerIP = p.Spec.LoadBalancerIP
 		}
 		services[i] = service
 	}
@@ -512,7 +512,7 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 func MakeSegmentstorePodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	var maxUnavailable intstr.IntOrString
 
-	if p.Spec.Pravega.SegmentStoreReplicas == int32(1) {
+	if p.Spec.Replicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
 		maxUnavailable = intstr.FromInt(1)
