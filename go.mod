@@ -3,9 +3,12 @@ module github.com/pravega/pravega-operator
 go 1.13
 
 require (
+	4d63.com/gochecknoglobals v0.0.0-20201008074935-acfc0b28355a // indirect
 	4d63.com/gochecknoinits v0.0.0-20200108094044-eb73b47b9fc4 // indirect
+	github.com/alexkohler/nakedret v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.1.0
 	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
+	github.com/mdempsky/unconvert v0.0.0-20200228143138-95ecdbfc0b5f // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/operator-framework/operator-sdk v0.17.0
@@ -18,7 +21,6 @@ require (
 	github.com/stripe/safesql v0.2.0 // indirect
 	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9 // indirect
 	github.com/walle/lll v1.0.1 // indirect
-	golang.org/x/tools v0.0.0-20200426102838-f3a5411a4c3b // indirect
 	k8s.io/api v0.17.5
 	k8s.io/apimachinery v0.17.5
 	k8s.io/client-go v12.0.0+incompatible

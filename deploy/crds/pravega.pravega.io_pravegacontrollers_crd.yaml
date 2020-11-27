@@ -1,0 +1,374 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: pravegacontrollers.pravega.pravega.io
+spec:
+  group: pravega.pravega.io
+  names:
+    kind: PravegaController
+    listKind: PravegaControllerList
+    plural: pravegacontrollers
+    singular: pravegacontroller
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: PravegaCluster is the Schema for the pravegaclusters API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ClusterSpec defines the desired state of PravegaCluster
+          properties:
+            authentication:
+              description: 'Authentication can be enabled for authorizing all communication
+                from clients to controller and segment store See the following file
+                for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+              properties:
+                enabled:
+                  description: Enabled specifies whether or not authentication is
+                    enabled By default, authentication is not enabled
+                  type: boolean
+                passwordAuthSecret:
+                  description: name of Secret containing Password based Authentication
+                    Parameters like username, password and acl optional - used only
+                    by PasswordAuthHandler for authentication
+                  type: string
+              type: object
+            bookkeeperUri:
+              type: string
+            debugLogging:
+              description: DebugLogging indicates whether or not debug level logging
+                is enabled. Defaults to false.
+              type: boolean
+            extServiceType:
+              description: Type specifies the service type to achieve external access.
+                Options are "LoadBalancer" and "NodePort". By default, if external
+                access is enabled, it will use "LoadBalancer"
+              type: string
+            externalAccess:
+              description: ExternalAccess specifies whether or not to allow external
+                access to clients and the service type to use to achieve it By default,
+                external access is not enabled
+              properties:
+                domainName:
+                  description: Domain Name to be used for External Access This value
+                    is ignored if External Access is disabled
+                  type: string
+                enabled:
+                  description: Enabled specifies whether or not external access is
+                    enabled By default, external access is not enabled
+                  type: boolean
+                type:
+                  description: Type specifies the service type to achieve external
+                    access. Options are "LoadBalancer" and "NodePort". By default,
+                    if external access is enabled, it will use "LoadBalancer"
+                  type: string
+              type: object
+            image:
+              description: Image defines the Pravega Docker image to use. By default,
+                "pravega/pravega" will be used.
+              properties:
+                pullPolicy:
+                  description: PullPolicy describes a policy for if/when to pull a
+                    container image
+                  type: string
+                repository:
+                  type: string
+              type: object
+            jvmOptions:
+              description: ControllerJvmOptions is the JVM options for controller.
+                It will be passed to the JVM for performance tuning. If this field
+                is not specified, the operator will use a set of default options that
+                is good enough for general deployment.
+              items:
+                type: string
+              type: array
+            options:
+              additionalProperties:
+                type: string
+              description: 'Options is the Pravega configuration that is passed to
+                the Pravega processes as JAVA_OPTS. See the following file for a complete
+                list of options: https://github.com/pravega/pravega/blob/master/config/config.properties'
+              type: object
+            replicas:
+              description: ControllerReplicas defines the number of Controller replicas.
+                Defaults to 1.
+              format: int32
+              minimum: 0
+              type: integer
+            resources:
+              description: Resources specifies the request and limit of resources
+                that controller can have. CrResources includes CPU and memory resources
+              properties:
+                limits:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Limits describes the maximum amount of compute resources
+                    allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+                requests:
+                  additionalProperties:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  description: 'Requests describes the minimum amount of compute resources
+                    required. If Requests is omitted for a container, it defaults
+                    to Limits if that is explicitly specified, otherwise to an implementation-defined
+                    value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                  type: object
+              type: object
+            securityContext:
+              description: ControllerSecurityContext holds security configuration
+                that will be applied to a container
+              properties:
+                fsGroup:
+                  description: "A special supplemental group that applies to all containers
+                    in a pod. Some volume types allow the Kubelet to change the ownership
+                    of that volume to be owned by the pod: \n 1. The owning GID will
+                    be the FSGroup 2. The setgid bit is set (new files created in
+                    the volume will be owned by FSGroup) 3. The permission bits are
+                    OR'd with rw-rw---- \n If unset, the Kubelet will not modify the
+                    ownership and permissions of any volume."
+                  format: int64
+                  type: integer
+                runAsGroup:
+                  description: The GID to run the entrypoint of the container process.
+                    Uses runtime default if unset. May also be set in SecurityContext.  If
+                    set in both SecurityContext and PodSecurityContext, the value
+                    specified in SecurityContext takes precedence for that container.
+                  format: int64
+                  type: integer
+                runAsNonRoot:
+                  description: Indicates that the container must run as a non-root
+                    user. If true, the Kubelet will validate the image at runtime
+                    to ensure that it does not run as UID 0 (root) and fail to start
+                    the container if it does. If unset or false, no such validation
+                    will be performed. May also be set in SecurityContext.  If set
+                    in both SecurityContext and PodSecurityContext, the value specified
+                    in SecurityContext takes precedence.
+                  type: boolean
+                runAsUser:
+                  description: The UID to run the entrypoint of the container process.
+                    Defaults to user specified in image metadata if unspecified. May
+                    also be set in SecurityContext.  If set in both SecurityContext
+                    and PodSecurityContext, the value specified in SecurityContext
+                    takes precedence for that container.
+                  format: int64
+                  type: integer
+                seLinuxOptions:
+                  description: The SELinux context to be applied to all containers.
+                    If unspecified, the container runtime will allocate a random SELinux
+                    context for each container.  May also be set in SecurityContext.  If
+                    set in both SecurityContext and PodSecurityContext, the value
+                    specified in SecurityContext takes precedence for that container.
+                  properties:
+                    level:
+                      description: Level is SELinux level label that applies to the
+                        container.
+                      type: string
+                    role:
+                      description: Role is a SELinux role label that applies to the
+                        container.
+                      type: string
+                    type:
+                      description: Type is a SELinux type label that applies to the
+                        container.
+                      type: string
+                    user:
+                      description: User is a SELinux user label that applies to the
+                        container.
+                      type: string
+                  type: object
+                supplementalGroups:
+                  description: A list of groups applied to the first process run in
+                    each container, in addition to the container's primary GID.  If
+                    unspecified, no groups will be added to any container.
+                  items:
+                    format: int64
+                    type: integer
+                  type: array
+                sysctls:
+                  description: Sysctls hold a list of namespaced sysctls used for
+                    the pod. Pods with unsupported sysctls (by the container runtime)
+                    might fail to launch.
+                  items:
+                    description: Sysctl defines a kernel parameter to be set
+                    properties:
+                      name:
+                        description: Name of a property to set
+                        type: string
+                      value:
+                        description: Value of a property to set
+                        type: string
+                    required:
+                    - name
+                    - value
+                    type: object
+                  type: array
+                windowsOptions:
+                  description: The Windows specific settings applied to all containers.
+                    If unspecified, the options within a container's SecurityContext
+                    will be used. If set in both SecurityContext and PodSecurityContext,
+                    the value specified in SecurityContext takes precedence.
+                  properties:
+                    gmsaCredentialSpec:
+                      description: GMSACredentialSpec is where the GMSA admission
+                        webhook (https://github.com/kubernetes-sigs/windows-gmsa)
+                        inlines the contents of the GMSA credential spec named by
+                        the GMSACredentialSpecName field. This field is alpha-level
+                        and is only honored by servers that enable the WindowsGMSA
+                        feature flag.
+                      type: string
+                    gmsaCredentialSpecName:
+                      description: GMSACredentialSpecName is the name of the GMSA
+                        credential spec to use. This field is alpha-level and is only
+                        honored by servers that enable the WindowsGMSA feature flag.
+                      type: string
+                    runAsUserName:
+                      description: The UserName in Windows to run the entrypoint of
+                        the container process. Defaults to the user specified in image
+                        metadata if unspecified. May also be set in PodSecurityContext.
+                        If set in both SecurityContext and PodSecurityContext, the
+                        value specified in SecurityContext takes precedence. This
+                        field is beta-level and may be disabled with the WindowsRunAsUserName
+                        feature flag.
+                      type: string
+                  type: object
+              type: object
+            serviceAccountName:
+              description: ControllerServiceAccountName configures the service account
+                used on controller instances. If not specified, Kubernetes will automatically
+                assign the default service account in the namespace
+              type: string
+            svcAnnotations:
+              additionalProperties:
+                type: string
+              description: Annotations to be added to the external service
+              type: object
+            tls:
+              description: 'TLS is the Pravega security configuration that is passed
+                to the Pravega processes. See the following file for a complete list
+                of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
+              properties:
+                static:
+                  description: Static TLS means keys/certs are generated by the user
+                    and passed to an operator.
+                  properties:
+                    caBundle:
+                      type: string
+                    controllerStoreSecret:
+                      type: string
+                  type: object
+              type: object
+            version:
+              description: "Version is the expected version of the Pravega cluster.
+                The pravega-operator will eventually make the Pravega cluster version
+                equal to the expected version. \n The version must follow the [semver](
+                http://semver.org) format, for example \"3.2.13\". Only Pravega released
+                versions are supported: https://github.com/pravega/pravega/releases
+                \n If version is not set, default is \"0.4.0\"."
+              type: string
+            zookeeperUri:
+              description: 'ZookeeperUri specifies the hostname/IP address and port
+                in the format "hostname:port". By default, the value "zk-client:2181"
+                is used, that corresponds to the default Zookeeper service created
+                by the Pravega Zookkeeper operator available at: https://github.com/pravega/zookeeper-operator'
+              type: string
+          required:
+          - bookkeeperUri
+          - externalAccess
+          - version
+          - zookeeperUri
+          type: object
+        status:
+          description: PravegaControllerStatus defines the observed state of PravegaCluster
+          properties:
+            conditions:
+              description: Conditions list all the applied conditions
+              items:
+                description: ClusterCondition shows the current condition of a Pravega
+                  cluster. Comply with k8s API conventions
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another.
+                    type: string
+                  lastUpdateTime:
+                    description: The last time this condition was updated.
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of Pravega cluster condition.
+                    type: string
+                type: object
+              type: array
+            currentReplicas:
+              description: CurrentReplicas is the number of current replicas in the
+                cluster
+              format: int32
+              type: integer
+            currentVersion:
+              description: CurrentVersion is the current cluster version
+              type: string
+            members:
+              description: Members is the Pravega members in the cluster
+              properties:
+                ready:
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
+                unready:
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
+              type: object
+            readyReplicas:
+              description: ReadyReplicas is the number of ready replicas in the cluster
+              format: int32
+              type: integer
+            replicas:
+              description: Replicas is the number of desired replicas in the cluster
+              format: int32
+              type: integer
+            targetVersion:
+              description: TargetVersion is the version the cluster upgrading to.
+                If the cluster is not upgrading, TargetVersion is empty.
+              type: string
+            versionHistory:
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+  version: v1beta2
+  versions:
+  - name: v1beta2
+    served: true
+    storage: true
