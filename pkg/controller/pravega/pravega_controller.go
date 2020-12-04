@@ -19,6 +19,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -138,6 +139,26 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 
 	if p.Spec.Pravega.ControllerSecurityContext != nil {
 		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
+	}
+
+	if p.Spec.Authentication.ControllerToken != nil {
+		env1 := []corev1.EnvVar{
+			{
+				Name: p.Spec.Authentication.ControllerToken.EnvName,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: v1.LocalObjectReference{
+							Name: p.Spec.Authentication.ControllerToken.SecretName,
+						},
+						Key: p.Spec.Authentication.ControllerToken.KeyName,
+					},
+				},
+			},
+		}
+
+		for _, c := range podSpec.Containers {
+			c.Env = env1
+		}
 	}
 
 	configureControllerTLSSecrets(podSpec, p)
