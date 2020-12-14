@@ -97,7 +97,6 @@ See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/cus
 To install cert-manager check [this](https://cert-manager.io/docs/installation/kubernetes/).
 
 3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) version `0.1.3` or below must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade. You can upgrade to higher bookkeeper-operator versions later, if required. Also, Bookkeeper operator version map should contain the bookkeeper versions of the installed bookkeeper.
-You can upgrade to higher bookkeeper-operator versions
 
 4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace).
 
