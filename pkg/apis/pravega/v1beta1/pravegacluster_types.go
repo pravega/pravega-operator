@@ -96,7 +96,7 @@ type PravegaCluster struct {
 
 // WithDefaults set default values when not defined in the spec.
 func (p *PravegaCluster) WithDefaults() (changed bool) {
-	changed = p.Spec.withDefaults()
+	changed = p.Spec.withDefaults(p)
 	return changed
 }
 
@@ -152,7 +152,7 @@ type ClusterSpec struct {
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
-func (s *ClusterSpec) withDefaults() (changed bool) {
+func (s *ClusterSpec) withDefaults(p *PravegaCluster) (changed bool) {
 	if s.ZookeeperUri == "" {
 		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
@@ -196,6 +196,16 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 
 	if s.Pravega.withDefaults() {
 		changed = true
+	}
+
+	if s.Pravega.ControllerPodAffinity == nil {
+		changed = true
+		s.Pravega.ControllerPodAffinity = util.PodAntiAffinity("pravega-controller", p.GetName())
+	}
+
+	if s.Pravega.SegmentStorePodAffinity == nil {
+		changed = true
+		s.Pravega.SegmentStorePodAffinity = util.PodAntiAffinity("pravega-segmentstore", p.GetName())
 	}
 
 	if util.IsVersionBelow07(s.Version) && s.Pravega.CacheVolumeClaimTemplate == nil {
