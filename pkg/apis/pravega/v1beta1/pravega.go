@@ -12,8 +12,9 @@ package v1beta1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
-	"k8s.io/api/core/v1"
+
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -174,6 +175,12 @@ type PravegaSpec struct {
 
 	// ControllerSecurityContext holds security configuration that will be applied to a container
 	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
+
+	// The scheduling constraints on Controller pods.
+	ControllerPodAffinity *corev1.Affinity `json:"controllerPodAffinity,omitempty"`
+
+	// The scheduling constraints on Segementstore pods.
+	SegmentStorePodAffinity *corev1.Affinity `json:"segmentStorePodAffinity,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
