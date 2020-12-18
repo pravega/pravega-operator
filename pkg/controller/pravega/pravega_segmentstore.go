@@ -152,7 +152,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
+		Affinity: p.Spec.Pravega.SegmentStorePodAffinity,
 		Volumes: []corev1.Volume{
 			{
 				Name: heapDumpName,

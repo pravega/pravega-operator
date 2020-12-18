@@ -381,6 +381,16 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ControllerPodAffinity != nil {
+		in, out := &in.ControllerPodAffinity, &out.ControllerPodAffinity
+		*out = new(v1.Affinity)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.SegmentStorePodAffinity != nil {
+		in, out := &in.SegmentStorePodAffinity, &out.SegmentStorePodAffinity
+		*out = new(v1.Affinity)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

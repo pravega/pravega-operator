@@ -54,6 +54,7 @@ controller:
       memory: 2Gi
   securityContext: {}
     # runAsUser: 0
+  affinity: {}
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for controller
@@ -76,6 +77,7 @@ segmentStore:
       memory: 4Gi
   securityContext: {}
     # runAsUser: 0
+  affinity: {}
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for segmentStore

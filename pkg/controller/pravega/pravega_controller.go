@@ -124,7 +124,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-controller", p.Name),
+		Affinity: p.Spec.Pravega.ControllerPodAffinity,
 		Volumes: []corev1.Volume{
 			{
 				Name: heapDumpName,

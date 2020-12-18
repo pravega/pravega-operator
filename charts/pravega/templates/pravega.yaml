@@ -48,6 +48,14 @@ spec:
     controllerSecurityContext:
       runAsUser: {{ .Values.controller.securityContext.runAsUser }}
     {{- end }}
+    {{- if .Values.controller.affinity }}
+    controllerPodAffinity:
+{{ toYaml .Values.controller.affinity | indent 6 }}
+    {{- end }}
+{{- if .Values.segmentStore.affinity }}
+    segmentStorePodAffinity:
+{{ toYaml .Values.segmentStore.affinity | indent 6 }}
+    {{- end }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
