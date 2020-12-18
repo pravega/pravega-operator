@@ -24,7 +24,10 @@ spec:
     enabled: {{ .Values.authentication.enabled }}
     {{- if .Values.authentication.enabled }}
     passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
+    segmentStoreTokenSecret: {{ .Values.authentication.segmentStoreTokenSecret }}
+    controllerTokenSecret: {{ .Values.authentication.controllerTokenSecret }}
     {{- end }}
+
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}

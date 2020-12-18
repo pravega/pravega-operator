@@ -203,15 +203,27 @@ func DownwardAPIEnv(p *api.PravegaCluster) []corev1.EnvVar {
 			},
 		},
 	}
-	if p.Spec.Authentication.SegmentStoreToken != nil {
+	if p.Spec.Authentication.SegmentStoreTokenSecret != "" {
 		envvar := corev1.EnvVar{
-			Name: p.Spec.Authentication.SegmentStoreToken.EnvName,
+			Name: "autoScale_tokenSigningKey",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: v1.LocalObjectReference{
-						Name: p.Spec.Authentication.SegmentStoreToken.SecretName,
+						Name: p.Spec.Authentication.SegmentStoreTokenSecret,
 					},
-					Key: p.Spec.Authentication.SegmentStoreToken.KeyName,
+					Key: "autoScale_tokenSigningKey",
+				},
+			},
+		}
+		env1 = append(env1, envvar)
+		envvar = corev1.EnvVar{
+			Name: "pravega_client_auth_token",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: p.Spec.Authentication.SegmentStoreTokenSecret,
+					},
+					Key: "pravega_client_auth_token",
 				},
 			},
 		}

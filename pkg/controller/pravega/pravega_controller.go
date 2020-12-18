@@ -70,6 +70,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				Args: []string{
 					"controller",
 				},
+				Env: ControllerDownwardAPIEnv(p),
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "rest",
@@ -141,29 +142,32 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
 	}
 
-	if p.Spec.Authentication.ControllerToken != nil {
-		env1 := []corev1.EnvVar{
-			{
-				Name: p.Spec.Authentication.ControllerToken.EnvName,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: v1.LocalObjectReference{
-							Name: p.Spec.Authentication.ControllerToken.SecretName,
-						},
-						Key: p.Spec.Authentication.ControllerToken.KeyName,
-					},
-				},
-			},
-		}
-
-		for _, c := range podSpec.Containers {
-			c.Env = env1
-		}
-	}
-
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
 	return podSpec
+}
+
+func ControllerDownwardAPIEnv(p *api.PravegaCluster) []corev1.EnvVar {
+
+	if p.Spec.Authentication.ControllerTokenSecret == "" {
+		return nil
+	}
+
+	env1 := []corev1.EnvVar{
+		{
+			Name: "controller_auth_tokenSigningKey",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: p.Spec.Authentication.ControllerTokenSecret,
+					},
+					Key: "controller_auth_tokenSigningKey",
+				},
+			},
+		},
+	}
+	return env1
+
 }
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
