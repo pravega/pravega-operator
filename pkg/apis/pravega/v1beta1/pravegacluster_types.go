@@ -1037,8 +1037,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["controller.container.count"]; ok {
 		checkstring := fmt.Sprintf("-Dcontroller.container.count=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dcontroller.containerCount=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("controller.container.count should not be changed ")
 		}
 	}
@@ -1051,8 +1053,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["pravegaservice.container.count"]; ok {
 		checkstring := fmt.Sprintf("-Dpravegaservice.container.count=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dpravegaservice.containerCount=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("pravegaservice.container.count should not be changed ")
 		}
 	}
@@ -1065,8 +1069,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["bookkeeper.ledger.path"]; ok {
 		checkstring := fmt.Sprintf("-Dbookkeeper.ledger.path=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dbookkeeper.bkLedgerPath=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("bookkeeper.ledger.path should not be changed ")
 		}
 	}
@@ -1079,8 +1085,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["controller.retention.bucket.count"]; ok {
 		checkstring := fmt.Sprintf("-Dcontroller.retention.bucket.count=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dcontroller.retention.bucketCount=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("controller.retention.bucket.count should not be changed ")
 		}
 	}
@@ -1093,8 +1101,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["controller.watermarking.bucket.count"]; ok {
 		checkstring := fmt.Sprintf("-Dcontroller.watermarking.bucket.count=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dcontroller.watermarking.bucketCount=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("controller.watermarking.bucket.count should not be changed ")
 		}
 	}
@@ -1107,8 +1117,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["pravegaservice.dataLog.impl.name"]; ok {
 		checkstring := fmt.Sprintf("-Dpravegaservice.dataLog.impl.name=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dpravegaservice.dataLogImplementation=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("pravegaservice.dataLog.impl.name should not be changed ")
 		}
 	}
@@ -1121,8 +1133,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["pravegaservice.storage.impl.name"]; ok {
 		checkstring := fmt.Sprintf("-Dpravegaservice.storage.impl.name=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dpravegaservice.storageImplementation=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("pravegaservice.storage.impl.name should not be changed ")
 		}
 	}
@@ -1135,8 +1149,10 @@ func (p *PravegaCluster) validateConfigMap() error {
 	}
 	if val, ok := p.Spec.Pravega.Options["storageextra.noOp.mode.enable"]; ok {
 		checkstring := fmt.Sprintf("-Dstorageextra.noOp.mode.enable=%v", val)
-		eq := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
-		if !eq {
+		eq_new := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		checkstring = fmt.Sprintf("-Dstorageextra.storageNoOpMode=%v", val)
+		eq_old := strings.Contains(configmap.Data["JAVA_OPTS"], checkstring)
+		if !(eq_old || eq_new) {
 			return fmt.Errorf("storageextra.noOp.mode.enable should not be changed ")
 		}
 	}
