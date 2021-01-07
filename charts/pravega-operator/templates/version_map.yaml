@@ -1,3 +1,5 @@
+{{- $fromVersion := .Values.testmode.fromVersion }}
+{{- $toVersion := .Values.testmode.toVersion }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
