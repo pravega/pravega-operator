@@ -1028,7 +1028,7 @@ func (p *PravegaCluster) validateConfigMap() error {
 			return fmt.Errorf("failed to get configmap (%s): %v", configmap.Name, err)
 		}
 	}
-	data := strings.Split(configmap.Data["JAVA_OPTS"]," ")
+	data := strings.Split(configmap.Data["JAVA_OPTS"], " ")
 	eq := false
 	if val, ok := p.Spec.Pravega.Options["controller.containerCount"]; ok {
 		key := fmt.Sprintf("-Dcontroller.containerCount=%v", val)
