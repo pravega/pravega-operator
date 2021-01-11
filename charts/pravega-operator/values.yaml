@@ -28,7 +28,7 @@ testmode:
   ## mention the major version number
   ## eg. enter 0.8.0 if u wish to deploy version 0.8.0-2500.efe501a
   fromVersion: ""
-  ## fromVersion is used to specify the
+  ## toVersion is used to specify the
   ## test version of pravega that you wish to provide an upgrade path to
   ## from the earlier specified version
   ## eg. enter 0.9.0 if u wish to provide an upgrade path from pravega 0.8.0 to 0.9.0
