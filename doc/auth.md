@@ -80,6 +80,7 @@ For more security configurations, please check [here](https://github.com/pravega
 Pravega Operator Supports Passing of Auth Parametes as Secret which are mounted as file in both Segment Store and Controller (Operator mounts these secrets in Segementstore pod it's mounted at `/etc/ss-auth-volume` and in Controller pod at `/etc/controller-auth-volume` respectively)
 
 Note that Pravega has to use this feature and start Picking below specified values from file insted of jvm properties which it currently does.
+(This is not implemented at pravega end currently)
 
 Below is how we can create secret and expose them as file for Auth related properties:-
 
@@ -120,7 +121,7 @@ controllerauthdata.txt:  67 bytes
 ```
 $ cat segmentstoreauthdata.txt
 delegationToken.signingKey.basis: "secret"
-controller.connect.auth.params={method};{token};{dynamic}
+controller.connect.auth.params: {method};{token};{dynamic}
 ```
 4. Create a kubernetes secret with this file:
 
