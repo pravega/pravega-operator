@@ -160,6 +160,14 @@ var _ = Describe("pravegacluster", func() {
 
 	})
 
+	Context("DownwardAPIEnv()", func() {
+
+		env := DownwardAPIEnv()
+		It("should not be nil", func() {
+			Ω(env).ShouldNot(BeNil())
+		})
+
+	})
 	Context("HealthcheckCommand()", func() {
 
 		out := HealthcheckCommand(1234)

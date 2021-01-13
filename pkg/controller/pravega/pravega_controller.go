@@ -19,7 +19,6 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -70,7 +69,6 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				Args: []string{
 					"controller",
 				},
-				Env: ControllerDownwardAPIEnv(p),
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "rest",
@@ -144,30 +142,8 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
+	configureControllerAuthSecrets(podSpec, p)
 	return podSpec
-}
-
-func ControllerDownwardAPIEnv(p *api.PravegaCluster) []corev1.EnvVar {
-
-	if p.Spec.Authentication.ControllerTokenSecret == "" {
-		return nil
-	}
-
-	env1 := []corev1.EnvVar{
-		{
-			Name: "controller_auth_tokenSigningKey",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: p.Spec.Authentication.ControllerTokenSecret,
-					},
-					Key: "controller_auth_tokenSigningKey",
-				},
-			},
-		},
-	}
-	return env1
-
 }
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
@@ -180,6 +156,13 @@ func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.PasswordAuthSecret != "" {
 		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.PasswordAuthSecret,
 			authVolumeName, authMountDir)
+	}
+}
+
+func configureControllerAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.ControllerTokenSecret != "" {
+		addSecretVolumeWithMount(podSpec, p, controllerAuthVolumeName, p.Spec.Authentication.ControllerTokenSecret,
+			controllerAuthVolumeName, controllerAuthMountDir)
 	}
 }
 

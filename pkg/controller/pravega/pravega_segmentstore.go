@@ -19,7 +19,6 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -119,7 +118,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					},
 				},
 				EnvFrom:      environment,
-				Env:          DownwardAPIEnv(p),
+				Env:          util.DownwardAPIEnv(),
 				VolumeMounts: MakeSegmentStoreVolumeMount(p),
 				Resources:    *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
@@ -179,58 +178,9 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
 
+	configureSegmentstoreAuthSecret(&podSpec, p)
+
 	return podSpec
-}
-
-func DownwardAPIEnv(p *api.PravegaCluster) []corev1.EnvVar {
-	env1 := []corev1.EnvVar{
-		{
-			Name: "POD_NAME",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					APIVersion: "v1",
-					FieldPath:  "metadata.name",
-				},
-			},
-		},
-		{
-			Name: "POD_NAMESPACE",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					APIVersion: "v1",
-					FieldPath:  "metadata.namespace",
-				},
-			},
-		},
-	}
-	if p.Spec.Authentication.SegmentStoreTokenSecret != "" {
-		envvar := corev1.EnvVar{
-			Name: "autoScale_tokenSigningKey",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: p.Spec.Authentication.SegmentStoreTokenSecret,
-					},
-					Key: "autoScale_tokenSigningKey",
-				},
-			},
-		}
-		env1 = append(env1, envvar)
-		envvar = corev1.EnvVar{
-			Name: "pravega_client_auth_token",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: v1.LocalObjectReference{
-						Name: p.Spec.Authentication.SegmentStoreTokenSecret,
-					},
-					Key: "pravega_client_auth_token",
-				},
-			},
-		}
-		env1 = append(env1, envvar)
-	}
-	return env1
-
 }
 
 func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
@@ -426,6 +376,25 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      tlsVolumeName,
 			MountPath: tlsMountDir,
+		})
+	}
+}
+
+func configureSegmentstoreAuthSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.SegmentStoreTokenSecret != "" {
+		vol := corev1.Volume{
+			Name: ssAuthVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.Authentication.SegmentStoreTokenSecret,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssAuthVolumeName,
+			MountPath: ssAuthMountDir,
 		})
 	}
 }
