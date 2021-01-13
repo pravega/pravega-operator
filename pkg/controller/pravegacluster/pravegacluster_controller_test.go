@@ -492,7 +492,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(err).Should(BeNil())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
-
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
 				})
 			})
@@ -548,7 +547,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(err).Should(BeNil())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
-
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
 				})
 			})
