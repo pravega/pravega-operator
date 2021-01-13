@@ -42,11 +42,11 @@ spec:
   pravega:
     {{- if .Values.segmentStore.securityContext }}
     segmentStoreSecurityContext:
-      runAsUser: {{ .Values.segmentStore.securityContext.runAsUser }}
+{{ toYaml .Values.segmentStore.securityContext | indent 6 }}
     {{- end }}
     {{- if .Values.controller.securityContext }}
     controllerSecurityContext:
-      runAsUser: {{ .Values.controller.securityContext.runAsUser }}
+{{ toYaml .Values.controller.securityContext | indent 6 }}
     {{- end }}
     {{- if .Values.controller.affinity }}
     controllerPodAffinity:
