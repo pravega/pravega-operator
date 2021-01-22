@@ -81,6 +81,10 @@ type PravegaSpec struct {
 	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
+	MaxUnavailableSegmentStoreReplicas int32 `json:"maxUnavailableSgmentStoreReplicas"`
+
+	MaxUnavailableControllerReplicas int32 `json:"maxUnavailableControllerReplicas"`
+
 	// DebugLogging indicates whether or not debug level logging is enabled.
 	// Defaults to false.
 	// +optional
@@ -192,6 +196,16 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if !config.TestMode && s.SegmentStoreReplicas < 1 {
 		changed = true
 		s.SegmentStoreReplicas = 1
+	}
+
+	if !config.TestMode && s.MaxUnavailableControllerReplicas < 1 {
+		changed = true
+		s.MaxUnavailableControllerReplicas = 1
+	}
+
+	if !config.TestMode && s.MaxUnavailableSegmentStoreReplicas < 1 {
+		changed = true
+		s.MaxUnavailableSegmentStoreReplicas = 1
 	}
 
 	if s.Image == nil {

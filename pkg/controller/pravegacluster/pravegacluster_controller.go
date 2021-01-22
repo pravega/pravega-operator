@@ -304,8 +304,15 @@ func (r *ReconcilePravegaCluster) reconcileControllerPdb(p *pravegav1beta1.Prave
 	pdb := pravega.MakeControllerPodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			err = r.client.Update(context.TODO(), pdb)
+			if err != nil {
+				return fmt.Errorf("failed to update pdb (%s): %v", pdb.Name, err)
+			}
+		} else {
+			return err
+		}
 	}
 	return nil
 }
@@ -314,8 +321,15 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStorePdb(p *pravegav1beta1.Pra
 	pdb := pravega.MakeSegmentstorePodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	if err != nil {
+		if errors.IsAlreadyExists(err) {
+			err = r.client.Update(context.TODO(), pdb)
+			if err != nil {
+				return fmt.Errorf("failed to update pdb (%s): %v", pdb.Name, err)
+			}
+		} else {
+			return err
+		}
 	}
 	return nil
 }
