@@ -86,7 +86,6 @@ Below is how we can create secret and expose them as file for Auth related prope
 
 1. Create a File containg `controller.security.auth.delegationToken.signingKey.basis`  as `delegationToken.signingKey.basis` which represent the tokensigning key used to connect to the controller:
 
-Sample encrypted password file:
 ```
 $ cat controllerauthdata.txt
 delegationToken.signingKey.basis: "secret"
