@@ -1118,6 +1118,12 @@ spec:
                             type: string
                         type: object
                     type: object
+                  maxUnavailableControllerReplicas:
+                    format: int32
+                    type: integer
+                  maxUnavailableSgmentStoreReplicas:
+                    format: int32
+                    type: integer
                   options:
                     additionalProperties:
                       type: string
