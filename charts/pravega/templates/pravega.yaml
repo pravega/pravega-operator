@@ -81,11 +81,13 @@ spec:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
+    maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableControllerReplicas }}
     {{- if .Values.controller.resources }}
     controllerResources:
 {{ toYaml .Values.controller.resources | indent 6 }}
     {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
+    maxUnavailableSegmentStoreReplicas: {{ .Values.segmentStore.maxUnavailableSegmentStoreReplicas }}
     {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
 {{ toYaml .Values.segmentStore.resources | indent 6 }}

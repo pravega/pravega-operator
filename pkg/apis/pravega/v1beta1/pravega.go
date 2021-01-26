@@ -81,7 +81,7 @@ type PravegaSpec struct {
 	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
-	MaxUnavailableSegmentStoreReplicas int32 `json:"maxUnavailableSgmentStoreReplicas"`
+	MaxUnavailableSegmentStoreReplicas int32 `json:"maxUnavailableSegmentStoreReplicas"`
 
 	MaxUnavailableControllerReplicas int32 `json:"maxUnavailableControllerReplicas"`
 
