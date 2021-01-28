@@ -81,8 +81,16 @@ type PravegaSpec struct {
 	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
 
+	// MaxUnavailableSegmentStoreReplicas defines the
+	// MaxUnavailable SegmentStore Replicas
+	// Default is 1.
+	// +optional
 	MaxUnavailableSegmentStoreReplicas int32 `json:"maxUnavailableSegmentStoreReplicas"`
 
+	// MaxUnavailableControllerReplicas defines the
+	// MaxUnavailable Controller Replicas
+	// Default is 1.
+	// +optional
 	MaxUnavailableControllerReplicas int32 `json:"maxUnavailableControllerReplicas"`
 
 	// DebugLogging indicates whether or not debug level logging is enabled.

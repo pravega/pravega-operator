@@ -1131,9 +1131,13 @@ spec:
                         type: object
                     type: object
                   maxUnavailableControllerReplicas:
+                    description: MaxUnavailableControllerReplicas defines the MaxUnavailable
+                      Controller Replicas Default is 1.
                     format: int32
                     type: integer
                   maxUnavailableSegmentStoreReplicas:
+                    description: MaxUnavailableSegmentStoreReplicas defines the MaxUnavailable
+                      SegmentStore Replicas Default is 1.
                     format: int32
                     type: integer
                   options:

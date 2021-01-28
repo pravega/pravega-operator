@@ -17,6 +17,9 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
@@ -350,6 +353,43 @@ var _ = Describe("PravegaCluster Controller", func() {
 						err = client.Get(context.TODO(), nn, foundSvc)
 						fmt.Printf("client-services error: %v", err)
 						Ω(err).Should(MatchError("services \"example-pravega-segment-store-0\" not found"))
+					})
+				})
+
+				Context("checking updatePDB", func() {
+					var (
+						err1 error
+						str1 string
+					)
+					BeforeEach(func() {
+						res, err = r.Reconcile(req)
+						currentpdb := &policyv1beta1.PodDisruptionBudget{}
+						r.client.Get(context.TODO(), types.NamespacedName{Name: p.PdbNameForSegmentstore(), Namespace: p.Namespace}, currentpdb)
+						maxUnavailable := intstr.FromInt(3)
+						newpdb := &policyv1beta1.PodDisruptionBudget{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "PodDisruptionBudget",
+								APIVersion: "policy/v1beta1",
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test-name",
+								Namespace: p.Namespace,
+							},
+							Spec: policyv1beta1.PodDisruptionBudgetSpec{
+								MaxUnavailable: &maxUnavailable,
+								Selector: &metav1.LabelSelector{
+									MatchLabels: p.LabelsForController(),
+								},
+							},
+						}
+						err1 = r.updatePdb(currentpdb, newpdb)
+						str1 = fmt.Sprintf("%s", currentpdb.Spec.MaxUnavailable)
+					})
+					It("should not give error", func() {
+						Ω(err1).Should(BeNil())
+					})
+					It("unavailable replicas should change to 3", func() {
+						Ω(str1).To(Equal("3"))
 					})
 				})
 
