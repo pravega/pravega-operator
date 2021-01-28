@@ -20,9 +20,9 @@ import (
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -304,31 +304,43 @@ func (r *ReconcilePravegaCluster) reconcileControllerPdb(p *pravegav1beta1.Prave
 	pdb := pravega.MakeControllerPodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
-	if err != nil {
-		if errors.IsAlreadyExists(err) {
-			err = r.client.Update(context.TODO(), pdb)
-			if err != nil {
-				return fmt.Errorf("failed to update pdb (%s): %v", pdb.Name, err)
-			}
-		} else {
-			return err
-		}
+
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
 	}
-	return nil
+
+	currentPdb := &policyv1beta1.PodDisruptionBudget{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
+	if err != nil {
+		return err
+	}
+	return r.updatePdb(currentPdb, pdb)
 }
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStorePdb(p *pravegav1beta1.PravegaCluster) (err error) {
 	pdb := pravega.MakeSegmentstorePodDisruptionBudget(p)
 	controllerutil.SetControllerReference(p, pdb, r.scheme)
 	err = r.client.Create(context.TODO(), pdb)
+
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+
+	currentPdb := &policyv1beta1.PodDisruptionBudget{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
 	if err != nil {
-		if errors.IsAlreadyExists(err) {
-			err = r.client.Update(context.TODO(), pdb)
-			if err != nil {
-				return fmt.Errorf("failed to update pdb (%s): %v", pdb.Name, err)
-			}
-		} else {
-			return err
+		return err
+	}
+	return r.updatePdb(currentPdb, pdb)
+}
+
+func (r *ReconcilePravegaCluster) updatePdb(currentPdb *policyv1beta1.PodDisruptionBudget, newPdb *policyv1beta1.PodDisruptionBudget) (err error) {
+
+	if !reflect.DeepEqual(currentPdb.Spec.MaxUnavailable, newPdb.Spec.MaxUnavailable) {
+		currentPdb.Spec.MaxUnavailable = newPdb.Spec.MaxUnavailable
+		err = r.client.Update(context.TODO(), currentPdb)
+		if err != nil {
+			return fmt.Errorf("failed to update pdb (%s): %v", currentPdb.Name, err)
 		}
 	}
 	return nil
