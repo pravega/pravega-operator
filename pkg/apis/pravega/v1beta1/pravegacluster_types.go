@@ -290,6 +290,12 @@ type AuthenticationParameters struct {
 	// name of Secret containing Password based Authentication Parameters like username, password and acl
 	// optional - used only by PasswordAuthHandler for authentication
 	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
+
+	//name of secret containg TokenSigningKey
+	ControllerTokenSecret string `json:"controllerTokenSecret,omitempty"`
+
+	//name of secret containg TokenSigningKey and AuthToken
+	SegmentStoreTokenSecret string `json:"segmentStoreTokenSecret,omitempty"`
 }
 
 func (ap *AuthenticationParameters) IsEnabled() bool {

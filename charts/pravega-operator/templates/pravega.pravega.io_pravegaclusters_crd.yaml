@@ -74,6 +74,8 @@ spec:
                   from clients to controller and segment store See the following file
                   for a complete list of options: https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md'
                 properties:
+                  controllerTokenSecret:
+                    type: string
                   enabled:
                     description: Enabled specifies whether or not authentication is
                       enabled By default, authentication is not enabled
@@ -82,6 +84,8 @@ spec:
                     description: name of Secret containing Password based Authentication
                       Parameters like username, password and acl optional - used only
                       by PasswordAuthHandler for authentication
+                    type: string
+                  segmentStoreTokenSecret:
                     type: string
                 type: object
               bookkeeperUri:

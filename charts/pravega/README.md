@@ -63,6 +63,8 @@ The following table lists the configurable parameters of the pravega chart and t
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
+| `authentication.segmentStoreTokenSecret` | Name of Secret containing tokenSigningkey for the ss, if authentication is enabled | |
+| `authentication.controllerTokenSecret` | Name of Secret containing tokenSigningkey for controller, if authentication is enabled | |
 | `zookeeperUri` | Zookeeper client service URI | `zookeeper-client:2181` |
 | `bookkeeperUri` | Bookkeeper headless service URI | `bookkeeper-bookie-headless:3181` |
 | `externalAccess.enabled` | Enable external access | `false` |

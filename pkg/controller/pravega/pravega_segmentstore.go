@@ -178,6 +178,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
 
+	configureSegmentstoreAuthSecret(&podSpec, p)
+
 	return podSpec
 }
 
@@ -374,6 +376,25 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      tlsVolumeName,
 			MountPath: tlsMountDir,
+		})
+	}
+}
+
+func configureSegmentstoreAuthSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.SegmentStoreTokenSecret != "" {
+		vol := corev1.Volume{
+			Name: ssAuthVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.Authentication.SegmentStoreTokenSecret,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssAuthVolumeName,
+			MountPath: ssAuthMountDir,
 		})
 	}
 }

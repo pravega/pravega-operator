@@ -14,6 +14,10 @@ authentication:
   enabled: false
   ## passwordAuthSecret is ignored if authentication is disabled
   passwordAuthSecret:
+  #segmentStoreToken is ignored if authentication is disabled
+  segmentStoreTokenSecret:
+  #controllerTokenSecret is ignored if authentication is disabled
+  controllerTokenSecret:
 
 zookeeperUri: zookeeper-client:2181
 bookkeeperUri: bookkeeper-bookie-headless:3181

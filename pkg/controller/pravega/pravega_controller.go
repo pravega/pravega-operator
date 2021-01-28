@@ -142,6 +142,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
+	configureControllerAuthSecrets(podSpec, p)
 	return podSpec
 }
 
@@ -155,6 +156,13 @@ func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.PasswordAuthSecret != "" {
 		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.PasswordAuthSecret,
 			authVolumeName, authMountDir)
+	}
+}
+
+func configureControllerAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.ControllerTokenSecret != "" {
+		addSecretVolumeWithMount(podSpec, p, controllerAuthVolumeName, p.Spec.Authentication.ControllerTokenSecret,
+			controllerAuthVolumeName, controllerAuthMountDir)
 	}
 }
 

@@ -103,8 +103,9 @@ var _ = Describe("Controller", func() {
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
-						Enabled:            true,
-						PasswordAuthSecret: "authentication-secret",
+						Enabled:               true,
+						PasswordAuthSecret:    "authentication-secret",
+						ControllerTokenSecret: "controllerauth-secret",
 					},
 				}
 				p.WithDefaults()
@@ -219,8 +220,9 @@ var _ = Describe("Controller", func() {
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
-						Enabled:            true,
-						PasswordAuthSecret: "authentication-secret",
+						Enabled:               true,
+						PasswordAuthSecret:    "authentication-secret",
+						ControllerTokenSecret: "controllerauth-secret",
 					},
 				}
 				p.WithDefaults()
