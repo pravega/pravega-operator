@@ -536,7 +536,7 @@ func MakeSegmentstorePodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.P
 	if p.Spec.Pravega.SegmentStoreReplicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
-		maxUnavailable = intstr.FromInt(1)
+		maxUnavailable = intstr.FromInt(int(p.Spec.Pravega.MaxUnavailableSegmentStoreReplicas))
 	}
 
 	return &policyv1beta1.PodDisruptionBudget{

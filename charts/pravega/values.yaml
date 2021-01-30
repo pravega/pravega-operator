@@ -45,6 +45,7 @@ serviceAccount:
 
 controller:
   replicas: 1
+  maxUnavailableControllerReplicas: 1
   resources:
     requests:
       cpu: 500m
@@ -64,6 +65,7 @@ controller:
 
 segmentStore:
   replicas: 1
+  maxUnavailableSegmentStoreReplicas: 1
   secret: {}
     # name:
     # path:
