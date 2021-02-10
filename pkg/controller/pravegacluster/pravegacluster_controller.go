@@ -242,9 +242,11 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 				return err
 			}
 			//restarting controller pods
-			err = r.restartDeploymentPod(p)
-			if err != nil {
-				return err
+			if !r.checkVersionUpgradeTriggered(p) {
+				err = r.restartDeploymentPod(p)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -274,13 +276,24 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 				return err
 			}
 			//restarting sts pods
-			err = r.restartStsPod(p)
-			if err != nil {
-				return err
+			if !r.checkVersionUpgradeTriggered(p) {
+				err = r.restartStsPod(p)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
+}
+
+func (r *ReconcilePravegaCluster) checkVersionUpgradeTriggered(p *pravegav1beta1.PravegaCluster) bool {
+	currentPravegaCluster := &pravegav1beta1.PravegaCluster{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
+	if err == nil && currentPravegaCluster.Status.CurrentVersion != p.Spec.Version {
+		return true
+	}
+	return false
 }
 
 func (r *ReconcilePravegaCluster) reconcilePdb(p *pravegav1beta1.PravegaCluster) (err error) {

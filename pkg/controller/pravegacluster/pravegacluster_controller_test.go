@@ -393,6 +393,28 @@ var _ = Describe("PravegaCluster Controller", func() {
 					})
 				})
 
+				Context("checking checkVersionUpgradeTriggered function", func() {
+					var (
+						ans1, ans2 bool
+					)
+					BeforeEach(func() {
+						client = fake.NewFakeClient(p)
+						r = &ReconcilePravegaCluster{client: client, scheme: s}
+						res, err = r.Reconcile(req)
+
+						ans1 = r.checkVersionUpgradeTriggered(p)
+						p.Spec.Version = "0.8.0"
+						ans2 = r.checkVersionUpgradeTriggered(p)
+					})
+					It("ans1 should be false", func() {
+						Ω(ans1).To(Equal(false))
+					})
+					It("ans2 should be true", func() {
+						Ω(ans2).To(Equal(true))
+					})
+
+				})
+
 				Context("reconcileFinalizers", func() {
 					BeforeEach(func() {
 						p.WithDefaults()
