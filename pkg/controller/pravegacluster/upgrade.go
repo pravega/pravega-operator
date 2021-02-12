@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -654,6 +655,10 @@ func (r *ReconcilePravegaCluster) getOneOutdatedPod(sts *appsv1.StatefulSet, ver
 	if err != nil {
 		return nil, err
 	}
+
+	sort.SliceStable(podList.Items, func(i int, j int) bool {
+		return podList.Items[i].Name < podList.Items[j].Name
+	})
 
 	for _, podItem := range podList.Items {
 		if util.GetPodVersion(&podItem) == version {

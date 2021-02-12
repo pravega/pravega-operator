@@ -17,6 +17,9 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
+	policyv1beta1 "k8s.io/api/policy/v1beta1"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
@@ -353,6 +356,65 @@ var _ = Describe("PravegaCluster Controller", func() {
 					})
 				})
 
+				Context("checking updatePDB", func() {
+					var (
+						err1 error
+						str1 string
+					)
+					BeforeEach(func() {
+						res, err = r.Reconcile(req)
+						currentpdb := &policyv1beta1.PodDisruptionBudget{}
+						r.client.Get(context.TODO(), types.NamespacedName{Name: p.PdbNameForSegmentstore(), Namespace: p.Namespace}, currentpdb)
+						maxUnavailable := intstr.FromInt(3)
+						newpdb := &policyv1beta1.PodDisruptionBudget{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "PodDisruptionBudget",
+								APIVersion: "policy/v1beta1",
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      "test-name",
+								Namespace: p.Namespace,
+							},
+							Spec: policyv1beta1.PodDisruptionBudgetSpec{
+								MaxUnavailable: &maxUnavailable,
+								Selector: &metav1.LabelSelector{
+									MatchLabels: p.LabelsForController(),
+								},
+							},
+						}
+						err1 = r.updatePdb(currentpdb, newpdb)
+						str1 = fmt.Sprintf("%s", currentpdb.Spec.MaxUnavailable)
+					})
+					It("should not give error", func() {
+						Ω(err1).Should(BeNil())
+					})
+					It("unavailable replicas should change to 3", func() {
+						Ω(str1).To(Equal("3"))
+					})
+				})
+
+				Context("checking checkVersionUpgradeTriggered function", func() {
+					var (
+						ans1, ans2 bool
+					)
+					BeforeEach(func() {
+						client = fake.NewFakeClient(p)
+						r = &ReconcilePravegaCluster{client: client, scheme: s}
+						res, err = r.Reconcile(req)
+
+						ans1 = r.checkVersionUpgradeTriggered(p)
+						p.Spec.Version = "0.8.0"
+						ans2 = r.checkVersionUpgradeTriggered(p)
+					})
+					It("ans1 should be false", func() {
+						Ω(ans1).To(Equal(false))
+					})
+					It("ans2 should be true", func() {
+						Ω(ans2).To(Equal(true))
+					})
+
+				})
+
 				Context("reconcileFinalizers", func() {
 					BeforeEach(func() {
 						p.WithDefaults()
@@ -492,7 +554,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(err).Should(BeNil())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
-
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
 				})
 			})
@@ -548,7 +609,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(err).Should(BeNil())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=1")).Should(BeTrue())
-
 					Ω(strings.Contains(foundCm.Data["JAVA_OPTS"], "-XX:MaxRAMFraction=2")).Should(BeFalse())
 				})
 			})
@@ -674,6 +734,74 @@ var _ = Describe("PravegaCluster Controller", func() {
 					svcName3 := p.ServiceNameForSegmentStore(2) + "." + domainName
 					Expect(foundSegmentStoreSvc3.GetAnnotations()).To(HaveKeyWithValue(
 						"external-dns.alpha.kubernetes.io/hostname", svcName3))
+				})
+			})
+		})
+
+		Context("Custom spec with ExternalAccess and changing the domainName", func() {
+			var (
+				client     client.Client
+				err        error
+				domainName string
+			)
+
+			BeforeEach(func() {
+				domainName = "pravega.com."
+				p.Spec = v1beta1.ClusterSpec{
+					Version: "0.3.2-rc2",
+					ExternalAccess: &v1beta1.ExternalAccess{
+						Enabled:    true,
+						Type:       corev1.ServiceTypeClusterIP,
+						DomainName: domainName,
+					},
+					Pravega: &v1beta1.PravegaSpec{
+						ControllerReplicas:   2,
+						SegmentStoreReplicas: 3,
+					},
+				}
+				// equivalent of 1st reconcile
+				p.WithDefaults()
+				client = fake.NewFakeClient(p)
+				r = &ReconcilePravegaCluster{client: client, scheme: s}
+				// 2nd reconcile
+				res, err = r.Reconcile(req)
+			})
+
+			Context("Pravega SegmentStore External Access", func() {
+				var foundSegmentStoreSvc1 *corev1.Service
+
+				BeforeEach(func() {
+					// 2nd reconcile
+					res, err = r.Reconcile(req)
+					// 3rd reconcile
+					res, err = r.Reconcile(req)
+					domainName = "pravega1.com."
+					foundPravega := &v1beta1.PravegaCluster{}
+					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+					foundPravega.Spec.ExternalAccess.DomainName = domainName
+					client.Update(context.TODO(), foundPravega)
+					// 4th reconcile
+					_, _ = r.Reconcile(req)
+
+					foundSegmentStoreSvc1 = &corev1.Service{}
+					nn1 := types.NamespacedName{
+						Name:      p.ServiceNameForSegmentStore(0),
+						Namespace: Namespace,
+					}
+					err = client.Get(context.TODO(), nn1, foundSegmentStoreSvc1)
+				})
+
+				It("should create all segmentstore services", func() {
+					Ω(err).Should(BeNil())
+				})
+
+				It("should set only DNS name annotation", func() {
+					mapLength := len(foundSegmentStoreSvc1.GetAnnotations())
+					Ω(mapLength).To(Equal(1))
+
+					svcName1 := p.ServiceNameForSegmentStore(0) + "." + domainName
+					Expect(foundSegmentStoreSvc1.GetAnnotations()).To(HaveKeyWithValue(
+						"external-dns.alpha.kubernetes.io/hostname", svcName1))
 				})
 			})
 		})

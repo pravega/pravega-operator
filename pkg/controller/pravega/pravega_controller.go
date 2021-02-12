@@ -12,6 +12,7 @@ package pravega
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -121,7 +122,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-controller", p.Name),
+		Affinity: p.Spec.Pravega.ControllerPodAffinity,
 		Volumes: []corev1.Volume{
 			{
 				Name: heapDumpName,
@@ -135,8 +136,13 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName
 	}
 
+	if p.Spec.Pravega.ControllerSecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
+	}
+
 	configureControllerTLSSecrets(podSpec, p)
 	configureAuthSecrets(podSpec, p)
+	configureControllerAuthSecrets(podSpec, p)
 	return podSpec
 }
 
@@ -150,6 +156,13 @@ func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.PasswordAuthSecret != "" {
 		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.PasswordAuthSecret,
 			authVolumeName, authMountDir)
+	}
+}
+
+func configureControllerAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.ControllerTokenSecret != "" {
+		addSecretVolumeWithMount(podSpec, p, controllerAuthVolumeName, p.Spec.Authentication.ControllerTokenSecret,
+			controllerAuthVolumeName, controllerAuthMountDir)
 	}
 }
 
@@ -190,8 +203,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:+UseCGroupMemoryLimitForHeap",
-			"-XX:MaxRAMFraction=2",
+			"-XX:+UseContainerSupport",
+			"-XX:MaxRAMPercentage=50.0",
 		)
 	}
 
@@ -200,6 +213,8 @@ func MakeControllerConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
+
+	sort.Strings(javaOpts)
 
 	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
 	configData := map[string]string{
@@ -281,7 +296,7 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 }
 
 func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
-	minAvailable := intstr.FromInt(1)
+	minAvailable := intstr.FromInt(int(p.Spec.Pravega.MaxUnavailableControllerReplicas))
 	return &policyv1beta1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PodDisruptionBudget",

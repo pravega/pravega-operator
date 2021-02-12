@@ -12,7 +12,9 @@ package v1beta1
 
 import (
 	"github.com/pravega/pravega-operator/pkg/controller/config"
-	"k8s.io/api/core/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -78,6 +80,18 @@ type PravegaSpec struct {
 	// +kubebuilder:validation:Minimum=0
 	// +optional
 	SegmentStoreReplicas int32 `json:"segmentStoreReplicas"`
+
+	// MaxUnavailableSegmentStoreReplicas defines the
+	// MaxUnavailable SegmentStore Replicas
+	// Default is 1.
+	// +optional
+	MaxUnavailableSegmentStoreReplicas int32 `json:"maxUnavailableSegmentStoreReplicas"`
+
+	// MaxUnavailableControllerReplicas defines the
+	// MaxUnavailable Controller Replicas
+	// Default is 1.
+	// +optional
+	MaxUnavailableControllerReplicas int32 `json:"maxUnavailableControllerReplicas"`
 
 	// DebugLogging indicates whether or not debug level logging is enabled.
 	// Defaults to false.
@@ -167,6 +181,18 @@ type PravegaSpec struct {
 
 	// SegmentStoreExternalTrafficPolicy defines the ExternalTrafficPolicy it can have cluster or local
 	SegmentStoreExternalTrafficPolicy string `json:"segmentStoreExternalTrafficPolicy,omitempty"`
+
+	// SegmentStoreSecurityContext holds security configuration that will be applied to a container
+	SegmentStoreSecurityContext *corev1.PodSecurityContext `json:"segmentStoreSecurityContext,omitempty"`
+
+	// ControllerSecurityContext holds security configuration that will be applied to a container
+	ControllerSecurityContext *corev1.PodSecurityContext `json:"controllerSecurityContext,omitempty"`
+
+	// The scheduling constraints on Controller pods.
+	ControllerPodAffinity *corev1.Affinity `json:"controllerPodAffinity,omitempty"`
+
+	// The scheduling constraints on Segementstore pods.
+	SegmentStorePodAffinity *corev1.Affinity `json:"segmentStorePodAffinity,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -178,6 +204,16 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if !config.TestMode && s.SegmentStoreReplicas < 1 {
 		changed = true
 		s.SegmentStoreReplicas = 1
+	}
+
+	if !config.TestMode && s.MaxUnavailableControllerReplicas < 1 {
+		changed = true
+		s.MaxUnavailableControllerReplicas = 1
+	}
+
+	if !config.TestMode && s.MaxUnavailableSegmentStoreReplicas < 1 {
+		changed = true
+		s.MaxUnavailableSegmentStoreReplicas = 1
 	}
 
 	if s.Image == nil {

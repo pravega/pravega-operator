@@ -44,14 +44,20 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 
 ## Quickstart
 
+We recommend using our [helm charts](charts) for all installation and upgrades (but not for rollbacks at the moment since helm rollbacks are still experimental). The helm charts for pravega operator (version 0.4.5 onwards) and pravega cluster (version 0.5.0 onwards) are published in [https://charts.pravega.io](https://charts.pravega.io/). To add this repository to your Helm repos, use the following command
+```
+helm repo add pravega https://charts.pravega.io
+```
+There are manual deployment, upgrade and rollback options available as well.
+
 ### Install the Operator
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-We recommend using helm to deploy a Pravega Operator. Check out the [helm installation](charts/pravega-operator/README.md) document for instructions.
+To understand how to deploy a Pravega Operator using helm, refer to [this](charts/pravega-operator#installing-the-chart).
 
 #### Deploying in Test Mode
- The Operator can be run in a "test" mode if we want to create pravega on minikube or on a cluster with very limited resources by  enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. "Test" mode ensures a bare minimum setup of pravega and is not recommended to be used in production environments.
+ The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ### Upgrade the Operator
 
@@ -68,6 +74,8 @@ Check out the available [options for long term storage](doc/longtermstorage.md) 
 For demo purposes, you can quickly install a toy NFS server.
 
 ```
+$ helm repo add stable https://charts.helm.sh/stable
+$ helm repo update
 $ helm install stable/nfs-server-provisioner --generate-name
 ```
 
@@ -79,22 +87,9 @@ $ kubectl create -f ./example/pvc-tier2.yaml
 
 #### Install a Pravega cluster
 
-Use Helm to install a sample Pravega cluster with release name `bar`.
+To understand how to deploy a pravega cluster using helm, refer to [this](charts/pravega#installing-the-chart).
 
-```
-$ helm install bar charts/pravega --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
-```
-
-where:
-
-- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
-- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
-- **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name. `pravega-tier2` if you created the PVC above.
-
-
-Check out the [Pravega Helm Chart](charts/pravega) for the complete list of configurable parameters.
-
-Verify that the cluster instances and its components are being created.
+Once the pravega cluster with release name `bar` has been created, use the following command to verify that the cluster instances and its components are being created.
 
 ```
 $ kubectl get PravegaCluster
@@ -132,27 +127,27 @@ statefulset.apps/bar-pravega-segmentstore       3         3         2m
 By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:
 
 ```
-tcp://<pravega-name>-pravega-controller.<namespace>:9090
+tcp://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:9090
 ```
 
 And the `REST` management interface is available at:
 
 ```
-http://<pravega-name>-pravega-controller.<namespace>:10080/
+http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
 ```
 
 Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
-Check out the [exposing Segmentstore service on single IP address ](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
+Check out the [exposing Segmentstore service on single IP address](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
 
 ### Scale a Pravega cluster
 
-You can scale Pravega components independently by modifying their corresponding field in the Pravega resource spec. You can either `kubectl edit` the cluster or `kubectl patch` it. If you edit it, update the number of replicas for BookKeeper, Controller, and/or Segment Store and save the updated spec.
+You can scale Pravega components independently by modifying their corresponding field in the Pravega resource spec. You can either `kubectl edit` the cluster or `kubectl patch` it. If you edit it, update the number of replicas for Controller, and/or Segment Store and save the updated spec.
 
 Example of patching the Pravega resource to scale the Segment Store instances to 4.
 
 ```
-kubectl patch PravegaCluster <pravega-name> --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
+kubectl patch PravegaCluster [CLUSTER_NAME] --type='json' -p='[{"op": "replace", "path": "/spec/pravega/segmentStoreReplicas", "value": 4}]'
 ```
 
 ### Upgrade a Pravega cluster
@@ -162,7 +157,7 @@ Check out the [upgrade guide](doc/upgrade-cluster.md).
 ### Uninstall the Pravega cluster
 
 ```
-$ helm uninstall bar
+$ helm uninstall [PRAVEGA_RELEASE_NAME]
 $ kubectl delete -f ./example/pvc-tier2.yaml
 ```
 
@@ -171,7 +166,7 @@ $ kubectl delete -f ./example/pvc-tier2.yaml
 > Note that the Pravega clusters managed by the Pravega operator will NOT be deleted even if the operator is uninstalled.
 
 ```
-$ helm uninstall foo
+$ helm uninstall [PRAVEGA_OPERATOR_RELEASE_NAME]
 ```
 
 If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator.

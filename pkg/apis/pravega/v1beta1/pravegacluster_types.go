@@ -72,11 +72,7 @@ type PravegaClusterList struct {
 	Items           []PravegaCluster `json:"items"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +k8s:openapi-gen=true
-
 // Generate CRD using kubebuilder
-
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
@@ -87,6 +83,9 @@ type PravegaClusterList struct {
 // +kubebuilder:printcolumn:name="Ready Members",type=integer,JSONPath=`.status.readyReplicas`,description="The number of ready pravega members"
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // PravegaCluster is the Schema for the pravegaclusters API
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
 type PravegaCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -97,7 +96,7 @@ type PravegaCluster struct {
 
 // WithDefaults set default values when not defined in the spec.
 func (p *PravegaCluster) WithDefaults() (changed bool) {
-	changed = p.Spec.withDefaults()
+	changed = p.Spec.withDefaults(p)
 	return changed
 }
 
@@ -153,7 +152,7 @@ type ClusterSpec struct {
 	Pravega *PravegaSpec `json:"pravega"`
 }
 
-func (s *ClusterSpec) withDefaults() (changed bool) {
+func (s *ClusterSpec) withDefaults(p *PravegaCluster) (changed bool) {
 	if s.ZookeeperUri == "" {
 		changed = true
 		s.ZookeeperUri = DefaultZookeeperUri
@@ -197,6 +196,16 @@ func (s *ClusterSpec) withDefaults() (changed bool) {
 
 	if s.Pravega.withDefaults() {
 		changed = true
+	}
+
+	if s.Pravega.ControllerPodAffinity == nil {
+		changed = true
+		s.Pravega.ControllerPodAffinity = util.PodAntiAffinity("pravega-controller", p.GetName())
+	}
+
+	if s.Pravega.SegmentStorePodAffinity == nil {
+		changed = true
+		s.Pravega.SegmentStorePodAffinity = util.PodAntiAffinity("pravega-segmentstore", p.GetName())
 	}
 
 	if util.IsVersionBelow07(s.Version) && s.Pravega.CacheVolumeClaimTemplate == nil {
@@ -281,6 +290,12 @@ type AuthenticationParameters struct {
 	// name of Secret containing Password based Authentication Parameters like username, password and acl
 	// optional - used only by PasswordAuthHandler for authentication
 	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
+
+	//name of secret containg TokenSigningKey
+	ControllerTokenSecret string `json:"controllerTokenSecret,omitempty"`
+
+	//name of secret containg TokenSigningKey and AuthToken
+	SegmentStoreTokenSecret string `json:"segmentStoreTokenSecret,omitempty"`
 }
 
 func (ap *AuthenticationParameters) IsEnabled() bool {
@@ -883,13 +898,21 @@ func (p *PravegaCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateCreate() error {
 	log.Printf("validate create %s", p.Name)
-	return p.validatePravegaVersion()
+	return p.ValidatePravegaVersion("")
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 	log.Printf("validate update %s", p.Name)
-	return p.validatePravegaVersion()
+	err := p.ValidatePravegaVersion("")
+	if err != nil {
+		return err
+	}
+	err = p.validateConfigMap()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -899,9 +922,14 @@ func (p *PravegaCluster) ValidateDelete() error {
 	return nil
 }
 
-func getSupportedVersions() (map[string]string, error) {
+func getSupportedVersions(filename string) (map[string]string, error) {
 	var supportedVersions = map[string]string{}
-	file, err := os.Open("/tmp/config/keys")
+	filepath := filename
+	if filename == "" {
+		filepath = "/tmp/config/keys"
+	}
+
+	file, err := os.Open(filepath)
 
 	if err != nil {
 		log.Fatalf("failed opening file: %v", err)
@@ -924,8 +952,8 @@ func getSupportedVersions() (map[string]string, error) {
 	return supportedVersions, nil
 }
 
-func (p *PravegaCluster) validatePravegaVersion() error {
-	supportedVersions, err := getSupportedVersions()
+func (p *PravegaCluster) ValidatePravegaVersion(filename string) error {
+	supportedVersions, err := getSupportedVersions(filename)
 	if err != nil {
 		return fmt.Errorf("Error retrieving suported versions %v", err)
 	}
@@ -981,7 +1009,7 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
 
-	log.Printf("validatePravegaVersion:: normFoundVersion %s", normFoundVersion)
+	log.Printf("ValidatePravegaVersion:: normFoundVersion %s", normFoundVersion)
 	upgradeString, ok := supportedVersions[normFoundVersion]
 	if !ok {
 		// It should never happen
@@ -991,7 +1019,223 @@ func (p *PravegaCluster) validatePravegaVersion() error {
 	if !util.ContainsVersion(upgradeList, normRequestVersion) {
 		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
 	}
-	log.Print("validatePravegaVersion:: No error found...returning...")
+	log.Print("ValidatePravegaVersion:: No error found...returning...")
+	return nil
+}
+
+func (p *PravegaCluster) validateConfigMap() error {
+	configmap := &corev1.ConfigMap{}
+	err := Mgr.GetClient().Get(context.TODO(),
+		types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, configmap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return fmt.Errorf("failed to get configmap (%s): %v", configmap.Name, err)
+		}
+	}
+	data := strings.Split(configmap.Data["JAVA_OPTS"], " ")
+	eq := false
+	if val, ok := p.Spec.Pravega.Options["controller.containerCount"]; ok {
+		key := fmt.Sprintf("-Dcontroller.containerCount=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.containerCount should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["controller.container.count"]; ok {
+		old_key := fmt.Sprintf("-Dcontroller.containerCount=%v", val)
+		new_key := fmt.Sprintf("-Dcontroller.container.count=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.container.count should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.containerCount"]; ok {
+		key := fmt.Sprintf("-Dpravegaservice.containerCount=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.containerCount should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.container.count"]; ok {
+		old_key := fmt.Sprintf("-Dpravegaservice.containerCount=%v", val)
+		new_key := fmt.Sprintf("-Dpravegaservice.container.count=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.container.count should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["bookkeeper.bkLedgerPath"]; ok {
+		key := fmt.Sprintf("-Dbookkeeper.bkLedgerPath=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("bookkeeper.bkLedgerPath should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["bookkeeper.ledger.path"]; ok {
+		old_key := fmt.Sprintf("-Dbookkeeper.bkLedgerPath=%v", val)
+		new_key := fmt.Sprintf("-Dbookkeeper.ledger.path=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("bookkeeper.ledger.path should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["controller.retention.bucketCount"]; ok {
+		key := fmt.Sprintf("-Dcontroller.retention.bucketCount=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.retention.bucketCount should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["controller.retention.bucket.count"]; ok {
+		old_key := fmt.Sprintf("-Dcontroller.retention.bucketCount=%v", val)
+		new_key := fmt.Sprintf("-Dcontroller.retention.bucket.count=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.retention.bucket.count should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["controller.watermarking.bucketCount"]; ok {
+		key := fmt.Sprintf("-Dcontroller.watermarking.bucketCount=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.watermarking.bucketCount should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["controller.watermarking.bucket.count"]; ok {
+		old_key := fmt.Sprintf("-Dcontroller.watermarking.bucketCount=%v", val)
+		new_key := fmt.Sprintf("-Dcontroller.watermarking.bucket.count=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("controller.watermarking.bucket.count should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.dataLogImplementation"]; ok {
+		key := fmt.Sprintf("-Dpravegaservice.dataLogImplementation=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.dataLogImplementation should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.dataLog.impl.name"]; ok {
+		old_key := fmt.Sprintf("-Dpravegaservice.dataLogImplementation=%v", val)
+		new_key := fmt.Sprintf("-Dpravegaservice.dataLog.impl.name=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.dataLog.impl.name should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.storageImplementation"]; ok {
+		key := fmt.Sprintf("-Dpravegaservice.storageImplementation=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.storageImplementation should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.storage.impl.name"]; ok {
+		old_key := fmt.Sprintf("-Dpravegaservice.storageImplementation=%v", val)
+		new_key := fmt.Sprintf("-Dpravegaservice.storage.impl.name=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("pravegaservice.storage.impl.name should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["storageextra.storageNoOpMode"]; ok {
+		key := fmt.Sprintf("-Dstorageextra.storageNoOpMode=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("storageextra.storageNoOpMode should not be modified")
+		}
+	}
+	eq = false
+	if val, ok := p.Spec.Pravega.Options["storageextra.noOp.mode.enable"]; ok {
+		old_key := fmt.Sprintf("-Dstorageextra.storageNoOpMode=%v", val)
+		new_key := fmt.Sprintf("-Dstorageextra.noOp.mode.enable=%v", val)
+		for _, checkstring := range data {
+			if checkstring == old_key || checkstring == new_key {
+				eq = true
+			}
+		}
+		if !eq {
+			return fmt.Errorf("storageextra.noOp.mode.enable should not be modified")
+		}
+	}
+	log.Print("validateConfigMap:: No error found...returning...")
 	return nil
 }
 

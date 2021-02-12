@@ -11,15 +11,15 @@
 package e2e
 
 import (
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testUpgradeCluster(t *testing.T) {
+func testCMUpgradeCluster(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	doCleanup := true
@@ -41,13 +41,8 @@ func testUpgradeCluster(t *testing.T) {
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	initialVersion := "0.6.1"
-	upgradeVersion := "0.7.0"
-	cluster.Spec.Version = initialVersion
-	cluster.Spec.Pravega.Image = &api.ImageSpec{
-		Repository: "pravega/pravega",
-		PullPolicy: "IfNotPresent",
-	}
+
+	cluster.Spec.Pravega.Options["pravegaservice.containerCount"] = "3"
 
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cluster)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -61,23 +56,29 @@ func testUpgradeCluster(t *testing.T) {
 	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	g.Expect(pravega.Status.CurrentVersion).To(Equal(initialVersion))
+	//updating pravega option
+	pravega.Spec.Pravega.Options["bookkeeper.bkAckQuorumSize"] = "2"
 
-	pravega.Spec.Version = upgradeVersion
-
+	//updating pravegacluster
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WaitForPravegaClusterToUpgrade(t, f, ctx, pravega, upgradeVersion)
+	//checking if the upgrade of options was successful
+	err = pravega_e2eutil.WaitForCMPravegaClusterToUpgrade(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// This is to get the latest Pravega cluster object
 	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	g.Expect(pravega.Spec.Version).To(Equal(upgradeVersion))
-	g.Expect(pravega.Status.CurrentVersion).To(Equal(upgradeVersion))
-	g.Expect(pravega.Status.TargetVersion).To(Equal(""))
+	//updating pravega option
+	pravega.Spec.Pravega.Options["pravegaservice.containerCount"] = "10"
+
+	//updating pravegacluster
+	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
+
+	//should give an error
+	g.Expect(strings.ContainsAny(err.Error(), "controller.containerCount should not be changed")).To(Equal(true))
 
 	// Delete cluster
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)

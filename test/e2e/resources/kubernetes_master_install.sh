@@ -1,5 +1,8 @@
 #!/bin/sh
-
+echo "TCPKeepAlive yes" >> /etc/ssh/sshd_config 
+echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
+echo "ClientAliveCountMax 3" >> /etc/ssh/sshd_config
+service sshd restart
 sudo apt-get update
 echo "update done"
 sudo apt install docker.io -y

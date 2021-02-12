@@ -1,8 +1,8 @@
 apiVersion: v2
 name: pravega
 description: Pravega Helm chart for Kubernetes
-version: 0.7.0
-appVersion: 0.7.0
+version: 0.8.0
+appVersion: 0.8.0
 keywords:
 - pravega
 - storage

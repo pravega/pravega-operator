@@ -2,7 +2,7 @@
 ## This is a YAML-formatted file.
 ## Declare variables to be passed into your templates.
 
-version: 0.7.0
+version: 0.8.0
 
 tls: {}
   # secret:
@@ -14,6 +14,10 @@ authentication:
   enabled: false
   ## passwordAuthSecret is ignored if authentication is disabled
   passwordAuthSecret:
+  #segmentStoreToken is ignored if authentication is disabled
+  segmentStoreTokenSecret:
+  #controllerTokenSecret is ignored if authentication is disabled
+  controllerTokenSecret:
 
 zookeeperUri: zookeeper-client:2181
 bookkeeperUri: bookkeeper-bookie-headless:3181
@@ -41,6 +45,7 @@ serviceAccount:
 
 controller:
   replicas: 1
+  maxUnavailableControllerReplicas: 1
   resources:
     requests:
       cpu: 500m
@@ -48,6 +53,9 @@ controller:
     limits:
       cpu: 1000m
       memory: 2Gi
+  securityContext: {}
+    # runAsUser: 0
+  affinity: {}
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for controller
@@ -57,6 +65,7 @@ controller:
 
 segmentStore:
   replicas: 1
+  maxUnavailableSegmentStoreReplicas: 1
   secret: {}
     # name:
     # path:
@@ -68,13 +77,16 @@ segmentStore:
     limits:
       cpu: 2000m
       memory: 4Gi
+  securityContext: {}
+    # runAsUser: 0
+  affinity: {}
   ## service type and annotations are ignored if external access is disabled
   service:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-    segmentStoreLoadBalancerIP:
-    segmentStoreExternalTrafficPolicy: Local
+    loadBalancerIP:
+    externalTrafficPolicy:
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
 
 storage:
@@ -108,7 +120,7 @@ storage:
 
   cache:
     size: 20Gi
-    className: standard
+    className:
 
 options:
   bookkeeper.ensemble.size: "3"

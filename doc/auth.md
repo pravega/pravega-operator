@@ -76,3 +76,82 @@ where username and password are credentials you intend to use.
 Note that Pravega operator uses `/etc/auth-passwd-volume` as the mounting directory for secrets.
 
 For more security configurations, please check [here](https://github.com/pravega/pravega/blob/master/documentation/src/docs/security/pravega-security-configurations.md).
+
+Pravega Operator Supports Passing of Auth Parametes as Secret which are mounted as file in both Segment Store and Controller (Operator mounts these secrets in Segementstore pod it's mounted at `/etc/ss-auth-volume` and in Controller pod at `/etc/controller-auth-volume` respectively)
+
+Note that Pravega has to use this feature and start Picking below specified values from file insted of jvm properties which it currently does.
+(This is not implemented at pravega end currently)
+
+Below is how we can create secret and expose them as file for Auth related properties:-
+
+1. Create a File containg `controller.security.auth.delegationToken.signingKey.basis`  as `delegationToken.signingKey.basis` which represent the tokensigning key used to connect to the controller:
+
+```
+$ cat controllerauthdata.txt
+delegationToken.signingKey.basis: "secret"
+```
+
+2. Create a kubernetes secret with this file:
+
+```
+$ kubectl create secret generic controllertokensecret \
+  --from-file=./controllerauthdata.txt \
+```
+
+Ensure Secret is created:-
+
+```
+$ kubectl describe secret controllertokensecret
+Name:         controllertokensecret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+controllerauthdata.txt:  67 bytes
+
+```
+
+3. Create a File containg `autoScale.security.auth.token.signingKey.basis` as `delegationToken.signingKey.basis` which represent the tokensigning key used to connect to the Segmentstore along with other 3 values `pravega.client.auth.method`, `pravega.client.auth.token` and `controller.connect.auth.credentials.dynamic` as `controller.connect.auth.params` which contains all the 3 values in the same order seprated by semicolon:
+
+```
+$ cat segmentstoreauthdata.txt
+delegationToken.signingKey.basis: "secret"
+controller.connect.auth.params: {method};{token};{dynamic}
+```
+4. Create a kubernetes secret with this file:
+
+```
+$ kubectl create secret generic sstokensecret \
+  --from-file=./segmentstoreauthdata.txt \
+```
+Ensure Secret is created:-
+
+```
+$ kubectl describe secret sstokensecret
+Name:         sstokensecret
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Type:  Opaque
+
+Data
+====
+segmentstoreauthdata.txt:  106 bytes
+
+```
+
+5. Use these secrets instead of specifying the values in the option:-
+
+```
+spec:
+  authentication:
+    enabled: true
+    passwordAuthSecret: password-auth
+    segmentStoreTokenSecret: sstokensecret
+    controllerTokenSecret: controllertokensecret
+```    

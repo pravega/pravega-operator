@@ -1,3 +1,4 @@
+{{- $longTermStorageType := .Values.storage.longtermStorage.type | default "filesystem" -}}
 apiVersion: "pravega.pravega.io/v1beta1"
 kind: "PravegaCluster"
 metadata:
@@ -9,15 +10,24 @@ spec:
   {{- if .Values.tls }}
   tls:
     static:
+      {{- if .Values.tls.secret.controller }}
       controllerSecret: {{ .Values.tls.secret.controller }}
+      {{- end }}
+      {{- if .Values.tls.secret.segmentStore }}
       segmentStoreSecret: {{ .Values.tls.secret.segmentStore }}
+      {{- end }}
+      {{- if .Values.tls.caBundle }}
       caBundle: {{ .Values.tls.caBundle }}
+      {{- end }}
   {{- end }}
   authentication:
     enabled: {{ .Values.authentication.enabled }}
     {{- if .Values.authentication.enabled }}
     passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
+    segmentStoreTokenSecret: {{ .Values.authentication.segmentStoreTokenSecret }}
+    controllerTokenSecret: {{ .Values.authentication.controllerTokenSecret }}
     {{- end }}
+
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}
@@ -30,13 +40,31 @@ spec:
     {{- end }}
     {{- end }}
   pravega:
+    {{- if .Values.segmentStore.securityContext }}
+    segmentStoreSecurityContext:
+{{ toYaml .Values.segmentStore.securityContext | indent 6 }}
+    {{- end }}
+    {{- if .Values.controller.securityContext }}
+    controllerSecurityContext:
+{{ toYaml .Values.controller.securityContext | indent 6 }}
+    {{- end }}
+    {{- if .Values.controller.affinity }}
+    controllerPodAffinity:
+{{ toYaml .Values.controller.affinity | indent 6 }}
+    {{- end }}
+{{- if .Values.segmentStore.affinity }}
+    segmentStorePodAffinity:
+{{ toYaml .Values.segmentStore.affinity | indent 6 }}
+    {{- end }}
     {{- if .Values.externalAccess.enabled }}
     controllerServiceAccountName: {{ .Values.serviceAccount.name }}
     segmentStoreServiceAccountName: {{ .Values.serviceAccount.name }}
-    {{- if .Values.segmentStore.service.segmentStoreLoadBalancerIP }}
-    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.segmentStoreLoadBalancerIP  }}
+    {{- if .Values.segmentStore.service.loadBalancerIP }}
+    segmentStoreLoadBalancerIP: {{ .Values.segmentStore.service.loadBalancerIP  }}
     {{- end }}
-    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.segmentStoreExternalTrafficPolicy }}
+    {{- if .Values.segmentStore.service.externalTrafficPolicy }}
+    segmentStoreExternalTrafficPolicy:  {{ .Values.segmentStore.service.externalTrafficPolicy }}
+    {{- end }}
     {{- if .Values.controller.service.type }}
     controllerExtServiceType: {{ .Values.controller.service.type }}
     {{- end }}
@@ -56,11 +84,13 @@ spec:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
+    maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableControllerReplicas }}
     {{- if .Values.controller.resources }}
     controllerResources:
 {{ toYaml .Values.controller.resources | indent 6 }}
     {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
+    maxUnavailableSegmentStoreReplicas: {{ .Values.segmentStore.maxUnavailableSegmentStoreReplicas }}
     {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
 {{ toYaml .Values.segmentStore.resources | indent 6 }}
@@ -70,11 +100,9 @@ spec:
     {{- end }}
     {{- if .Values.segmentStore.secret }}
     segmentStoreSecret:
-      {{- if .Values.segmentStore.secret.name }}
-      secret: {{ .Values.segmentStore.name }}
-      {{- end }}
+      secret: {{ .Values.segmentStore.secret.name }}
       {{- if .Values.segmentStore.secret.path }}
-      mountPath: {{ .Values.segmentStore.path }}
+      mountPath: {{ .Values.segmentStore.secret.path }}
       {{- end }}
     {{- end }}
     {{- if .Values.controller.jvmOptions }}
@@ -86,20 +114,24 @@ spec:
 {{ toYaml .Values.segmentStore.jvmOptions | indent 6 }}
     {{- end }}
     debugLogging: {{ .Values.debugLogging }}
+    {{- if .Values.storage.cache }}
     cacheVolumeClaimTemplate:
       accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.storage.cache.className }}
       storageClassName: {{ .Values.storage.cache.className }}
+      {{- end }}
       resources:
         requests:
           storage: {{ .Values.storage.cache.size }}
+    {{- end }}
     longtermStorage:
-      {{- if eq .Values.storage.longtermStorage.type "ecs"}}
+      {{- if eq $longTermStorageType "ecs" }}
       ecs:
         configUri: {{ .Values.storage.longtermStorage.ecs.configUri }}
         bucket: {{ .Values.storage.longtermStorage.ecs.bucket }}
         prefix: {{ .Values.storage.longtermStorage.ecs.prefix }}
         credentials: {{ .Values.storage.longtermStorage.ecs.credentials }}
-      {{- else if eq .Values.storage.longtermStorage.type "hdfs"}}
+      {{- else if eq $longTermStorageType "hdfs"}}
       hdfs:
         uri: {{ .Values.storage.longtermStorage.hdfs.uri }}
         root: {{ .Values.storage.longtermStorage.hdfs.root }}
@@ -107,7 +139,7 @@ spec:
       {{- else }}
       filesystem:
         persistentVolumeClaim:
-          claimName: {{ .Values.storage.longtermStorage.filesystem.pvc }}
+          claimName: {{ .Values.storage.longtermStorage.filesystem.pvc | default "pravega-tier2" }}
       {{- end }}
     {{- if .Values.options }}
     options:

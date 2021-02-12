@@ -12,6 +12,7 @@ package pravega
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -150,7 +151,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: util.PodAntiAffinity("pravega-segmentstore", p.Name),
+		Affinity: p.Spec.Pravega.SegmentStorePodAffinity,
 		Volumes: []corev1.Volume{
 			{
 				Name: heapDumpName,
@@ -165,6 +166,10 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		podSpec.ServiceAccountName = p.Spec.Pravega.SegmentStoreServiceAccountName
 	}
 
+	if p.Spec.Pravega.SegmentStoreSecurityContext != nil {
+		podSpec.SecurityContext = p.Spec.Pravega.SegmentStoreSecurityContext
+	}
+
 	configureSegmentstoreSecret(&podSpec, p)
 
 	configureSegmentstoreTLSSecret(&podSpec, p)
@@ -172,6 +177,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configureCaBundleSecret(&podSpec, p)
 
 	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
+
+	configureSegmentstoreAuthSecret(&podSpec, p)
 
 	return podSpec
 }
@@ -210,8 +217,8 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		jvmOpts = append(jvmOpts,
 			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:+UseCGroupMemoryLimitForHeap",
-			"-XX:MaxRAMFraction=2",
+			"-XX:+UseContainerSupport",
+			"-XX:MaxRAMPercentage=50.0",
 		)
 	}
 
@@ -220,6 +227,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
+
+	sort.Strings(javaOpts)
+
 	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
 	configData := map[string]string{
 		"AUTHORIZATION_ENABLED": authEnabledStr,
@@ -370,6 +380,25 @@ func configureSegmentstoreTLSSecret(podSpec *corev1.PodSpec, p *api.PravegaClust
 	}
 }
 
+func configureSegmentstoreAuthSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Authentication.SegmentStoreTokenSecret != "" {
+		vol := corev1.Volume{
+			Name: ssAuthVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.Authentication.SegmentStoreTokenSecret,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      ssAuthVolumeName,
+			MountPath: ssAuthMountDir,
+		})
+	}
+}
+
 func configureCaBundleSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.TLS.IsCaBundlePresent() {
 		vol := corev1.Volume{
@@ -507,7 +536,7 @@ func MakeSegmentstorePodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.P
 	if p.Spec.Pravega.SegmentStoreReplicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
-		maxUnavailable = intstr.FromInt(1)
+		maxUnavailable = intstr.FromInt(int(p.Spec.Pravega.MaxUnavailableSegmentStoreReplicas))
 	}
 
 	return &policyv1beta1.PodDisruptionBudget{

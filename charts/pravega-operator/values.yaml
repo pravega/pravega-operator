@@ -4,7 +4,7 @@
 
 image:
   repository: pravega/pravega-operator
-  tag: 0.5.1
+  tag: 0.5.2
   pullPolicy: IfNotPresent
 
 ## Install RBAC roles and bindings.
@@ -23,10 +23,19 @@ crd:
 testmode:
   ## Whether to enable test mode.
   enabled: false
-  ## version of pravega that you wish to deploy
-  ## mention the major version number
-  ## eg. enter 0.8.0 if u wish to deploy version 0.8.0-2500.efe501a
+  ## version is used to specify the major version number
+  ## of the unreleased pravega version that you wish to deploy
+  ## or provide an upgrade path to
+  ## Note: mention the major version number
+  ## eg. enter 0.9.0 if u wish to deploy version 0.9.0-2500.efe501a
   version: ""
+  ## fromVersion is used to specify the major version number
+  ## of the unreleased pravega version you wish to provide an upgrade path from
+  ## i.e. if you wish to provide an upgrade path from this unreleased version (testmode.fromVersion)
+  ## to the unreleased version number specified by the previous field (testmode.version)
+  ## Note: mention the major version number
+  ## eg. enter 0.7.4 if u wish to provide an upgrade path from pravega 0.7.4 to 0.9.0
+  fromVersion: ""
 
 webhookCert:
   crt:
@@ -46,3 +55,7 @@ hooks:
   image:
     repository: lachlanevenson/k8s-kubectl
     tag: v1.16.10
+  ## Whether to create pre-delete hook which ensures that
+  ## the operator cannot be deleted till the pravega cluster
+  ## custom resources have been cleaned up
+  delete: true
