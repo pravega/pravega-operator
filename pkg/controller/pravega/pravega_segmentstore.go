@@ -16,8 +16,8 @@ import (
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
-	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/pravega/pravega-operator/pkg/controller/config"
+	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
