@@ -17,7 +17,6 @@ import (
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/util"
-	"github.com/pravega/pravega-operator/pkg/controller/config"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -149,9 +148,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					InitialDelaySeconds: 300,
 					PeriodSeconds:       15,
 					FailureThreshold:    4,
-				},
-				SecurityContext: &corev1.SecurityContext{
-					Privileged: &config.TestMode,
 				},
 			},
 		},
