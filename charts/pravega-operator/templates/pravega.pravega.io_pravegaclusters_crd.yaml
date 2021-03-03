@@ -956,11 +956,6 @@ spec:
                           specified in SecurityContext takes precedence for that container.
                         format: int64
                         type: integer
-                      privileged:
-                        description: Indicates that the container must run in unprivileged or privileged mode.
-                          If true, the container is "privileged", and it is given access to all devices on the host.
-                          If false, the container is not allowed to access any devices on the host.
-                        type: boolean
                       seLinuxOptions:
                         description: The SELinux context to be applied to all containers.
                           If unspecified, the container runtime will allocate a random
@@ -1889,11 +1884,6 @@ spec:
                           specified in SecurityContext takes precedence for that container.
                         format: int64
                         type: integer
-                      privileged:
-                        description: Indicates that the container must run in unprivileged or privileged mode.
-                          If true, the container is "privileged", and it is given access to all devices on the host.
-                          If false, the container is not allowed to access any devices on the host.
-                        type: boolean
                       seLinuxOptions:
                         description: The SELinux context to be applied to all containers.
                           If unspecified, the container runtime will allocate a random
