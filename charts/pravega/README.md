@@ -13,7 +13,7 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
   - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Pravega Operator. You can install it using its own [Helm chart](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator)
-
+  - LongTerm Storage ([options for long term storage](doc/longtermstorage.md))
 ## Installing the Chart
 
 To install the pravega chart, use the following commands:
@@ -42,6 +42,13 @@ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperU
 ```
 Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
 
+## Updating the chart
+
+For updating the pravega chart, use the following command
+
+```
+helm upgrade [RELEASE_NAME]  --version=[VERSION]  --set controller.replicas=2 --set segmentstore.replicas=3
+```
 
 ## Uninstalling the Chart
 

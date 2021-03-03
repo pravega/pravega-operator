@@ -4,16 +4,17 @@ Installs [pravega-operator](https://github.com/pravega/pravega-operator) to crea
 
 ## Introduction
 
-This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega Operator on multiple namespaces.
+This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3.2.1+
-  - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
-  - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Cert-Manager v0.15.0+ or some other certificate management solution in order to manage the webhook service certificates. This can be easily deployed by referring to [this](https://cert-manager.io/docs/installation/kubernetes/)
   - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
+## Deploying in Test Mode
+   The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
+   
 ## Installing the Chart
 
 To install the pravega-operator chart, use the following commands:
@@ -43,6 +44,8 @@ $ helm uninstall [RELEASE_NAME]
 ```
 
 This command removes all the Kubernetes components associated with the chart and deletes the release.
+
+>Note: If you want to delete the Pravega clusters, make sure to do it before uninstalling the operator.
 
 ## Configuration
 
