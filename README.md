@@ -37,9 +37,10 @@ The Pravega Operator manages Pravega clusters deployed to Kubernetes and automat
 - [x] Open API Schema validation
 - [x] External Access support
 
-### Project status: beta
+### Project status
 
 The project is currently beta. While no breaking API changes are currently planned, we reserve the right to address bugs and change the API before the project is declared stable.
+
 ### Requirements
 
 - Kubernetes 1.15+
@@ -48,7 +49,6 @@ The project is currently beta. While no breaking API changes are currently plann
 - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
 ## Quickstart
-
 
 We recommend using our [helm charts](charts) for all installation and upgrades (but not for rollbacks at the moment since helm rollbacks are still experimental). The helm charts for pravega operator (version 0.4.5 onwards) and pravega cluster (version 0.5.0 onwards) are published in [https://charts.pravega.io](https://charts.pravega.io/).
 
