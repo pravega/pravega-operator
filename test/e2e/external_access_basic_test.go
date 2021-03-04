@@ -46,6 +46,10 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 
 	time.Sleep(1 * time.Minute)
 
+	// This is to get the latest Pravega cluster object
+	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
 	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 

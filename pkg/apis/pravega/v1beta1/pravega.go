@@ -193,12 +193,20 @@ type PravegaSpec struct {
 
 	// The scheduling constraints on Segementstore pods.
 	SegmentStorePodAffinity *corev1.Affinity `json:"segmentStorePodAffinity,omitempty"`
+
+	//This is used to schedule the timeout value for rollback
+	RollbackTimeout int32 `json:"rollbacktimeout,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
 	if !config.TestMode && s.ControllerReplicas < 1 {
 		changed = true
 		s.ControllerReplicas = 1
+	}
+
+	if !config.TestMode && s.RollbackTimeout < 1 {
+		changed = true
+		s.RollbackTimeout = 10
 	}
 
 	if !config.TestMode && s.SegmentStoreReplicas < 1 {

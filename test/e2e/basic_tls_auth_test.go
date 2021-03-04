@@ -18,7 +18,8 @@ import (
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testScaleCluster(t *testing.T) {
+// Test create and recreate a Pravega cluster with the same name
+func testCreatePravegaClusterWithAuthAndTls(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	doCleanup := true
@@ -28,7 +29,6 @@ func testScaleCluster(t *testing.T) {
 			ctx.Cleanup()
 		}
 	}()
-
 	namespace, err := ctx.GetNamespace()
 	g.Expect(err).NotTo(HaveOccurred())
 	f := framework.Global
@@ -40,7 +40,7 @@ func testScaleCluster(t *testing.T) {
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
 
-	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
+	pravega, err := pravega_e2eutil.CreatePravegaClusterWithTlsAuth(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
@@ -48,37 +48,6 @@ func testScaleCluster(t *testing.T) {
 	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// Scale up Pravega cluster, increase segment store size by 1
-	pravega.Spec.Pravega.SegmentStoreReplicas = 2
-	pravega.Spec.Pravega.ControllerReplicas = 2
-	podSize = 4
-
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// Scale down Pravega cluster back to default
-	pravega.Spec.Pravega.SegmentStoreReplicas = 1
-	pravega.Spec.Pravega.ControllerReplicas = 1
-	podSize = 2
-
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// Delete cluster
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
@@ -87,5 +56,4 @@ func testScaleCluster(t *testing.T) {
 
 	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
-
 }

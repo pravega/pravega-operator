@@ -18,7 +18,7 @@ import (
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testMultiZKCluster(t *testing.T) {
+func testMultiPravegaCluster(t *testing.T) {
 	g := NewGomegaWithT(t)
 
 	doCleanup := true
