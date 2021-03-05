@@ -93,6 +93,8 @@ The following command will run the Operator locally with the default Kubernetes 
 ```
 $ make run-local
 ```
+### Deploying in Test Mode
+The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file of operator charts. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ### Installation on Google Kubernetes Engine
 

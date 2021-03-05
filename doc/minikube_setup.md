@@ -67,7 +67,7 @@ spec:
 ```
 
 ### Pravega
-Finally create a Pravega Cluster comprising of a single SegmentStore and Controller replica using the Pravega Operator. Modify the pravega manifest and ensure that the following fields are present within its `spec`.
+Finally create a Pravega Cluster comprising of a single SegmentStore and Controller replica using the Pravega Operator.The Operator can be run in `test mode` by enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Modify the pravega manifest and ensure that the following fields are present within its `spec`.
 
 ```yaml
 spec:
