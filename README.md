@@ -12,7 +12,7 @@
     * [Install the Operator](#install-the-operator)
     * [Install the Cluster](#install-the-cluster)
     * [Installing on minikube](#installing-on-minikube)
-    * [One click install of Pravega](#one-click-install-of-pravega)
+    * [Script for complete Pravega Installation](#script-for-complete-pravega-installation)
     * [Scale the Cluster](#scale-the-cluster)
     * [Upgrade the Cluster](#upgrade-the-cluster)
     * [Upgrade the Operator](#upgrade-the-operator)
@@ -56,11 +56,11 @@ We recommend using our [helm charts](charts) for all installation and upgrades (
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
 
-To understand how to deploy a Pravega Operator using helm, refer to [this](charts/pravega-operator#installing-the-chart).
+To understand how to deploy a Pravega Operator using helm, refer to [this](charts/pravega-operator#deploying-pravega-operator).
 
 ### Install the cluster
 
-To understand how to deploy a pravega cluster using helm, refer to [this](charts/pravega#installing-the-chart).
+To understand how to deploy a pravega cluster using helm, refer to [this](charts/pravega#deploying-a-pravega-cluster).
 
 ### Upgrade the Operator
 
@@ -70,7 +70,7 @@ For upgrading the pravega operator check the document [operator-upgrade](doc/ope
 
 For installing operator and cluster on minikbe, refer to [minikube](doc/minikube_setup.md).
 
-### One click install of Pravega
+### Script for complete Pravega Installation
 
 For installing pravega and all the components together, please refer to [this](setup/README.md).
 
