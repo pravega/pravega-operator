@@ -130,11 +130,3 @@ jobs:
     - name: Running e2e
       run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
-    - name: Deleting cluster
-      if: ${{ always() }}
-      run: |
-        SSHKEY=`packet-cli ssh-key get | grep "pravega-travis" | awk '{print $2}' | tr -d ' '`
-        echo y | packet-cli ssh-key delete -i $SSHKEY
-        echo y | packet-cli device  delete -i $CLUSTER_ID
-        echo y | packet-cli device  delete -i $CLUSTER_ID1
-        echo y | packet-cli device  delete -i $CLUSTER_ID2

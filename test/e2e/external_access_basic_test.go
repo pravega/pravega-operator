@@ -35,8 +35,8 @@ func testExternalCreateRecreateCluster(t *testing.T) {
 	f := framework.Global
 
 	//creating the setup for running the test
-	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
+	//err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
+	//g.Expect(err).NotTo(HaveOccurred())
 
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
