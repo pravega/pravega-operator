@@ -116,7 +116,8 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey=$(openssl rand -base64 128)"
+        SECRET_KEY=`openssl rand -base64 128`
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey=$SECRET_KEY"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/external_access/"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls; kubectl create secret generic controller-tls \
