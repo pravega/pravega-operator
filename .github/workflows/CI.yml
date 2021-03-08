@@ -114,6 +114,9 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=testpravegaop --docker-password=c155d654-3c09-48aa-a62d-2d5178454784 --docker-email=prabhaker.saxena75g@gmail.com"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk-$OPERATOR_SDK_VERSION-x86_64-linux-gnu && chmod +x operator-sdk && sudo mv operator-sdk /usr/local/bin/"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.13.8 --binary;gvm use go1.13.8 --default"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey=$(openssl rand -base64 128)"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/external_access/"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls; kubectl create secret generic controller-tls \
@@ -130,3 +133,11 @@ jobs:
     - name: Running e2e
       run: |
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator;source /root/.gvm/scripts/gvm;make test-e2e"
+    - name: Deleting cluster
+      if: ${{ always() }}
+      run: |
+        SSHKEY=`packet-cli ssh-key get | grep "pravega-travis" | awk '{print $2}' | tr -d ' '`
+        echo y | packet-cli ssh-key delete -i $SSHKEY
+        echo y | packet-cli device  delete -i $CLUSTER_ID
+        echo y | packet-cli device  delete -i $CLUSTER_ID1
+        echo y | packet-cli device  delete -i $CLUSTER_ID2
