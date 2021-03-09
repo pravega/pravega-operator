@@ -12,8 +12,8 @@ minikube start --cpus=8 --memory=50000mb --disk-size=50000mb
 
 Here, we specify the optimal resources that we need to provide to each of the components in order to have a working Pravega setup.
 
-### Tier 2
-To setup Tier 2 refer to [this](tier2.md#tier-2-storage). The `PersistentVolumeClaim` to consume the volume so created should be provisioned to consume 10Gi.
+### LongTermStorage
+To setup LongTermStorage refer to [this](longtermstorage.md#long-term-storage). The `PersistentVolumeClaim` to consume the volume so created should be provisioned to consume 10Gi.
 
 ```yaml
   resources:

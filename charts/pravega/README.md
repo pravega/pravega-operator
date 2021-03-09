@@ -13,7 +13,7 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
   - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Pravega Operator. Please refer [this](https://github.com/pravega/pravega-operator/blob/master/charts/pravega-operator/README.md)
-  - LongTerm Storage ([options for long term storage](doc/longtermstorage.md))
+  - LongTerm Storage ([options for long term storage](https://github.com/pravega/pravega-operator/blob/master/doc/longtermstorage.md))
 ## Deploying a Pravega Cluster
 
 To install the pravega chart, use the following commands:
