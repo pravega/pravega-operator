@@ -81,7 +81,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerResources:            customReq,
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
+						ControllerPodAnnotations:       annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
+						SegmentStorePodAnnotations:     annotationsMap,
 						SegmentStoreEnvVars:            "SEG_CONFIG_MAP",
 						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
 							Secret:    "seg-secret",
@@ -203,7 +205,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerResources:             customReq,
 						SegmentStoreResources:           customReq,
 						ControllerServiceAnnotations:    annotationsMap,
+						ControllerPodAnnotations:        annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStorePodAnnotations:      annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
 						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
 							Secret:    "seg-secret",
@@ -312,7 +316,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerResources:             customReq,
 						SegmentStoreResources:           customReq,
 						ControllerServiceAnnotations:    annotationsMap,
+						ControllerPodAnnotations:        annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStorePodAnnotations:      annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",

@@ -102,7 +102,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	}
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
-
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{

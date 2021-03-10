@@ -167,6 +167,8 @@ type PravegaSpec struct {
 	// +optional
 	ControllerServiceAnnotations map[string]string `json:"controllerSvcAnnotations"`
 
+	ControllerPodAnnotations map[string]string `json:"controllerPodAnnotations"`
+
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
@@ -175,6 +177,8 @@ type PravegaSpec struct {
 	// Annotations to be added to the external service
 	// +optional
 	SegmentStoreServiceAnnotations map[string]string `json:"segmentStoreSvcAnnotations"`
+
+	SegmentStorePodAnnotations map[string]string `json:"segmentStorePodAnnotations"`
 
 	// Specifying this IP would ensure we use same IP address for all the ss services
 	SegmentStoreLoadBalancerIP string `json:"segmentStoreLoadBalancerIP,omitempty"`
@@ -289,10 +293,19 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.ControllerServiceAnnotations = map[string]string{}
 	}
+	if s.ControllerPodAnnotations == nil {
+		changed = true
+		s.ControllerPodAnnotations = map[string]string{}
+	}
 
 	if s.SegmentStoreServiceAnnotations == nil {
 		changed = true
 		s.SegmentStoreServiceAnnotations = map[string]string{}
+	}
+
+	if s.SegmentStorePodAnnotations == nil {
+		changed = true
+		s.SegmentStorePodAnnotations = map[string]string{}
 	}
 
 	return changed
