@@ -1263,7 +1263,7 @@ func (p *PravegaCluster) PravegaControllerServiceURL() string {
 
 func (p *PravegaCluster) LabelsForController() map[string]string {
 	labels := p.LabelsForPravegaCluster()
-	for k, v := range p.Spec.Pravega.ControllerPodAnnotations {
+	for k, v := range p.Spec.Pravega.ControllerPodLabels {
 		labels[k] = v
 	}
 	labels["component"] = "pravega-controller"
@@ -1272,7 +1272,7 @@ func (p *PravegaCluster) LabelsForController() map[string]string {
 
 func (p *PravegaCluster) LabelsForSegmentStore() map[string]string {
 	labels := p.LabelsForPravegaCluster()
-	for k, v := range p.Spec.Pravega.SegmentStorePodAnnotations {
+	for k, v := range p.Spec.Pravega.SegmentStorePodLabels {
 		labels[k] = v
 	}
 	labels["component"] = "pravega-segmentstore"

@@ -82,9 +82,9 @@ var _ = Describe("Controller", func() {
 						ControllerResources:            customReq,
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
-						ControllerPodAnnotations:       annotationsMap,
+						ControllerPodLabels:            annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						SegmentStorePodAnnotations:     annotationsMap,
+						SegmentStorePodLabels:          annotationsMap,
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
@@ -202,9 +202,9 @@ var _ = Describe("Controller", func() {
 						SegmentStoreResources:          customReq,
 						ControllerExternalServiceType:  corev1.ServiceTypeLoadBalancer,
 						ControllerServiceAnnotations:   annotationsMap,
-						ControllerPodAnnotations:       annotationsMap,
+						ControllerPodLabels:            annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
-						SegmentStorePodAnnotations:     annotationsMap,
+						SegmentStorePodLabels:          annotationsMap,
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},

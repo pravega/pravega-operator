@@ -831,9 +831,9 @@ var _ = Describe("PravegaCluster Controller", func() {
 						ControllerExternalServiceType:   corev1.ServiceTypeLoadBalancer,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeNodePort,
 						ControllerServiceAnnotations:    annotationsMap,
-						ControllerPodAnnotations:        annotationsMap,
+						ControllerPodLabels:             annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
-						SegmentStorePodAnnotations:      annotationsMap,
+						SegmentStorePodLabels:           annotationsMap,
 					},
 				}
 				// equivalent of 1st reconcile
