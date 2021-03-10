@@ -65,7 +65,6 @@ func testPravegaCluster(t *testing.T) {
 		"testExternalCreateRecreateCluster":      testExternalCreateRecreateCluster,
 		"testCreatePravegaClusterWithTls":        testCreatePravegaClusterWithTls,
 		"testDeletePods":                         testDeletePods,
-		"testMultiPravegaCluster":                testMultiPravegaCluster,
 		"testRollbackPravegaCluster":             testRollbackPravegaCluster,
 		"testCreatePravegaClusterWithAuthAndTls": testCreatePravegaClusterWithAuthAndTls,
 	}
