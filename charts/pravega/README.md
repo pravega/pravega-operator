@@ -44,6 +44,42 @@ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperU
 ```
 Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
 
+Once installation is successful, all cluster members should become ready.
+```
+$ kubectl get all -l pravega_cluster=bar-pravega
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/bar-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
+pod/bar-pravega-segmentstore-0                1/1     Running   0          2m
+pod/bar-pravega-segmentstore-1                1/1     Running   0          1m
+pod/bar-pravega-segmentstore-2                1/1     Running   0          30s
+
+NAME                                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
+service/bar-pravega-controller              ClusterIP   10.23.244.3   <none>        10080/TCP,9090/TCP   2m
+service/bar-pravega-segmentstore-headless   ClusterIP   None          <none>        12345/TCP            2m
+
+NAME                                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/bar-pravega-controller-64ff87fc49       1         1         1       2m
+
+NAME                                            DESIRED   CURRENT   AGE
+statefulset.apps/bar-pravega-segmentstore       3         3         2m
+```
+
+By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:
+
+```
+tcp://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:9090
+```
+
+And the `REST` management interface is available at:
+
+```
+http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
+```
+
+Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
+
+Check out the [exposing Segmentstore service on single IP address](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
+
 ## Upgrading Pravega Cluster
 
 For updating the pravega chart, use the following command

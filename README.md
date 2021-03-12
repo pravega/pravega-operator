@@ -76,7 +76,7 @@ For installing pravega and all the components together, please refer to [this](s
 
 ### Scale the Cluster
 
-For scaling the parvega cluster using helm, refer to [this](charts/pravega#updating-the-chart).
+For scaling the parvega cluster using helm, refer to [this](charts/pravega#upgrading-pravega-cluster).
 
 ### Upgrade the cluster
 
