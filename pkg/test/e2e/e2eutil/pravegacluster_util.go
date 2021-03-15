@@ -43,6 +43,7 @@ var (
 func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	b := &bkapi.BookkeeperCluster{}
 	b.WithDefaults()
+	b.Spec.Image.PullPolicy = "IfNotPresent"
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
 	err := DeleteBKCluster(t, f, ctx, b)
@@ -57,6 +58,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 
 	z := &zkapi.ZookeeperCluster{}
 	z.WithDefaults()
+	z.Spec.Image.PullPolicy = "IfNotPresent"
 	z.Name = "zookeeper"
 	z.Namespace = namespace
 
@@ -102,11 +104,11 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 // CreatePravegaCluster creates a PravegaCluster CR with the desired spec
 func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
-
 	pravega := &api.PravegaCluster{}
 	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
@@ -120,6 +122,7 @@ func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster with External Access: %s", p.Name)
 	p.WithDefaults()
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.ExternalAccess.Enabled = true
 	p.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
@@ -142,6 +145,7 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 // CreatePravegaClusterWithTlsAuth creates a PravegaCluster CR with the desired spec for both Auth and Tls
 func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster with Auth and Tls: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.Authentication.Enabled = true
 	p.Spec.Authentication.PasswordAuthSecret = "password-auth"
@@ -198,6 +202,7 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *
 // CreatePravegaClusterWithTls creates a PravegaCluster CR with the desired spec for tls
 func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster with tls: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
 	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
