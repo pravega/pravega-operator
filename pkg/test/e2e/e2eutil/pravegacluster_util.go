@@ -55,6 +55,8 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 		return err
 	}
 
+	time.Sleep(1 * time.Minute)
+
 	z := &zkapi.ZookeeperCluster{}
 	z.WithDefaults()
 	z.Name = "zookeeper"
