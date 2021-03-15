@@ -43,7 +43,6 @@ var (
 func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	b := &bkapi.BookkeeperCluster{}
 	b.WithDefaults()
-	b.Spec.Image.PullPolicy = "IfNotPresent"
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
 	err := DeleteBKCluster(t, f, ctx, b)
@@ -58,7 +57,6 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 
 	z := &zkapi.ZookeeperCluster{}
 	z.WithDefaults()
-	z.Spec.Image.PullPolicy = "IfNotPresent"
 	z.Name = "zookeeper"
 	z.Namespace = namespace
 
@@ -75,6 +73,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.WithDefaults()
 	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
 	z.Spec.Replicas = 1
+	z.Spec.Image.PullPolicy = "IfNotPresent"
 	z, err = CreateZKCluster(t, f, ctx, z)
 	if err != nil {
 		return err
@@ -84,6 +83,11 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	if err != nil {
 		return err
 	}
+
+	b.WithDefaults()
+	b.Spec.Image.PullPolicy = "IfNotPresent"
+	b.Name = "bookkeeper"
+	b.Namespace = namespace
 	b, err = CreateBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
