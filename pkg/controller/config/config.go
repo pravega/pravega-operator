@@ -14,4 +14,5 @@ package config
 // the following changes:
 // - Disables Pravega Controller minimum number of replicas
 // - Disables Segment Store minimum number of replicas
+// - Enables privileged mode for Segment Store containers
 var TestMode bool
