@@ -62,6 +62,7 @@ controller:
     type:
     annotations: {}
   jvmOptions: []
+  labels: {}
 
 segmentStore:
   replicas: 1
@@ -88,6 +89,7 @@ segmentStore:
     loadBalancerIP:
     externalTrafficPolicy:
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
+  labels: {}
 
 storage:
 

@@ -1263,12 +1263,22 @@ func (p *PravegaCluster) PravegaControllerServiceURL() string {
 
 func (p *PravegaCluster) LabelsForController() map[string]string {
 	labels := p.LabelsForPravegaCluster()
+	if p.Spec.Pravega != nil && p.Spec.Pravega.ControllerPodLabels != nil {
+		for k, v := range p.Spec.Pravega.ControllerPodLabels {
+			labels[k] = v
+		}
+	}
 	labels["component"] = "pravega-controller"
 	return labels
 }
 
 func (p *PravegaCluster) LabelsForSegmentStore() map[string]string {
 	labels := p.LabelsForPravegaCluster()
+	if p.Spec.Pravega != nil && p.Spec.Pravega.SegmentStorePodLabels != nil {
+		for k, v := range p.Spec.Pravega.SegmentStorePodLabels {
+			labels[k] = v
+		}
+	}
 	labels["component"] = "pravega-segmentstore"
 	return labels
 }

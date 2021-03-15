@@ -71,6 +71,8 @@ spec:
     {{- if .Values.controller.service.annotations }}
     controllerSvcAnnotations:
 {{ toYaml .Values.controller.service.annotations | indent 6 }}
+    controllerPodLabels:
+{{ toYaml .Values.controller.labels | indent 6 }}
     {{- end }}
     {{- if .Values.segmentStore.service.type }}
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
@@ -78,6 +80,8 @@ spec:
     {{- if .Values.segmentStore.service.annotations }}
     segmentStoreSvcAnnotations:
 {{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
+    segmentStorePodLabels:
+{{ toYaml .Values.segmentStore.labels | indent 6 }}
     {{- end }}
     {{- end }}
     image:

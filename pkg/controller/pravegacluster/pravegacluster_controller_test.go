@@ -363,6 +363,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 					)
 					BeforeEach(func() {
 						res, err = r.Reconcile(req)
+						p.WithDefaults()
 						currentpdb := &policyv1beta1.PodDisruptionBudget{}
 						r.client.Get(context.TODO(), types.NamespacedName{Name: p.PdbNameForSegmentstore(), Namespace: p.Namespace}, currentpdb)
 						maxUnavailable := intstr.FromInt(3)
@@ -831,7 +832,9 @@ var _ = Describe("PravegaCluster Controller", func() {
 						ControllerExternalServiceType:   corev1.ServiceTypeLoadBalancer,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeNodePort,
 						ControllerServiceAnnotations:    annotationsMap,
+						ControllerPodLabels:             annotationsMap,
 						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStorePodLabels:           annotationsMap,
 					},
 				}
 				// equivalent of 1st reconcile
