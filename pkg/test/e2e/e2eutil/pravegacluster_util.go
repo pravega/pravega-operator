@@ -89,6 +89,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	b.Spec.Version = "0.9.0"
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
+	b.Spec.JVMOptions.ExtraOpts = []string{"-XX:+UseContainerSupport", "-XX:+IgnoreUnrecognizedVMOptions"}
 	b, err = CreateBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
