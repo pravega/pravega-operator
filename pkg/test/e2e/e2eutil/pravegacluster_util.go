@@ -85,7 +85,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	}
 
 	b.WithDefaults()
-	b.Spec.Image.PullPolicy = "IfNotPresent"
+	b.Spec.Image.ImageSpec.PullPolicy = "IfNotPresent"
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
 	b, err = CreateBKCluster(t, f, ctx, b)
