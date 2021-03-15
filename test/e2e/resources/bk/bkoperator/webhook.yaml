@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookkeeper-webhook-svc
+  namespace: default
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    component: bookkeeper-operator
+  sessionAffinity: None
+  type: ClusterIP
+---
+
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: bookkeeper-webhook-config
+  annotations:
+    cert-manager.io/inject-ca-from: default/selfsigned-cert-bk
+webhooks:
+- clientConfig:
+    service:
+      name: bookkeeper-webhook-svc
+      namespace: default
+      path: /validate-bookkeeper-pravega-io-v1alpha1-bookkeepercluster
+  name: bookkeeperwebhook.pravega.io
+  failurePolicy: Fail
+  rules:
+  - apiGroups:
+    - bookkeeper.pravega.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - bookkeeperclusters
+    scope: "*"
+  timeoutSeconds: 30
