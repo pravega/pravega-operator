@@ -85,11 +85,8 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	}
 
 	b.WithDefaults()
-	b.Spec.Image.ImageSpec.PullPolicy = "IfNotPresent"
-	b.Spec.Version = "0.9.0"
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
-	b.Spec.JVMOptions.ExtraOpts = []string{"-XX:+UseContainerSupport", "-XX:+IgnoreUnrecognizedVMOptions"}
 	b, err = CreateBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
@@ -305,6 +302,9 @@ func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 // CreateBKCluster creates a BookkeeperCluster CR with the desired spec
 func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
+	b.Spec.Image.ImageSpec.PullPolicy = "IfNotPresent"
+	b.Spec.Version = "0.8.0"
+	b.Spec.JVMOptions.ExtraOpts = []string{"-XX:+UseContainerSupport", "-XX:+IgnoreUnrecognizedVMOptions"}
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
 	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
