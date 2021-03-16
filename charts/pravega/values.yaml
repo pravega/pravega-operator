@@ -158,3 +158,5 @@ options:
   # controller.metrics.influxDB.reporter.enable: "true"
   # controller.metrics.output.frequency.seconds: "10"
   # controller.metrics.influxDB.connect.uri: "http://INFLUXDB-IP:8086"
+  # hostPathVolumeMounts: "foo=/tmp/foo,bar=/tmp/bar"
+  # emptyDirVolumeMounts: "baz=/tmp/baz,quux=/tmp/quux"
