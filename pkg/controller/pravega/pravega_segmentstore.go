@@ -168,7 +168,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 				EnvFrom:      environment,
 				Env:          util.DownwardAPIEnv(),
-				VolumeMounts: MakeSegmentStoreVolumeMount(p),
+				VolumeMounts: MakeSegmentStoreVolumeMount(p, hostPathVolumeMounts, emptyDirVolumeMounts),
 				Resources:    *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
