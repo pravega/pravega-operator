@@ -27,7 +27,7 @@ For upgrading the pravega operator check the document [Operator Upgrade](doc/ope
 ## Features
 
 - [x] [Create and destroy a Pravega cluster](charts/pravega/README.md)
-- [x] [Resize cluster](charts/pravega/README.md#upgrading-pravega-cluster)
+- [x] [Resize cluster](charts/pravega/README.md#updating-pravega-cluster)
 - [x] [Rolling upgrades/Rollback](doc/upgrade-cluster.md)
 - [x] [Pravega Configuration tuning](doc/configuration.md)
 - [x] Input validation
