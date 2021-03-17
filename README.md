@@ -18,8 +18,6 @@ For setting up pravega quickly, check our [complete Pravega Installation script]
 
 ## Install the Operator
 
-> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](doc/development.md#installation-on-google-kubernetes-engine).
-
 To understand how to deploy a Pravega Operator refer to [Operator Deployment](charts/pravega-operator#deploying-pravega-operator).
 
 ## Upgrade the Operator
@@ -51,4 +49,5 @@ We thrive to build a welcoming and open community for anyone who wants to use th
 Check out the [pravega troubleshooting](doc/troubleshooting.md#pravega-cluster-issues) for pravega issues and for operator issues [operator troubleshooting](doc/troubleshooting.md#pravega-operator-issues).
 
 ## License
+
 Pravega Operator is under Apache 2.0 license. See the [LICENSE](https://github.com/pravega/pravega-operator/blob/master/LICENSE) for details.

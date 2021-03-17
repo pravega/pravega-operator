@@ -14,6 +14,7 @@ This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-op
 
 ## Installing Pravega-Operator
 
+> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](../../doc/development.md#installation-on-google-kubernetes-engine).
 To install the pravega-operator chart, use the following commands:
 
 ```
