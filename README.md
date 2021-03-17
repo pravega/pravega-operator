@@ -42,7 +42,7 @@ The latest Pravega operator releases can be found on the [Github Release](https:
 
 ## Contributing and Community
 
-We thrive to build a welcoming and open community for anyone who wants to use the operator or contribute to it. [Here](CONTTRIBUTING.md) we describe how to contribute to pravega operator.Contact the developers and community on [slack](https://pravega-io.slack.com/) ([signup](https://pravega-slack-invite.herokuapp.com/)) if you need any help.
+We thrive to build a welcoming and open community for anyone who wants to use the operator or contribute to it. [Here](CONTRIBUTING.md) we describe how to contribute to pravega operator.Contact the developers and community on [slack](https://pravega-io.slack.com/) ([signup](https://pravega-slack-invite.herokuapp.com/)) if you need any help.
 
 ## Troubleshooting
 
