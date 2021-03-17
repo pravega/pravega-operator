@@ -55,8 +55,6 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 		return err
 	}
 
-	time.Sleep(1 * time.Minute)
-
 	z := &zkapi.ZookeeperCluster{}
 	z.WithDefaults()
 	z.Name = "zookeeper"
@@ -308,6 +306,10 @@ func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
+	b.Spec.Probes.LivenessProbe.PeriodSeconds = 15
+	b.Spec.Probes.ReadinessProbe.PeriodSeconds = 15
+	b.Spec.Probes.LivenessProbe.TimeoutSeconds = 10
+	b.Spec.Probes.ReadinessProbe.TimeoutSeconds = 10
 	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
