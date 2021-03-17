@@ -1,4 +1,4 @@
-# Pravega Helm Chart
+# Pravega Deployment
 
 Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
 
@@ -12,8 +12,8 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
   - Helm 3.2.1+
   - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
-  - Pravega Operator. Please refer [this](https://github.com/pravega/pravega-operator/blob/master/charts/pravega-operator/README.md)
-  - LongTerm Storage ([options for long term storage](https://github.com/pravega/pravega-operator/blob/master/doc/longtermstorage.md))
+  - Pravega Operator. Please refer [this](../../charts/pravega-operator/README.md)
+  - LongTerm Storage ([options for long term storage](../../doc/longtermstorage.md))
 ## Deploying a Pravega Cluster
 
 To install the pravega chart, use the following commands:
@@ -24,13 +24,14 @@ $ helm repo update
 $ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
 where:
+
 - **[RELEASE_NAME]** is the release name for the pravega chart.
 - **[VERSION]** can be any stable release version for pravega from 0.5.0 onwards.
 - **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
 - **[BOOKKEEPER_SVC]** is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
 - **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name (`pravega-tier2` if you created the PVC using the manifest provided).
 
-**Note:**  You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration),the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
+>Note:  You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration),the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
 
 >Note: If we provide [RELEASE_NAME] same as chart name, cluster name will be same as release-name. But if we are providing a different name for release(other than pravega in this case), cluster name will be [RELEASE_NAME]-[chart-name]. However, cluster name can be overridden by providing `--set  fullnameOverride=[CLUSTER_NAME]` along with helm install command.
 
@@ -76,19 +77,19 @@ And the `REST` management interface is available at:
 http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
 ```
 
-Check out the [external access documentation](doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
+Check out the [external access documentation](../../doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
-Check out the [exposing Segmentstore service on single IP address](https://github.com/pravega/pravega-operator/blob/4aa88641c3d5a1d5afbb2b9e628846639fd13290/doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
+Check out the [exposing Segmentstore service on single IP address](../..//doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
 
-## Upgrading Pravega Cluster
+## Updating Pravega Cluster
 
-For updating the pravega chart, use the following command
+For updating the pravega cluster, use the following command
 
 ```
 helm upgrade [RELEASE_NAME]  --version=[VERSION]  --set controller.replicas=2 --set segmentstore.replicas=3
 ```
 
-Please refer [upgrade](https://github.com/pravega/pravega-operator/blob/master/doc/upgrade-cluster.md) for upgrading cluster versions.
+Please refer [upgrade](../../doc/upgrade-cluster.md) for upgrading cluster versions.
 
 ## Uninstalling Pravega Cluster
 

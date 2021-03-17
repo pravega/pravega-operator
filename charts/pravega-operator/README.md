@@ -1,4 +1,4 @@
-# Pravega Operator Helm Chart
+# Deploying Pravega-Operator
 
 Installs [pravega-operator](https://github.com/pravega/pravega-operator) to create/configure/manage Pravega clusters atop Kubernetes.
 
@@ -10,9 +10,9 @@ This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-op
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3.2.1+
   - Cert-Manager v0.15.0+ or some other certificate management solution in order to manage the webhook service certificates. This can be easily deployed by referring to [this](https://cert-manager.io/docs/installation/kubernetes/)
-  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
+  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](../../deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
-## Deploying Pravega-Operator
+## Installing Pravega-Operator
 
 To install the pravega-operator chart, use the following commands:
 
@@ -32,6 +32,10 @@ This command deploys a pravega-operator on the Kubernetes cluster in its default
 >Note: If we provide [RELEASE_NAME] same as chart name, deployment name will be same as release-name. But if we are providing a different name for release(other than pravega-operator in this case), deployment name will be [RELEASE_NAME]-[chart-name]. However, deployment name can be overridden by providing --set  fullnameOverride=[DEPLOYMENT_NAME]` along with helm install command
 
 >Note: If the pravega-operator version is 0.4.5, webhookCert.certName and webhookCert.secretName should not be set. Also in this case, bookkeeper operator, cert-manager and the certificate/issuer do not need to be deployed as prerequisites.
+
+## Upgrading Pravega-Operator
+
+For upgrading pravega-operator, please refer [upgrade guide](../../doc/operator-upgrade.md)
 
 ## Uninstalling Pravega-Operator
 
