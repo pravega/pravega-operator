@@ -244,7 +244,6 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 	}
 	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
 	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
-
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -306,10 +305,10 @@ func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
-	b.Spec.Probes.LivenessProbe.PeriodSeconds = 15
-	b.Spec.Probes.ReadinessProbe.PeriodSeconds = 15
-	b.Spec.Probes.LivenessProbe.TimeoutSeconds = 10
-	b.Spec.Probes.ReadinessProbe.TimeoutSeconds = 10
+	b.Spec.Probes.LivenessProbe.PeriodSeconds = 10
+	b.Spec.Probes.ReadinessProbe.PeriodSeconds = 10
+	b.Spec.Probes.LivenessProbe.TimeoutSeconds = 15
+	b.Spec.Probes.ReadinessProbe.TimeoutSeconds = 15
 	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
