@@ -34,7 +34,7 @@ var (
 	Timeout              = time.Second * 60
 	CleanupRetryInterval = time.Second * 1
 	CleanupTimeout       = time.Second * 5
-	ReadyTimeout         = time.Minute * 5
+	ReadyTimeout         = time.Minute * 10
 	UpgradeTimeout       = time.Minute * 10
 	TerminateTimeout     = time.Minute * 2
 	VerificationTimeout  = time.Minute * 5
@@ -73,6 +73,7 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.WithDefaults()
 	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
 	z.Spec.Replicas = 1
+	z.Spec.Image.PullPolicy = "IfNotPresent"
 	z, err = CreateZKCluster(t, f, ctx, z)
 	if err != nil {
 		return err
@@ -82,6 +83,12 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	if err != nil {
 		return err
 	}
+
+	b.WithDefaults()
+	b.Name = "bookkeeper"
+	b.Namespace = namespace
+	b.Spec.Image.ImageSpec.PullPolicy = "IfNotPresent"
+	b.Spec.Version = "0.8.0"
 	b, err = CreateBKCluster(t, f, ctx, b)
 	if err != nil {
 		return err
@@ -102,6 +109,30 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 // CreatePravegaCluster creates a PravegaCluster CR with the desired spec
 func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	t.Logf("creating pravega cluster: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+	pravega := &api.PravegaCluster{}
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
+// CreatePravegaClusterForExternalAccess creates a PravegaCluster CR with the desired spec for ExternalAccess
+func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+	p.WithDefaults()
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.ExternalAccess.Enabled = true
+	p.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
+	p.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
+	p.Spec.Pravega.SegmentStoreReplicas = 1
 	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -114,6 +145,142 @@ func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 	}
 	t.Logf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
+}
+
+// CreatePravegaClusterWithTlsAuth creates a PravegaCluster CR with the desired spec for both Auth and Tls
+func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with Auth and Tls: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.Authentication.Enabled = true
+	p.Spec.Authentication.PasswordAuthSecret = "password-auth"
+	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
+	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
+	p.Spec.Pravega.Options = map[string]string{
+		"pravegaservice.containerCount":           "4",
+		"pravegaservice.cacheMaxSize":             "1073741824",
+		"pravegaservice.zkSessionTimeoutMs":       "10000",
+		"attributeIndex.readBlockSize":            "1048576",
+		"readIndex.storageReadAlignment":          "1048576",
+		"durableLog.checkpointMinCommitCount":     "300",
+		"bookkeeper.bkAckQuorumSize":              "3",
+		"controller.auth.tlsEnabled":              "true",
+		"controller.auth.tlsCertFile":             "/etc/secret-volume/controller01.pem",
+		"controller.auth.tlsKeyFile":              "/etc/secret-volume/controller01.key.pem",
+		"controller.auth.tlsTrustStore":           "/etc/secret-volume/ca-cert",
+		"controller.rest.tlsKeyStoreFile":         "/etc/secret-volume/controller01.jks",
+		"controller.rest.tlsKeyStorePasswordFile": "/etc/secret-volume/pass-secret-tls",
+		"controller.auth.userPasswordFile":        "/etc/auth-passwd-volume/pass-secret-tls-auth.txt",
+		"pravegaservice.enableTls":                "true",
+		"pravegaservice.certFile":                 "/etc/secret-volume/segmentstore01.pem",
+		"pravegaservice.keyFile":                  "/etc/secret-volume/segmentstore01.key.pem",
+		"autoScale.tlsEnabled":                    "true",
+		"autoScale.tlsCertFile":                   "/etc/secret-volume/ca-cert",
+		"bookkeeper.tlsEnabled":                   "true",
+		"bookkeeper.tlsTrustStorePath":            "empty",
+		"autoScale.validateHostName":              "true",
+		"autoScale.authEnabled":                   "true",
+		"controller.auth.tokenSigningKey":         "secret",
+		"autoScale.tokenSigningKey":               "secret",
+		"pravega.client.auth.token":               "YWRtaW46MTExMV9hYWFh",
+		"pravega.client.auth.method":              "Basic",
+	}
+	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
+	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
+
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	pravega := &api.PravegaCluster{}
+
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
+// CreatePravegaClusterWithTls creates a PravegaCluster CR with the desired spec for tls
+func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	t.Logf("creating pravega cluster with tls: %s", p.Name)
+	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
+	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
+	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
+	p.Spec.TLS.Static.SegmentStoreSecret = "segmentstore-tls"
+	p.Spec.Pravega.Options = map[string]string{
+		"pravegaservice.containerCount":                                     "4",
+		"pravegaservice.cacheMaxSize":                                       "1073741824",
+		"pravegaservice.zkSessionTimeoutMs":                                 "10000",
+		"attributeIndex.readBlockSize":                                      "1048576",
+		"readIndex.storageReadAlignment":                                    "1048576",
+		"durableLog.checkpointMinCommitCount":                               "300",
+		"bookkeeper.bkAckQuorumSize":                                        "3",
+		"controller.security.tls.enable":                                    "true",
+		"controller.security.tls.server.certificate.location":               "/etc/secret-volume/controller01.pem",
+		"controller.security.tls.server.privateKey.location":                "/etc/secret-volume/controller01.key.pem",
+		"controller.security.tls.trustStore.location":                       "/etc/secret-volume/ca-cert",
+		"controller.security.tls.server.keyStore.location":                  "/etc/secret-volume/controller01.jks",
+		"controller.security.tls.server.keyStore.pwd.location":              "/etc/secret-volume/pass-secret-tls",
+		"controller.security.pwdAuthHandler.accountsDb.location":            "/etc/auth-passwd-volume/pass-secret-tls-auth.txt",
+		"controller.security.auth.delegationToken.ttl.seconds":              "100",
+		"pravegaservice.security.tls.enable":                                "true",
+		"pravegaservice.security.tls.server.certificate.location":           "/etc/secret-volume/segmentstore01.pem",
+		"pravegaservice.security.tls.server.privateKey.location":            "/etc/secret-volume/segmentstore01.key.pem",
+		"pravegaservice.security.tls.certificate.autoReload.enable":         "true",
+		"autoScale.controller.connect.security.tls.enable":                  "true",
+		"autoScale.controller.connect.security.tls.truststore.location":     "/etc/secret-volume/ca-cert",
+		"bookkeeper.connect.security.tls.enable":                            "false",
+		"bookkeeper.connect.security.tls.trustStore.location":               "empty",
+		"autoScale.controller.connect.security.tls.validateHostName.enable": "false",
+		"autoScale.controller.connect.security.auth.enable":                 "false",
+		"controller.security.auth.delegationToken.signingKey.basis":         "secret",
+		"autoScale.security.auth.token.signingKey.basis":                    "secret",
+		"pravega.client.auth.token":                                         "YWRtaW46MTExMV9hYWFh",
+		"pravega.client.auth.method":                                        "Basic",
+	}
+	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
+	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
+	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create CR: %v", err)
+	}
+
+	pravega := &api.PravegaCluster{}
+
+	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	if err != nil {
+		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
+	}
+
+	t.Logf("created pravega cluster: %s", pravega.Name)
+	return pravega, nil
+}
+
+func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
+	}
+
+	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	if err != nil {
+		return err
+	}
+	pod := &corev1.Pod{}
+
+	for i := 0; i < size; i++ {
+		pod = &podList.Items[i]
+		t.Logf("podnameis %v", pod.Name)
+		err := f.Client.Delete(goctx.TODO(), pod)
+		if err != nil {
+			return fmt.Errorf("failed to delete pod: %v", err)
+		}
+		t.Logf("deleted pravega pod: %s", pod.Name)
+	}
+	return nil
 }
 
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
@@ -138,6 +305,10 @@ func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 	t.Logf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
+	b.Spec.Probes.LivenessProbe.PeriodSeconds = 10
+	b.Spec.Probes.ReadinessProbe.PeriodSeconds = 10
+	b.Spec.Probes.LivenessProbe.TimeoutSeconds = 15
+	b.Spec.Probes.ReadinessProbe.TimeoutSeconds = 15
 	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
@@ -199,6 +370,7 @@ func DeleteZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 // UpdatePravegaCluster updates the PravegaCluster CR
 func UpdatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
 	t.Logf("updating pravega cluster: %s", p.Name)
+	p.Spec.Pravega.RollbackTimeout = 10
 	err := f.Client.Update(goctx.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to update CR: %v", err)
@@ -340,6 +512,66 @@ func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *f
 
 		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
 			// Cluster upgraded
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster upgraded: %s", p.Name)
+	return nil
+}
+
+// WaitForPravegaClusterToRollback will wait until all pods have completed Rollback
+func WaitForPravegaClusterToRollback(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
+	t.Logf("waiting for cluster to Rollback: %s", p.Name)
+
+	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
+		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		if err != nil {
+			return false, err
+		}
+
+		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionRollback)
+		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
+
+		t.Logf("\twaiting for cluster to Rollback (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+
+		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
+			// Cluster upgraded
+			return true, nil
+		}
+		return false, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	t.Logf("pravega cluster Completed Rollback: %s", p.Name)
+	return nil
+}
+
+// WaitForPravegaClusterToFailUpgrade will wait till Upgrade Fails
+func WaitForPravegaClusterToFailUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
+	t.Logf("waiting for cluster to Fail upgrade: %s", p.Name)
+
+	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
+		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		if err != nil {
+			return false, err
+		}
+
+		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
+		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
+
+		t.Logf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+
+		if upgradeCondition.Status == corev1.ConditionFalse && errorCondition.Status == corev1.ConditionTrue {
+			// Cluster upgraded Failed
 			return true, nil
 		}
 		return false, nil
@@ -610,10 +842,37 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 	return nil
 }
 
+// UpdatePravegaClusterRollback updates the PravegaCluster CR for Rollback
+func UpdatePravegaClusterRollback(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
+	t.Logf("updating pravega cluster: %s", p.Name)
+	p.Spec.Pravega.RollbackTimeout = 1
+	err := f.Client.Update(goctx.TODO(), p)
+	if err != nil {
+		return fmt.Errorf("failed to Rollback CR: %v", err)
+	}
+
+	t.Logf("completed Rollback of pravega cluster: %s", p.Name)
+	return nil
+}
+
+// CheckExternalAccesss Checks if External Access is enabled or not
+func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster) error {
+
+	ssSvc := &corev1.Service{}
+	conSvc := &corev1.Service{}
+	_ = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForSegmentStore(0)}, ssSvc)
+	_ = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForController()}, conSvc)
+
+	if len(conSvc.Status.LoadBalancer.Ingress) == 0 || len(ssSvc.Status.LoadBalancer.Ingress) == 0 {
+		return fmt.Errorf("External Access is not enabled")
+	}
+	t.Logf("pravega cluster External Acess Validated: %s", pravega.Name)
+	return nil
+}
+
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	t.Log("restarting tier2 storage")
 	tier2 := NewTier2(namespace)
-
 	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{})
 
 	if err == nil {

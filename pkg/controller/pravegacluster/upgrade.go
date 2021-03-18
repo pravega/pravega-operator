@@ -368,7 +368,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 	}
 	// Upgrade still in progress
 	// Check if segmentstore fail to have progress within a timeout
-	err = checkSyncTimeout(p, pravegav1beta1.UpdatingSegmentstoreReason, sts.Status.UpdatedReplicas)
+	err = checkSyncTimeout(p, pravegav1beta1.UpdatingSegmentstoreReason, sts.Status.UpdatedReplicas, p.Spec.Pravega.RollbackTimeout)
 	if err != nil {
 		return false, fmt.Errorf("updating statefulset (%s) failed due to %v", sts.Name, err)
 	}
@@ -712,7 +712,7 @@ func (r *ReconcilePravegaCluster) getPodsWithVersion(selector labels.Selector, n
 	return pods, nil
 }
 
-func checkSyncTimeout(p *pravegav1beta1.PravegaCluster, reason string, updatedReplicas int32) error {
+func checkSyncTimeout(p *pravegav1beta1.PravegaCluster, reason string, updatedReplicas int32, t int32) error {
 	lastCondition := p.Status.GetLastCondition()
 	if lastCondition == nil {
 		return nil
@@ -721,7 +721,8 @@ func checkSyncTimeout(p *pravegav1beta1.PravegaCluster, reason string, updatedRe
 		// if reason and message are the same as before, which means there is no progress since the last reconciling,
 		// then check if it reaches the timeout.
 		parsedTime, _ := time.Parse(time.RFC3339, lastCondition.LastUpdateTime)
-		if time.Now().After(parsedTime.Add(time.Duration(10 * time.Minute))) {
+		minCount := time.Duration(t)
+		if time.Now().After(parsedTime.Add(time.Duration(minCount * time.Minute))) {
 			// timeout
 			return fmt.Errorf("progress deadline exceeded")
 		}
