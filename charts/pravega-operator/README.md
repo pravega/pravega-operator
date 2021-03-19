@@ -2,10 +2,6 @@
 
 Installs [pravega-operator](https://github.com/pravega/pravega-operator) to create/configure/manage Pravega clusters atop Kubernetes.
 
-## Introduction
-
-This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
-
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3.2.1+
@@ -23,6 +19,7 @@ $ helm repo update
 $ helm install [RELEASE_NAME] pravega/pravega-operator --version=[VERSION] --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
 ```
 where:
+
 - **[RELEASE_NAME]** is the release name for the pravega-operator chart.
 - **[VERSION]** can be any stable release version for pravega-operator from 0.5.0 onwards.
 - **[CERT_NAME]** is the name of the certificate created as a prerequisite

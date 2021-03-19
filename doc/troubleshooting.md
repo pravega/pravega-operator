@@ -7,7 +7,6 @@
 * [Controller pod not in ready state](#controller-pod-not-in-ready-state)
 * [Unsupported Pravega cluster version](#unsupported-pravega-cluster-version)
 * [Unsupported upgrade from version](#unsupported-upgrade-from-version)
-* [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
