@@ -1,14 +1,14 @@
 ## Manual installation
 
 * [Install the Operator manually](#install-the-operator-manually)
-* [Set up LongTermStorage](#Set-up-LongTermStorage)
+* [Set up LongTermStorage](#set-up-longtermstorage)
 * [Install the Pravega cluster manually](#install-the-pravega-cluster-manually)
 * [Uninstall the Pravega Cluster manually](#uninstall-the-pravega-cluster-manually)
 * [Uninstall the Operator manually](#uninstall-the-operator-manually)
 
 ### Install the Operator manually
 
-> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
+> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](development.md#installation-on-google-kubernetes-engine).
 
 In case you dont have a cert-manager, Install the cert-manager v0.15.0+ from the following link:-
 
@@ -42,8 +42,7 @@ $ kubectl create -f deploy/operator.yaml
 ```
 
 ### Deploying in Test Mode
- We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file.
- Check out [test mode](../README.md#deploying-in-test-mode)
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ```
 containers:
