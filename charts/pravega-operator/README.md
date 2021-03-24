@@ -6,7 +6,7 @@ Installs [pravega-operator](https://github.com/pravega/pravega-operator) to crea
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3.2.1+
   - Cert-Manager v0.15.0+ or some other certificate management solution in order to manage the webhook service certificates. This can be easily deployed by referring to [this](https://cert-manager.io/docs/installation/kubernetes/)
-  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](../../deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
+  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this certificate.yaml file](../../deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
 ## Installing Pravega-Operator
 

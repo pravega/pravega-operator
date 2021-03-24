@@ -19,7 +19,7 @@
 
 ## Certificate Error: Internal error occurred: failed calling webhook
 
-while installing pravega, if we get the error as  below,
+While installing pravega, if we get the error as  below,
 ```
 helm install pravega charts/pravega
 Error: Internal error occurred: failed calling webhook "pravegawebhook.pravega.io": Post https://pravega-webhook-svc.default.svc:443/validate-pravega-pravega-io-v1beta1-pravegacluster?timeout=30s: x509: certificate signed by unknown authority
@@ -53,7 +53,7 @@ This issue is happening because `pravegaclustername` is not matching `PRAVEGA_CL
 
 # Controller pod not in ready state
 
-while installing pravega, if the controller pod goes in `0/1` state as below, it can be due to meta data mismatch in znode
+While installing pravega, if the controller pod goes in `0/1` state as below, it can be due to meta data mismatch in znode
 
 ```
 pravega-pravega-controller-68d68796f4-m5w7m             0/1     Running            0          15m
@@ -62,7 +62,7 @@ To resolve this issue, we have to ensure that zookeeper, bookkeeper and longterm
 
 ## Unsupported Pravega cluster version
 
-while installing pravega, if we get the below error
+While installing pravega, if we get the below error
 ```
 Error: admission webhook "pravegawebhook.pravega.io" denied the request: unsupported Pravega cluster version 0.10.0-2703.c9b7be114
 ```
@@ -79,7 +79,7 @@ helm install pravega-operator charts/pravega-operator --set testmode.enabled=tru
 Alternatively, we can edit the configmap and add entry as `0.10.0:0.10.0` in the configmap and restart the pravega-operator pod
 ## Unsupported upgrade from version
 
-while upgrading pravega, if we get the error similar to below
+While upgrading pravega, if we get the error similar to below
 
 ```
 Error from server (unsupported upgrade from version 0.8.0-2640.e4c436ba9 to 0.9.0-2752.2652549b3): error when applying patch
