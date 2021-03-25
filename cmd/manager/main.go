@@ -24,20 +24,21 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/version"
+	"github.com/rs/zerolog"
+	zerologs "github.com/rs/zerolog/log"
 	log "github.com/sirupsen/logrus"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 var (
 	versionFlag bool
 	webhookFlag bool
+	logLevel    string
 )
 
 func init() {
@@ -55,9 +56,18 @@ func printVersion() {
 }
 
 func main() {
-	flag.Parse()
-	logf.SetLogger(logf.ZapLogger(false))
+	logLevel, ok := os.LookupEnv("LOG_LEVEL")
+	if !ok {
+		panic("missing LOG_LEVEL environment variable")
+	}
 
+	level, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		panic(err)
+	}
+	zerolog.SetGlobalLevel(level)
+
+	flag.Parse()
 	printVersion()
 
 	if versionFlag {
@@ -65,18 +75,18 @@ func main() {
 	}
 
 	if controllerconfig.TestMode {
-		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
+		zerologs.Warn().Msg("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		log.Fatal(err, "failed to get watch namespace")
+		zerologs.Error().Err(err).Msg("failed to get watch namespace")
 	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Fatal(err)
+		zerologs.Error().Err(err).Msg("")
 	}
 
 	// Become the leader before proceeding
@@ -86,33 +96,42 @@ func main() {
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
 
 	if err != nil {
-		log.Fatal(err)
+		zerologs.Fatal().
+			Err(err).
+			Msg("")
 	}
 
-	log.Print("Registering Components")
+	zerologs.Info().Msg("Registering Components")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatal(err)
+		zerologs.Fatal().
+			Err(err).
+			Msg("")
+
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Fatal(err)
+		zerologs.Fatal().
+			Err(err).
+			Msg("")
 	}
 
 	v1beta1.Mgr = mgr
 	if webhookFlag {
 		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
-			log.Error(err, "unable to create webhook %s", err.Error())
+			zerologs.Error().Err(err).Msgf("unable to create webhook %s", err.Error())
 			os.Exit(1)
 		}
 	}
 
-	log.Print("Starting the Cmd")
+	zerologs.Info().Msg("Starting the Cmd")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		log.Fatal(err, "manager exited non-zero")
+		zerologs.Fatal().
+			Err(err).
+			Msg("manager exited non-zero")
 	}
 }
