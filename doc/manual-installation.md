@@ -75,7 +75,7 @@ metadata:
   name: "pravega"
 spec:
   version: 0.7.0
-  zookeeperUri: [ZOOKEEPER_HOST]:2181
+  zookeeperUri: [ZOOKEEPER_SVC]:2181
   bookkeeperUri: [BOOKKEEPER_SVC]:3181"
   pravega:
     controllerReplicas: 1
@@ -96,7 +96,7 @@ spec:
 
 where:
 
-- `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
+- `[ZOOKEEPER_SVC]` is the name of client service of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
 Check out other sample CR files in the [`example`](../example) directory.
