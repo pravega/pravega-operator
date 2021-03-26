@@ -12,7 +12,7 @@
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
 * [Logs missing when Pravega upgrades](#logs-missing-when-Pravega-upgrades)
 * [Collecting log files for crashed pod](#collecting-log-files-for-crashed-pod)
-* [Filtering kubectl Events](#fillering-kubectl-events)
+* [Filtering kubectl Events](#filtering-kubectl-events)
 * [Unrecognized VM option](#unrecognized-vm-option)
 
 ## Pravega operator Issues
