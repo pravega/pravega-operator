@@ -51,7 +51,7 @@ Caused by: org.apache.bookkeeper.client.BKException$ZKException: Error while usi
         at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:630)
         at org.apache.zookeeper.ClientCnxn$EventThread.run(ClientCnxn.java:510)
 ```
-This issue is happening because name of the pravega cluster (which can be seen with the output of kubectl get pravegacluster) is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in [bookkeeper configmap](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
+This issue is happening because name of the pravega cluster (which can be seen with the output of `kubectl get pravegacluster`) is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in [bookkeeper configmap](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
 
 # Controller pod not in ready state
 

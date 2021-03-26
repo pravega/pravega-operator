@@ -40,7 +40,8 @@ This command deploys pravega on the Kubernetes cluster in its default configurat
 ```
 helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_SVC] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
 ```
-Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
+
+Based on the [cluster flavours](values) selected,segmentstore memory requirements needs to be adjusted.
 
 Once installation is successful, all cluster members should become ready.
 ```
@@ -76,7 +77,7 @@ http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
 
 Check out the [external access documentation](../../doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
 
-Check out the [exposing Segmentstore service on single IP address](../..//doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to Pravega Segment store on the same IP address from outside Kubernetes.
+Check out the [exposing Segmentstore service on single IP address](../..//doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to all Pravega Segmentstore instances on the same IP address from outside Kubernetes.
 
 ## Updating Pravega Cluster
 
