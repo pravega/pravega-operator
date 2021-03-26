@@ -12,8 +12,8 @@ minikube start --cpus=8 --memory=50000mb --disk-size=50000mb
 
 Here, we specify the optimal resources that we need to provide to each of the components in order to have a working Pravega setup.
 
-### Tier 2
-To setup Tier 2 refer to [this](tier2.md#tier-2-storage). The `PersistentVolumeClaim` to consume the volume so created should be provisioned to consume 10Gi.
+### LongTermStorage
+To setup LongTermStorage refer to [this](longtermstorage.md#long-term-storage). The `PersistentVolumeClaim` to consume the volume so created should be provisioned to consume 10Gi.
 
 ```yaml
   resources:
@@ -38,7 +38,7 @@ spec:
 ```
 
 ### Bookkeeper
-Create a single node Bookkeeper Cluster using the [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator). In order to create a single node Bookkeeper Cluster, create the Bookkeeper Operator in [test mode](https://github.com/pravega/bookkeeper-operator#install-the-operator-in-test-mode). Modify the bookkeeper manifest and ensure that the following fields are present within its `spec`.
+Create a single node Bookkeeper Cluster using the [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator). In order to create a single node Bookkeeper Cluster, create the Bookkeeper Operator in [test mode](https://github.com/pravega/bookkeeper-operator/blob/master/doc/development.md#install-the-operator-in-test-mode). Modify the bookkeeper manifest and ensure that the following fields are present within its `spec`.
 
 ```yaml
 spec:
@@ -67,7 +67,7 @@ spec:
 ```
 
 ### Pravega
-Finally create a Pravega Cluster comprising of a single SegmentStore and Controller replica using the Pravega Operator. Modify the pravega manifest and ensure that the following fields are present within its `spec`.
+Finally create a Pravega Cluster comprising of a single SegmentStore and Controller replica using the Pravega Operator.The Operator can be run in `test mode` by enabling `testmode: true` in `values.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Modify the pravega manifest and ensure that the following fields are present within its `spec`.
 
 ```yaml
 spec:

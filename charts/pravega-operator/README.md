@@ -1,20 +1,16 @@
-# Pravega Operator Helm Chart
+# Deploying Pravega-Operator
 
-Installs [pravega-operator](https://github.com/pravega/pravega-operator) to create/configure/manage Pravega clusters atop Kubernetes.
-
-## Introduction
-
-This chart bootstraps a [pravega-operator](https://github.com/pravega/pravega-operator) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega Operator on multiple namespaces.
+Here, we briefly describe how to install [pravega-operator](https://github.com/pravega/pravega-operator) that is used to create/configure/manage Pravega clusters atop Kubernetes.
 
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs
   - Helm 3.2.1+
-  - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
-  - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Cert-Manager v0.15.0+ or some other certificate management solution in order to manage the webhook service certificates. This can be easily deployed by referring to [this](https://cert-manager.io/docs/installation/kubernetes/)
-  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
+  - An Issuer and a Certificate (either self-signed or CA signed) in the same namespace that the Pravega Operator will be installed (refer to [this certificate.yaml file](../../deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
-## Installing the Chart
+## Installing Pravega-Operator
+
+> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](../../doc/development.md#installation-on-google-kubernetes-engine).
 
 To install the pravega-operator chart, use the following commands:
 
@@ -24,17 +20,23 @@ $ helm repo update
 $ helm install [RELEASE_NAME] pravega/pravega-operator --version=[VERSION] --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
 ```
 where:
+
 - **[RELEASE_NAME]** is the release name for the pravega-operator chart.
-- **[DEPLOYMENT_NAME]** is the name of the pravega-operator deployment so created. (If [RELEASE_NAME] contains the string `pravega-operator`, `[DEPLOYMENT_NAME] = [RELEASE_NAME]`, else `[DEPLOYMENT_NAME] = [RELEASE_NAME]-pravega-operator`. The [DEPLOYMENT_NAME] can however be overridden by providing `--set fullnameOverride=[DEPLOYMENT_NAME]` along with the helm install command)
 - **[VERSION]** can be any stable release version for pravega-operator from 0.5.0 onwards.
 - **[CERT_NAME]** is the name of the certificate created as a prerequisite
 - **[SECRET_NAME]** is the name of the secret created by the above certificate
 
-This command deploys a pravega-operator on the Kubernetes cluster in its default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+This command deploys a pravega-operator on the Kubernetes cluster in its default configuration. The [configuration](#operator-configuration) section lists the parameters that can be configured during installation.
+
+>Note: If we provide [RELEASE_NAME] same as chart name, deployment name will be same as release-name. But if we are providing a different name for release(other than pravega-operator in this case), deployment name will be [RELEASE_NAME]-[chart-name]. However, deployment name can be overridden by providing --set  fullnameOverride=[DEPLOYMENT_NAME]` along with helm install command
 
 >Note: If the pravega-operator version is 0.4.5, webhookCert.certName and webhookCert.secretName should not be set. Also in this case, bookkeeper operator, cert-manager and the certificate/issuer do not need to be deployed as prerequisites.
 
-## Uninstalling the Chart
+## Upgrading Pravega-Operator
+
+For upgrading pravega-operator, please refer [upgrade guide](../../doc/operator-upgrade.md)
+
+## Uninstalling Pravega-Operator
 
 To uninstall/delete the pravega-operator chart, use the following command:
 
@@ -44,7 +46,7 @@ $ helm uninstall [RELEASE_NAME]
 
 This command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Configuration
+## Operator Configuration
 
 The following table lists the configurable parameters of the pravega-operator chart and their default values.
 

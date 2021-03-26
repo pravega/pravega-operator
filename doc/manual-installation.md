@@ -1,14 +1,14 @@
 ## Manual installation
 
 * [Install the Operator manually](#install-the-operator-manually)
-* [Set up LongTermStorage](#Set-up-LongTermStorage)
+* [Set up LongTermStorage](#set-up-longtermstorage)
 * [Install the Pravega cluster manually](#install-the-pravega-cluster-manually)
 * [Uninstall the Pravega Cluster manually](#uninstall-the-pravega-cluster-manually)
 * [Uninstall the Operator manually](#uninstall-the-operator-manually)
 
 ### Install the Operator manually
 
-> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](#installation-on-google-kubernetes-engine).
+> Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](development.md#installation-on-google-kubernetes-engine).
 
 In case you dont have a cert-manager, Install the cert-manager v0.15.0+ from the following link:-
 
@@ -42,8 +42,7 @@ $ kubectl create -f deploy/operator.yaml
 ```
 
 ### Deploying in Test Mode
- We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file.
- Check out [test mode](../README.md#deploying-in-test-mode)
+ We can enable test mode on operator by passing an argument `-test` in `operator.yaml` file. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ```
 containers:
@@ -57,7 +56,7 @@ containers:
     imagePullPolicy: Always
     args: [-test]
 ```
-### Set up LongTermStorage:-
+### Set up LongTermStorage
 
 Pravega requires a long term storage provider known as longtermStorage.
 
@@ -76,7 +75,7 @@ metadata:
   name: "pravega"
 spec:
   version: 0.7.0
-  zookeeperUri: [ZOOKEEPER_HOST]:2181
+  zookeeperUri: [ZOOKEEPER_SVC]:2181
   bookkeeperUri: [BOOKKEEPER_SVC]:3181"
   pravega:
     controllerReplicas: 1
@@ -97,7 +96,7 @@ spec:
 
 where:
 
-- `[ZOOKEEPER_HOST]` is the host or IP address of your Zookeeper deployment.
+- `[ZOOKEEPER_SVC]` is the name of client service of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
 Check out other sample CR files in the [`example`](../example) directory.
