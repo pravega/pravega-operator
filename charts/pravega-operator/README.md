@@ -1,6 +1,6 @@
 # Deploying Pravega-Operator
 
-Installs [pravega-operator](https://github.com/pravega/pravega-operator) to create/configure/manage Pravega clusters atop Kubernetes.
+Here, we briefly describe how to install [pravega-operator](https://github.com/pravega/pravega-operator) that is used to create/configure/manage Pravega clusters atop Kubernetes.
 
 ## Prerequisites
   - Kubernetes 1.15+ with Beta APIs

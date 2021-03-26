@@ -12,6 +12,8 @@
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
 * [Logs missing when Pravega upgrades](#logs-missing-when-Pravega-upgrades)
 * [Collecting log files for crashed pod](#collecting-log-files-for-crashed-pod)
+* [Filtering kubectl Events](#fillering-kubectl-events)
+* [Unrecognized VM option](#unrecognized-vm-option)
 
 ## Pravega operator Issues
 * [Operator pod in container creating state](#operator-pod-in-container-creating-state)
@@ -199,6 +201,37 @@ strategy to upgrade pod one at a time. This strategy will use a new replicaset f
 old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
 replicaset, thus the logs for the old pod cannot be obtained using `kubectl logs`.
 
+## Collecting log files for crashed pod
+
+For collecting log files for crashed pod, use the below command
+
+```
+kubectl logs <podname> --previous
+```
+
+## Filtering kubectl Events
+
+For filtering kubernetes events, please use the below command,
+
+```
+kubectl get events --namespace default --field-selector involvedObject.name=<name of the object> --sort-by=.metadata.creationTimestamp
+```
+
+## Unrecognized VM option
+
+While Installing pravega, if the pods didnt come up with error as below,
+
+```
+Unrecognized VM option 'PrintGCDateStamps'
+Error: Could not create the Java Virtual Machine.
+Error: A fatal exception has occurred. Program will exit.
+```
+This is happening because some of default JVM options in operator is not supported by Java version used by pravega. This can be resolved by setting the JVM option `IgnoreUnrecognizedVMOptions` as below.
+
+```
+helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
+```
+
 ## Operator pod in container creating state
 
 while installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly.Please refer [prerequisite](../charts/pravega-operator/README.md#Prerequisites)
@@ -215,19 +248,3 @@ kubectl delete configmap pravega-operator-lock
 ```
 After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
 be deleted by Deployment controller.
-
-## Collecting log files for crashed pod
-
-For collecting log files for crashed pod, use the below command
-
-```
-kubectl logs <podname> --previous
-```
-
-## Filtering kubectl Events
-
-For filtering kubernetes events, please use the below command,
-
-```
-kubectl get events --namespace default --field-selector involvedObject.name=<name of the object> --sort-by=.metadata.creationTimestamp
-```

@@ -1,6 +1,6 @@
-# Pravega Deployment
+# Deploying Pravega
 
-Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
+Here, we briefly describe how to [install](#installing-pravega-cluster)/[update](#updating-pravega-cluster)/[uninstall](#uninstalling-pravega-cluster)/[configure](#pravega-configuration) pravega clusters atop kubernetes.
 
 ## Prerequisites
 
@@ -10,10 +10,10 @@ Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
   - Pravega Operator. Please refer [this](../../charts/pravega-operator/README.md)
   - LongTerm Storage ([options for long term storage](../../doc/longtermstorage.md))
-  
-## Deploying a Pravega Cluster
 
-To install the pravega chart, use the following commands:
+## Installing Pravega Cluster
+
+To install the pravega cluster, use the following commands:
 
 ```
 $ helm repo add pravega https://charts.pravega.io

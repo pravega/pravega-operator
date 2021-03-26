@@ -1,9 +1,17 @@
 ## Development
 
-Requirements:
+## Contents
+
+ * [Requirements](#requirements)
+ * [Build the operator image](#build-the-operator-image)
+ * [Run the Operator locally](#run-the-operator-locally)
+ * [Installation on Google Kubernetes Engine](#installation-on-google-kubernetes-engine)
+ * [Install the Operator in Test Mode](#install-the-operator-in-test-mode)
+
+### Requirements:
   - Go 1.13+
 
-### Install Go
+#### Install Go
 
 You can install go directly or use gvm ( go version manager)
 
@@ -93,8 +101,6 @@ The following command will run the Operator locally with the default Kubernetes 
 ```
 $ make run-local
 ```
-### Deploying in Test Mode
-The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file of operator charts. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
 
 ### Installation on Google Kubernetes Engine
 
@@ -138,3 +144,6 @@ To push changes to branch:
 ```
 $> git push origin issue-234-unique-branch-name
 ```
+
+### Deploying in Test Mode
+The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file of operator charts. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.

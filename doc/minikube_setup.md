@@ -38,7 +38,7 @@ spec:
 ```
 
 ### Bookkeeper
-Create a single node Bookkeeper Cluster using the [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator). In order to create a single node Bookkeeper Cluster, create the Bookkeeper Operator in [test mode](https://github.com/pravega/bookkeeper-operator#install-the-operator-in-test-mode). Modify the bookkeeper manifest and ensure that the following fields are present within its `spec`.
+Create a single node Bookkeeper Cluster using the [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator). In order to create a single node Bookkeeper Cluster, create the Bookkeeper Operator in [test mode](https://github.com/pravega/bookkeeper-operator/blob/master/doc/development.md#install-the-operator-in-test-mode). Modify the bookkeeper manifest and ensure that the following fields are present within its `spec`.
 
 ```yaml
 spec:
