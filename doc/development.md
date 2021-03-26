@@ -6,7 +6,7 @@
  * [Build the operator image](#build-the-operator-image)
  * [Run the Operator locally](#run-the-operator-locally)
  * [Installation on Google Kubernetes Engine](#installation-on-google-kubernetes-engine)
- * [Install the Operator in Test Mode](#install-the-operator-in-test-mode)
+ * [Deploying in Test Mode](#deploying-in-test-mode)
 
 ### Requirements:
   - Go 1.13+
