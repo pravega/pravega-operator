@@ -11,7 +11,7 @@
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
 * [Logs missing when Pravega upgrades](#logs-missing-when-Pravega-upgrades)
-* [Collecting log files for crashed pod](#collecting-log-files-for-crashed-pod)
+* [Collecting logs for crashed pod](#collecting-logs-for-crashed-pod)
 * [Filtering kubectl Events](#filtering-kubectl-events)
 * [Unrecognized VM option](#unrecognized-vm-option)
 
@@ -51,7 +51,7 @@ Caused by: org.apache.bookkeeper.client.BKException$ZKException: Error while usi
         at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:630)
         at org.apache.zookeeper.ClientCnxn$EventThread.run(ClientCnxn.java:510)
 ```
-This issue is happening because `pravegaclustername` is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in bookkeeper configmap (https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
+This issue is happening because name of the pravega cluster (which can be seen with the output of kubectl get pravegacluster) is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in [bookkeeper configmap](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
 
 # Controller pod not in ready state
 
@@ -88,9 +88,18 @@ Error from server (unsupported upgrade from version 0.8.0-2640.e4c436ba9 to 0.9.
 ```
 We need to make sure that supported versions are present in configmap as `0.8.0:0.9.0`. If the entries are missing, we have to add these options in the configmap by enabling test mode as follows while installing Operator
 
+If the version from which we are triggering upgrade is present in configmap, use the below command.
+
+```
+helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.version="0.9.0"
+```
+
+If the version from which we are triggering upgrade and the version to which upgrade is performed are not present in configmap use the below command
+
 ```
 helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.fromVersion="0.8.0" --set testmode.version="0.9.0"
 ```
+
 Alternatively, we can edit the configmap and add entry as `0.8.0:0.8.0,0.9.0` in the configmap and restart the pravega-operator pod
 
 ## NFS volume mount failure: wrong fs type
@@ -239,7 +248,7 @@ while installing operator, if the operator pod goes in `ContainerCreating` state
 ## Recover Operator when node fails
 
 If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
-not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/master/doc/proposals/leader-for-life.md).
+not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/v0.17.x/doc/proposals/leader-for-life.md).
 
 To make it work, the cluster admin will need to delete the lock by running
 
