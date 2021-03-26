@@ -53,7 +53,7 @@ Caused by: org.apache.bookkeeper.client.BKException$ZKException: Error while usi
 ```
 This issue is happening because name of the pravega cluster (which can be seen with the output of `kubectl get pravegacluster`) is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in [bookkeeper configmap](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
 
-# Controller pod not in ready state
+## Controller pod not in ready state
 
 While installing pravega, if the controller pod goes in `0/1` state as below, it can be due to meta data mismatch in znode
 
