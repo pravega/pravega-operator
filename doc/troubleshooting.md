@@ -210,9 +210,9 @@ strategy to upgrade pod one at a time. This strategy will use a new replicaset f
 old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
 replicaset, thus the logs for the old pod cannot be obtained using `kubectl logs`.
 
-## Collecting log files for crashed pod
+## Collecting logs for crashed pod
 
-For collecting log files for crashed pod, use the below command
+For collecting logs for crashed pod, use the below command
 
 ```
 kubectl logs <podname> --previous
