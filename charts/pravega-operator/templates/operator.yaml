@@ -31,6 +31,8 @@ spec:
         args: [-test]
         {{- end }}
         env:
+        - name: LOG_LEVEL
+          value: "{{ .Values.debugLevel }}"
         - name: WATCH_NAMESPACE
           value: "{{ .Values.watchNamespace }}"
         - name: POD_NAME

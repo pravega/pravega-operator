@@ -13,12 +13,14 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
+	"github.com/rs/zerolog"
 	zerologs "github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +39,17 @@ type componentSyncVersionFun struct {
 
 // upgrade
 func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCluster) (err error) {
+	logLevel, ok := os.LookupEnv("LOG_LEVEL")
+	if !ok {
+		logLevel = "debug"
+	}
+
+	level, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		panic(err)
+	}
+	zerolog.SetGlobalLevel(level)
+
 	defer func() {
 		r.client.Status().Update(context.TODO(), p)
 	}()

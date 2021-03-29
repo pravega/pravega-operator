@@ -13,6 +13,7 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -20,6 +21,7 @@ import (
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
+	"github.com/rs/zerolog"
 	zerologs "github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +57,17 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
+	logLevel, ok := os.LookupEnv("LOG_LEVEL")
+	if !ok {
+		logLevel = "debug"
+	}
+
+	level, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		panic(err)
+	}
+	zerolog.SetGlobalLevel(level)
+
 	c, err := controller.New("pravegacluster-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err

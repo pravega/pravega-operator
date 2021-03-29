@@ -50,6 +50,9 @@ webhookCert:
 ## An empty string means all namespaces.
 watchNamespace: ""
 
+##Specify the loging level used by operator
+debugLevel: "debug"
+
 hooks:
   backoffLimit: 10
   image:
