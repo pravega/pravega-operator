@@ -266,7 +266,7 @@ func IsPodReady(pod *corev1.Pod) bool {
 }
 
 func IsPodFaulty(pod *corev1.Pod) (bool, error) {
-	if pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
+	if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
 		pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
 		return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
 	}
