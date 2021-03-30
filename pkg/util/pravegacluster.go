@@ -12,12 +12,14 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 
 	v "github.com/hashicorp/go-version"
+	"github.com/rs/zerolog"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +35,19 @@ const (
 
 func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
+}
+
+func LogLevel() zerolog.Level {
+	logLevel, ok := os.LookupEnv("LOG_LEVEL")
+	if !ok {
+		logLevel = "debug"
+	}
+
+	level, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		panic(err)
+	}
+	return level
 }
 
 //function to check if the version is below 0.7 or not

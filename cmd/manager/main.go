@@ -23,13 +23,12 @@ import (
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
+	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/pravega/pravega-operator/pkg/version"
 	"github.com/rs/zerolog"
-	zerologs "github.com/rs/zerolog/log"
-	log "github.com/sirupsen/logrus"
+	log "github.com/rs/zerolog/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -48,24 +47,15 @@ func init() {
 }
 
 func printVersion() {
-	log.Printf("pravega-operator Version: %v", version.Version)
-	log.Printf("Git SHA: %s", version.GitSHA)
-	log.Printf("Go Version: %s", runtime.Version())
-	log.Printf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
-	log.Printf("operator-sdk Version: %v", sdkVersion.Version)
+	log.Info().Msgf("pravega-operator Version: %v", version.Version)
+	log.Info().Msgf("Git SHA: %s", version.GitSHA)
+	log.Info().Msgf("Go Version: %s", runtime.Version())
+	log.Info().Msgf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
+	log.Info().Msgf("operator-sdk Version: %v", sdkVersion.Version)
 }
 
 func main() {
-	logLevel, ok := os.LookupEnv("LOG_LEVEL")
-	if !ok {
-		panic("missing LOG_LEVEL environment variable")
-	}
-
-	level, err := zerolog.ParseLevel(logLevel)
-	if err != nil {
-		panic(err)
-	}
-	zerolog.SetGlobalLevel(level)
+	zerolog.SetGlobalLevel(util.LogLevel())
 
 	flag.Parse()
 	printVersion()
@@ -75,18 +65,18 @@ func main() {
 	}
 
 	if controllerconfig.TestMode {
-		zerologs.Warn().Msg("----- Running in test mode. Make sure you are NOT in production -----")
+		log.Warn().Msg("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		zerologs.Error().Err(err).Msg("failed to get watch namespace")
+		log.Error().Err(err).Msg("failed to get watch namespace")
 	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		zerologs.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("")
 	}
 
 	// Become the leader before proceeding
@@ -96,16 +86,16 @@ func main() {
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
 
 	if err != nil {
-		zerologs.Fatal().
+		log.Fatal().
 			Err(err).
 			Msg("")
 	}
 
-	zerologs.Info().Msg("Registering Components")
+	log.Info().Msg("Registering Components")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		zerologs.Fatal().
+		log.Fatal().
 			Err(err).
 			Msg("")
 
@@ -113,7 +103,7 @@ func main() {
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		zerologs.Fatal().
+		log.Fatal().
 			Err(err).
 			Msg("")
 	}
@@ -121,16 +111,16 @@ func main() {
 	v1beta1.Mgr = mgr
 	if webhookFlag {
 		if err := (&v1beta1.PravegaCluster{}).SetupWebhookWithManager(mgr); err != nil {
-			zerologs.Error().Err(err).Msgf("unable to create webhook %s", err.Error())
+			log.Error().Err(err).Msgf("unable to create webhook %s", err.Error())
 			os.Exit(1)
 		}
 	}
 
-	zerologs.Info().Msg("Starting the Cmd")
+	log.Info().Msg("Starting the Cmd")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		zerologs.Fatal().
+		log.Fatal().
 			Err(err).
 			Msg("manager exited non-zero")
 	}

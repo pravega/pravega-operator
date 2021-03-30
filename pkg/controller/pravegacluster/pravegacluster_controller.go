@@ -13,7 +13,6 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -22,7 +21,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/rs/zerolog"
-	zerologs "github.com/rs/zerolog/log"
+	log "github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -57,16 +56,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	logLevel, ok := os.LookupEnv("LOG_LEVEL")
-	if !ok {
-		logLevel = "debug"
-	}
-
-	level, err := zerolog.ParseLevel(logLevel)
-	if err != nil {
-		panic(err)
-	}
-	zerolog.SetGlobalLevel(level)
+	zerolog.SetGlobalLevel(util.LogLevel())
 
 	c, err := controller.New("pravegacluster-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -98,7 +88,7 @@ type ReconcilePravegaCluster struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	zerologs.Info().Msgf("Reconciling PravegaCluster %s", fmt.Sprintf("%s/%s", request.Namespace, request.Name))
+	log.Info().Msgf("Reconciling PravegaCluster %s", fmt.Sprintf("%s/%s", request.Namespace, request.Name))
 
 	// Fetch the PravegaCluster instance
 	pravegaCluster := &pravegav1beta1.PravegaCluster{}
@@ -108,20 +98,20 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			zerologs.Info().Msgf("PravegaCluster %s not found. Ignoring since object must be deleted", fmt.Sprintf("%s/%s", request.Namespace, request.Name))
+			log.Info().Msgf("PravegaCluster %s not found. Ignoring since object must be deleted", fmt.Sprintf("%s/%s", request.Namespace, request.Name))
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		zerologs.Error().Err(err).Msg("failed to get PravegaCluster:")
+		log.Error().Err(err).Msg("failed to get PravegaCluster:")
 		return reconcile.Result{}, err
 	}
 
 	// Set default configuration for unspecified values
 	changed := pravegaCluster.WithDefaults()
 	if changed {
-		zerologs.Info().Msgf("Setting default settings for pravega-cluster: %s", request.Name)
+		log.Info().Msgf("Setting default settings for pravega-cluster: %s", request.Name)
 		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
-			zerologs.Error().Err(err).Msg("Error applying defaults on Pravega Cluster :")
+			log.Error().Err(err).Msg("Error applying defaults on Pravega Cluster :")
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{Requeue: true}, nil
@@ -129,7 +119,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 	err = r.run(pravegaCluster)
 	if err != nil {
-		zerologs.Error().Err(err).Msgf("failed to reconcile pravega cluster (%s):", pravegaCluster.Name)
+		log.Error().Err(err).Msgf("failed to reconcile pravega cluster (%s):", pravegaCluster.Name)
 		return reconcile.Result{}, err
 	}
 	return reconcile.Result{RequeueAfter: ReconcileTime}, nil
@@ -206,7 +196,7 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 				event := p.NewApplicationEvent("ZKMETA_CLEANUP_ERROR", "ZK Metadata Cleanup Failed", message, "Error")
 				pubErr := r.client.Create(context.TODO(), event)
 				if pubErr != nil {
-					zerologs.Info().Msgf("Error publishing zk metadata cleanup failure event to k8s. %v", pubErr)
+					log.Info().Msgf("Error publishing zk metadata cleanup failure event to k8s. %v", pubErr)
 				}
 				return fmt.Errorf(message)
 			}
@@ -447,7 +437,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 							return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", pod.Name)
 						}
 						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
-						zerologs.Info().Msgf("waiting for %v pod to be deleted", pod.Name)
+						log.Info().Msgf("waiting for %v pod to be deleted", pod.Name)
 					}
 					start = time.Now()
 					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
@@ -456,7 +446,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 							return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", pod.Name)
 						}
 						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
-						zerologs.Info().Msgf("waiting for %v pod to be in ready state", pod.Name)
+						log.Info().Msgf("waiting for %v pod to be in ready state", pod.Name)
 					}
 				}
 			}
@@ -480,7 +470,7 @@ func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1beta1.Pravega
 func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster) (err error) {
 	err = r.deployController(p)
 	if err != nil {
-		zerologs.Error().Err(err).Msg("failed to deploy controller:")
+		log.Error().Err(err).Msg("failed to deploy controller:")
 		return err
 	}
 
@@ -490,7 +480,7 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 
 		err = r.deploySegmentStore(p)
 		if err != nil {
-			zerologs.Error().Err(err).Msg("failed to deploy segment store: ")
+			log.Error().Err(err).Msg("failed to deploy segment store: ")
 			return err
 		}
 
@@ -525,7 +515,7 @@ func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) er
 	}
 	// delete sts, if found
 	r.client.Delete(context.TODO(), sts)
-	zerologs.Info().Msgf("Deleted old SegmentStore STS %s", sts.Name)
+	log.Info().Msgf("Deleted old SegmentStore STS %s", sts.Name)
 	return nil
 }
 
@@ -580,7 +570,7 @@ func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta
 				return fmt.Errorf("failed to get external service (%s): %v", svcName, err)
 			}
 			r.client.Delete(context.TODO(), extService)
-			zerologs.Info().Msgf("Deleted old SegmentStore external service %s", extService)
+			log.Info().Msgf("Deleted old SegmentStore external service %s", extService)
 		}
 	}
 	return nil
@@ -620,7 +610,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			}
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
-				zerologs.Info().Msgf("Deleting SSS STS as it has old version owner ref.")
+				log.Info().Msgf("Deleting SSS STS as it has old version owner ref.")
 				err = r.client.Delete(context.TODO(), sts)
 				if err != nil {
 					return err
@@ -943,7 +933,7 @@ func (r *ReconcilePravegaCluster) rollbackFailedUpgrade(p *pravegav1beta1.Praveg
 	if r.isRollbackTriggered(p) {
 		// start rollback to previous version
 		previousVersion := p.Status.GetLastVersion()
-		zerologs.Info().Msgf("Rolling back to last cluster version  %v", previousVersion)
+		log.Info().Msgf("Rolling back to last cluster version  %v", previousVersion)
 		//Rollback cluster to previous version
 		return r.rollbackClusterVersion(p, previousVersion)
 	}

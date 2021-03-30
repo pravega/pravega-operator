@@ -66,3 +66,4 @@ The following table lists the configurable parameters of the pravega-operator ch
 | `webhookCert.certName` | Name of the certificate, if generate is set to false | `selfsigned-cert` |
 | `webhookCert.secretName` | Name of the secret created by the certificate, if generate is set to false | `selfsigned-cert-tls` |
 | `watchNamespace` | Namespaces to be watched  | `""` |
+| `logLevel` | Specify the loging level used by operator  | `"debug"` |

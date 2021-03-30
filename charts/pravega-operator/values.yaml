@@ -51,7 +51,7 @@ webhookCert:
 watchNamespace: ""
 
 ##Specify the loging level used by operator
-debugLevel: "debug"
+logLevel: "debug"
 
 hooks:
   backoffLimit: 10

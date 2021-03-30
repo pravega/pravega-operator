@@ -13,7 +13,6 @@ package pravegacluster
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"time"
 
@@ -21,7 +20,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/rs/zerolog"
-	zerologs "github.com/rs/zerolog/log"
+	log "github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,16 +38,7 @@ type componentSyncVersionFun struct {
 
 // upgrade
 func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCluster) (err error) {
-	logLevel, ok := os.LookupEnv("LOG_LEVEL")
-	if !ok {
-		logLevel = "debug"
-	}
-
-	level, err := zerolog.ParseLevel(logLevel)
-	if err != nil {
-		panic(err)
-	}
-	zerolog.SetGlobalLevel(level)
+	zerolog.SetGlobalLevel(util.LogLevel())
 
 	defer func() {
 		r.client.Status().Update(context.TODO(), p)
@@ -73,25 +63,25 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCl
 	if upgradeCondition.Status == corev1.ConditionTrue {
 		// Upgrade process already in progress
 		if p.Status.TargetVersion == "" {
-			zerologs.Info().Msgf("syncing to an unknown version: cancelling upgrade process")
+			log.Info().Msgf("syncing to an unknown version: cancelling upgrade process")
 			return r.clearUpgradeStatus(p)
 		}
 
 		if p.Status.TargetVersion == p.Status.CurrentVersion {
-			zerologs.Info().Msgf("syncing to version '%s' completed", p.Status.TargetVersion)
+			log.Info().Msgf("syncing to version '%s' completed", p.Status.TargetVersion)
 			return r.clearUpgradeStatus(p)
 		}
 
 		syncCompleted, err := r.syncComponentsVersion(p)
 		if err != nil {
-			zerologs.Error().Err(err).Msgf("error syncing cluster version, upgrade failed.")
+			log.Error().Err(err).Msgf("error syncing cluster version, upgrade failed.")
 			p.Status.SetErrorConditionTrue("UpgradeFailed", err.Error())
 			// emit an event for Upgrade Failure
 			message := fmt.Sprintf("Error Upgrading from version %v to %v. %v", p.Status.CurrentVersion, p.Status.TargetVersion, err.Error())
 			event := p.NewEvent("UPGRADE_ERROR", pravegav1beta1.UpgradeErrorReason, message, "Error")
 			pubErr := r.client.Create(context.TODO(), event)
 			if pubErr != nil {
-				zerologs.Info().Msgf("Error publishing Upgrade Failure event to k8s. %v", pubErr)
+				log.Info().Msgf("Error publishing Upgrade Failure event to k8s. %v", pubErr)
 			}
 			r.clearUpgradeStatus(p)
 			return err
@@ -101,7 +91,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCl
 			// All component versions have been synced
 			p.Status.AddToVersionHistory(p.Status.TargetVersion)
 			p.Status.CurrentVersion = p.Status.TargetVersion
-			zerologs.Info().Msgf("Upgrade completed for all pravega components.")
+			log.Info().Msgf("Upgrade completed for all pravega components.")
 		}
 		return nil
 	}
@@ -116,7 +106,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCl
 		// skip this check when cluster is in RollbackFailed state
 		if readyCondition == nil || readyCondition.Status != corev1.ConditionTrue {
 			r.clearUpgradeStatus(p)
-			zerologs.Info().Msgf("cannot trigger upgrade if there are unready pods")
+			log.Info().Msgf("cannot trigger upgrade if there are unready pods")
 			return nil
 		}
 	} else {
@@ -125,7 +115,7 @@ func (r *ReconcilePravegaCluster) syncClusterVersion(p *pravegav1beta1.PravegaCl
 	}
 
 	// Need to sync cluster versions
-	zerologs.Info().Msgf("syncing cluster version from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
+	log.Info().Msgf("syncing cluster version from %s to %s", p.Status.CurrentVersion, p.Spec.Version)
 	// Setting target version and condition.
 	// The upgrade process will start on the next reconciliation
 	p.Status.TargetVersion = p.Spec.Version
@@ -157,13 +147,13 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1beta1.Prave
 	if rollbackCondition == nil || rollbackCondition.Status != corev1.ConditionTrue {
 		// We're in the first iteration for Rollback
 		// Add Rollback Condition to Cluster Status
-		zerologs.Info().Msgf("Updating Target Version to  %v", version)
+		log.Info().Msgf("Updating Target Version to  %v", version)
 		p.Status.TargetVersion = version
 		p.Status.SetRollbackConditionTrue("", "")
 		updateErr := r.client.Status().Update(context.TODO(), p)
 		if updateErr != nil {
 			p.Status.SetRollbackConditionFalse()
-			zerologs.Info().Msgf("Error updating cluster: %v", updateErr.Error())
+			log.Info().Msgf("Error updating cluster: %v", updateErr.Error())
 			return fmt.Errorf("Error updating cluster status. %v", updateErr)
 		}
 		return nil
@@ -178,10 +168,10 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1beta1.Prave
 		event := p.NewEvent("ROLLBACK_ERROR", pravegav1beta1.RollbackErrorReason, message, "Error")
 		pubErr := r.client.Create(context.TODO(), event)
 		if pubErr != nil {
-			zerologs.Info().Msgf("Error publishing ROLLBACK_ERROR event to k8s. %v", pubErr)
+			log.Info().Msgf("Error publishing ROLLBACK_ERROR event to k8s. %v", pubErr)
 		}
 		r.clearRollbackStatus(p)
-		zerologs.Info().Msgf("Error rolling back to cluster version %v. Reason: %v", version, err)
+		log.Info().Msgf("Error rolling back to cluster version %v. Reason: %v", version, err)
 		//r.client.Status().Update(context.TODO(), p)
 		return err
 	}
@@ -192,14 +182,14 @@ func (r *ReconcilePravegaCluster) rollbackClusterVersion(p *pravegav1beta1.Prave
 		// Set Error/UpgradeFailed Condition to 'false', so rollback is not triggered again
 		p.Status.SetErrorConditionFalse()
 		r.clearRollbackStatus(p)
-		zerologs.Info().Msgf("Rollback to version %v completed for all pravega components.", version)
+		log.Info().Msgf("Rollback to version %v completed for all pravega components.", version)
 	}
 	//r.client.Status().Update(context.TODO(), p)
 	return nil
 }
 
 func (r *ReconcilePravegaCluster) clearRollbackStatus(p *pravegav1beta1.PravegaCluster) (err error) {
-	zerologs.Info().Msgf("clearRollbackStatus")
+	log.Info().Msgf("clearRollbackStatus")
 	p.Status.SetRollbackConditionFalse()
 	p.Status.TargetVersion = ""
 	// need to deep copy the status struct, otherwise it will be overwritten
@@ -230,7 +220,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1beta1.Praveg
 		startIndex := len(componentSyncFuncs) - 1
 		// update components in reverse order
 		for i := startIndex; i >= 0; i-- {
-			zerologs.Info().Msgf("Rollback: syncing component %v", i)
+			log.Info().Msgf("Rollback: syncing component %v", i)
 			component := componentSyncFuncs[i]
 			synced, err := r.syncComponent(component, p)
 			if !synced {
@@ -245,7 +235,7 @@ func (r *ReconcilePravegaCluster) syncComponentsVersion(p *pravegav1beta1.Praveg
 			}
 		}
 	}
-	zerologs.Info().Msgf("Version sync completed for all components.")
+	log.Info().Msgf("Version sync completed for all components.")
 	return true, nil
 }
 
@@ -260,7 +250,7 @@ func (r *ReconcilePravegaCluster) syncComponent(component componentSyncVersionFu
 		// Do not continue with the next component until this one is done
 		return false, nil
 	}
-	zerologs.Info().Msgf("%s version sync has been completed", component.name)
+	log.Info().Msgf("%s version sync has been completed", component.name)
 	return true, nil
 }
 
@@ -282,7 +272,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1beta1.Praveg
 
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
-		zerologs.Info().Msgf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
+		log.Info().Msgf("updating deployment (%s) pod template image to '%s'", deploy.Name, targetImage)
 
 		configMap := pravega.MakeControllerConfigMap(p)
 		controllerutil.SetControllerReference(p, configMap, r.scheme)
@@ -301,7 +291,7 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1beta1.Praveg
 	}
 
 	// Pod template already updated
-	zerologs.Info().Msgf("deployment (%s) status: %d updated, %d ready, %d target", deploy.Name,
+	log.Info().Msgf("deployment (%s) status: %d updated, %d ready, %d target", deploy.Name,
 		deploy.Status.UpdatedReplicas, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
 
 	// Check whether the upgrade is in progress or has completed
@@ -351,7 +341,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 		p.Status.UpdateProgress(pravegav1beta1.UpdatingSegmentstoreReason, "0")
 		// Need to update pod template
 		// This will trigger the rolling upgrade process
-		zerologs.Info().Msgf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
+		log.Info().Msgf("updating statefulset (%s) template image to '%s'", sts.Name, targetImage)
 
 		configMap := pravega.MakeSegmentstoreConfigMap(p)
 		controllerutil.SetControllerReference(p, configMap, r.scheme)
@@ -371,7 +361,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 	}
 
 	// Pod template already updated
-	zerologs.Info().Msgf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
+	log.Info().Msgf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
 	// Check whether the upgrade is in progress or has completed
 	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
@@ -407,7 +397,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 			return false, fmt.Errorf("could not obtain outdated pod")
 		}
 
-		zerologs.Info().Msgf("upgrading pod: %s", pod.Name)
+		log.Info().Msgf("upgrading pod: %s", pod.Name)
 
 		err = r.client.Delete(context.TODO(), pod)
 		if err != nil {
@@ -436,7 +426,7 @@ func (r *ReconcilePravegaCluster) IsAbove07STSPresent(p *pravegav1beta1.PravegaC
 		if errors.IsNotFound(err) {
 			return false
 		}
-		zerologs.Error().Err(err).Msg("failed to get StatefulSet:")
+		log.Error().Err(err).Msg("failed to get StatefulSet:")
 		return false
 	}
 	return true
@@ -501,7 +491,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1beta1.
 					*newsts.Spec.Replicas = 0
 					err2 := r.client.Create(context.TODO(), newsts)
 					if err2 != nil {
-						zerologs.Error().Err(err).Msg("failed to create StatefulSet:")
+						log.Error().Err(err).Msg("failed to create StatefulSet:")
 						return false, err2
 					}
 					return false, err
@@ -510,11 +500,11 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1beta1.
 			*newsts.Spec.Replicas = 0
 			err2 := r.client.Create(context.TODO(), newsts)
 			if err2 != nil {
-				zerologs.Error().Err(err).Msg("failed to create StatefulSet:")
+				log.Error().Err(err).Msg("failed to create StatefulSet:")
 				return false, err2
 			}
 		} else {
-			zerologs.Error().Err(err).Msg("failed to get StatefulSet: ")
+			log.Error().Err(err).Msg("failed to get StatefulSet: ")
 			return false, err
 		}
 	}
@@ -537,7 +527,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersionTo07(p *pravegav1beta1.
 				return true, nil
 			}
 		}
-		zerologs.Error().Err(err).Msg("failed to get StatefulSet: ")
+		log.Error().Err(err).Msg("failed to get StatefulSet: ")
 		return false, err
 	}
 
