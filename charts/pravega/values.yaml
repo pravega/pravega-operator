@@ -14,10 +14,10 @@ authentication:
   enabled: false
   ## passwordAuthSecret is ignored if authentication is disabled
   passwordAuthSecret:
-  #segmentStoreToken is ignored if authentication is disabled
-  segmentStoreTokenSecret:
-  #controllerTokenSecret is ignored if authentication is disabled
-  controllerTokenSecret:
+  ##segmentStoreToken is ignored if authentication is disabled
+  #segmentStoreTokenSecret:
+  ##controllerTokenSecret is ignored if authentication is disabled
+  #controllerTokenSecret:
 
 zookeeperUri: zookeeper-client:2181
 bookkeeperUri: bookkeeper-bookie-headless:3181
@@ -45,7 +45,7 @@ serviceAccount:
 
 controller:
   replicas: 1
-  maxUnavailableControllerReplicas: 1
+  #maxUnavailableControllerReplicas: 1
   resources:
     requests:
       cpu: 500m
@@ -66,7 +66,7 @@ controller:
 
 segmentStore:
   replicas: 1
-  maxUnavailableSegmentStoreReplicas: 1
+  #maxUnavailableSegmentStoreReplicas: 1
   secret: {}
     # name:
     # path:

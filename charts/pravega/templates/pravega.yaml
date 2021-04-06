@@ -24,10 +24,13 @@ spec:
     enabled: {{ .Values.authentication.enabled }}
     {{- if .Values.authentication.enabled }}
     passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
+    {{- if .Values.authentication.segmentStoreTokenSecret }}
     segmentStoreTokenSecret: {{ .Values.authentication.segmentStoreTokenSecret }}
+    {{- end }}
+    {{- if .Values.authentication.controllerTokenSecret }}
     controllerTokenSecret: {{ .Values.authentication.controllerTokenSecret }}
     {{- end }}
-
+    {{- end }}
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}
@@ -88,13 +91,17 @@ spec:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
+    {{- if .Values.controller.maxUnavailableControllerReplicas }}
     maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableControllerReplicas }}
+    {{- end }}
     {{- if .Values.controller.resources }}
     controllerResources:
 {{ toYaml .Values.controller.resources | indent 6 }}
     {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
+    {{- if .Values.segmentStore.maxUnavailableSegmentStoreReplicas }}
     maxUnavailableSegmentStoreReplicas: {{ .Values.segmentStore.maxUnavailableSegmentStoreReplicas }}
+    {{- end }}
     {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
 {{ toYaml .Values.segmentStore.resources | indent 6 }}
