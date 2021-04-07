@@ -124,7 +124,7 @@ spec:
             name: metrics
           command:
           - zookeeper-operator
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
           - name: WATCH_NAMESPACE
             value: ""
@@ -145,6 +145,7 @@ spec:
   image:
     repository: "pravega/zookeeper"
     tag: latest
+    pullPolicy: IfNotPresent
   replicas: 1
   persistence:
     reclaimPolicy: Delete
