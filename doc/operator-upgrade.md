@@ -110,8 +110,6 @@ where:
 
 ### Triggering the upgrade
 
-#### Upgrade via helm
-
 The upgrade to Operator 0.5.0 can be triggered using the following command
 ```
 helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=0.5.0 --set webhookCert.crt=[TLS_CRT] --set webhookCert.certName=[CERT_NAME] --set webhookCert.secretName=[SECRET_NAME]
@@ -138,10 +136,6 @@ This script patches the `PravegaCluster` and the newly created `BookkeeperCluste
 5. **[NAMESPACE]** is the namespace in which PravegaCluster and BookkeeperCluster resources are deployed (this is an optional parameter and its default value is `default`).
 6. **[ZOOKEEPER_SVC_NAME]** is the name of the zookeeper client service (this is an optional parameter and its default value is `zookeeper-client`).
 7. **[BOOKKEEPER_REPLICA_COUNT]** is the number of replicas in the BookkeeperCluster (this is an optional parameter and its default value is `3`).
-
-#### Upgrade manually
-
-To manually trigger the upgrade to Operator 0.5.0, run the script `operatorUpgrade.sh` under [tools](https://github.com/pravega/pravega-operator/blob/master/tools) folder. This script patches the Pravega Cluster CRD and creates necessary K8s artifacts, needed by 0.5.0 Operator, prior to triggering the upgrade by updating the image tag in Operator deployment.
 
 ### How to check for successful upgrade completion
 

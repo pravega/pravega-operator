@@ -2,7 +2,7 @@
 ## This is a YAML-formatted file.
 ## Declare variables to be passed into your templates.
 
-version: 0.8.0
+version: 0.9.0
 
 tls: {}
   # secret:

@@ -56,7 +56,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.7.0"
+	DefaultPravegaVersion = "0.9.0"
 )
 
 func init() {

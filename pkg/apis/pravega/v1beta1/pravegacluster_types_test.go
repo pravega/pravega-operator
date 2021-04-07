@@ -65,8 +65,8 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.ExternalAccess).ShouldNot(BeNil())
 		})
 
-		It("should set version to 0.7.0", func() {
-			Ω(p.Spec.Version).Should(Equal("0.7.0"))
+		It("should set version to 0.9.0", func() {
+			Ω(p.Spec.Version).Should(Equal("0.9.0"))
 		})
 
 		It("should set pravega spec", func() {
@@ -117,14 +117,15 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			file1.WriteString("0.3.0:0.3.0,0.3.1,0.3.2 \n")
 			file1.WriteString("0.3.1:0.3.1,0.3.2 \n")
 			file1.WriteString("0.4.0:0.4.0 \n")
-			file1.WriteString("0.5.0:0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1 \n")
-			file1.WriteString("0.5.1:0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1 \n")
-			file1.WriteString("0.6.0:0.6.0,0.6.1,0.6.2,0.7.0,0.7.1 \n")
-			file1.WriteString("0.6.1:0.6.1,0.6.2,0.7.0,0.7.1  \n")
-			file1.WriteString("0.6.2:0.6.2,0.7.0,0.7.1 \n")
-			file1.WriteString("0.7.0:0.7.0,0.7.1 \n")
-			file1.WriteString("0.7.1:0.7.1 \n")
-			file1.WriteString("0.7.2:0.7.1 \n")
+			file1.WriteString("0.5.0:0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.5.1:0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.6.0:0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.6.1:0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0  \n")
+			file1.WriteString("0.6.2:0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.7.0:0.7.0,0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.7.1:0.7.1,0.8.0,0.9.0 \n")
+			file1.WriteString("0.8.0:0.8.0,0.9.0 \n")
+			file1.WriteString("0.9.0:0.9.0 \n")
 		})
 		Context("Spec version empty", func() {
 			var (
@@ -156,7 +157,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err error
 			)
 			BeforeEach(func() {
-				p.Spec.Version = "0.9.0"
+				p.Spec.Version = "0.8.3"
 				err = p.ValidatePravegaVersion("filename")
 			})
 			It("should return error", func() {
