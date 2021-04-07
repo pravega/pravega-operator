@@ -273,7 +273,7 @@ func IsPodFaulty(pod *corev1.Pod) (bool, error) {
 	for _, container := range pod.Status.ContainerStatuses {
 		if IsPravegaContainer(container) && container.State.Waiting != nil && (container.State.Waiting.Reason == "ImagePullBackOff" ||
 			container.State.Waiting.Reason == "CrashLoopBackOff") {
-			return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+			return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, container.State.Waiting.Reason)
 		}
 	}
 	return false, nil
