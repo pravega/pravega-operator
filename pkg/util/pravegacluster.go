@@ -265,10 +265,16 @@ func IsPodReady(pod *corev1.Pod) bool {
 	return false
 }
 
+func IsPravegaContainer(container corev1.ContainerStatus) bool {
+	return container.Name == "pravega-controller" || container.Name == "pravega-segmentstore"
+}
+
 func IsPodFaulty(pod *corev1.Pod) (bool, error) {
-	if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].State.Waiting != nil && (pod.Status.ContainerStatuses[0].State.Waiting.Reason == "ImagePullBackOff" ||
-		pod.Status.ContainerStatuses[0].State.Waiting.Reason == "CrashLoopBackOff") {
-		return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+	for _, container := range pod.Status.ContainerStatuses {
+		if IsPravegaContainer(container) && container.State.Waiting != nil && (container.State.Waiting.Reason == "ImagePullBackOff" ||
+			container.State.Waiting.Reason == "CrashLoopBackOff") {
+			return true, fmt.Errorf("pod %s update failed because of %s", pod.Name, pod.Status.ContainerStatuses[0].State.Waiting.Reason)
+		}
 	}
 	return false, nil
 }
