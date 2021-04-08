@@ -109,7 +109,7 @@ The following table lists the configurable parameters of the pravega chart and t
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `version` | Pravega version | `0.8.0` |
+| `version` | Pravega version | `0.9.0` |
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
@@ -125,7 +125,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `debugLogging` | Enable debug logging | `false` |
 | `serviceAccount.name` | Service account to be used | `pravega-components` |
 | `controller.replicas` | Number of controller replicas | `1` |
-| `controller.maxUnavailableControllerReplicas` | Number of maxUnavailableControllerReplicas possible for controller pdb | `1` |
+| `controller.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for controller pdb | |
 | `controller.resources.requests.cpu` | CPU requests for controller | `500m` |
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
 | `controller.resources.limits.cpu` | CPU limits for controller | `1000m` |
@@ -137,7 +137,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.labels` | Labels to add to the controller pods | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
-| `segmentStore.maxUnavailableSegmentStoreReplicas` | Number of maxUnavailableSegmentStoreReplicas possible for segmentstore pdb | `1` |
+| `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentstore pdb | |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
 | `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |

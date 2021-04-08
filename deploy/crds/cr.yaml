@@ -3,7 +3,7 @@ kind: "PravegaCluster"
 metadata:
   name: "pravega"
 spec:
-  version: 0.8.0
+  version: 0.9.0
   zookeeperUri: zookeeper-client:2181
   externalAccess:
     enabled: true
