@@ -57,11 +57,16 @@ func testPravegaCluster(t *testing.T) {
 	}
 
 	testFuncs := map[string]func(t *testing.T){
-		"testCreateRecreateCluster": testCreateRecreateCluster,
-		"testScaleCluster":          testScaleCluster,
-		"testUpgradeCluster":        testUpgradeCluster,
-		"testWebhook":               testWebhook,
-		"testCMUpgradeCluster":      testCMUpgradeCluster,
+		"testCreateRecreateCluster":              testCreateRecreateCluster,
+		"testScaleCluster":                       testScaleCluster,
+		"testUpgradeCluster":                     testUpgradeCluster,
+		"testWebhook":                            testWebhook,
+		"testCMUpgradeCluster":                   testCMUpgradeCluster,
+		"testExternalCreateRecreateCluster":      testExternalCreateRecreateCluster,
+		"testCreatePravegaClusterWithTls":        testCreatePravegaClusterWithTls,
+		"testDeletePods":                         testDeletePods,
+		"testRollbackPravegaCluster":             testRollbackPravegaCluster,
+		"testCreatePravegaClusterWithAuthAndTls": testCreatePravegaClusterWithAuthAndTls,
 	}
 
 	for name, f := range testFuncs {

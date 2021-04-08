@@ -1,43 +1,106 @@
 # Troubleshooting
 
-### Table of contents:
+## Pravega Cluster Issues
 
-* [Helm Error: no available release name found](#helm-error-no-available-release-name-found)
+* [Certificate Error: Internal error occurred: failed calling webhook](#certificate-error-internal-error-occurred-failed-calling-webhook)
+* [Segment store in CrashLoopBackOff](#segment-store-in-crashloopbackoff)
+* [Controller pod not in ready state](#controller-pod-not-in-ready-state)
+* [Unsupported Pravega cluster version](#unsupported-pravega-cluster-version)
+* [Unsupported upgrade from version](#unsupported-upgrade-from-version)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
-* [Recover Operator when node fails](#recover-operator-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
-* [Logs missing when Pravega upgrades](Log-missing-when-Pravega-upgrades)
+* [Logs missing when Pravega upgrades](#logs-missing-when-Pravega-upgrades)
+* [Collecting logs for crashed pod](#collecting-logs-for-crashed-pod)
+* [Filtering kubectl Events](#filtering-kubectl-events)
+* [Unrecognized VM option](#unrecognized-vm-option)
 
-## Helm Error: no available release name found
+## Pravega operator Issues
+* [Operator pod in container creating state](#operator-pod-in-container-creating-state)
+* [Recover Operator when node fails](#recover-operator-when-node-fails)
 
-When installing a cluster for the first time using `kubeadm`, the initialization defaults to setting up RBAC controlled access, which messes with permissions needed by Tiller to do installations, scan for installed components, and so on. `helm init` works without issue, but `helm list`, `helm install` and other commands do not work.
+## Certificate Error: Internal error occurred: failed calling webhook
+
+While installing pravega, if we get the error as  below,
+```
+helm install pravega charts/pravega
+Error: Internal error occurred: failed calling webhook "pravegawebhook.pravega.io": Post https://pravega-webhook-svc.default.svc:443/validate-pravega-pravega-io-v1beta1-pravegacluster?timeout=30s: x509: certificate signed by unknown authority
+```
+We need to ensure that certificates are installed before installing the operator. Please refer [prerequisite](../charts/pravega-operator/README.md#Prerequisites)
+
+## Segment store in CrashLoopBackOff
+
+If segmentstore goes in `CrashLoopBackOff` state while installing pravega and if segmentstore pod logs shows as below
 
 ```
-$ helm install stable/nfs-server-provisioner
-Error: no available release name found
+2021-03-17 13:02:39,930 848  [main] ERROR o.a.b.client.BookieWatcherImpl - Failed to get bookie list :
+org.apache.bookkeeper.client.BKException$ZKException: Error while using ZooKeeper
+        at org.apache.bookkeeper.discover.ZKRegistrationClient.lambda$getChildren$0(ZKRegistrationClient.java:212)
+        at org.apache.bookkeeper.zookeeper.ZooKeeperClient$25$1.processResult(ZooKeeperClient.java:1174)
+        at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:630)
+        at org.apache.zookeeper.ClientCnxn$EventThread.run(ClientCnxn.java:510)
+2021-03-17 13:02:39,931 849  [main] ERROR i.p.s.server.host.ServiceStarter - Could not start the Service, Aborting.
+io.pravega.segmentstore.storage.DataLogNotAvailableException: Unable to establish connection to ZooKeeper or BookKeeper.
+        at io.pravega.segmentstore.storage.impl.bookkeeper.BookKeeperLogFactory.initialize(BookKeeperLogFactory.java:116)
+        at io.pravega.segmentstore.server.store.ServiceBuilder.initialize(ServiceBuilder.java:240)
+        at io.pravega.segmentstore.server.host.ServiceStarter.start(ServiceStarter.java:95)
+        at io.pravega.segmentstore.server.host.ServiceStarter.main(ServiceStarter.java:275)
+Caused by: org.apache.bookkeeper.client.BKException$ZKException: Error while using ZooKeeper
+        at org.apache.bookkeeper.discover.ZKRegistrationClient.lambda$getChildren$0(ZKRegistrationClient.java:212)
+        at org.apache.bookkeeper.zookeeper.ZooKeeperClient$25$1.processResult(ZooKeeperClient.java:1174)
+        at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:630)
+        at org.apache.zookeeper.ClientCnxn$EventThread.run(ClientCnxn.java:510)
 ```
-The following workaround can be applied to resolve the issue:
+This issue is happening because name of the pravega cluster (which can be seen with the output of `kubectl get pravegacluster`) is not matching `PRAVEGA_CLUSTER_NAME` provided in the bookkeeper configmap. Due to that it is looking at a wrong path for ledger location in znode. In order to resolve this issue, we have ensure that the cluster name is same as that in [bookkeeper configmap](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/config_map.yaml)
 
-1. Create a service account for the Tiller.
+## Controller pod not in ready state
 
-```
-kubectl create serviceaccount --namespace kube-system tiller
-```
-
-2. Bind that service account to the `cluster-admin` ClusterRole.
+While installing pravega, if the controller pod goes in `0/1` state as below, it can be due to meta data mismatch in znode
 
 ```
-kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+pravega-pravega-controller-68d68796f4-m5w7m             0/1     Running            0          15m
+```
+To resolve this issue, we have to ensure that zookeeper, bookkeeper and longterm storage are recreated before doing the pravega installation.
+
+## Unsupported Pravega cluster version
+
+While installing pravega, if we get the below error
+```
+Error: admission webhook "pravegawebhook.pravega.io" denied the request: unsupported Pravega cluster version 0.10.0-2703.c9b7be114
+```
+We need to make sure the supported versions are present in config map by the following command
+
+`kubectl describe cm supported-versions-map`
+
+If the entries are not there in configmap, we have to add these options in the configmap by enabling test mode as follows while installing operator
+
+```
+helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.version="0.10.0"
 ```
 
-3. Add the service account to the Tiller deployment.
+Alternatively, we can edit the configmap and add entry as `0.10.0:0.10.0` in the configmap and restart the pravega-operator pod
+## Unsupported upgrade from version
+
+While upgrading pravega, if we get the error similar to below
 
 ```
-kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+Error from server (unsupported upgrade from version 0.8.0-2640.e4c436ba9 to 0.9.0-2752.2652549b3): error when applying patch
+```
+We need to make sure that supported versions are present in configmap as `0.8.0:0.9.0`. If the entries are missing, we have to add these options in the configmap by enabling test mode as follows while installing Operator
+
+If the version from which we are triggering upgrade is present in configmap, use the below command.
+
+```
+helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.version="0.9.0"
 ```
 
-The above commands should resolve the errors and `helm install` should work correctly.
+If the version from which we are triggering upgrade and the version to which upgrade is performed are not present in configmap use the below command
+
+```
+helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.fromVersion="0.8.0" --set testmode.version="0.9.0"
+```
+
+Alternatively, we can edit the configmap and add entry as `0.8.0:0.8.0,0.9.0` in the configmap and restart the pravega-operator pod
 
 ## NFS volume mount failure: wrong fs type
 
@@ -69,27 +132,15 @@ When a node failure happens, unlike Deployment Pod, the Statefulset Pod on that 
 This is because Kubernetes guarantees at most once execution of a Statefulset. See the [design](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/storage/pod-safety.md).
 
 If the failed node is not coming back, the cluster admin can manually recover the lost pod of Statefulset.
-To do that, the cluster admin can delete the failed node object in the apiserver by running 
+To do that, the cluster admin can delete the failed node object in the apiserver by running
 ```
 kubectl delete node <node name>
 ```
-After the failed node is deleted from Kubernetes, the Statefulset pods on that node will be rescheduled to other available nodes. 
-
-## Recover Operator when node fails
-
-If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
-not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/master/doc/proposals/leader-for-life.md).
-
-To make it work, the cluster admin will need to delete the lock by running
-```
-kubectl delete configmap pravega-operator-lock
-```
-After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
-be deleted by Deployment controller. 
+After the failed node is deleted from Kubernetes, the Statefulset pods on that node will be rescheduled to other available nodes.
 
 ## External-IP details truncated in older Kubectl Client Versions
 
-When Pravega is deployed with `external-access enabled`, an External-IP is assigned to its controller and segment store services, which is used by clients to access it. The External-IP details can be viewed in the output of the `kubectl get svc`. 
+When Pravega is deployed with `external-access enabled`, an External-IP is assigned to its controller and segment store services, which is used by clients to access it. The External-IP details can be viewed in the output of the `kubectl get svc`.
 However, when using kubectl client version `v1.10.x` or lower, the External-IP for the controller and segment store services appears truncated in the output.
 
 ```
@@ -153,8 +204,56 @@ Events:                   <none>
 
 ## Logs missing when Pravega upgrades
 
-Users may find Pravega logs for old pods to be missing post upgrade. This is because the operator uses the Kubernetes 
+Users may find Pravega logs for old pods to be missing post upgrade. This is because the operator uses the Kubernetes
 [rolling update](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#updating-statefulsets)
-strategy to upgrade pod one at a time. This strategy will use a new replicaset for the update, it will kill one pod in the 
+strategy to upgrade pod one at a time. This strategy will use a new replicaset for the update, it will kill one pod in the
 old replicaset and start a pod in the new replicaset in the meantime. So after upgrading, users are actually using a new
 replicaset, thus the logs for the old pod cannot be obtained using `kubectl logs`.
+
+## Collecting logs for crashed pod
+
+For collecting logs for crashed pod, use the below command
+
+```
+kubectl logs <podname> --previous
+```
+
+## Filtering kubectl Events
+
+For filtering kubernetes events, please use the below command,
+
+```
+kubectl get events --namespace default --field-selector involvedObject.name=<name of the object> --sort-by=.metadata.creationTimestamp
+```
+
+## Unrecognized VM option
+
+While Installing pravega, if the pods didnt come up with error as below,
+
+```
+Unrecognized VM option 'PrintGCDateStamps'
+Error: Could not create the Java Virtual Machine.
+Error: A fatal exception has occurred. Program will exit.
+```
+This is happening because some of default JVM options in operator is not supported by Java version used by pravega. This can be resolved by setting the JVM option `IgnoreUnrecognizedVMOptions` as below.
+
+```
+helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
+```
+
+## Operator pod in container creating state
+
+while installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly.Please refer [prerequisite](../charts/pravega-operator/README.md#Prerequisites)
+
+## Recover Operator when node fails
+
+If the Operator pod is deployed on the node that fails, the pod will be rescheduled to a healthy node. However, the Operator will
+not function properly because it has a leader election locking mechanism. See [here](https://github.com/operator-framework/operator-sdk/blob/v0.17.x/doc/proposals/leader-for-life.md).
+
+To make it work, the cluster admin will need to delete the lock by running
+
+```
+kubectl delete configmap pravega-operator-lock
+```
+After that, the new Operator pod will become the leader. If the node comes up later, the extra Operator pod will
+be deleted by Deployment controller.

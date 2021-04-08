@@ -103,6 +103,54 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 
 	environment = configureTier2Secrets(environment, p.Spec.Pravega)
 
+	var hostPathVolumeMounts []string
+	var emptyDirVolumeMounts []string
+	var ok bool
+
+	if _, ok = p.Spec.Pravega.Options["hostPathVolumeMounts"]; ok {
+		hostPathVolumeMounts = strings.Split(p.Spec.Pravega.Options["hostPathVolumeMounts"], ",")
+	}
+	if _, ok = p.Spec.Pravega.Options["emptyDirVolumeMounts"]; ok {
+		emptyDirVolumeMounts = strings.Split(p.Spec.Pravega.Options["emptyDirVolumeMounts"], ",")
+	}
+
+	var volumes []corev1.Volume
+	if len(hostPathVolumeMounts) > 1 {
+		for _, vm := range hostPathVolumeMounts {
+			s := strings.Split(vm, "=")
+			v := corev1.Volume{
+				Name: s[0],
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: s[1],
+					},
+				},
+			}
+			volumes = append(volumes, v)
+		}
+	}
+	if len(emptyDirVolumeMounts) > 1 {
+		for _, vm := range emptyDirVolumeMounts {
+			s := strings.Split(vm, "=")
+			v := corev1.Volume{
+				Name: s[0],
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+			volumes = append(volumes, v)
+		}
+	} else {
+		// if user did not set emptyDirVolumeMounts
+		v := corev1.Volume{
+			Name: heapDumpName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		volumes = append(volumes, v)
+	}
+
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -120,7 +168,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 				EnvFrom:      environment,
 				Env:          util.DownwardAPIEnv(),
-				VolumeMounts: MakeSegmentStoreVolumeMount(p),
+				VolumeMounts: MakeSegmentStoreVolumeMount(p, hostPathVolumeMounts, emptyDirVolumeMounts),
 				Resources:    *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -156,14 +204,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			},
 		},
 		Affinity: p.Spec.Pravega.SegmentStorePodAffinity,
-		Volumes: []corev1.Volume{
-			{
-				Name: heapDumpName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		},
+		Volumes:  volumes,
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {
@@ -187,20 +228,43 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	return podSpec
 }
 
-func MakeSegmentStoreVolumeMount(p *api.PravegaCluster) []corev1.VolumeMount {
-	volumeMount := []corev1.VolumeMount{
-		{
+func MakeSegmentStoreVolumeMount(p *api.PravegaCluster, hostPathVolumeMounts []string, emptyDirVolumeMounts []string) []corev1.VolumeMount {
+	var volumeMounts []corev1.VolumeMount
+
+	if len(hostPathVolumeMounts) > 1 {
+		for _, vm := range hostPathVolumeMounts {
+			s := strings.Split(vm, "=")
+			v := corev1.VolumeMount{
+				Name:      s[0],
+				MountPath: s[1],
+			}
+			volumeMounts = append(volumeMounts, v)
+		}
+	}
+	if len(emptyDirVolumeMounts) > 1 {
+		for _, vm := range emptyDirVolumeMounts {
+			s := strings.Split(vm, "=")
+			v := corev1.VolumeMount{
+				Name:      s[0],
+				MountPath: s[1],
+			}
+			volumeMounts = append(volumeMounts, v)
+		}
+	} else {
+		// if user did not set emptyDirVolumeMounts
+		v := corev1.VolumeMount{
 			Name:      heapDumpName,
 			MountPath: heapDumpDir,
-		},
+		}
+		volumeMounts = append(volumeMounts, v)
 	}
 	if util.IsVersionBelow07(p.Spec.Version) {
-		volumeMount = append(volumeMount, corev1.VolumeMount{
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      cacheVolumeName,
 			MountPath: cacheVolumeMountPoint,
 		})
 	}
-	return volumeMount
+	return volumeMounts
 }
 
 func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {

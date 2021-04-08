@@ -1,11 +1,10 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: foo-pravega-operator
-  namespace: default 
+  name: bookkeeper-operator
 rules:
 - apiGroups:
-  - pravega.pravega.io
+  - bookkeeper.pravega.io
   resources:
   - "*"
   verbs:
@@ -43,19 +42,13 @@ rules:
   - jobs
   verbs:
   - '*'
-- apiGroups:
-  - bookkeeper.pravega.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
+
 ---
 
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: foo-pravega-operator
-  namespace: default 
+  name: bookkeeper-operator
 rules:
 - apiGroups:
   - ""
@@ -82,17 +75,11 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - pravega.pravega.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
-- apiGroups:
   - bookkeeper.pravega.io
   resources:
   - "*"
   verbs:
-  - "*"  
+  - "*"
 - apiGroups:
   - policy
   resources:
@@ -108,4 +95,3 @@ rules:
   - statefulsets
   verbs:
   - "*"
-

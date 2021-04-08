@@ -1,10 +1,6 @@
-# Pravega Helm Chart
+# Deploying Pravega
 
-Installs [Pravega](https://github.com/pravega/pravega) clusters atop Kubernetes.
-
-## Introduction
-
-This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [Kubernetes](http://kubernetes.io) using the [Helm](https://helm.sh) package manager. The chart can be installed multiple times to create Pravega cluster on multiple namespaces.
+Here, we briefly describe how to [install](#installing-pravega-cluster)/[update](#updating-pravega-cluster)/[uninstall](#uninstalling-pravega-cluster)/[configure](#pravega-configuration) pravega clusters atop kubernetes.
 
 ## Prerequisites
 
@@ -12,38 +8,92 @@ This chart creates a [Pravega](https://github.com/pravega/pravega) cluster in [K
   - Helm 3.2.1+
   - An existing Apache Zookeeper 3.6.1 cluster. This can be easily deployed using our [Zookeeper Operator](https://github.com/pravega/zookeeper-operator)
   - An existing Apache Bookkeeper 4.9.2 cluster. This can be easily deployed using our [BookKeeper Operator](https://github.com/pravega/bookkeeper-operator)
-  - Pravega Operator. You can install it using its own [Helm chart](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator)
+  - Pravega Operator. Please refer [this](../../charts/pravega-operator/README.md)
+  - LongTerm Storage ([options for long term storage](../../doc/longtermstorage.md))
 
-## Installing the Chart
+## Installing Pravega Cluster
 
-To install the pravega chart, use the following commands:
+To install the pravega cluster, use the following commands:
 
 ```
 $ helm repo add pravega https://charts.pravega.io
 $ helm repo update
-$ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
+$ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_SVC] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME]
 ```
 where:
+
 - **[RELEASE_NAME]** is the release name for the pravega chart.
-- **[CLUSTER_NAME]** is the name of the pravega cluster so created. (If [RELEASE_NAME] contains the string `pravega`, `[CLUSTER_NAME] = [RELEASE_NAME]`, else `[CLUSTER_NAME] = [RELEASE_NAME]-pravega`. The [CLUSTER_NAME] can however be overridden by providing `--set fullnameOverride=[CLUSTER_NAME]` along with the helm install command)
-  **Note:** You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration), the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
 - **[VERSION]** can be any stable release version for pravega from 0.5.0 onwards.
-- **[ZOOKEEPER_HOST]** is the host or IP address of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
-- **[BOOKKEEPER_SVC]** is the is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
+- **[ZOOKEEPER_SVC]** is the name of client service of your Zookeeper deployment (e.g. `zookeeper-client:2181`). Multiple Zookeeper URIs can be specified, use a comma-separated list and DO NOT leave any spaces in between (e.g. `zookeeper-0:2181,zookeeper-1:2181,zookeeper-2:2181`).
+- **[BOOKKEEPER_SVC]** is the name of the headless service of your Bookkeeper deployment (e.g. `bookkeeper-bookie-0.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-1.bookkeeper-bookie-headless.default.svc.cluster.local:3181,bookkeeper-bookie-2.bookkeeper-bookie-headless.default.svc.cluster.local:3181`).
 - **[TIER2_NAME]** is the longtermStorage `PersistentVolumeClaim` name (`pravega-tier2` if you created the PVC using the manifest provided).
 
-This command deploys pravega on the Kubernetes cluster in its default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+>Note:  You need to ensure that the [CLUSTER_NAME] is the same value as that provided in the [bookkeeper chart configuration](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper#configuration),the default value for which is `pravega` and can be achieved by either providing the `[RELEASE_NAME] = pravega` or by providing `--set fullnameOverride=pravega` at the time of installing the pravega chart. On the contrary, the default value of [CLUSTER_NAME] in the bookkeeper charts can also be overridden by providing `--set pravegaClusterName=[CLUSTER_NAME]` at the time of installing the bookkeeper chart)
+
+>Note: If we provide [RELEASE_NAME] same as chart name, cluster name will be same as release-name. But if we are providing a different name for release(other than pravega in this case), cluster name will be [RELEASE_NAME]-[chart-name]. However, cluster name can be overridden by providing `--set  fullnameOverride=[CLUSTER_NAME]` along with helm install command.
+
+This command deploys pravega on the Kubernetes cluster in its default configuration. The [configuration](#pravega-configuration) section lists the parameters that can be configured during installation.
 
 >Note: If the underlying pravega operator version is 0.4.5, bookkeeperUri should not be set, and the pravega-bk chart should be used instead of the pravega chart
 
 >Note: If the operator version is 0.5.1 or below and pravega version is 0.9.0 or above, need to set the controller and segment store JVM options as shown below.
 ```
-helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_HOST] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
+helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperUri=[ZOOKEEPER_SVC] --set bookkeeperUri=[BOOKKEEPER_SVC] --set storage.longtermStorage.filesystem.pvc=[TIER2_NAME] --set 'controller.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions}' --set 'segmentStore.jvmOptions={-XX:+UseContainerSupport,-XX:+IgnoreUnrecognizedVMOptions,-Xmx2g,-XX:MaxDirectMemorySize=2g}'
 ```
-Based on the cluster flavours selected,segmentstore memory requirements needs to be adjusted.
 
+Based on the [cluster flavours](values) selected,segmentstore memory requirements needs to be adjusted.
 
-## Uninstalling the Chart
+Once installation is successful, all cluster members should become ready.
+```
+$ kubectl get all -l pravega_cluster=bar-pravega
+NAME                                          READY   STATUS    RESTARTS   AGE
+pod/bar-pravega-controller-64ff87fc49-kqp9k   1/1     Running   0          2m
+pod/bar-pravega-segmentstore-0                1/1     Running   0          2m
+pod/bar-pravega-segmentstore-1                1/1     Running   0          1m
+pod/bar-pravega-segmentstore-2                1/1     Running   0          30s
+
+NAME                                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)              AGE
+service/bar-pravega-controller              ClusterIP   10.23.244.3   <none>        10080/TCP,9090/TCP   2m
+service/bar-pravega-segmentstore-headless   ClusterIP   None          <none>        12345/TCP            2m
+
+NAME                                                    DESIRED   CURRENT   READY   AGE
+replicaset.apps/bar-pravega-controller-64ff87fc49       1         1         1       2m
+
+NAME                                            DESIRED   CURRENT   AGE
+statefulset.apps/bar-pravega-segmentstore       3         3         2m
+```
+
+By default, a `PravegaCluster` instance is only accessible within the cluster through the Controller `ClusterIP` service. From within the Kubernetes cluster, a client can connect to Pravega at:
+
+```
+tcp://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:9090
+```
+
+And the `REST` management interface is available at:
+
+```
+http://[CLUSTER_NAME]-pravega-controller.[NAMESPACE]:10080/
+```
+
+Check out the [external access documentation](../../doc/external-access.md) if your clients need to connect to Pravega from outside Kubernetes.
+
+Check out the [exposing Segmentstore service on single IP address](../..//doc/external-access.md#exposing-segmentstore-service-on-single-ip-address-and-different-ports) if your clients need to connect to all Pravega Segmentstore instances on the same IP address from outside Kubernetes.
+
+## Updating Pravega Cluster
+
+For updating the pravega cluster, use the following command
+
+```
+helm upgrade [RELEASE_NAME]  --version=[VERSION]  --set controller.replicas=2 --set segmentstore.replicas=3
+```
+ we can also update other configurable parameters at run time. For changing log level to DEBUG use the below command.
+
+ ```
+  helm upgrade pravega charts/pravega --set-string options."log\.level"="DEBUG"
+  ```
+Please refer [upgrade](../../doc/upgrade-cluster.md) for upgrading cluster versions.
+
+## Uninstalling Pravega Cluster
 
 To uninstall/delete the pravega chart, use the following command:
 
@@ -53,13 +103,13 @@ $ helm uninstall [RELEASE_NAME]
 
 This command removes all the Kubernetes components associated with the chart and deletes the release.
 
-## Configuration
+## Pravega Configuration
 
 The following table lists the configurable parameters of the pravega chart and their default values.
 
 | Parameter | Description | Default |
 | ----- | ----------- | ------ |
-| `version` | Pravega version | `0.8.0` |
+| `version` | Pravega version | `0.9.0` |
 | `tls` | Pravega security configuration passed to the Pravega processes | `{}` |
 | `authentication.enabled` | Enable authentication to authorize client communication with Pravega | `false` |
 | `authentication.passwordAuthSecret` | Name of Secret containing Password based Authentication Parameters, if authentication is enabled | |
@@ -75,7 +125,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `debugLogging` | Enable debug logging | `false` |
 | `serviceAccount.name` | Service account to be used | `pravega-components` |
 | `controller.replicas` | Number of controller replicas | `1` |
-| `controller.maxUnavailableControllerReplicas` | Number of maxUnavailableControllerReplicas possible for controller pdb | `1` |
+| `controller.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for controller pdb | |
 | `controller.resources.requests.cpu` | CPU requests for controller | `500m` |
 | `controller.resources.requests.memory` | Memory requests for controller | `1Gi` |
 | `controller.resources.limits.cpu` | CPU limits for controller | `1000m` |
@@ -84,9 +134,10 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.affinity` | Specifies scheduling constraints on controller pods | `{}` |
 | `controller.service.type` | Override the controller service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
+| `controller.labels` | Labels to add to the controller pods | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
-| `segmentStore.maxUnavailableSegmentStoreReplicas` | Number of maxUnavailableSegmentStoreReplicas possible for segmentstore pdb | `1` |
+| `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentstore pdb | |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
 | `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |
@@ -100,6 +151,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.service.loadBalancerIP` | It is used to provide a LoadBalancerIP for the segmentStore service | |
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
+| `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |
 | `storage.longtermStorage.ecs` | Configuration to use a Dell EMC ECS system, if long term storage type is ecs | `{}` |

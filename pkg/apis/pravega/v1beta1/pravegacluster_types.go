@@ -56,7 +56,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.7.0"
+	DefaultPravegaVersion = "0.9.0"
 )
 
 func init() {
@@ -1263,12 +1263,22 @@ func (p *PravegaCluster) PravegaControllerServiceURL() string {
 
 func (p *PravegaCluster) LabelsForController() map[string]string {
 	labels := p.LabelsForPravegaCluster()
+	if p.Spec.Pravega != nil && p.Spec.Pravega.ControllerPodLabels != nil {
+		for k, v := range p.Spec.Pravega.ControllerPodLabels {
+			labels[k] = v
+		}
+	}
 	labels["component"] = "pravega-controller"
 	return labels
 }
 
 func (p *PravegaCluster) LabelsForSegmentStore() map[string]string {
 	labels := p.LabelsForPravegaCluster()
+	if p.Spec.Pravega != nil && p.Spec.Pravega.SegmentStorePodLabels != nil {
+		for k, v := range p.Spec.Pravega.SegmentStorePodLabels {
+			labels[k] = v
+		}
+	}
 	labels["component"] = "pravega-segmentstore"
 	return labels
 }

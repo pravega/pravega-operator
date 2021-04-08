@@ -1040,6 +1040,11 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
+                  controllerPodLabels:
+                    additionalProperties:
+                      type: string
+                    description: Labels to be added to the Controller Pods
+                    type: object
                   controllerjvmOptions:
                     description: ControllerJvmOptions is the JVM options for controller.
                       It will be passed to the JVM for performance tuning. If this
@@ -1790,6 +1795,11 @@ spec:
                     format: int32
                     minimum: 0
                     type: integer
+                  rollbacktimeout:
+                    description: This is used to schedule the timeout value for rollback.
+                    format: int32
+                    minimum: 0
+                    type: integer
                   segmentStoreResources:
                     description: SegmentStoreResources specifies the request and limit
                       of resources that segmentStore can have. SegmentStoreResources
@@ -1967,6 +1977,11 @@ spec:
                     additionalProperties:
                       type: string
                     description: Annotations to be added to the external service
+                    type: object
+                  segmentStorePodLabels:
+                    additionalProperties:
+                      type: string
+                    description: Labels to be added to the SegmentStore Pods
                     type: object
                 type: object
               tls:
@@ -2801,6 +2816,11 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
+                  controllerPodLabels:
+                    additionalProperties:
+                      type: string
+                    description: Labels to be added to the Controller Pods
+                    type: object
                   controllerjvmOptions:
                     description: ControllerJvmOptions is the JVM options for controller.
                       It will be passed to the JVM for performance tuning. If this
@@ -2895,6 +2915,11 @@ spec:
                     additionalProperties:
                       type: string
                     description: Annotations to be added to the external service
+                    type: object
+                  segmentStorePodLabels:
+                    additionalProperties:
+                      type: string
+                    description: Labels to be added to the SegmentStore Pods
                     type: object
                   tier2:
                     description: Tier2 is the configuration of Pravega's tier 2 storage.

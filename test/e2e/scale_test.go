@@ -54,7 +54,8 @@ func testScaleCluster(t *testing.T) {
 
 	// Scale up Pravega cluster, increase segment store size by 1
 	pravega.Spec.Pravega.SegmentStoreReplicas = 2
-	podSize = 3
+	pravega.Spec.Pravega.ControllerReplicas = 2
+	podSize = 4
 
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -68,6 +69,7 @@ func testScaleCluster(t *testing.T) {
 
 	// Scale down Pravega cluster back to default
 	pravega.Spec.Pravega.SegmentStoreReplicas = 1
+	pravega.Spec.Pravega.ControllerReplicas = 1
 	podSize = 2
 
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)

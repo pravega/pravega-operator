@@ -24,10 +24,13 @@ spec:
     enabled: {{ .Values.authentication.enabled }}
     {{- if .Values.authentication.enabled }}
     passwordAuthSecret: {{ .Values.authentication.passwordAuthSecret }}
+    {{- if .Values.authentication.segmentStoreTokenSecret }}
     segmentStoreTokenSecret: {{ .Values.authentication.segmentStoreTokenSecret }}
+    {{- end }}
+    {{- if .Values.authentication.controllerTokenSecret }}
     controllerTokenSecret: {{ .Values.authentication.controllerTokenSecret }}
     {{- end }}
-
+    {{- end }}
   version: {{ .Values.version }}
   zookeeperUri: {{ .Values.zookeeperUri }}
   bookkeeperUri: {{ .Values.bookkeeperUri }}
@@ -71,6 +74,8 @@ spec:
     {{- if .Values.controller.service.annotations }}
     controllerSvcAnnotations:
 {{ toYaml .Values.controller.service.annotations | indent 6 }}
+    controllerPodLabels:
+{{ toYaml .Values.controller.labels | indent 6 }}
     {{- end }}
     {{- if .Values.segmentStore.service.type }}
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
@@ -78,19 +83,25 @@ spec:
     {{- if .Values.segmentStore.service.annotations }}
     segmentStoreSvcAnnotations:
 {{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
+    segmentStorePodLabels:
+{{ toYaml .Values.segmentStore.labels | indent 6 }}
     {{- end }}
     {{- end }}
     image:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
-    maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableControllerReplicas }}
+    {{- if .Values.controller.maxUnavailableReplicas }}
+    maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableReplicas }}
+    {{- end }}
     {{- if .Values.controller.resources }}
     controllerResources:
 {{ toYaml .Values.controller.resources | indent 6 }}
     {{- end }}
     segmentStoreReplicas: {{ .Values.segmentStore.replicas }}
-    maxUnavailableSegmentStoreReplicas: {{ .Values.segmentStore.maxUnavailableSegmentStoreReplicas }}
+    {{- if .Values.segmentStore.maxUnavailableReplicas }}
+    maxUnavailableSegmentStoreReplicas: {{ .Values.segmentStore.maxUnavailableReplicas }}
+    {{- end }}
     {{- if .Values.segmentStore.resources }}
     segmentStoreResources:
 {{ toYaml .Values.segmentStore.resources | indent 6 }}

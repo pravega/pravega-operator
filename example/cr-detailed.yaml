@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: "pravega-cluster"
 spec:
-  version: 0.7.0
+  version: 0.9.0
   zookeeperUri: zookeeper-client:2181
 
   # Security configurations for Pravega
