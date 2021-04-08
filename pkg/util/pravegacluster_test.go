@@ -229,7 +229,7 @@ var _ = Describe("pravegacluster", func() {
 				Status: v1.PodStatus{
 					ContainerStatuses: []v1.ContainerStatus{
 						{
-							Name: "test",
+							Name: "pravega-segmentstore",
 							State: v1.ContainerState{
 								Waiting: &v1.ContainerStateWaiting{
 									Reason: "CrashLoopBackOff",
@@ -242,7 +242,7 @@ var _ = Describe("pravegacluster", func() {
 				Status: v1.PodStatus{
 					ContainerStatuses: []v1.ContainerStatus{
 						{
-							Name:  "test",
+							Name:  "pravega-segmentstore",
 							State: v1.ContainerState{},
 						},
 					}},
