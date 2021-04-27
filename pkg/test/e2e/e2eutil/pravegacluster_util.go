@@ -21,6 +21,7 @@ import (
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/util"
 	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -867,6 +868,23 @@ func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.T
 		return fmt.Errorf("External Access is not enabled")
 	}
 	t.Logf("pravega cluster External Acess Validated: %s", pravega.Name)
+	return nil
+}
+
+func CheckServiceExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, svcName string) error {
+	svc := &corev1.Service{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: svcName}, svc)
+	if err != nil {
+		return fmt.Errorf("service doesnt exist: %v", err)
+	}
+	return nil
+}
+func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, stsName string) error {
+	sts := &appsv1.StatefulSet{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: stsName}, sts)
+	if err != nil {
+		return fmt.Errorf("sts doesnt exist: %v", err)
+	}
 	return nil
 }
 
