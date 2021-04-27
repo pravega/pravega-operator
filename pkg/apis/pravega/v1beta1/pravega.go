@@ -201,16 +201,16 @@ type PravegaSpec struct {
 	// The scheduling constraints on Segementstore pods.
 	SegmentStorePodAffinity *corev1.Affinity `json:"segmentStorePodAffinity,omitempty"`
 
-	//This is used to schedule the timeout value for rollback
+	// This is used to schedule the timeout value for rollback
 	RollbackTimeout int32 `json:"rollbacktimeout,omitempty"`
 
-	//This is used as suffix for controller service name
+	// This is used as suffix for controller service name
 	ControllerSvcNameSuffix string `json:"controllerSvcNameSuffix,omitempty"`
 
-	//This is used as suffix for segmentstore sts name
+	// This is used as suffix for segmentstore sts name
 	SegmentStoreStsNameSuffix string `json:"segmentStoreStsNameSuffix,omitempty"`
 
-	//This is used as suffix for segmentstore headless service name
+	// This is used as suffix for segmentstore headless service name
 	SegmentStoreHeadlessSvcNameSuffix string `json:"segmentStoreHeadlessSvcNameSuffix,omitempty"`
 }
 

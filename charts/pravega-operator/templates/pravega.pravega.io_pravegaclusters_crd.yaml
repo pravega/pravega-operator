@@ -1045,7 +1045,7 @@ spec:
                       will automatically assign the default service account in the
                       namespace default
                     type: string
-                  controllerSvceNameSuffix:
+                  controllerSvcNameSuffix:
                     description: This is used as suffix for controller service name
                     type: string
                   controllerSvcAnnotations:

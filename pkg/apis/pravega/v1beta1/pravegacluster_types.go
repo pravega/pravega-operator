@@ -291,10 +291,10 @@ type AuthenticationParameters struct {
 	// optional - used only by PasswordAuthHandler for authentication
 	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
 
-	//name of secret containg TokenSigningKey
+	// name of secret containg TokenSigningKey
 	ControllerTokenSecret string `json:"controllerTokenSecret,omitempty"`
 
-	//name of secret containg TokenSigningKey and AuthToken
+	// name of secret containg TokenSigningKey and AuthToken
 	SegmentStoreTokenSecret string `json:"segmentStoreTokenSecret,omitempty"`
 }
 

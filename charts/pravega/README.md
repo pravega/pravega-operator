@@ -136,6 +136,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
 | `controller.labels` | Labels to add to the controller pods | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
+| `controller.svcNameSuffix` | suffix for controller service name | `pravega-controller` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentstore pdb | |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
@@ -151,6 +152,8 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.service.loadBalancerIP` | It is used to provide a LoadBalancerIP for the segmentStore service | |
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
+| `segmentStore.stsNameSuffix` | suffix for segmentstore sts name | `pravega-segment-store` |
+| `segmentStore.headlessSvcNameSuffix` | suffix for segmentsdtore headless service name | `pravega-segmentstore-headless` |
 | `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |
