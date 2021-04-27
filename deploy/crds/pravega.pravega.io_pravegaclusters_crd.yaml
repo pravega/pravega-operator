@@ -1797,7 +1797,7 @@ spec:
                     description: This is used to schedule the timeout value for rollback.
                     format: int32
                     minimum: 0
-                    type: integer  
+                    type: integer
                   segmentStoreResources:
                     description: SegmentStoreResources specifies the request and limit
                       of resources that segmentStore can have. SegmentStoreResources

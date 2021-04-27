@@ -203,6 +203,15 @@ type PravegaSpec struct {
 
 	//This is used to schedule the timeout value for rollback
 	RollbackTimeout int32 `json:"rollbacktimeout,omitempty"`
+
+	//This is used as suffix for controller service name
+	ControllerSvcNameSuffix string `json:"controllerSvcNameSuffix,omitempty"`
+
+	//This is used as suffix for segmentstore sts name
+	SegmentStoreStsNameSuffix string `json:"segmentStoreStsNameSuffix,omitempty"`
+
+	//This is used as suffix for segmentstore headless service name
+	SegmentStoreHeadlessSvcNameSuffix string `json:"segmentStoreHeadlessSvcNameSuffix,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -317,6 +326,19 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if s.SegmentStorePodLabels == nil {
 		changed = true
 		s.SegmentStorePodLabels = map[string]string{}
+	}
+	if s.ControllerSvcNameSuffix == "" {
+		changed = true
+		s.ControllerSvcNameSuffix = "pravega-controller"
+	}
+
+	if s.SegmentStoreHeadlessSvcNameSuffix == "" {
+		changed = true
+		s.SegmentStoreHeadlessSvcNameSuffix = "pravega-segmentstore-headless"
+	}
+	if s.SegmentStoreStsNameSuffix == "" {
+		changed = true
+		s.SegmentStoreStsNameSuffix = "pravega-segment-store"
 	}
 
 	return changed
