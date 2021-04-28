@@ -48,6 +48,11 @@ func testCreateRecreateCluster(t *testing.T) {
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+	podSize := 2
+	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	g.Expect(err).NotTo(HaveOccurred())
+
 	svcName := fmt.Sprintf("%s-testcontroller", pravega.Name)
 	err = pravega_e2eutil.CheckServiceExists(t, f, ctx, pravega, svcName)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -58,11 +63,6 @@ func testCreateRecreateCluster(t *testing.T) {
 
 	stsName := fmt.Sprintf("%s-segsts", pravega.Name)
 	err = pravega_e2eutil.CheckStsExists(t, f, ctx, pravega, stsName)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
-	podSize := 2
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
