@@ -1,37 +1,44 @@
+---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
 rules:
-- apiGroups:
-  - pravega.pravega.io
-  resources:
-  - "*"
-  verbs:
-  - get
+  - apiGroups:
+      - pravega.pravega.io
+    resources:
+      - "*"
+    verbs:
+      - get
+  - apiGroups:
+      - extensions
+    resources:
+      - "deployments"
+    verbs:
+      - get
 ---
 
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
 subjects:
-- kind: ServiceAccount
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
-  namespace: {{.Release.Namespace}}
+  - kind: ServiceAccount
+    name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
+    namespace: {{.Release.Namespace}}
 roleRef:
   kind: Role
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -39,55 +46,42 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
-
+  {{- if .Values.global.registrySecret }}
+imagePullSecrets:
+  - name: {{ .Values.global.registrySecret }}
+  {{- end }}
 ---
 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   namespace: {{ .Release.Namespace }}
   annotations:
-      "helm.sh/hook": post-install, post-upgrade
-      "helm.sh/hook-weight": "1"
-      "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
+    "helm.sh/hook": post-install, post-upgrade
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, before-hook-creation, hook-failed
 data:
   validations.sh: |
     #!/bin/sh
     set -e
     sleep 30
 
-    kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega.fullname" . }} -o jsonpath='{.status.conditions[?(@.type=="PodsReady")].status}' | grep True
-
-    replicas=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega.fullname" . }} -o jsonpath='{.status.replicas}'`
-    readyReplicas=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega.fullname" . }} -o jsonpath='{.status.readyReplicas}'`
-    currentVersion=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega.fullname" . }} -o jsonpath='{.status.currentVersion}'`
-    targetVersion=`kubectl get PravegaCluster -n {{ .Release.Namespace }} {{ template "pravega.fullname" . }} -o jsonpath='{.spec.version}'`
-
-    echo "PravegaCluster replicas: $currentReplicas"
-    echo "PravegaCluster readyReplicas: $readyReplicas"
-    echo "PravegaCluster currentVersion: $currentVersion"
-    echo "PravegaCluster targetVersion: $targetVersion"
-
-    if [ $readyReplicas != $replicas ]; then
+    if [ -z "$(kubectl api-resources | grep PravegaCluster)" ]; then
         exit 1
-    fi
-
-    if [ $currentVersion != $targetVersion ]; then
-        exit 2
     fi
 ---
 
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ template "pravega.fullname" . }}-post-install-upgrade
+  name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
   namespace: {{ .Release.Namespace }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
@@ -97,21 +91,25 @@ spec:
   backoffLimit: {{ .Values.hooks.backoffLimit }}
   template:
     metadata:
-      name: {{ template "pravega.fullname" . }}-post-install-upgrade
+      name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
     spec:
-      serviceAccountName: {{ template "pravega.fullname" . }}-post-install-upgrade
+      serviceAccountName: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
+      {{- if .Values.global.registrySecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.registrySecret }}
+      {{- end }}
       restartPolicy: Never
       containers:
-      - name: post-install-upgrade-job
-        image: "{{ .Values.hooks.image.repository }}:{{ .Values.hooks.image.tag }}"
-        command:
-          - /scripts/validations.sh
-        volumeMounts:
-          - name: sh
-            mountPath: /scripts
-            readOnly: true
+        - name: post-install-upgrade-job
+          image: "{{ .Values.global.registry }}/{{ .Values.hooks.image.repository }}:{{ .Values.hooks.image.tag }}"
+          command:
+            - /scripts/validations.sh
+          volumeMounts:
+            - name: sh
+              mountPath: /scripts
+              readOnly: true
       volumes:
         - name: sh
           configMap:
-            name: {{ template "pravega.fullname" . }}-post-install-upgrade
+            name: {{ template "pravega-operator.fullname" . }}-post-install-upgrade
             defaultMode: 0555

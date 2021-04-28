@@ -5,13 +5,13 @@ metadata:
   name: {{ template "pravega-operator.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "pravega-operator.commonLabels" . | indent 4 }}
+  {{ include "pravega-operator.commonLabels" . | indent 4 }}
 subjects:
-- kind: ServiceAccount
-  name: {{ .Values.serviceAccount.name }}
-  namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ template "pravega-operator.fullname" . }}
   apiGroup: rbac.authorization.k8s.io
-{{- end }}
+  {{- end }}

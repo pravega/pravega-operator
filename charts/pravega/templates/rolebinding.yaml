@@ -1,17 +1,22 @@
-{{- if .Values.externalAccess.enabled }}
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Values.serviceAccount.name }}
+  name: {{.Release.Name }}-pravega
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "pravega.commonLabels" . | indent 4 }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name}}
+    operator: objectscale-operator
+    product: objectscale
 subjects:
-- kind: ServiceAccount
-  name: {{ .Values.serviceAccount.name }}
-  namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{.Release.Name }}-pravega
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ .Values.serviceAccount.name }}
+  name: {{.Release.Name }}-pravega
   apiGroup: rbac.authorization.k8s.io
-{{- end }}

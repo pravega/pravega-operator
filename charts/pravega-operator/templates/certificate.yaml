@@ -5,20 +5,20 @@ metadata:
   name: {{ template "pravega-operator.fullname" . }}-issuer
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "pravega-operator.commonLabels" . | indent 4 }}
+  {{ include "pravega-operator.commonLabels" . | indent 4 }}
 spec:
   ca:
     secretName: {{ template "pravega-operator.fullname" . }}-key-pair
-{{- end }}
+  {{- end }}
 ---
-{{- if .Values.webhookCert.generate }}
+  {{- if .Values.webhookCert.generate }}
 apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
   name: {{ template "pravega-operator.fullname" . }}-cert
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "pravega-operator.commonLabels" . | indent 4 }}
+  {{ include "pravega-operator.commonLabels" . | indent 4 }}
 spec:
   isCA: true
   duration: 8760h
@@ -31,9 +31,9 @@ spec:
     - pravega-webhook-svc.{{ .Release.Namespace }}.svc
   issuerRef:
     name: {{ template "pravega-operator.fullname" . }}-issuer
-{{- end }}
+  {{- end }}
 ---
-{{- if .Values.webhookCert.generate }}
+  {{- if .Values.webhookCert.generate }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -43,4 +43,4 @@ type: kubernetes.io/tls
 data:
   tls.crt: {{ .Values.webhookCert.crt }}
   tls.key: {{ .Values.webhookCert.key }}
-{{- end }}
+  {{- end }}
