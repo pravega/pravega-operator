@@ -291,10 +291,10 @@ type AuthenticationParameters struct {
 	// optional - used only by PasswordAuthHandler for authentication
 	PasswordAuthSecret string `json:"passwordAuthSecret,omitempty"`
 
-	//name of secret containg TokenSigningKey
+	// name of secret containg TokenSigningKey
 	ControllerTokenSecret string `json:"controllerTokenSecret,omitempty"`
 
-	//name of secret containg TokenSigningKey and AuthToken
+	// name of secret containg TokenSigningKey and AuthToken
 	SegmentStoreTokenSecret string `json:"segmentStoreTokenSecret,omitempty"`
 }
 
@@ -1249,7 +1249,7 @@ func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
 
 //if version is above or equals to 0.7 this name will be assigned
 func (p *PravegaCluster) StatefulSetNameForSegmentstoreAbove07() string {
-	return fmt.Sprintf("%s-pravega-segment-store", p.Name)
+	return fmt.Sprintf("%s-%s", p.Name, p.Spec.Pravega.SegmentStoreStsNameSuffix)
 }
 
 //if version is below 0.7 this name will be assigned
@@ -1299,7 +1299,7 @@ func (p *PravegaCluster) ConfigMapNameForController() string {
 }
 
 func (p *PravegaCluster) ServiceNameForController() string {
-	return fmt.Sprintf("%s-pravega-controller", p.Name)
+	return fmt.Sprintf("%s-%s", p.Name, p.Spec.Pravega.ControllerSvcNameSuffix)
 }
 
 func (p *PravegaCluster) ServiceNameForSegmentStore(index int32) string {
@@ -1314,11 +1314,11 @@ func (p *PravegaCluster) ServiceNameForSegmentStoreBelow07(index int32) string {
 }
 
 func (p *PravegaCluster) ServiceNameForSegmentStoreAbove07(index int32) string {
-	return fmt.Sprintf("%s-pravega-segment-store-%d", p.Name, index)
+	return fmt.Sprintf("%s-%s-%d", p.Name, p.Spec.Pravega.SegmentStoreStsNameSuffix, index)
 }
 
 func (p *PravegaCluster) HeadlessServiceNameForSegmentStore() string {
-	return fmt.Sprintf("%s-pravega-segmentstore-headless", p.Name)
+	return fmt.Sprintf("%s-%s", p.Name, p.Spec.Pravega.SegmentStoreHeadlessSvcNameSuffix)
 }
 
 func (p *PravegaCluster) HeadlessServiceNameForBookie() string {

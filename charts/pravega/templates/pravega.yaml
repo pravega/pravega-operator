@@ -91,6 +91,15 @@ spec:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
+    {{- if .Values.controller.svcNameSuffix }}
+    controllerSvcNameSuffix: {{ .Values.controller.svcNameSuffix }}
+    {{- end }}
+    {{- if .Values.segmentStore.stsNameSuffix }}
+    segmentStoreStsNameSuffix: {{ .Values.segmentStore.stsNameSuffix }}
+    {{- end }}
+    {{- if .Values.segmentStore.headlessSvcNameSuffix }}
+    segmentStoreHeadlessSvcNameSuffix: {{ .Values.segmentStore.headlessSvcNameSuffix }}
+    {{- end }}
     {{- if .Values.controller.maxUnavailableReplicas }}
     maxUnavailableControllerReplicas: {{ .Values.controller.maxUnavailableReplicas }}
     {{- end }}

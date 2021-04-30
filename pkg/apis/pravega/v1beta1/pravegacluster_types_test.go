@@ -347,6 +347,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(name).ShouldNot(BeNil())
 		})
 
+		p.WithDefaults()
 		name = p.StatefulSetNameForSegmentstoreAbove07()
 		It("Should return segmentstore sts name", func() {
 			Ω(name).ShouldNot(BeNil())
@@ -357,6 +358,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(name).ShouldNot(BeNil())
 		})
 
+		p.WithDefaults()
 		name = p.PravegaControllerServiceURL()
 		It("Should return controller service url", func() {
 			Ω(name).ShouldNot(BeNil())

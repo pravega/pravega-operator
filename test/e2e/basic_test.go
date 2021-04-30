@@ -11,6 +11,7 @@
 package e2e
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -40,12 +41,28 @@ func testCreateRecreateCluster(t *testing.T) {
 	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
 	defaultCluster.WithDefaults()
 
+	defaultCluster.Spec.Pravega.ControllerSvcNameSuffix = "testcontroller"
+	defaultCluster.Spec.Pravega.SegmentStoreHeadlessSvcNameSuffix = "testsegstore"
+	defaultCluster.Spec.Pravega.SegmentStoreStsNameSuffix = "segsts"
+
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
 	podSize := 2
 	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	svcName := fmt.Sprintf("%s-testcontroller", pravega.Name)
+	err = pravega_e2eutil.CheckServiceExists(t, f, ctx, pravega, svcName)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	svcName = fmt.Sprintf("%s-testsegstore", pravega.Name)
+	err = pravega_e2eutil.CheckServiceExists(t, f, ctx, pravega, svcName)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	stsName := fmt.Sprintf("%s-segsts", pravega.Name)
+	err = pravega_e2eutil.CheckStsExists(t, f, ctx, pravega, stsName)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
@@ -68,6 +85,18 @@ func testCreateRecreateCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	svcName = fmt.Sprintf("%s-pravega-controller", pravega.Name)
+	err = pravega_e2eutil.CheckServiceExists(t, f, ctx, pravega, svcName)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	svcName = fmt.Sprintf("%s-pravega-segmentstore-headless", pravega.Name)
+	err = pravega_e2eutil.CheckServiceExists(t, f, ctx, pravega, svcName)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	stsName = fmt.Sprintf("%s-pravega-segment-store", pravega.Name)
+	err = pravega_e2eutil.CheckStsExists(t, f, ctx, pravega, stsName)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)

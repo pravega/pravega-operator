@@ -46,6 +46,7 @@ serviceAccount:
 controller:
   replicas: 1
   maxUnavailableReplicas:
+  svcNameSuffix:
   resources:
     requests:
       cpu: 500m
@@ -90,6 +91,8 @@ segmentStore:
     externalTrafficPolicy:
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
   labels: {}
+  stsNameSuffix:
+  headlessSvcNameSuffix:
 
 storage:
 

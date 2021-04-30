@@ -1045,6 +1045,9 @@ spec:
                       will automatically assign the default service account in the
                       namespace default
                     type: string
+                  controllerSvcNameSuffix:
+                    description: This is used as suffix for controller service name
+                    type: string
                   controllerSvcAnnotations:
                     additionalProperties:
                       type: string
@@ -1805,11 +1808,17 @@ spec:
                     format: int32
                     minimum: 0
                     type: integer
+                  segmentStoreStsNameSuffix:
+                    description: This is used as suffix for segmentstore sts name
+                    type: string
+                  segmentStoreHeadlessSvcNameSuffix:
+                    description: This is used as suffix for segmentstore headless service name
+                    type: string
                   rollbacktimeout:
                     description: This is used to schedule the timeout value for rollback.
                     format: int32
                     minimum: 0
-                    type: integer  
+                    type: integer
                   segmentStoreResources:
                     description: SegmentStoreResources specifies the request and limit
                       of resources that segmentStore can have. SegmentStoreResources
