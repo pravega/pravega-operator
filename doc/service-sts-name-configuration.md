@@ -1,6 +1,6 @@
 # Configuring SegmentStore Headless Service Name
 
-By default segmentstore headless service name is configured as [pravegaclustername] followed by string `-pravega-segmentstore-headless`.
+By default segmentstore headless service name is configured as `<pravegaclustername>` followed by string `-pravega-segmentstore-headless`.
 
 ```
 pravega-pravega-segmentstore-headless    ClusterIP    None    <none>    12345/TCP    2d16h
@@ -21,7 +21,7 @@ pravega-segstore-svc    ClusterIP    None    <none>    12345/TCP    2d16h
 
 # Configuring Segmentsore Statefulset Name
 
-By default segmentstore statefulset name  is configured as [pravegaclustername] followed by string `-pravega-segment-store`.
+By default segmentstore statefulset name  is configured as `<pravegaclustername>` followed by string `-pravega-segment-store`.
 
 ```
 pravega-pravega-segment-store    1/1     2d17h
@@ -42,7 +42,7 @@ pravega-segstore-sts        1/1     2d17h
 
 # Configuring Controller Service Name
 
-By default controller service name is configured as [pravegaclustername] followed by string `-pravega-controller`.
+By default controller service name is configured as `<pravegaclustername>` followed by string `-pravega-controller`.
 
 ```
 pravega-pravega-controller    ClusterIP   10.100.200.173   <none>        10080/TCP,9090/TCP        2d16h
