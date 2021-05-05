@@ -256,7 +256,7 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
 	currentConfigMap := &corev1.ConfigMap{}
-	segementstoreportupdated := false
+	segementStorePortUpdated := false
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
@@ -272,16 +272,13 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
-			segementstoreportupdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
-		}
-
-		if !eq {
+			segementStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
 			err := r.client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
 			}
 			//restarting sts pods
-			if !r.checkVersionUpgradeTriggered(p) && !segementstoreportupdated {
+			if !r.checkVersionUpgradeTriggered(p) && !segementStorePortUpdated {
 				err = r.restartStsPod(p)
 				if err != nil {
 					return err
@@ -411,8 +408,8 @@ func (r *ReconcilePravegaCluster) reconcileControllerService(p *pravegav1beta1.P
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1.PravegaCluster) (err error) {
 	headlessService := pravega.MakeSegmentStoreHeadlessService(p)
 	controllerutil.SetControllerReference(p, headlessService, r.scheme)
-	currentservice := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: headlessService.Name, Namespace: p.Namespace}, currentservice)
+	currentService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: headlessService.Name, Namespace: p.Namespace}, currentService)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -423,12 +420,12 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 		}
 	} else {
 
-		if currentservice.Spec.Ports[0].Port != headlessService.Spec.Ports[0].Port {
-			currentservice.Spec.Ports[0].Port = headlessService.Spec.Ports[0].Port
-			currentservice.Spec.Ports[0].TargetPort = headlessService.Spec.Ports[0].TargetPort
-			err = r.client.Update(context.TODO(), currentservice)
+		if currentService.Spec.Ports[0].Port != headlessService.Spec.Ports[0].Port {
+			currentService.Spec.Ports[0].Port = headlessService.Spec.Ports[0].Port
+			currentService.Spec.Ports[0].TargetPort = headlessService.Spec.Ports[0].TargetPort
+			err = r.client.Update(context.TODO(), currentService)
 			if err != nil {
-				return fmt.Errorf("failed to update headless service port (%s): %v", headlessService.Name, err)
+				return fmt.Errorf("failed to update headless service port (%s): %v", currentService.Name, err)
 			}
 		}
 	}
@@ -452,7 +449,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 					currentservice.Spec.Ports[0].TargetPort = service.Spec.Ports[0].TargetPort
 					err = r.client.Update(context.TODO(), currentservice)
 					if err != nil {
-						return fmt.Errorf("failed to update external service port (%s): %v", service.Name, err)
+						return fmt.Errorf("failed to update external service port (%s): %v", currentservice.Name, err)
 					}
 				}
 
