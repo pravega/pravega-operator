@@ -13,6 +13,7 @@ package pravega
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -151,6 +152,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		volumes = append(volumes, v)
 	}
 
+	containerport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -163,7 +165,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "server",
-						ContainerPort: 12345,
+						ContainerPort: int32(containerport),
 					},
 				},
 				EnvFrom:      environment,
@@ -173,7 +175,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(12345),
+							Command: util.HealthcheckCommand(int32(containerport)),
 						},
 					},
 					// Segment Stores can take a few minutes to become ready when the cluster
@@ -186,7 +188,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(12345),
+							Command: util.HealthcheckCommand(int32(containerport)),
 						},
 					},
 					// In the readiness probe we allow the pod to take up to 5 minutes
@@ -281,6 +283,9 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
+	if _, ok := p.Spec.Pravega.Options["pravegaservice.service.listener.port"]; !ok {
+		p.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "12345"
+	}
 	if match, _ := util.CompareVersions(p.Spec.Version, "0.4.0", ">="); match {
 		// Pravega < 0.4 uses a Java version that does not support the options below
 		jvmOpts = append(jvmOpts,
@@ -487,6 +492,7 @@ func configureCaBundleSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 }
 
 func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
+	serviceport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -501,7 +507,7 @@ func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "server",
-					Port:     12345,
+					Port:     int32(serviceport),
 					Protocol: "TCP",
 				},
 			},
@@ -549,6 +555,7 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	var service *corev1.Service
 	serviceType := getSSServiceType(p)
 	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
+	serviceport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		ssPodName := p.ServiceNameForSegmentStore(i)
 		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
@@ -573,9 +580,9 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 				Ports: []corev1.ServicePort{
 					{
 						Name:       "server",
-						Port:       12345,
+						Port:       int32(serviceport),
 						Protocol:   "TCP",
-						TargetPort: intstr.FromInt(12345),
+						TargetPort: intstr.FromInt(serviceport),
 					},
 				},
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
@@ -590,7 +597,7 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
 		}
 		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
-			service.Spec.Ports[0].Port = 12345 + i
+			service.Spec.Ports[0].Port = int32(serviceport) + i
 			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
 		}
 		services[i] = service

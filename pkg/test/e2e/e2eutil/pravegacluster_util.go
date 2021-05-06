@@ -13,6 +13,7 @@ package e2eutil
 import (
 	goctx "context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -885,7 +886,25 @@ func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	if err != nil {
 		return fmt.Errorf("sts doesnt exist: %v", err)
 	}
+
 	return nil
+}
+
+func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, key string, value string) error {
+	cm := &corev1.ConfigMap{}
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: cmName}, cm)
+	if err != nil {
+		return fmt.Errorf("failed to obtain configmap: %v", err)
+	}
+	if cm != nil {
+		optvalue := cm.Data[key]
+		if strings.Contains(optvalue, value) {
+			t.Logf("configmap is updated %s", cm.Name)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("config map is not updated")
 }
 
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {

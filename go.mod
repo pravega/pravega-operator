@@ -3,7 +3,9 @@ module github.com/pravega/pravega-operator
 go 1.13
 
 require (
+	github.com/alexkohler/nakedret v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.1.0
+	github.com/jgautheron/goconst v1.4.0 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/operator-framework/operator-sdk v0.17.0

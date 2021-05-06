@@ -12,6 +12,7 @@ package pravega_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -146,7 +147,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					cm := pravega.MakeSegmentstoreConfigMap(p)
+					Ω(strings.Contains(cm.Data["JAVA_OPTS"], "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
 					Ω(err).Should(BeNil())
 				})
 				It("should create a config-map with empty tier2", func() {
@@ -219,7 +221,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
-							"dummy-key": "dummy-value",
+							"dummy-key":                            "dummy-value",
+							"pravegaservice.service.listener.port": "443",
 						},
 						LongTermStorage: &v1beta1.LongTermStorageSpec{
 							FileSystem: &v1beta1.FileSystemSpec{
@@ -265,7 +268,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 
 				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+					cm := pravega.MakeSegmentstoreConfigMap(p)
+					Ω(strings.Contains(cm.Data["JAVA_OPTS"], "-Dpravegaservice.service.listener.port=443")).Should(BeTrue())
 					Ω(err).Should(BeNil())
 				})
 

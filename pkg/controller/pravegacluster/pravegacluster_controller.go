@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -254,8 +255,8 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 }
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
-
 	currentConfigMap := &corev1.ConfigMap{}
+	segmentStorePortUpdated := false
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
@@ -271,12 +272,13 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
+			segmentStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
 			err := r.client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
 			}
 			//restarting sts pods
-			if !r.checkVersionUpgradeTriggered(p) {
+			if !r.checkVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
 				err = r.restartStsPod(p)
 				if err != nil {
 					return err
@@ -285,6 +287,22 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 		}
 	}
 	return nil
+}
+func (r *ReconcilePravegaCluster) checkSegmentStorePortUpdated(p *pravegav1beta1.PravegaCluster, cm *corev1.ConfigMap) bool {
+	if val, ok := p.Spec.Pravega.Options["pravegaservice.service.listener.port"]; ok {
+		eq := false
+		data := strings.Split(cm.Data["JAVA_OPTS"], " ")
+		key := fmt.Sprintf("-Dpravegaservice.service.listener.port=%v", val)
+		for _, checkstring := range data {
+			if checkstring == key {
+				eq = true
+			}
+		}
+		if !eq {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *ReconcilePravegaCluster) checkVersionUpgradeTriggered(p *pravegav1beta1.PravegaCluster) bool {
@@ -390,9 +408,26 @@ func (r *ReconcilePravegaCluster) reconcileControllerService(p *pravegav1beta1.P
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1.PravegaCluster) (err error) {
 	headlessService := pravega.MakeSegmentStoreHeadlessService(p)
 	controllerutil.SetControllerReference(p, headlessService, r.scheme)
-	err = r.client.Create(context.TODO(), headlessService)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	currentService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: headlessService.Name, Namespace: p.Namespace}, currentService)
+
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.client.Create(context.TODO(), headlessService)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+	} else {
+
+		if currentService.Spec.Ports[0].Port != headlessService.Spec.Ports[0].Port {
+			currentService.Spec.Ports[0].Port = headlessService.Spec.Ports[0].Port
+			currentService.Spec.Ports[0].TargetPort = headlessService.Spec.Ports[0].TargetPort
+			err = r.client.Update(context.TODO(), currentService)
+			if err != nil {
+				return fmt.Errorf("failed to update headless service port (%s): %v", currentService.Name, err)
+			}
+		}
 	}
 
 	if p.Spec.ExternalAccess.Enabled {
@@ -409,6 +444,15 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 					}
 				}
 			} else {
+				if service.Spec.Ports[0].Port != currentservice.Spec.Ports[0].Port {
+					currentservice.Spec.Ports[0].Port = service.Spec.Ports[0].Port
+					currentservice.Spec.Ports[0].TargetPort = service.Spec.Ports[0].TargetPort
+					err = r.client.Update(context.TODO(), currentservice)
+					if err != nil {
+						return fmt.Errorf("failed to update external service port (%s): %v", currentservice.Name, err)
+					}
+				}
+
 				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
 				if !eq {
 					err := r.client.Delete(context.TODO(), currentservice)
@@ -605,6 +649,19 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 				types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 			if err != nil {
 				return err
+			}
+			if statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort != sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort {
+				sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort
+				sts.Spec.Template.Spec.Containers[0].ReadinessProbe = statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe
+				sts.Spec.Template.Spec.Containers[0].LivenessProbe = statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe
+				err = r.client.Update(context.TODO(), sts)
+				if err != nil {
+					return fmt.Errorf("failed to update stateful set: %v", err)
+				}
+				err = r.restartStsPod(p)
+				if err != nil {
+					return err
+				}
 			}
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
