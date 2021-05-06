@@ -256,7 +256,7 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1beta1.PravegaCluster) (err error) {
 	currentConfigMap := &corev1.ConfigMap{}
-	segementStorePortUpdated := false
+	segmentStorePortUpdated := false
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
 	controllerutil.SetControllerReference(p, configMap, r.scheme)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
@@ -272,13 +272,13 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
-			segementStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
+			segmentStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
 			err := r.client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
 			}
 			//restarting sts pods
-			if !r.checkVersionUpgradeTriggered(p) && !segementStorePortUpdated {
+			if !r.checkVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
 				err = r.restartStsPod(p)
 				if err != nil {
 					return err
