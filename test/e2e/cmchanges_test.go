@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
@@ -75,9 +76,12 @@ func testCMUpgradeCluster(t *testing.T) {
 
 	// Check configmap is  Updated
 	cmName := fmt.Sprintf("%s-pravega-segmentstore", pravega.Name)
-	option := "pravegaservice.service.listener.port=443"
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, cmName, option)
+	value := "pravegaservice.service.listener.port=443"
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, cmName, "JAVA_OPTS", value)
 	g.Expect(err).NotTo(HaveOccurred())
+
+	// Sleeping for 1 min before read/write data
+	time.Sleep(60 * time.Second)
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())

@@ -890,16 +890,18 @@ func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	return nil
 }
 
-func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, field string) error {
+func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, key string, value string) error {
 	cm := &corev1.ConfigMap{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: cmName}, cm)
 	if err != nil {
 		return fmt.Errorf("failed to obtain configmap: %v", err)
 	}
-	javaopts := cm.Data["JAVA_OPTS"]
-	if strings.Contains(javaopts, field) {
-		t.Logf("configmap is updated %s", cm.Name)
-		return nil
+	if cm != nil {
+		optvalue := cm.Data[key]
+		if strings.Contains(optvalue, value) {
+			t.Logf("configmap is updated %s", cm.Name)
+			return nil
+		}
 	}
 
 	return fmt.Errorf("config map is not updated")
