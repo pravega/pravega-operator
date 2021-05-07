@@ -83,6 +83,7 @@ var _ = Describe("Controller", func() {
 						SegmentStoreResources:          customReq,
 						ControllerServiceAnnotations:   annotationsMap,
 						ControllerPodLabels:            annotationsMap,
+						ControllerPodAnnotations:       annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						SegmentStorePodLabels:          annotationsMap,
 						Image: &v1beta1.ImageSpec{
@@ -152,6 +153,8 @@ var _ = Describe("Controller", func() {
 				It("should have runAsUser value as 0", func() {
 					podTemplate := pravega.MakeControllerPodTemplate(p)
 					Ω(fmt.Sprintf("%v", *podTemplate.Spec.SecurityContext.RunAsUser)).To(Equal("0"))
+					Ω(podTemplate.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
+					Ω(podTemplate.Labels["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
 				})
 			})
 			Context("Controller with external service type empty", func() {

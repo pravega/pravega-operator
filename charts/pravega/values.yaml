@@ -64,6 +64,7 @@ controller:
     annotations: {}
   jvmOptions: []
   labels: {}
+  annotations: {}
 
 segmentStore:
   replicas: 1
@@ -91,6 +92,7 @@ segmentStore:
     externalTrafficPolicy:
   jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
   labels: {}
+  annotations: {}
   stsNameSuffix:
   headlessSvcNameSuffix:
 

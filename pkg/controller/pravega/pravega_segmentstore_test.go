@@ -85,6 +85,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						ControllerPodLabels:            annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						SegmentStorePodLabels:          annotationsMap,
+						SegmentStorePodAnnotations:     annotationsMap,
 						SegmentStoreEnvVars:            "SEG_CONFIG_MAP",
 						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
 							Secret:    "seg-secret",
@@ -167,6 +168,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 				It("should have runAsUser value as 0", func() {
 					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
 					Ω(fmt.Sprintf("%v", *podTemplate.Spec.SecurityContext.RunAsUser)).To(Equal("0"))
+					Ω(podTemplate.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
+					Ω(podTemplate.Labels["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
+
 				})
 			})
 		})

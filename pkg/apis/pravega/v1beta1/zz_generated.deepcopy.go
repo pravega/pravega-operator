@@ -371,6 +371,13 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.ControllerPodAnnotations != nil {
+		in, out := &in.ControllerPodAnnotations, &out.ControllerPodAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.SegmentStoreServiceAnnotations != nil {
 		in, out := &in.SegmentStoreServiceAnnotations, &out.SegmentStoreServiceAnnotations
 		*out = make(map[string]string, len(*in))
@@ -380,6 +387,13 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 	}
 	if in.SegmentStorePodLabels != nil {
 		in, out := &in.SegmentStorePodLabels, &out.SegmentStorePodLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.SegmentStorePodAnnotations != nil {
+		in, out := &in.SegmentStorePodAnnotations, &out.SegmentStorePodAnnotations
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val

@@ -1985,6 +1985,11 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
+                  segmentStorePodAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the SegmentStore pods
+                    type: object
                   segmentStorePodLabels:
                     additionalProperties:
                       type: string
@@ -2822,6 +2827,11 @@ spec:
                     additionalProperties:
                       type: string
                     description: Annotations to be added to the external service
+                    type: object
+                  controllerPodAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to controller pods
                     type: object
                   controllerPodLabels:
                     additionalProperties:

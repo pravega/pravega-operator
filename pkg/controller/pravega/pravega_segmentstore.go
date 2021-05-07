@@ -65,7 +65,7 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      p.LabelsForSegmentStore(),
-			Annotations: map[string]string{"pravega.version": p.Spec.Version},
+			Annotations: p.AnnotationsForSegmentStore(),
 		},
 		Spec: makeSegmentstorePodSpec(p),
 	}

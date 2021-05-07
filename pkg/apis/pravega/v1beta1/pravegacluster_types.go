@@ -1283,6 +1283,26 @@ func (p *PravegaCluster) LabelsForSegmentStore() map[string]string {
 	return labels
 }
 
+func (p *PravegaCluster) AnnotationsForController() map[string]string {
+	annotations := map[string]string{"pravega.version": p.Spec.Version}
+	if p.Spec.Pravega != nil && p.Spec.Pravega.ControllerPodAnnotations != nil {
+		for k, v := range p.Spec.Pravega.ControllerPodAnnotations {
+			annotations[k] = v
+		}
+	}
+	return annotations
+}
+
+func (p *PravegaCluster) AnnotationsForSegmentStore() map[string]string {
+	annotations := map[string]string{"pravega.version": p.Spec.Version}
+	if p.Spec.Pravega != nil && p.Spec.Pravega.SegmentStorePodAnnotations != nil {
+		for k, v := range p.Spec.Pravega.SegmentStorePodAnnotations {
+			annotations[k] = v
+		}
+	}
+	return annotations
+}
+
 func (pravegaCluster *PravegaCluster) LabelsForPravegaCluster() map[string]string {
 	return map[string]string{
 		"app":             "pravega-cluster",
