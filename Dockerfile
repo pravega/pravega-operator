@@ -7,10 +7,11 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
+ARG DOCKER_REGISTRY
 ARG GO_VERSION=1.13.8
 ARG ALPINE_VERSION=3.11
 
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
+FROM ${DOCKER_REGISTRY:+$DOCKER_REGISTRY/}golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
 
 ARG PROJECT_NAME=pravega-operator
 ARG REPO_PATH=github.com/pravega/$PROJECT_NAME
@@ -33,7 +34,7 @@ RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /src/${PROJECT_NAME} \
     /src/cmd/manager
 
 # =============================================================================
-FROM alpine:${ALPINE_VERSION} AS final
+FROM ${DOCKER_REGISTRY:+$DOCKER_REGISTRY/}alpine:${ALPINE_VERSION} AS final
 
 RUN apk add --update \
     sudo \
