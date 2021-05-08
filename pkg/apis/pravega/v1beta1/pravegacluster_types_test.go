@@ -338,6 +338,10 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			p.Spec.Version = "0.6.0"
 			p.WithDefaults()
 		})
+		annotationsMap := map[string]string{
+			"annotations": "test",
+			"labels":      "test",
+		}
 		It("should set volume claim template", func() {
 			Ω(p.Spec.Pravega.CacheVolumeClaimTemplate).ShouldNot(BeNil())
 		})
@@ -364,19 +368,34 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(name).ShouldNot(BeNil())
 		})
 
+		p.Spec.Pravega.ControllerPodLabels = annotationsMap
 		labels := p.LabelsForController()
+
 		It("Should return controller labels", func() {
 			Ω(labels).ShouldNot(BeNil())
 		})
 
+		p.Spec.Pravega.SegmentStorePodLabels = annotationsMap
 		labels = p.LabelsForSegmentStore()
 		It("Should return segmentstore labels", func() {
 			Ω(labels).ShouldNot(BeNil())
 		})
 
+		p.Spec.Pravega.ControllerPodAnnotations = annotationsMap
+		annotations := p.AnnotationsForController()
+		It("Should return controller annotations", func() {
+			Ω(annotations).ShouldNot(BeNil())
+		})
+
+		p.Spec.Pravega.SegmentStorePodAnnotations = annotationsMap
+		annotations = p.AnnotationsForSegmentStore()
+		It("Should return segmentstore annotations", func() {
+			Ω(annotations).ShouldNot(BeNil())
+		})
+
 		labels = p.LabelsForPravegaCluster()
 		It("Should return pravega labels", func() {
-			Ω(name).ShouldNot(BeNil())
+			Ω(labels).ShouldNot(BeNil())
 		})
 
 		name = p.PdbNameForController()
