@@ -74,24 +74,30 @@ spec:
     {{- if .Values.controller.service.annotations }}
     controllerSvcAnnotations:
 {{ toYaml .Values.controller.service.annotations | indent 6 }}
-    controllerPodLabels:
-{{ toYaml .Values.controller.labels | indent 6 }}
-    {{- end }}
-    controllerPodAnnotations:
-{{ toYaml .Values.controller.annotations | indent 6 }}
     {{- end }}
     {{- if .Values.segmentStore.service.type }}
     segmentStoreExtServiceType: {{ .Values.segmentStore.service.type }}
     {{- end }}
     {{- if .Values.segmentStore.service.annotations }}
     segmentStoreSvcAnnotations:
-{{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
+  {{ toYaml .Values.segmentStore.service.annotations | indent 6 }}
+    {{- end }}
+    {{- end }}
+    {{- if .Values.controller.labels }}
+    controllerPodLabels:
+{{ toYaml .Values.controller.labels | indent 6 }}
+    {{- end }}
+    {{- if .Values.controller.annotations }}
+    controllerPodAnnotations:
+{{ toYaml .Values.controller.annotations | indent 6 }}
+    {{- end }}
+    {{- if .Values.segmentStore.labels }}
     segmentStorePodLabels:
 {{ toYaml .Values.segmentStore.labels | indent 6 }}
     {{- end }}
+    {{- if .Values.segmentStore.annotations }}
     segmentStorePodAnnotations:
 {{ toYaml .Values.segmentStore.annotations | indent 6 }}
-    {{- end }}
     {{- end }}
     image:
       repository: {{ .Values.image.repository }}
