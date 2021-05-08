@@ -231,8 +231,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Options: map[string]string{
 							"dummy-key":                            "dummy-value",
 							"pravegaservice.service.listener.port": "443",
-							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
-							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+							"configMapVolumeMounts":                "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
+							"emptyDirVolumeMounts":                 "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						LongTermStorage: &v1beta1.LongTermStorageSpec{
 							FileSystem: &v1beta1.FileSystemSpec{
