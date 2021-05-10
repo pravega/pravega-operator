@@ -154,7 +154,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
 | `segmentStore.stsNameSuffix` | suffix for segmentstore sts name | `pravega-segment-store` |
-| `segmentStore.headlessSvcNameSuffix` | suffix for segmentsdtore headless service name | `pravega-segmentstore-headless` |
+| `segmentStore.headlessSvcNameSuffix` | suffix for segmentstore headless service name | `pravega-segmentstore-headless` |
 | `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
 | `segmentStore.annotations` | Annotations to add to the segmentStore pods | `{}` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
