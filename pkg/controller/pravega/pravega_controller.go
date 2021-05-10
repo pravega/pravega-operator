@@ -53,7 +53,7 @@ func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 	return corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:      p.LabelsForController(),
-			Annotations: map[string]string{"pravega.version": p.Spec.Version},
+			Annotations: p.AnnotationsForController(),
 		},
 		Spec: *makeControllerPodSpec(p),
 	}

@@ -1053,6 +1053,11 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
+                  controllerPodAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to controller pods
+                    type: object
                   controllerPodLabels:
                     additionalProperties:
                       type: string
@@ -1997,6 +2002,11 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
+                  segmentStorePodAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Annotations to be added to the SegmentStore pods
+                    type: object
                   segmentStorePodLabels:
                     additionalProperties:
                       type: string
@@ -2835,11 +2845,6 @@ spec:
                       type: string
                     description: Annotations to be added to the external service
                     type: object
-                  controllerPodLabels:
-                    additionalProperties:
-                      type: string
-                    description: Labels to be added to the Controller Pods
-                    type: object
                   controllerjvmOptions:
                     description: ControllerJvmOptions is the JVM options for controller.
                       It will be passed to the JVM for performance tuning. If this
@@ -2934,11 +2939,6 @@ spec:
                     additionalProperties:
                       type: string
                     description: Annotations to be added to the external service
-                    type: object
-                  segmentStorePodLabels:
-                    additionalProperties:
-                      type: string
-                    description: Labels to be added to the SegmentStore Pods
                     type: object
                   tier2:
                     description: Tier2 is the configuration of Pravega's tier 2 storage.
