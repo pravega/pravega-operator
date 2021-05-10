@@ -92,7 +92,9 @@ var _ = Describe("Controller", func() {
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
-							"dummy-key": "dummy-value",
+							"dummy-key":             "dummy-value",
+							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
+							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						CacheVolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{
 							VolumeName: "abc",
@@ -134,6 +136,16 @@ var _ = Describe("Controller", func() {
 				It("should create the deployment", func() {
 					deploy := pravega.MakeControllerDeployment(p)
 					Ω(*deploy.Spec.Replicas).Should(Equal(int32(2)))
+				})
+
+				It("should have configMap/emptyDir VolumeMounts set to the values given by user", func() {
+					deploy := pravega.MakeControllerPodTemplate(p)
+					mounthostpath0 := deploy.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
+					mounthostpath1 := deploy.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath2 := deploy.Spec.Containers[0].VolumeMounts[1].MountPath
+					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
 				})
 
 				It("should create the service", func() {
@@ -214,7 +226,9 @@ var _ = Describe("Controller", func() {
 						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
 						Options: map[string]string{
-							"dummy-key": "dummy-value",
+							"dummy-key":             "dummy-value",
+							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
+							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						CacheVolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{
 							VolumeName: "abc",
@@ -250,6 +264,16 @@ var _ = Describe("Controller", func() {
 				It("should create the deployment", func() {
 					deploy := pravega.MakeControllerDeployment(p)
 					Ω(deploy.Name).To(Equal(p.DeploymentNameForController()))
+				})
+
+				It("should have configMap/emptyDir VolumeMounts set to the values given by user", func() {
+					deploy := pravega.MakeControllerPodTemplate(p)
+					mounthostpath0 := deploy.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
+					mounthostpath1 := deploy.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath2 := deploy.Spec.Containers[0].VolumeMounts[1].MountPath
+					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
 				})
 
 				It("should create the service", func() {
