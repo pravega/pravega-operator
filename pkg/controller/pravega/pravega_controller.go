@@ -60,19 +60,17 @@ func MakeControllerPodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 }
 
 func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
+	// Parse volumes & volumeMounts parameters first
 	var hostPathVolumeMounts []string
 	var emptyDirVolumeMounts []string
+	var configMapVolumeMounts []string
 	var ok bool
+
+	var volumes []corev1.Volume
+	var volumeMounts []corev1.VolumeMount
 
 	if _, ok = p.Spec.Pravega.Options["hostPathVolumeMounts"]; ok {
 		hostPathVolumeMounts = strings.Split(p.Spec.Pravega.Options["hostPathVolumeMounts"], ",")
-	}
-	if _, ok = p.Spec.Pravega.Options["emptyDirVolumeMounts"]; ok {
-		emptyDirVolumeMounts = strings.Split(p.Spec.Pravega.Options["emptyDirVolumeMounts"], ",")
-	}
-
-	var volumes []corev1.Volume
-	if len(hostPathVolumeMounts) > 1 {
 		for _, vm := range hostPathVolumeMounts {
 			s := strings.Split(vm, "=")
 			v := corev1.Volume{
@@ -84,9 +82,16 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 			}
 			volumes = append(volumes, v)
+
+			m := corev1.VolumeMount{
+				Name:      s[0],
+				MountPath: s[1],
+			}
+			volumeMounts = append(volumeMounts, m)
 		}
 	}
-	if len(emptyDirVolumeMounts) > 1 {
+	if _, ok = p.Spec.Pravega.Options["emptyDirVolumeMounts"]; ok {
+		emptyDirVolumeMounts = strings.Split(p.Spec.Pravega.Options["emptyDirVolumeMounts"], ",")
 		for _, vm := range emptyDirVolumeMounts {
 			s := strings.Split(vm, "=")
 			v := corev1.Volume{
@@ -96,6 +101,12 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 			}
 			volumes = append(volumes, v)
+
+			m := corev1.VolumeMount{
+				Name:      s[0],
+				MountPath: s[1],
+			}
+			volumeMounts = append(volumeMounts, m)
 		}
 	} else {
 		// if user did not set emptyDirVolumeMounts
@@ -106,6 +117,37 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 			},
 		}
 		volumes = append(volumes, v)
+
+		m := corev1.VolumeMount{
+			Name:      heapDumpName,
+			MountPath: heapDumpDir,
+		}
+		volumeMounts = append(volumeMounts, m)
+	}
+	if _, ok = p.Spec.Pravega.Options["configMapVolumeMounts"]; ok {
+		configMapVolumeMounts = strings.Split(p.Spec.Pravega.Options["configMapVolumeMounts"], ",")
+		for _, vm := range configMapVolumeMounts {
+			p := strings.Split(vm, "=")
+			s := strings.Split(p[0], ":")
+			v := corev1.Volume{
+				Name: s[0],
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: s[0],
+						},
+					},
+				},
+			}
+			volumes = append(volumes, v)
+
+			m := corev1.VolumeMount{
+				Name:      s[0],
+				MountPath: p[1],
+				SubPath:   s[1],
+			}
+			volumeMounts = append(volumeMounts, m)
+		}
 	}
 
 	podSpec := &corev1.PodSpec{
@@ -136,7 +178,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 						},
 					},
 				},
-				VolumeMounts: createVolumeMount(hostPathVolumeMounts, emptyDirVolumeMounts),
+				VolumeMounts: volumeMounts,
 				Resources:    *p.Spec.Pravega.ControllerResources,
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -180,39 +222,6 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	configureAuthSecrets(podSpec, p)
 	configureControllerAuthSecrets(podSpec, p)
 	return podSpec
-}
-
-func createVolumeMount(hostPathVolumeMounts []string, emptyDirVolumeMounts []string) []corev1.VolumeMount {
-	var volumeMounts []corev1.VolumeMount
-
-	if len(hostPathVolumeMounts) > 1 {
-		for _, vm := range hostPathVolumeMounts {
-			s := strings.Split(vm, "=")
-			v := corev1.VolumeMount{
-				Name:      s[0],
-				MountPath: s[1],
-			}
-			volumeMounts = append(volumeMounts, v)
-		}
-	}
-	if len(emptyDirVolumeMounts) > 1 {
-		for _, vm := range emptyDirVolumeMounts {
-			s := strings.Split(vm, "=")
-			v := corev1.VolumeMount{
-				Name:      s[0],
-				MountPath: s[1],
-			}
-			volumeMounts = append(volumeMounts, v)
-		}
-	} else {
-		// if user did not set emptyDirVolumeMounts
-		v := corev1.VolumeMount{
-			Name:      heapDumpName,
-			MountPath: heapDumpDir,
-		}
-		volumeMounts = append(volumeMounts, v)
-	}
-	return volumeMounts
 }
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
