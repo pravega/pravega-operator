@@ -139,7 +139,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
 | `controller.svcNameSuffix` | suffix for controller service name | `pravega-controller` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
-| `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentstore pdb | |
+| `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentStore pdb | |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
 | `segmentStore.env` | Name of configmap containing environment variables to be added to the segmentStore | |
 | `segmentStore.resources.requests.cpu` | CPU requests for segmentStore | `1000m` |
@@ -147,14 +147,14 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.resources.limits.cpu` | CPU limits for segmentStore | `2000m` |
 | `segmentStore.resources.limits.memory` | Memory limits for segmentStore | `4Gi` |
 | `segmentStore.securityContext` | Holds pod-level security attributes and common container settings for segmentStore | `{}` |
-| `segmentStore.affinity | Specifies scheduling constraints on segmentstore pods | `{}` |
+| `segmentStore.affinity | Specifies scheduling constraints on segmentStore pods | `{}` |
 | `segmentStore.service.type` | Override the segmentStore service type, if external access is enabled (LoadBalancer/NodePort) | |
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.service.loadBalancerIP` | It is used to provide a LoadBalancerIP for the segmentStore service | |
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
 | `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
-| `segmentStore.stsNameSuffix` | suffix for segmentstore sts name | `pravega-segment-store` |
-| `segmentStore.headlessSvcNameSuffix` | suffix for segmentstore headless service name | `pravega-segmentstore-headless` |
+| `segmentStore.stsNameSuffix` | suffix for segmentStore sts name | `pravega-segment-store` |
+| `segmentStore.headlessSvcNameSuffix` | suffix for segmentStore headless service name | `pravega-segmentstore-headless` |
 | `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
 | `segmentStore.annotations` | Annotations to add to the segmentStore pods | `{}` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
