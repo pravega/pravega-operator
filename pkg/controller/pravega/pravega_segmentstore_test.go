@@ -99,6 +99,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 							"dummy-key":             "dummy-value",
 							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
 							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+							"hostPathVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						LongTermStorage: &v1beta1.LongTermStorageSpec{
 							Ecs: &v1beta1.ECSSpec{
@@ -161,12 +162,16 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
 					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
 					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
 					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath4).Should(Equal("/tmp/dumpfile/heap"))
 					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
 					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath3 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[3].MountPath
+					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
 					Ω(err).Should(BeNil())
 				})
 				It("should set external access service type to LoadBalancer", func() {
@@ -231,8 +236,6 @@ var _ = Describe("PravegaSegmentstore", func() {
 						Options: map[string]string{
 							"dummy-key":                            "dummy-value",
 							"pravegaservice.service.listener.port": "443",
-							"configMapVolumeMounts":                "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
-							"emptyDirVolumeMounts":                 "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						LongTermStorage: &v1beta1.LongTermStorageSpec{
 							FileSystem: &v1beta1.FileSystemSpec{
@@ -285,12 +288,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
-					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
-					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
-					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
-					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath0).Should(Equal("/tmp/dumpfile/heap"))
 					Ω(err).Should(BeNil())
 				})
 
@@ -349,6 +348,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 							"dummy-key":             "dummy-value",
 							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
 							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+							"hostPathVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						LongTermStorage: &v1beta1.LongTermStorageSpec{
 							Hdfs: &v1beta1.HDFSSpec{
@@ -397,12 +397,16 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
 					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
 					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
 					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath4).Should(Equal("/tmp/dumpfile/heap"))
 					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
 					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath3 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[3].MountPath
+					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
 					Ω(err).Should(BeNil())
 				})
 				It("should set external access service type to LoadBalancer", func() {
