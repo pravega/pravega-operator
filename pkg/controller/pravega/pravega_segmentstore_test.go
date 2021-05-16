@@ -150,17 +150,22 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(err).Should(BeNil())
 				})
 
-				It("should create a config-map", func() {
+				It("should create a config-map and set the JVM options given by user", func() {
 					cm := pravega.MakeSegmentstoreConfigMap(p)
-					Ω(strings.Contains(cm.Data["JAVA_OPTS"], "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
-					Ω(err).Should(BeNil())
+					javaOpts := cm.Data["JAVA_OPTS"]
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
 				})
+
 				It("should create a config-map with empty tier2", func() {
 					p.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{}
 					cm := pravega.MakeSegmentstoreConfigMap(p)
 					Ω(cm.Data["TIER2_STORAGE"]).To(Equal(""))
 					Ω(err).Should(BeNil())
 				})
+
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
 					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
@@ -175,9 +180,11 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
 					Ω(err).Should(BeNil())
 				})
+
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
 				})
+
 				It("should have runAsUser value as 0", func() {
 					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
 					Ω(fmt.Sprintf("%v", *podTemplate.Spec.SecurityContext.RunAsUser)).To(Equal("0"))
@@ -287,13 +294,6 @@ var _ = Describe("PravegaSegmentstore", func() {
 				It("should create a config-map", func() {
 					cm := pravega.MakeSegmentstoreConfigMap(p)
 					Ω(strings.Contains(cm.Data["JAVA_OPTS"], "-Dpravegaservice.service.listener.port=443")).Should(BeTrue())
-					Ω(err).Should(BeNil())
-				})
-
-				It("should create a stateful set", func() {
-					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-					Ω(mounthostpath0).Should(Equal("/tmp/dumpfile/heap"))
 					Ω(err).Should(BeNil())
 				})
 

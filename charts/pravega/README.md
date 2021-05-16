@@ -136,7 +136,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.service.annotations` | Annotations to add to the controller service, if external access is enabled | `{}` |
 | `controller.labels` | Labels to add to the controller pods | `{}` |
 | `controller.annotations` | Annotations to add to the controller pods | `{}` |
-| `controller.jvmOptions` | JVM Options for controller | `["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]` |
+| `controller.jvmOptions` | JVM Options for controller | `["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport"]` |
 | `controller.svcNameSuffix` | suffix for controller service name | `pravega-controller` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentStore pdb | |
@@ -152,7 +152,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.service.annotations` | Annotations to add to the segmentStore service, if external access is enabled | `{}` |
 | `segmentStore.service.loadBalancerIP` | It is used to provide a LoadBalancerIP for the segmentStore service | |
 | `segmentStore.service.externalTrafficPolicy` | It is used to provide ExternalTrafficPolicy for the segmentStore service |  |
-| `segmentStore.jvmOptions` | JVM Options for segmentStore | `[]` |
+| `segmentStore.jvmOptions` | JVM Options for segmentStore | `["-Xms1g", "-Xmx2g", "-XX:MaxDirectMemorySize=2g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport"]` |
 | `segmentStore.stsNameSuffix` | suffix for segmentStore sts name | `pravega-segment-store` |
 | `segmentStore.headlessSvcNameSuffix` | suffix for segmentStore headless service name | `pravega-segmentstore-headless` |
 | `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
