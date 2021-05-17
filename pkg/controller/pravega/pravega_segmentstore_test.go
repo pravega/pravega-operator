@@ -157,6 +157,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
 					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
 					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
+					Ω(err).Should(BeNil())
 				})
 
 				It("should create a config-map with empty tier2", func() {
@@ -168,16 +169,16 @@ var _ = Describe("PravegaSegmentstore", func() {
 
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
-					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
-					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
-					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
-					Ω(mounthostpath4).Should(Equal("/tmp/dumpfile/heap"))
-					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
-					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath0).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
+					Ω(mounthostpath1).Should(Equal("/opt/pravega/logs"))
+					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath2).Should(Equal("/tmp/dumpfile/heap"))
 					mounthostpath3 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[3].MountPath
 					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
+					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
+					Ω(mounthostpath4).Should(Equal("/opt/pravega/conf/logback.xml"))
 					Ω(err).Should(BeNil())
 				})
 
@@ -291,9 +292,13 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(err).Should(BeNil())
 				})
 
-				It("should create a config-map", func() {
+				It("should create a config-map and set the JVM options given by user", func() {
 					cm := pravega.MakeSegmentstoreConfigMap(p)
-					Ω(strings.Contains(cm.Data["JAVA_OPTS"], "-Dpravegaservice.service.listener.port=443")).Should(BeTrue())
+					javaOpts := cm.Data["JAVA_OPTS"]
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=443")).Should(BeTrue())
 					Ω(err).Should(BeNil())
 				})
 
@@ -395,22 +400,27 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(err).Should(BeNil())
 				})
 
-				It("should create a config-map", func() {
-					_ = pravega.MakeSegmentstoreConfigMap(p)
+				It("should create a config-map and set the JVM options given by user", func() {
+					cm := pravega.MakeSegmentstoreConfigMap(p)
+					javaOpts := cm.Data["JAVA_OPTS"]
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
 					Ω(err).Should(BeNil())
 				})
 				It("should create a stateful set", func() {
 					sts := pravega.MakeSegmentStoreStatefulSet(p)
-					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
-					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
-					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
-					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
-					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
-					Ω(mounthostpath4).Should(Equal("/tmp/dumpfile/heap"))
-					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
-					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath0).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
+					Ω(mounthostpath1).Should(Equal("/opt/pravega/logs"))
+					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath2).Should(Equal("/tmp/dumpfile/heap"))
 					mounthostpath3 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[3].MountPath
 					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
+					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
+					Ω(mounthostpath4).Should(Equal("/opt/pravega/conf/logback.xml"))
 					Ω(err).Should(BeNil())
 				})
 				It("should set external access service type to LoadBalancer", func() {

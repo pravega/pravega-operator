@@ -12,7 +12,7 @@ controller:
     ## used to override the service type for controller
     type:
     annotations: {}
-  jvmOptions: ["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport"]
+  jvmOptions: ["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
 
 segmentStore:
   replicas: 6
@@ -32,7 +32,7 @@ segmentStore:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-  jvmOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g", "-XX:MaxDirectMemorySize=2g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport"]
+  jvmOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g", "-XX:MaxDirectMemorySize=2g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
 
 options:
   bookkeeper.ensemble.size: "3"
