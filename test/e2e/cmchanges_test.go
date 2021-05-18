@@ -92,6 +92,9 @@ func testCMUpgradeCluster(t *testing.T) {
 	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	// Sleeping for 1 min before read/write data
+	time.Sleep(60 * time.Second)
+
 	// Check configmap is  Updated
 	fmt.Println("Checking updated configmap")
 	ss_val = "pravegaservice.service.listener.port=443"
@@ -106,9 +109,6 @@ func testCMUpgradeCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", bk_val)
 	g.Expect(err).NotTo(HaveOccurred())
-
-	// Sleeping for 1 min before read/write data
-	time.Sleep(60 * time.Second)
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
