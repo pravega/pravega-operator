@@ -898,6 +898,8 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 	}
 	if cm != nil {
 		optvalue := cm.Data[key]
+		fmt.Println("Printing option value")
+		fmt.Println(optvalue)
 		if strings.Contains(optvalue, value) {
 			t.Logf("configmap is updated %s", cm.Name)
 			return nil
