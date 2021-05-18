@@ -57,17 +57,17 @@ func testPravegaCluster(t *testing.T) {
 	}
 
 	testFuncs := map[string]func(t *testing.T){
-		"testCreateRecreateCluster":         testCreateRecreateCluster,
-		"testScaleCluster":                  testScaleCluster,
-		"testUpgradeCluster":                testUpgradeCluster,
-		"testWebhook":                       testWebhook,
-		"testCMUpgradeCluster":              testCMUpgradeCluster,
-		"testExternalCreateRecreateCluster": testExternalCreateRecreateCluster,
+		// "testCreateRecreateCluster":         testCreateRecreateCluster,
+		// "testScaleCluster":                  testScaleCluster,
+		// "testUpgradeCluster":                testUpgradeCluster,
+		// "testWebhook":                       testWebhook,
+		"testCMUpgradeCluster": testCMUpgradeCluster,
+		// "testExternalCreateRecreateCluster": testExternalCreateRecreateCluster,
 		// commenting out this test as pravega installation with TLS alone is not supported
 		//"testCreatePravegaClusterWithTls":        testCreatePravegaClusterWithTls,
-		"testDeletePods":                         testDeletePods,
-		"testRollbackPravegaCluster":             testRollbackPravegaCluster,
-		"testCreatePravegaClusterWithAuthAndTls": testCreatePravegaClusterWithAuthAndTls,
+		// "testDeletePods":                         testDeletePods,
+		// "testRollbackPravegaCluster":             testRollbackPravegaCluster,
+		// "testCreatePravegaClusterWithAuthAndTls": testCreatePravegaClusterWithAuthAndTls,
 	}
 
 	for name, f := range testFuncs {

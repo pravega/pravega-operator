@@ -896,6 +896,8 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 	if err != nil {
 		return fmt.Errorf("failed to obtain configmap: %v", err)
 	}
+	fmt.Println("Printing configmap")
+	fmt.Printf("%+v", cm)
 	if cm != nil {
 		optvalue := cm.Data[key]
 		fmt.Println("Printing option value")

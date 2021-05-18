@@ -11,6 +11,7 @@
 package e2e
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -92,12 +93,18 @@ func testCMUpgradeCluster(t *testing.T) {
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Check configmap is  Updated
+	fmt.Println("Checking updated configmap")
 	ss_val = "pravegaservice.service.listener.port=443"
+	bk_val := "bookkeeper.bkAckQuorumSize=2"
 	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptions)
+	g.Expect(err).NotTo(HaveOccurred())
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", bk_val)
 	g.Expect(err).NotTo(HaveOccurred())
 	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptions)
 	g.Expect(err).NotTo(HaveOccurred())
 	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", ss_val)
+	g.Expect(err).NotTo(HaveOccurred())
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", bk_val)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	// Sleeping for 1 min before read/write data
