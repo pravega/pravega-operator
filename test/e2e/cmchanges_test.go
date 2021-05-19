@@ -11,7 +11,6 @@
 package e2e
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -44,7 +43,6 @@ func testCMUpgradeCluster(t *testing.T) {
 
 	cluster.WithDefaults()
 	jvmOpts := []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"}
-	jvmOptions := strings.Join(jvmOpts, " ")
 	cluster.Spec.Pravega.Options["pravegaservice.containerCount"] = "3"
 	cluster.Spec.Pravega.ControllerJvmOptions = jvmOpts
 	cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
@@ -64,17 +62,14 @@ func testCMUpgradeCluster(t *testing.T) {
 	// Check configmap has correct values
 	c_cm := pravega.ConfigMapNameForController()
 	ss_cm := pravega.ConfigMapNameForSegmentstore()
-	ss_val := "pravegaservice.service.listener.port=12345"
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptions)
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOpts)
 	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptions)
-	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", ss_val)
+	jvmOpts = append(jvmOpts, "pravegaservice.service.listener.port=12345")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOpts)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//updating pravega options
 	jvmOpts = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
-	jvmOptions = strings.Join(jvmOpts, " ")
 	pravega.Spec.Pravega.ControllerJvmOptions = jvmOpts
 	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
 	pravega.Spec.Pravega.Options["bookkeeper.bkAckQuorumSize"] = "2"
@@ -96,18 +91,11 @@ func testCMUpgradeCluster(t *testing.T) {
 	time.Sleep(60 * time.Second)
 
 	// Check configmap is  Updated
-	fmt.Println("Checking updated configmap")
-	ss_val = "pravegaservice.service.listener.port=443"
-	bk_val := "bookkeeper.bkAckQuorumSize=2"
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptions)
+	jvmOpts = append(jvmOpts, "bookkeeper.bkAckQuorumSize=2")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOpts)
 	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", bk_val)
-	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptions)
-	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", ss_val)
-	g.Expect(err).NotTo(HaveOccurred())
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", bk_val)
+	jvmOpts = append(jvmOpts, "pravegaservice.service.listener.port=443")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOpts)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
