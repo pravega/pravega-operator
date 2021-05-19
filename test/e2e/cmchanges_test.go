@@ -75,8 +75,8 @@ func testCMUpgradeCluster(t *testing.T) {
 	//updating pravega options
 	jvmOpts = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
 	jvmOptions = strings.Join(jvmOpts, " ")
-	cluster.Spec.Pravega.ControllerJvmOptions = jvmOpts
-	cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
+	pravega.Spec.Pravega.ControllerJvmOptions = jvmOpts
+	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
 	pravega.Spec.Pravega.Options["bookkeeper.bkAckQuorumSize"] = "2"
 	pravega.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "443"
 
