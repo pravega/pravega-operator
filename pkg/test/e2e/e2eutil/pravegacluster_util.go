@@ -903,6 +903,8 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 				return fmt.Errorf("config map is not updated")
 			}
 		}
+	} else {
+		return fmt.Errorf("config map is empty")
 	}
 	return nil
 }
