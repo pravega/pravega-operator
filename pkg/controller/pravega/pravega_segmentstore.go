@@ -152,21 +152,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			}
 			volumeMounts = append(volumeMounts, m)
 		}
-	} else {
-		// if user did not set emptyDirVolumeMounts
-		v := corev1.Volume{
-			Name: heapDumpName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}
-		volumes = append(volumes, v)
-
-		m := corev1.VolumeMount{
-			Name:      heapDumpName,
-			MountPath: heapDumpDir,
-		}
-		volumeMounts = append(volumeMounts, m)
 	}
 	if _, ok = p.Spec.Pravega.Options["configMapVolumeMounts"]; ok {
 		configMapVolumeMounts = strings.Split(p.Spec.Pravega.Options["configMapVolumeMounts"], ",")
@@ -283,28 +268,11 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		"-Dpravegaservice.clusterName=" + p.Name,
 	}
 
-	jvmOpts := []string{
-		"-Xms1g",
-		"-XX:+ExitOnOutOfMemoryError",
-		"-XX:+CrashOnOutOfMemoryError",
-		"-XX:+HeapDumpOnOutOfMemoryError",
-		"-XX:HeapDumpPath=" + heapDumpDir,
-		"-Dpravegaservice.clusterName=" + p.Name,
-	}
-
 	if _, ok := p.Spec.Pravega.Options["pravegaservice.service.listener.port"]; !ok {
 		p.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "12345"
 	}
-	if match, _ := util.CompareVersions(p.Spec.Version, "0.4.0", ">="); match {
-		// Pravega < 0.4 uses a Java version that does not support the options below
-		jvmOpts = append(jvmOpts,
-			"-XX:+UnlockExperimentalVMOptions",
-			"-XX:+UseContainerSupport",
-			"-XX:MaxRAMPercentage=50.0",
-		)
-	}
 
-	javaOpts = append(javaOpts, util.OverrideDefaultJVMOptions(jvmOpts, p.Spec.Pravega.SegmentStoreJVMOptions)...)
+	javaOpts = util.OverrideDefaultJVMOptions(javaOpts, p.Spec.Pravega.SegmentStoreJVMOptions)
 
 	for name, value := range p.Spec.Pravega.Options {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))

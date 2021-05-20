@@ -12,6 +12,7 @@ package pravega_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -128,9 +129,13 @@ var _ = Describe("Controller", func() {
 					Ω(pdb.Name).Should(Equal(p.PdbNameForController()))
 				})
 
-				It("should create a config-map", func() {
+				It("should create a config-map and set the JVM options given by user", func() {
 					cm := pravega.MakeControllerConfigMap(p)
+					javaOpts := cm.Data["JAVA_OPTS"]
 					Ω(cm.Data["log.level"]).Should(Equal("DEBUG"))
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
 				})
 
 				It("should create the deployment", func() {
@@ -256,9 +261,13 @@ var _ = Describe("Controller", func() {
 					Ω(pdb.Spec.Selector.MatchLabels).To(Equal(p.LabelsForController()))
 				})
 
-				It("should create a config-map", func() {
+				It("should create a config-map and set the JVM options given by user", func() {
 					cm := pravega.MakeControllerConfigMap(p)
+					javaOpts := cm.Data["JAVA_OPTS"]
 					Ω(cm.Data["ZK_URL"]).To(Equal(p.Spec.ZookeeperUri))
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
 				})
 
 				It("should create the deployment", func() {
