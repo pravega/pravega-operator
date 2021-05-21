@@ -16,7 +16,7 @@ spec:
 ```
 ### Pravega JVM Options
 
-It is also possible to tune the JVM options for Pravega Controller and Segmentstore. Pravega JVM options are for configuring Controller&Segmenstore JVM process whereas Pravega options are for configuring Pravega software.
+It is also possible to tune the JVM options for Pravega Controller and Segmentstore. Pravega JVM options are for configuring Controller & Segmenstore JVM process whereas Pravega options are for configuring Pravega software.
 
 Here is an example,
 ```
@@ -27,38 +27,7 @@ spec:
     segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
 ...
 ```
-There are a bunch of default options in the Pravega operator code that is good for general deployment,  It is possible to override those default values by just passing the customized options. For example, the default option `"-XX:MaxDirectMemorySize=1g"` can be override by passing `"-XX:MaxDirectMemorySize=2g"` to
-the Pravega operator. The operator will detect `MaxDirectMemorySize` and override its default value if it exists.
-
-Default Controller JVM Options
-```
-"-Xms512m",
-"-XX:+ExitOnOutOfMemoryError",
-"-XX:+CrashOnOutOfMemoryError",
-"-XX:+HeapDumpOnOutOfMemoryError",
-"-XX:HeapDumpPath=" + heapDumpDir,
-```
-if Pravega version is greater or equal 0.4, then the followings are also added to the default Controller JVM Options
-```
-"-XX:+UnlockExperimentalVMOptions",
-"-XX:+UseContainerSupport",
-"-XX:MaxRAMPercentage=50.0"
-```
-
-Default Segmenstore JVM Options
-```
-"-Xms1g",
-"-XX:+ExitOnOutOfMemoryError",
-"-XX:+CrashOnOutOfMemoryError",
-"-XX:+HeapDumpOnOutOfMemoryError",
-"-XX:HeapDumpPath=" + heapDumpDir,
-```
-if Pravega version is greater or equal to 0.4, then the followings are also added to the default Segmenstore JVM Options
-```
-"-XX:+UnlockExperimentalVMOptions",
-"-XX:+UseContainerSupport",
-"-XX:MaxRAMPercentage=50.0"
-```
+We do not provide any JVM options as defaults within the operator code for the Controller or the Segmentstore. These options can be passed into the operator through the deployment manifest.
 
 ### SegmentStore Custom Configuration
 

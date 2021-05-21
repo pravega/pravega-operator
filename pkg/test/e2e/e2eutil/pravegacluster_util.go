@@ -890,7 +890,7 @@ func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	return nil
 }
 
-func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, key string, value string) error {
+func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, key string, values []string) error {
 	cm := &corev1.ConfigMap{}
 	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: cmName}, cm)
 	if err != nil {
@@ -898,13 +898,15 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 	}
 	if cm != nil {
 		optvalue := cm.Data[key]
-		if strings.Contains(optvalue, value) {
-			t.Logf("configmap is updated %s", cm.Name)
-			return nil
+		for _, value := range values {
+			if !strings.Contains(optvalue, value) {
+				return fmt.Errorf("config map is not updated")
+			}
 		}
+	} else {
+		return fmt.Errorf("config map is empty")
 	}
-
-	return fmt.Errorf("config map is not updated")
+	return nil
 }
 
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {

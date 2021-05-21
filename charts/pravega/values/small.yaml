@@ -12,7 +12,7 @@ controller:
     ## used to override the service type for controller
     type:
     annotations: {}
-  jvmOptions: []
+  jvmOptions: ["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
 
 segmentStore:
   replicas: 1
@@ -32,7 +32,7 @@ segmentStore:
     ## used to override the service type for segmentStore
     type:
     annotations: {}
-  jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
+  jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g", "-XX:MaxDirectMemorySize=2g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
 
 options:
   bookkeeper.ensemble.size: "3"
@@ -51,6 +51,7 @@ options:
   controller.service.asyncTaskPool.size: "20"
   controller.retention.thread.count: "4"
   log.level: "INFO"
+  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap"
   ## The following parameters are only useful if you are going to deploy metrics in this cluster.
   # metrics.dynamicCache.size: "100000"
   # metrics.statistics.enable: "true"

@@ -21,8 +21,6 @@ const (
 	tlsMountDir              = "/etc/secret-volume"
 	caBundleVolumeName       = "ca-bundle"
 	caBundleMountDir         = "/etc/secret-volume/ca-bundle"
-	heapDumpName             = "heap-dump"
-	heapDumpDir              = "/tmp/dumpfile/heap"
 	authVolumeName           = "auth-passwd-secret"
 	authMountDir             = "/etc/auth-passwd-volume"
 	defaultTokenSigningKey   = "secret"

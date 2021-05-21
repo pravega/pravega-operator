@@ -62,7 +62,7 @@ controller:
     ## used to override the service type for controller
     type:
     annotations: {}
-  jvmOptions: []
+  jvmOptions: ["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
   labels: {}
   annotations: {}
   initContainers: []
@@ -91,7 +91,7 @@ segmentStore:
     annotations: {}
     loadBalancerIP:
     externalTrafficPolicy:
-  jvmOptions: ["-Xmx2g", "-XX:MaxDirectMemorySize=2g"]
+  jvmOptions: ["-Xms1g", "-Xmx2g", "-XX:MaxDirectMemorySize=2g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
   labels: {}
   annotations: {}
   stsNameSuffix:
@@ -167,5 +167,5 @@ options:
   # controller.metrics.output.frequency.seconds: "10"
   # controller.metrics.influxDB.connect.uri: "http://INFLUXDB-IP:8086"
   # hostPathVolumeMounts: "foo=/tmp/foo,bar=/tmp/bar"
-  # emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs"
+  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap"
   # configMapVolumeMounts: "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml"
