@@ -419,6 +419,20 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ControllerInitContainers != nil {
+		in, out := &in.ControllerInitContainers, &out.ControllerInitContainers
+		*out = make([]v1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.SegmentStoreInitContainers != nil {
+		in, out := &in.SegmentStoreInitContainers, &out.SegmentStoreInitContainers
+		*out = make([]v1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
