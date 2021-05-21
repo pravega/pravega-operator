@@ -19,6 +19,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -130,6 +131,14 @@ var _ = Describe("PravegaSegmentstore", func() {
 					RunAsUser: &no,
 				}
 				p.Spec.Pravega.SegmentStoreSecurityContext = &securitycontext
+
+				p.Spec.Pravega.SegmentStoreInitContainers = []v1.Container{
+					v1.Container{
+						Name:    "testing",
+						Image:   "dummy-image",
+						Command: []string{"sh", "-c", "ls;pwd"},
+					},
+				}
 			})
 
 			Context("First reconcile", func() {
@@ -192,6 +201,12 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(podTemplate.Annotations["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
 					Ω(podTemplate.Labels["service.beta.kubernetes.io/aws-load-balancer-type"]).To(Equal("nlb"))
 
+				})
+				It("should have init container", func() {
+					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
+					Ω(podTemplate.Spec.InitContainers[0].Name).To(Equal("testing"))
+					Ω(podTemplate.Spec.InitContainers[0].Image).To(Equal("dummy-image"))
+					Ω(strings.Contains(podTemplate.Spec.InitContainers[0].Command[2], "ls;pwd")).Should(BeTrue())
 				})
 			})
 		})
