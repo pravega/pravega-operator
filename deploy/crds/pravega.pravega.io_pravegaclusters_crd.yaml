@@ -820,7 +820,6 @@ spec:
                           type: array
                           x-kubernetes-list-map-keys:
                           - containerPort
-                          - protocol
                           x-kubernetes-list-type: map
                         readinessProbe:
                           description: 'Periodic probe of container service readiness.
@@ -2821,7 +2820,6 @@ spec:
                           type: array
                           x-kubernetes-list-map-keys:
                           - containerPort
-                          - protocol
                           x-kubernetes-list-type: map
                         readinessProbe:
                           description: 'Periodic probe of container service readiness.
@@ -3341,7 +3339,7 @@ spec:
                       required:
                       - name
                       type: object
-                    type: array  
+                    type: array
                   segmentStoreJVMOptions:
                     description: SegmentStoreJVMOptions is the JVM options for Segmentstore.
                       It will be passed to the JVM for performance tuning. If this
