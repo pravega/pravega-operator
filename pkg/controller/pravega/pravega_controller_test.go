@@ -19,7 +19,6 @@ import (
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -124,8 +123,8 @@ var _ = Describe("Controller", func() {
 
 				p.Spec.Pravega.ControllerSecurityContext = &securitycontext
 
-				p.Spec.Pravega.ControllerInitContainers = []v1.Container{
-					v1.Container{
+				p.Spec.Pravega.ControllerInitContainers = []corev1.Container{
+					corev1.Container{
 						Name:    "testing",
 						Image:   "dummy-image",
 						Command: []string{"sh", "-c", "ls;pwd"},

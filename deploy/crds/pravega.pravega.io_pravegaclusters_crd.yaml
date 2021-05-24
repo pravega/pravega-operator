@@ -253,7 +253,7 @@ spec:
                       access. Options are "LoadBalancer" and "NodePort". By default,
                       if external access is enabled, it will use "LoadBalancer"
                     type: string
-                  ontrollerInitContainers:
+                  controllerInitContainers:
                     description: InitContainers to be added to controller pods
                     items:
                       description: A single application container that you want to
