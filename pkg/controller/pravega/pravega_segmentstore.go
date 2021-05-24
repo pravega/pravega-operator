@@ -250,6 +250,9 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 		podSpec.SecurityContext = p.Spec.Pravega.SegmentStoreSecurityContext
 	}
 
+	if p.Spec.Pravega.SegmentStoreInitContainers != nil {
+		podSpec.InitContainers = p.Spec.Pravega.SegmentStoreInitContainers
+	}
 	configureSegmentstoreSecret(&podSpec, p)
 
 	configureSegmentstoreTLSSecret(&podSpec, p)

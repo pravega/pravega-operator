@@ -44,6 +44,21 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 						Secret:    "seg-secret",
 						MountPath: "",
 					},
+
+					SegmentStoreInitContainers: []v1.Container{
+						v1.Container{
+							Name:    "testing",
+							Image:   "dummy-image",
+							Command: []string{"sh", "-c", "ls;pwd"},
+						},
+					},
+					ControllerInitContainers: []v1.Container{
+						v1.Container{
+							Name:    "testing",
+							Image:   "dummy-image",
+							Command: []string{"sh", "-c", "ls;pwd"},
+						},
+					},
 				},
 			}
 			p1.WithDefaults()
@@ -90,7 +105,14 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			p1.Spec.Pravega.Options["key"] = "value"
 			p1.Spec.Pravega.SegmentStoreServiceAnnotations["user"] = "test"
 			p1.Spec.Pravega.ControllerServiceAnnotations["user"] = "test1"
+			p1.Spec.Pravega.ControllerPodLabels["user"] = "test2"
+			p1.Spec.Pravega.SegmentStorePodLabels["user"] = "test2"
+			p1.Spec.Pravega.ControllerPodAnnotations["user"] = "test2"
+			p1.Spec.Pravega.SegmentStorePodAnnotations["user"] = "test2"
+
 			p2.Spec.Pravega = p1.Spec.Pravega.DeepCopy()
+			p2.Spec.Pravega.SegmentStoreSecret = p1.Spec.Pravega.SegmentStoreSecret.DeepCopy()
+
 			p2.Spec.Pravega.LongTermStorage = p1.Spec.Pravega.LongTermStorage.DeepCopy()
 			p1.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{
 				Ecs: &v1beta1.ECSSpec{
@@ -154,6 +176,9 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking  segmentstore secret", func() {
 			Ω(p2.Spec.TLS.Static.SegmentStoreSecret).To(Equal("segmentstore-secret"))
 		})
+		It("checking  segmentstore secret inside pravega spec", func() {
+			Ω(p2.Spec.Pravega.SegmentStoreSecret.Secret).To(Equal("seg-secret"))
+		})
 		It("checking  image  repository", func() {
 			Ω(p2.Spec.Pravega.Image.Repository).To(Equal("pravega/exmple"))
 		})
@@ -163,7 +188,12 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking ControllerSecurityContext", func() {
 			Ω(fmt.Sprintf("%v", *p2.Spec.Pravega.ControllerSecurityContext.RunAsUser)).To(Equal("0"))
 		})
-
+		It("checking ControllerInitContainer", func() {
+			Ω(p2.Spec.Pravega.ControllerInitContainers[0].Name).To(Equal("testing"))
+		})
+		It("checking SegementStoreInitContainer", func() {
+			Ω(p2.Spec.Pravega.SegmentStoreInitContainers[0].Name).To(Equal("testing"))
+		})
 		It("checking  pravega options", func() {
 			Ω(p2.Spec.Pravega.Options["key"]).To(Equal("value"))
 		})

@@ -219,6 +219,12 @@ type PravegaSpec struct {
 
 	// This is used as suffix for segmentstore headless service name
 	SegmentStoreHeadlessSvcNameSuffix string `json:"segmentStoreHeadlessSvcNameSuffix,omitempty"`
+
+	// InitContainers to be added to controller pods
+	ControllerInitContainers []v1.Container `json:"controllerInitContainers,omitempty"`
+
+	// InitContainers to be added to segmentstore pods
+	SegmentStoreInitContainers []v1.Container `json:"segmentStoreInitContainers,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {

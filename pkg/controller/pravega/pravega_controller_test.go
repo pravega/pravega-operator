@@ -96,6 +96,7 @@ var _ = Describe("Controller", func() {
 							"dummy-key":             "dummy-value",
 							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
 							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+							"hostPathVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
 						},
 						CacheVolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{
 							VolumeName: "abc",
@@ -119,7 +120,16 @@ var _ = Describe("Controller", func() {
 				securitycontext := corev1.PodSecurityContext{
 					RunAsUser: &no,
 				}
+
 				p.Spec.Pravega.ControllerSecurityContext = &securitycontext
+
+				p.Spec.Pravega.ControllerInitContainers = []corev1.Container{
+					corev1.Container{
+						Name:    "testing",
+						Image:   "dummy-image",
+						Command: []string{"sh", "-c", "ls;pwd"},
+					},
+				}
 			})
 
 			Context("Controller", func() {
@@ -143,21 +153,33 @@ var _ = Describe("Controller", func() {
 					Ω(*deploy.Spec.Replicas).Should(Equal(int32(2)))
 				})
 
-				It("should have configMap/emptyDir VolumeMounts set to the values given by user", func() {
+				It("should have configMap/emptyDir/hostPath VolumeMounts set to the values given by user", func() {
 					deploy := pravega.MakeControllerPodTemplate(p)
-					mounthostpath0 := deploy.Spec.Containers[0].VolumeMounts[2].MountPath
+					mounthostpath0 := deploy.Spec.Containers[0].VolumeMounts[4].MountPath
 					Ω(mounthostpath0).Should(Equal("/opt/pravega/conf/logback.xml"))
 					mounthostpath1 := deploy.Spec.Containers[0].VolumeMounts[0].MountPath
 					Ω(mounthostpath1).Should(Equal("/tmp/dumpfile/heap"))
 					mounthostpath2 := deploy.Spec.Containers[0].VolumeMounts[1].MountPath
 					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
+					mounthostpath3 := deploy.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath3).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath4 := deploy.Spec.Containers[0].VolumeMounts[3].MountPath
+					Ω(mounthostpath4).Should(Equal("/opt/pravega/logs"))
+
 				})
 
 				It("should create the service", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
 				})
+				It("should have initcontainer ", func() {
+					podTemplate := pravega.MakeControllerPodTemplate(p)
+					Ω(podTemplate.Spec.InitContainers[0].Name).To(Equal("testing"))
+					Ω(podTemplate.Spec.InitContainers[0].Image).To(Equal("dummy-image"))
+					Ω(strings.Contains(podTemplate.Spec.InitContainers[0].Command[2], "ls;pwd")).Should(BeTrue())
+				})
 			})
+
 			Context("Controller with external service type and external access type empty", func() {
 				BeforeEach(func() {
 					p.Spec.Pravega.ControllerExternalServiceType = ""

@@ -65,6 +65,7 @@ controller:
   jvmOptions: ["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]
   labels: {}
   annotations: {}
+  initContainers: []
 
 segmentStore:
   replicas: 1
@@ -95,6 +96,7 @@ segmentStore:
   annotations: {}
   stsNameSuffix:
   headlessSvcNameSuffix:
+  initContainers:[]
 
 storage:
 
