@@ -96,7 +96,7 @@ segmentStore:
   annotations: {}
   stsNameSuffix:
   headlessSvcNameSuffix:
-  initContainers:[]
+  initContainers: []
 
 storage:
 
