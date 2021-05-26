@@ -167,5 +167,5 @@ options:
   # controller.metrics.output.frequency.seconds: "10"
   # controller.metrics.influxDB.connect.uri: "http://INFLUXDB-IP:8086"
   # hostPathVolumeMounts: "foo=/tmp/foo,bar=/tmp/bar"
-  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap"
+  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap,logs=/opt/pravega/logs"
   # configMapVolumeMounts: "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml"
