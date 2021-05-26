@@ -51,7 +51,7 @@ options:
   controller.service.asyncTaskPool.size: "20"
   controller.retention.thread.count: "4"
   log.level: "INFO"
-  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap"
+  emptyDirVolumeMounts: "heap-dump=/tmp/dumpfile/heap,logs=/opt/pravega/logs"
   ## The following parameters are only useful if you are going to deploy metrics in this cluster.
   # metrics.dynamicCache.size: "100000"
   # metrics.statistics.enable: "true"
