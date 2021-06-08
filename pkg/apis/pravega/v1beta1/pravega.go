@@ -225,6 +225,9 @@ type PravegaSpec struct {
 
 	// InitContainers to be added to segmentstore pods
 	SegmentStoreInitContainers []v1.Container `json:"segmentStoreInitContainers,omitempty"`
+
+	// Details of authplugin to be copied into pravega controller
+	AuthImplementations []AuthImplementationSpec `json:"authImplementations,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -414,6 +417,12 @@ type LongTermStorageSpec struct {
 
 	// Hdfs is used to configure an HDFS system as a Tier 2 backend
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
+}
+
+type AuthImplementationSpec struct {
+	Image          string `json:"image"`
+	PluginLocation string `json:"pluginLocation,omitempty"`
+	MountPath      string `json:"mountPath,omitempty"`
 }
 
 func (s *LongTermStorageSpec) withDefaults() (changed bool) {

@@ -12,7 +12,9 @@ package pravega
 
 import (
 	"fmt"
+	"log"
 	"sort"
+	"strconv"
 	"strings"
 
 	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
@@ -206,8 +208,53 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	if p.Spec.Pravega.ControllerSecurityContext != nil {
 		podSpec.SecurityContext = p.Spec.Pravega.ControllerSecurityContext
 	}
+	podSpec.InitContainers = []corev1.Container{}
 	if p.Spec.Pravega.ControllerInitContainers != nil {
-		podSpec.InitContainers = p.Spec.Pravega.ControllerInitContainers
+		podSpec.InitContainers = append(podSpec.InitContainers, p.Spec.Pravega.ControllerInitContainers...)
+	}
+	if p.Spec.Pravega.AuthImplementations != nil {
+		authContainers := []corev1.Container{}
+		var srcPath, mountPath string
+		for i, plugin := range p.Spec.Pravega.AuthImplementations {
+			log.Printf("Anisha plugin is %v", plugin)
+			if plugin.PluginLocation != "" {
+				srcPath = plugin.PluginLocation
+			} else {
+				srcPath = "/plugins/implementation/*.jar"
+			}
+			if plugin.MountPath != "" {
+				mountPath = plugin.MountPath
+			} else {
+				mountPath = "/opt/pravega/pluginlib"
+			}
+			arg := "cp " + srcPath + " " + mountPath
+
+			authContainers = append(authContainers, corev1.Container{
+				Name:    "authplugin" + strconv.Itoa(i),
+				Image:   plugin.Image,
+				Command: []string{"/bin/sh"},
+				Args: []string{
+					"-cx",
+					arg,
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "authplugin" + strconv.Itoa(i),
+						MountPath: mountPath,
+					},
+				},
+			})
+			vol := corev1.Volume{
+				Name: "authplugin" + strconv.Itoa(i),
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			}
+			podSpec.Volumes = append(podSpec.Volumes, vol)
+			podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, authContainers[i].VolumeMounts...)
+		}
+		podSpec.InitContainers = append(podSpec.InitContainers, authContainers...)
+
 	}
 
 	configureControllerTLSSecrets(podSpec, p)

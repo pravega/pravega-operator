@@ -138,7 +138,7 @@ The following table lists the configurable parameters of the pravega chart and t
 | `controller.annotations` | Annotations to add to the controller pods | `{}` |
 | `controller.jvmOptions` | JVM Options for controller | `["-Xms512m", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:HeapDumpPath=/tmp/dumpfile/heap", "-XX:MaxRAMPercentage=50.0", "-XX:+UseContainerSupport", "-XX:+PrintExtendedThreadInfo"]` |
 | `controller.svcNameSuffix` | suffix for controller service name | `pravega-controller` |
-| `controller.initContainers` | Init Conatiners to add to controller pods | `[]` |
+| `controller.initContainers` | Init Containers to add to controller pods | `[]` |
 | `segmentStore.replicas` | Number of segmentStore replicas | `1` |
 | `segmentStore.maxUnavailableReplicas` | Maximum number of unavailable replicas possible for segmentStore pdb | |
 | `segmentStore.secret` | Secret configuration for the segmentStore | `{}` |
@@ -158,7 +158,8 @@ The following table lists the configurable parameters of the pravega chart and t
 | `segmentStore.headlessSvcNameSuffix` | suffix for segmentStore headless service name | `pravega-segmentstore-headless` |
 | `segmentStore.labels` | Labels to add to the segmentStore pods | `{}` |
 | `segmentStore.annotations` | Annotations to add to the segmentStore pods | `{}` |
-| `segmentStore.initContainers` | Init Conatiners to add to the segmentStore pods | `[]` |
+| `segmentStore.initContainers` | Init Containers to add to the segmentStore pods | `[]` |
+| `authImplementations` | Plugin configuration to be used | `[]` |
 | `storage.longtermStorage.type` | Type of long term storage backend to be used (filesystem/ecs/hdfs) | `filesystem` |
 | `storage.longtermStorage.filesystem.pvc` | Name of the pre-created PVC, if long term storage type is filesystem | `pravega-tier2` |
 | `storage.longtermStorage.ecs` | Configuration to use a Dell EMC ECS system, if long term storage type is ecs | `{}` |
