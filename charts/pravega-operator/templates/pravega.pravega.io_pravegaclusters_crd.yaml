@@ -124,18 +124,24 @@ spec:
                 properties:
                   authImplementations:
                     description: Details of authplugin to be copied into pravega controller
-                    items:
-                      properties:
-                        image:
-                          type: string
-                        mountPath:
-                          type: string
-                        pluginLocation:
-                          type: string
-                      required:
-                      - image
-                      type: object
-                    type: array
+                    properties:
+                      authHandlers:
+                        items:
+                          description: Contains details of auth handler
+                          properties:
+                            image:
+                              type: string
+                            source:
+                              type: string
+                          required:
+                          - image
+                          type: object
+                        type: array
+                      mountPath:
+                        type: string
+                    required:
+                    - authHandlers
+                    type: object
                   cacheVolumeClaimTemplate:
                     description: CacheVolumeClaimTemplate is the spec to describe
                       PVC for the Pravega cache. This field is optional. If no PVC

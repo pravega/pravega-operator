@@ -227,7 +227,7 @@ type PravegaSpec struct {
 	SegmentStoreInitContainers []v1.Container `json:"segmentStoreInitContainers,omitempty"`
 
 	// Details of authplugin to be copied into pravega controller
-	AuthImplementations []AuthImplementationSpec `json:"authImplementations,omitempty"`
+	AuthImplementations *AuthImplementationSpec `json:"authImplementations,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -419,10 +419,16 @@ type LongTermStorageSpec struct {
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
 }
 
+// AuthImpemenationSpec helps to inject plugins to contoller pod
 type AuthImplementationSpec struct {
-	Image          string `json:"image"`
-	PluginLocation string `json:"pluginLocation,omitempty"`
-	MountPath      string `json:"mountPath,omitempty"`
+	MountPath    string            `json:"mountPath,omitempty"`
+	AuthHandlers []AuthHandlerSpec `json:"authHandlers"`
+}
+
+// Contains details of auth handler
+type AuthHandlerSpec struct {
+	Image  string `json:"image"`
+	Source string `json:"source,omitempty"`
 }
 
 func (s *LongTermStorageSpec) withDefaults() (changed bool) {

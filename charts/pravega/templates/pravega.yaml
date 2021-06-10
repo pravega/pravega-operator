@@ -111,7 +111,7 @@ spec:
       repository: {{ .Values.image.repository }}
       pullPolicy: {{ .Values.image.pullPolicy }}
     controllerReplicas: {{ .Values.controller.replicas }}
-    {{- if .Values.segmentStore.initContainers }}
+    {{- if .Values.authImplementations }}
     authImplementations:
 {{ toYaml .Values.authImplementations | indent 6 }}
     {{- end }}

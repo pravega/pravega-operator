@@ -12,7 +12,6 @@ package pravega
 
 import (
 	"fmt"
-	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -215,18 +214,18 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	if p.Spec.Pravega.AuthImplementations != nil {
 		authContainers := []corev1.Container{}
 		var srcPath, mountPath string
-		for i, plugin := range p.Spec.Pravega.AuthImplementations {
-			log.Printf("Anisha plugin is %v", plugin)
-			if plugin.PluginLocation != "" {
-				srcPath = plugin.PluginLocation
+		if p.Spec.Pravega.AuthImplementations.MountPath != "" {
+			mountPath = p.Spec.Pravega.AuthImplementations.MountPath
+		} else {
+			mountPath = "/opt/pravega/pluginlib"
+		}
+		for i, plugin := range p.Spec.Pravega.AuthImplementations.AuthHandlers {
+			if plugin.Source != "" {
+				srcPath = plugin.Source
 			} else {
 				srcPath = "/plugins/implementation/*.jar"
 			}
-			if plugin.MountPath != "" {
-				mountPath = plugin.MountPath
-			} else {
-				mountPath = "/opt/pravega/pluginlib"
-			}
+
 			arg := "cp " + srcPath + " " + mountPath
 
 			authContainers = append(authContainers, corev1.Container{
@@ -239,20 +238,21 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{
-						Name:      "authplugin" + strconv.Itoa(i),
+						Name:      "authplugin",
 						MountPath: mountPath,
 					},
 				},
 			})
-			vol := corev1.Volume{
-				Name: "authplugin" + strconv.Itoa(i),
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			}
-			podSpec.Volumes = append(podSpec.Volumes, vol)
-			podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, authContainers[i].VolumeMounts...)
+
 		}
+		vol := corev1.Volume{
+			Name: "authplugin",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, authContainers[0].VolumeMounts[0])
 		podSpec.InitContainers = append(podSpec.InitContainers, authContainers...)
 
 	}
