@@ -31,7 +31,7 @@ sed -i '2 s/^/#/' /etc/fstab
 echo "swapoff UUID=$UUID"
 swapoff UUID=$UUID
 IP=`ifconfig bond0:0 | grep "inet" | awk '{print $2}'`
-sudo kubeadm init --apiserver-advertise-address=$IP
+sudo kubeadm init --apiserver-advertise-address=$IP --kubernetes-version stable-1.16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
