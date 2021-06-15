@@ -7,7 +7,14 @@ sudo rm /lib/systemd/system/nfs-common.service
 sudo systemctl daemon-reload
 sudo systemctl start nfs-common
 sudo systemctl status nfs-common
-sudo apt install docker.io -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+   stable"
+sudo apt-get update
+echo "update done"
+sudo apt-get install docker-ce=5:19.03.9~3-0~ubuntu-focal -y
 echo "docker install"
 sudo systemctl enable --now docker
 apt-get update && apt-get install -y \
