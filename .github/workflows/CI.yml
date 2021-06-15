@@ -53,7 +53,7 @@ jobs:
     - name: Creating nodes
       run: |
         cd .. && tar -czvf pravega-operator.tar.gz pravega-operator
-        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f sg4 
         packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
         CLUSTER_ID=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
         echo "cluster id is $CLUSTER_ID"
