@@ -102,6 +102,19 @@ var _ = Describe("Controller", func() {
 							VolumeName: "abc",
 						},
 						DebugLogging: true,
+						AuthImplementations: &v1beta1.AuthImplementationSpec{
+							MountPath: "/ifs/data",
+							AuthHandlers: []v1beta1.AuthHandlerSpec{
+								{
+									Image:  "testimage1",
+									Source: "source1",
+								},
+								{
+									Image:  "testimage2",
+									Source: "source2",
+								},
+							},
+						},
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -172,11 +185,19 @@ var _ = Describe("Controller", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
 				})
-				It("should have initcontainer ", func() {
+				It("should have initcontainers ", func() {
 					podTemplate := pravega.MakeControllerPodTemplate(p)
 					Ω(podTemplate.Spec.InitContainers[0].Name).To(Equal("testing"))
 					Ω(podTemplate.Spec.InitContainers[0].Image).To(Equal("dummy-image"))
 					Ω(strings.Contains(podTemplate.Spec.InitContainers[0].Command[2], "ls;pwd")).Should(BeTrue())
+					Ω(podTemplate.Spec.InitContainers[1].Image).To(Equal("testimage1"))
+					Ω(podTemplate.Spec.InitContainers[1].Name).To(Equal("authplugin0"))
+					Ω(podTemplate.Spec.InitContainers[1].VolumeMounts[0].Name).To(Equal("authplugin"))
+					Ω(podTemplate.Spec.InitContainers[1].VolumeMounts[0].MountPath).To(Equal("/ifs/data"))
+					Ω(podTemplate.Spec.InitContainers[2].Name).To(Equal("authplugin1"))
+					Ω(podTemplate.Spec.InitContainers[2].Image).To(Equal("testimage2"))
+					Ω(podTemplate.Spec.InitContainers[2].VolumeMounts[0].Name).To(Equal("authplugin"))
+					Ω(podTemplate.Spec.InitContainers[2].VolumeMounts[0].MountPath).To(Equal("/ifs/data"))
 				})
 			})
 
@@ -260,6 +281,13 @@ var _ = Describe("Controller", func() {
 						CacheVolumeClaimTemplate: &corev1.PersistentVolumeClaimSpec{
 							VolumeName: "abc",
 						},
+						AuthImplementations: &v1beta1.AuthImplementationSpec{
+							AuthHandlers: []v1beta1.AuthHandlerSpec{
+								{
+									Image: "testimage1",
+								},
+							},
+						},
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -307,6 +335,14 @@ var _ = Describe("Controller", func() {
 					Ω(mounthostpath2).Should(Equal("/opt/pravega/logs"))
 				})
 
+				It("should have initcontainers created for auth handelers", func() {
+					podTemplate := pravega.MakeControllerPodTemplate(p)
+					Ω(podTemplate.Spec.InitContainers[0].Image).To(Equal("testimage1"))
+					Ω(podTemplate.Spec.InitContainers[0].Name).To(Equal("authplugin0"))
+					Ω(podTemplate.Spec.InitContainers[0].VolumeMounts[0].Name).To(Equal("authplugin"))
+					Ω(podTemplate.Spec.InitContainers[0].VolumeMounts[0].MountPath).To(Equal("/opt/pravega/pluginlib"))
+
+				})
 				It("should create the service", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))

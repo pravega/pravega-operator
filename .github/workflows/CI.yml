@@ -53,12 +53,12 @@ jobs:
     - name: Creating nodes
       run: |
         cd .. && tar -czvf pravega-operator.tar.gz pravega-operator
-        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
         CLUSTER_ID=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
         echo "cluster id is $CLUSTER_ID"
-        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
-        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
+        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f nrt1
         MASTER_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' ')
         while [ "$MASTER_STATE" != "active" ]; do MASTER_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         CLUSTER_IP=$(packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' ')
@@ -97,10 +97,10 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "mkdir /data;kubectl create -f /root/pravega-operator/test/e2e/resources/local-storage.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "curl -L https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "helm repo add stable https://charts.helm.sh/stable;helm install stable/nfs-server-provisioner --generate-name;kubectl -n default create -f /root/pravega-operator/test/e2e/resources/tier2.yaml"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.crds.yaml\""
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl apply -f \"https://github.com/jetstack/cert-manager/releases/download/v0.14.1/cert-manager.crds.yaml\""
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo add jetstack https://charts.jetstack.io"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "helm repo update"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create namespace cert-manager;helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v1.3.1 --set webhook.hostNetwork=true --set webhook.securePort=10666 --wait"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create namespace cert-manager;helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.14.1 --wait"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/test/e2e/resources/zookeeper.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/crd.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP  "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/certificate.yaml"

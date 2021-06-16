@@ -59,6 +59,19 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 							Command: []string{"sh", "-c", "ls;pwd"},
 						},
 					},
+					AuthImplementations: &v1beta1.AuthImplementationSpec{
+						MountPath: "/ifs/data",
+						AuthHandlers: []v1beta1.AuthHandlerSpec{
+							{
+								Image:  "testimage1",
+								Source: "source1",
+							},
+							{
+								Image:  "testimage2",
+								Source: "source2",
+							},
+						},
+					},
 				},
 			}
 			p1.WithDefaults()
@@ -112,6 +125,8 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 
 			p2.Spec.Pravega = p1.Spec.Pravega.DeepCopy()
 			p2.Spec.Pravega.SegmentStoreSecret = p1.Spec.Pravega.SegmentStoreSecret.DeepCopy()
+			p2.Spec.Pravega.AuthImplementations = p1.Spec.Pravega.AuthImplementations.DeepCopy()
+			p2.Spec.Pravega.AuthImplementations.AuthHandlers[0] = *p1.Spec.Pravega.AuthImplementations.AuthHandlers[0].DeepCopy()
 
 			p2.Spec.Pravega.LongTermStorage = p1.Spec.Pravega.LongTermStorage.DeepCopy()
 			p1.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{
@@ -191,6 +206,11 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking ControllerInitContainer", func() {
 			Ω(p2.Spec.Pravega.ControllerInitContainers[0].Name).To(Equal("testing"))
 		})
+		It("checking AuthHandlerDetails", func() {
+			Ω(p2.Spec.Pravega.AuthImplementations.AuthHandlers[0].Image).To(Equal("testimage1"))
+			Ω(p2.Spec.Pravega.AuthImplementations.MountPath).To(Equal("/ifs/data"))
+
+		})
 		It("checking SegementStoreInitContainer", func() {
 			Ω(p2.Spec.Pravega.SegmentStoreInitContainers[0].Name).To(Equal("testing"))
 		})
@@ -251,6 +271,10 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 		It("checking for nil LongTermStorage", func() {
 			p1.Spec.Pravega.LongTermStorage = nil
 			Ω(p1.Spec.Pravega.LongTermStorage.DeepCopy()).Should(BeNil())
+		})
+		It("checking for nil AuthImplementations", func() {
+			p1.Spec.Pravega.AuthImplementations = nil
+			Ω(p1.Spec.Pravega.AuthImplementations.DeepCopy()).Should(BeNil())
 		})
 		It("checking for nil member status", func() {
 			var memberstatus *v1beta1.MembersStatus
