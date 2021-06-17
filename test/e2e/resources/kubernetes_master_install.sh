@@ -4,9 +4,14 @@ echo "TCPKeepAlive yes" >> /etc/ssh/sshd_config
 echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
 echo "ClientAliveCountMax 3" >> /etc/ssh/sshd_config
 service sshd restart
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+   stable"
 sudo apt-get update
 echo "update done"
-sudo apt install docker.io -y
+sudo apt-get install docker-ce=5:19.03.9~3-0~ubuntu-focal -y
 echo "docker install"
 sudo systemctl enable --now docker
 sudo apt-get install nfs-common -y
@@ -32,7 +37,7 @@ sed -i '2 s/^/#/' /etc/fstab
 echo "swapoff UUID=$UUID"
 swapoff UUID=$UUID
 IP=`ifconfig bond0:0 | grep "inet" | awk '{print $2}'`
-sudo kubeadm init --apiserver-advertise-address=$IP
+sudo kubeadm init --apiserver-advertise-address=$IP  --pod-network-cidr=192.168.0.0/16
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
