@@ -1,8 +1,8 @@
-## Init Conatiners
+## Init Containers
 
 Users can mention the details in init containers to perform certain operations before the main container starts. This is supported in controller as well as segmentstore.
 
-To add init containers in segmentstore modify the  Pravega manifest and ensure that following fields are present.
+To add init containers in controller modify the  Pravega manifest and ensure that following fields are present.
 
 ```
 controller:
