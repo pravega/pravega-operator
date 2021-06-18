@@ -16,4 +16,4 @@ This document explains how to configure Pravega
 * [Enable admission webhook](webhook.md)
 * [Configuring Service and Sts Names](service-sts-name-configuration.md)
 * [Enable AuthHandlers](auth-handlers.md)
-* [Init Containers Usgae](init-containers.md)
+* [Init Containers Usage](init-containers.md)
