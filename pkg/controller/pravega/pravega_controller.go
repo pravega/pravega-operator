@@ -213,21 +213,14 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	}
 	if p.Spec.Pravega.AuthImplementations != nil {
 		authContainers := []corev1.Container{}
-		var srcPath, mountPath string
+		var mountPath string
 		if p.Spec.Pravega.AuthImplementations.MountPath != "" {
 			mountPath = p.Spec.Pravega.AuthImplementations.MountPath
 		} else {
 			mountPath = "/opt/pravega/pluginlib"
 		}
 		for i, plugin := range p.Spec.Pravega.AuthImplementations.AuthHandlers {
-			if plugin.Source != "" {
-				srcPath = plugin.Source
-			} else {
-				srcPath = "/plugins/implementation/*.jar"
-			}
-
-			arg := "cp " + srcPath + " " + mountPath
-
+			arg := "cp " + plugin.Source + " " + mountPath
 			authContainers = append(authContainers, corev1.Container{
 				Name:    "authplugin" + strconv.Itoa(i),
 				Image:   plugin.Image,

@@ -135,6 +135,7 @@ spec:
                               type: string
                           required:
                           - image
+                          - source
                           type: object
                         type: array
                       mountPath:

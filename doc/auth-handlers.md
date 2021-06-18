@@ -10,25 +10,6 @@ authImplementations:
     source: "/some_vendor/data/*"
 ```  
 
-User has to provide an image that contains authhandler implementation and the image should have `/bin/sh` enabled.
+User has to provide an image that contains authhandler implementation and the image should have `/bin/sh` enabled. Also need to ensure `source` provided in the `yaml` should be the correct location of `jar` file and should have sufficient permissions to copy the file. `MountPath` should be present in Pravega class path and currently  `/opt/pravega/pluginlib` is added in class path of Pravega controller.
 
 Pravega performs dynamic implementations of the Authorization/Authentication [API](https://github.com/pravega/pravega/blob/master/documentation/src/docs/auth/auth-plugin.md). Multiple implementations can co-exist and different plugins can be used by different users.
-
-
-Alternatively, user can mention the details in init Containers as well to copy the files to controller or segmentstore pods. For using init containers modify the  Pravega manifest and ensure that following fields are present.
-
-```
-initContainers:
-- name: "initscripts"
-  image: <image containing scripts>
-  command: ["cp /data/scripts/* /opt/scripts"]
-  volumeMounts:
-  - mountPath: /opt/scripts
-    name: scripts
-```
-Also, we need to ensure that main container is mounted and emptydir volume is created at the pod. This can be achieved by mentioning `emptyDirVolumeMounts` in options as below.
-
-```
-options:
-  emptyDirVolumeMounts: "scripts=/opt/scripts"
-```

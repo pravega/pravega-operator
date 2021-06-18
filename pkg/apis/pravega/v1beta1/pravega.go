@@ -428,7 +428,7 @@ type AuthImplementationSpec struct {
 // Contains details of auth handler
 type AuthHandlerSpec struct {
 	Image  string `json:"image"`
-	Source string `json:"source,omitempty"`
+	Source string `json:"source"`
 }
 
 func (s *LongTermStorageSpec) withDefaults() (changed bool) {
