@@ -97,7 +97,11 @@ segmentStore:
   stsNameSuffix:
   headlessSvcNameSuffix:
   initContainers: []
-
+authImplementations: {}
+  # mountPath: "/opt/pravega/pluginlib"
+  # authHandlers:
+  # - image:
+  #   source: "/some_vendor/data/*"
 storage:
 
   longtermStorage:

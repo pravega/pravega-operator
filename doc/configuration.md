@@ -15,3 +15,5 @@ This document explains how to configure Pravega
 * [Enable external access](external-access.md)
 * [Enable admission webhook](webhook.md)
 * [Configuring Service and Sts Names](service-sts-name-configuration.md)
+* [Enable AuthHandlers](auth-handlers.md)
+* [Init Containers Usage](init-containers.md)
