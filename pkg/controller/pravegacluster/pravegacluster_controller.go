@@ -280,6 +280,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 			//restarting sts pods
 			if !r.checkVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
 				err = r.restartStsPod(p)
+
 				if err != nil {
 					return err
 				}
@@ -625,7 +626,28 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 	err = r.client.Create(context.TODO(), deployment)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
+	} else if errors.IsAlreadyExists(err) {
+		foundDeploy := &appsv1.Deployment{}
+		name := p.DeploymentNameForController()
+		err := r.client.Get(context.TODO(),
+			types.NamespacedName{Name: name, Namespace: p.Namespace}, foundDeploy)
+		if err != nil {
+			return err
+		}
+
+		deployment.Spec.Template.Spec.Containers[0].Image = foundDeploy.Spec.Template.Spec.Containers[0].Image
+		deployment.Spec.Template.Annotations["pravega.version"] = foundDeploy.Spec.Template.Annotations["pravega.version"]
+		//if !r.checkVersionUpgradeTriggered(p) {
+		if !reflect.DeepEqual(deployment.Spec.Template, foundDeploy.Spec.Template) {
+			foundDeploy.Spec.Template = deployment.Spec.Template
+			err = r.client.Update(context.TODO(), foundDeploy)
+			if err != nil {
+				return fmt.Errorf("failed to update deployment set: %v", err)
+			}
+
+		}
 	}
+	//	}
 	return nil
 }
 
@@ -650,10 +672,12 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			if err != nil {
 				return err
 			}
-			if statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort != sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort {
-				sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort
-				sts.Spec.Template.Spec.Containers[0].ReadinessProbe = statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe
-				sts.Spec.Template.Spec.Containers[0].LivenessProbe = statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe
+			statefulSet.Spec.Template.Spec.Containers[0].Image = sts.Spec.Template.Spec.Containers[0].Image
+			statefulSet.Spec.Template.Annotations["pravega.version"] = sts.Spec.Template.Annotations["pravega.version"]
+			//if !r.checkVersionUpgradeTriggered(p) {
+			if !reflect.DeepEqual(statefulSet.Spec.Template, sts.Spec.Template) {
+				log.Printf("Anisha sts not equal %v %v", statefulSet.Spec.Template, sts.Spec.Template)
+				sts.Spec.Template = statefulSet.Spec.Template
 				err = r.client.Update(context.TODO(), sts)
 				if err != nil {
 					return fmt.Errorf("failed to update stateful set: %v", err)
@@ -662,7 +686,9 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 				if err != nil {
 					return err
 				}
+				//}
 			}
+
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
 				log.Printf("Deleting SSS STS as it has old version owner ref.")
