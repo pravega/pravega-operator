@@ -635,10 +635,7 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 			return err
 		}
 
-		deployment.Spec.Template.Spec.Containers[0].Image = foundDeploy.Spec.Template.Spec.Containers[0].Image
-		deployment.Spec.Template.Annotations["pravega.version"] = foundDeploy.Spec.Template.Annotations["pravega.version"]
-		//if !r.checkVersionUpgradeTriggered(p) {
-		if !reflect.DeepEqual(deployment.Spec.Template, foundDeploy.Spec.Template) {
+		if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
 			foundDeploy.Spec.Template = deployment.Spec.Template
 			err = r.client.Update(context.TODO(), foundDeploy)
 			if err != nil {
@@ -647,7 +644,6 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 
 		}
 	}
-	//	}
 	return nil
 }
 
@@ -672,21 +668,21 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			if err != nil {
 				return err
 			}
-			statefulSet.Spec.Template.Spec.Containers[0].Image = sts.Spec.Template.Spec.Containers[0].Image
-			statefulSet.Spec.Template.Annotations["pravega.version"] = sts.Spec.Template.Annotations["pravega.version"]
-			//if !r.checkVersionUpgradeTriggered(p) {
-			if !reflect.DeepEqual(statefulSet.Spec.Template, sts.Spec.Template) {
-				log.Printf("Anisha sts not equal %v %v", statefulSet.Spec.Template, sts.Spec.Template)
+
+			if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
+				originalsts := sts.DeepCopy()
 				sts.Spec.Template = statefulSet.Spec.Template
 				err = r.client.Update(context.TODO(), sts)
 				if err != nil {
 					return fmt.Errorf("failed to update stateful set: %v", err)
 				}
-				err = r.restartStsPod(p)
-				if err != nil {
-					return err
+
+				if !reflect.DeepEqual(originalsts.Spec.Template, sts.Spec.Template) {
+					err = r.restartStsPod(p)
+					if err != nil {
+						return err
+					}
 				}
-				//}
 			}
 
 			owRefs := sts.GetOwnerReferences()
