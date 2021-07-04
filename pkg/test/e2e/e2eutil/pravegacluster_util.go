@@ -909,6 +909,30 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 	return nil
 }
 
+// GetSts returns the sts
+func GetSts(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, stsName string) (*appsv1.StatefulSet, error) {
+	sts := &appsv1.StatefulSet{}
+	ns := "default"
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: stsName}, sts)
+	if err != nil {
+		return nil, fmt.Errorf("sts doesnt exist: %v", err)
+	}
+
+	return sts, nil
+}
+
+// GetDeployment returns the deployment
+func GetDeployment(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, deployName string) (*appsv1.Deployment, error) {
+	deploy := &appsv1.Deployment{}
+	ns := "default"
+	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: deployName}, deploy)
+	if err != nil {
+		return nil, fmt.Errorf("Deployment doesnt exist: %v", err)
+	}
+
+	return deploy, nil
+}
+
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	t.Log("restarting tier2 storage")
 	tier2 := NewTier2(namespace)

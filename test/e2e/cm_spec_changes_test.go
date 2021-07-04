@@ -74,6 +74,8 @@ func testCMUpgradeCluster(t *testing.T) {
 	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
 	pravega.Spec.Pravega.Options["bookkeeper.bkAckQuorumSize"] = "2"
 	pravega.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "443"
+	pravega.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
+	pravega.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
 
 	//updating pravegacluster
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
@@ -87,6 +89,15 @@ func testCMUpgradeCluster(t *testing.T) {
 	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	stsName := pravega.StatefulSetNameForSegmentstore()
+	sts, err1 := pravega_e2eutil.GetSts(t, f, ctx, stsName)
+	g.Expect(err1).NotTo(HaveOccurred())
+	g.Expect(sts.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
+
+	deployName := pravega.DeploymentNameForController()
+	deploy, err2 := pravega_e2eutil.GetDeployment(t, f, ctx, deployName)
+	g.Expect(err2).NotTo(HaveOccurred())
+	g.Expect(deploy.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
 	// Sleeping for 1 min before read/write data
 	time.Sleep(60 * time.Second)
 
