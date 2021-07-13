@@ -397,6 +397,62 @@ var _ = Describe("PravegaCluster Controller", func() {
 					})
 				})
 
+				Context("checking updateStatefulset", func() {
+					var (
+						err1 error
+						str1 string
+					)
+					BeforeEach(func() {
+
+						p.WithDefaults()
+						sts := &appsv1.StatefulSet{}
+						name := p.StatefulSetNameForSegmentstore()
+						foundPravega := &v1beta1.PravegaCluster{}
+						_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+						foundPravega.Spec.Pravega.SegmentStoreServiceAccountName = "testsa"
+						client.Update(context.TODO(), foundPravega)
+						_, _ = r.Reconcile(req)
+						err1 = r.client.Get(context.TODO(),
+							types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+
+						str1 = fmt.Sprintf("%s", sts.Spec.Template.Spec.ServiceAccountName)
+					})
+					It("should not give error", func() {
+						Ω(err1).Should(BeNil())
+					})
+					It("service account name should get updated correctly", func() {
+						Ω(str1).To(Equal("testsa"))
+					})
+				})
+
+				Context("checking updateDeployment", func() {
+					var (
+						err1 error
+						str1 string
+					)
+					BeforeEach(func() {
+
+						p.WithDefaults()
+						deploy := &appsv1.Deployment{}
+						name := p.DeploymentNameForController()
+						foundPravega := &v1beta1.PravegaCluster{}
+						_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
+						foundPravega.Spec.Pravega.ControllerServiceAccountName = "testsa"
+						client.Update(context.TODO(), foundPravega)
+						_, _ = r.Reconcile(req)
+						err1 = r.client.Get(context.TODO(),
+							types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+
+						str1 = fmt.Sprintf("%s", deploy.Spec.Template.Spec.ServiceAccountName)
+					})
+					It("should not give error", func() {
+						Ω(err1).Should(BeNil())
+					})
+					It("service account name should get updated correctly", func() {
+						Ω(str1).To(Equal("testsa"))
+					})
+				})
+
 				Context("checking checkVersionUpgradeTriggered function", func() {
 					var (
 						ans1, ans2 bool

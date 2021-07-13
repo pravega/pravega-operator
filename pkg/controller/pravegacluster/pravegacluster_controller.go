@@ -280,6 +280,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 			//restarting sts pods
 			if !r.checkVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
 				err = r.restartStsPod(p)
+
 				if err != nil {
 					return err
 				}
@@ -625,6 +626,23 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 	err = r.client.Create(context.TODO(), deployment)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
+	} else if errors.IsAlreadyExists(err) {
+		foundDeploy := &appsv1.Deployment{}
+		name := p.DeploymentNameForController()
+		err := r.client.Get(context.TODO(),
+			types.NamespacedName{Name: name, Namespace: p.Namespace}, foundDeploy)
+		if err != nil {
+			return err
+		}
+
+		if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
+			foundDeploy.Spec.Template = deployment.Spec.Template
+			err = r.client.Update(context.TODO(), foundDeploy)
+			if err != nil {
+				return fmt.Errorf("failed to update deployment set: %v", err)
+			}
+
+		}
 	}
 	return nil
 }
@@ -650,19 +668,23 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			if err != nil {
 				return err
 			}
-			if statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort != sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort {
-				sts.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort = statefulSet.Spec.Template.Spec.Containers[0].Ports[0].ContainerPort
-				sts.Spec.Template.Spec.Containers[0].ReadinessProbe = statefulSet.Spec.Template.Spec.Containers[0].ReadinessProbe
-				sts.Spec.Template.Spec.Containers[0].LivenessProbe = statefulSet.Spec.Template.Spec.Containers[0].LivenessProbe
+
+			if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
+				originalsts := sts.DeepCopy()
+				sts.Spec.Template = statefulSet.Spec.Template
 				err = r.client.Update(context.TODO(), sts)
 				if err != nil {
 					return fmt.Errorf("failed to update stateful set: %v", err)
 				}
-				err = r.restartStsPod(p)
-				if err != nil {
-					return err
+
+				if !reflect.DeepEqual(originalsts.Spec.Template, sts.Spec.Template) {
+					err = r.restartStsPod(p)
+					if err != nil {
+						return err
+					}
 				}
 			}
+
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
 				log.Printf("Deleting SSS STS as it has old version owner ref.")
