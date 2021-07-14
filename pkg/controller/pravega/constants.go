@@ -28,4 +28,6 @@ const (
 	ssAuthVolumeName         = "ss-auth-secret"
 	controllerAuthMountDir   = "/etc/controller-auth-volume"
 	ssAuthMountDir           = "/etc/ss-auth-volume"
+	influxDBSecretVolumeName = "influxdb-secret"
+	influxDBSecretMountDir   = "/etc/influxdb-secret-volume"
 )
