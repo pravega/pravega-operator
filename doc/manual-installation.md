@@ -10,7 +10,7 @@
 
 > Note: If you are running on Google Kubernetes Engine (GKE), please [check this first](development.md#installation-on-google-kubernetes-engine).
 
-In case you dont have a cert-manager, Install the cert-manager v0.15.0+ from the following link:-
+In case you don't have cert-manager v0.15.0+, install it from the following link :-
 
 https://cert-manager.io/docs/installation/kubernetes/
 
@@ -21,10 +21,6 @@ $ kubectl create -f deploy/certificate.yaml
 Install the webhook
 ```
 $ kubectl create -f deploy/webhook.yaml  
-```
-Install the version map for pravega-operator which contains the list of supported versions and supported upgrade paths for the pravega cluster
-```
-$ kubectl create -f  deploy/version_map.yaml
 ```
 Register the Pravega cluster custom resource definition (CRD).
 ```
@@ -99,7 +95,7 @@ where:
 - `[ZOOKEEPER_SVC]` is the name of client service of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
-Check out other sample CR files in the [`example`](../example) directory.
+Check out other sample CR files in the [example](../example) directory.
 
 Deploy the Pravega cluster.
 

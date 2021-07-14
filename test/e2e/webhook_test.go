@@ -36,15 +36,15 @@ func testWebhook(t *testing.T) {
 	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	//Test webhook with an unsupported Pravega cluster version
-	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "99.0.0")
+	//Test webhook with an invalid Pravega cluster version format
+	invalidVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "999")
 	invalidVersion.WithDefaults()
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidVersion)
-	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
+	g.Expect(err).To(HaveOccurred(), "Should reject deployment of invalid version format")
+	g.Expect(err.Error()).To(ContainSubstring("request version is not in valid format:"))
 
-	// Test webhook with a supported Pravega cluster version
-	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.3.0")
+	// Test webhook with a valid Pravega cluster version format
+	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.6.0")
 	validVersion.WithDefaults()
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, validVersion)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -53,14 +53,14 @@ func testWebhook(t *testing.T) {
 	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	// Try to upgrade to a non-supported version
+	// Try to downgrade the cluster
 	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	pravega.Spec.Version = "99.0.0"
+	pravega.Spec.Version = "0.5.0"
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).To(HaveOccurred(), "failed to reject request with unsupported version")
-	g.Expect(err.Error()).To(ContainSubstring("unsupported Pravega cluster version 99.0.0"))
+	g.Expect(err).To(HaveOccurred(), "Should not allow downgrade")
+	g.Expect(err.Error()).To(ContainSubstring("downgrading the cluster from version 0.6.0 to 0.5.0 is not supported"))
 
 	// Delete cluster
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)

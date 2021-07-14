@@ -1,3 +1,4 @@
+# this file is deprecated and will be removed in future releases
 kind: ConfigMap
 apiVersion: v1
 metadata:
