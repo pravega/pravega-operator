@@ -5,8 +5,6 @@
 * [Certificate Error: Internal error occurred: failed calling webhook](#certificate-error-internal-error-occurred-failed-calling-webhook)
 * [Segment store in CrashLoopBackOff](#segment-store-in-crashloopbackoff)
 * [Controller pod not in ready state](#controller-pod-not-in-ready-state)
-* [Unsupported Pravega cluster version](#unsupported-pravega-cluster-version)
-* [Unsupported upgrade from version](#unsupported-upgrade-from-version)
 * [NFS volume mount failure: wrong fs type](#nfs-volume-mount-failure-wrong-fs-type)
 * [Recover Statefulset when node fails](#recover-statefulset-when-node-fails)
 * [External-IP details truncated in older Kubectl Client Versions](#external-ip-details-truncated-in-older-kubectl-client-versions)
@@ -61,46 +59,6 @@ While installing pravega, if the controller pod goes in `0/1` state as below, it
 pravega-pravega-controller-68d68796f4-m5w7m             0/1     Running            0          15m
 ```
 To resolve this issue, we have to ensure that zookeeper, bookkeeper and longterm storage are recreated before doing the pravega installation.
-
-## Unsupported Pravega cluster version
-
-While installing pravega, if we get the below error
-```
-Error: admission webhook "pravegawebhook.pravega.io" denied the request: unsupported Pravega cluster version 0.10.0-2703.c9b7be114
-```
-We need to make sure the supported versions are present in config map by the following command
-
-`kubectl describe cm supported-versions-map`
-
-If the entries are not there in configmap, we have to add these options in the configmap by enabling test mode as follows while installing operator
-
-```
-helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.version="0.10.0"
-```
-
-Alternatively, we can edit the configmap and add entry as `0.10.0:0.10.0` in the configmap and restart the pravega-operator pod
-## Unsupported upgrade from version
-
-While upgrading pravega, if we get the error similar to below
-
-```
-Error from server (unsupported upgrade from version 0.8.0-2640.e4c436ba9 to 0.9.0-2752.2652549b3): error when applying patch
-```
-We need to make sure that supported versions are present in configmap as `0.8.0:0.9.0`. If the entries are missing, we have to add these options in the configmap by enabling test mode as follows while installing Operator
-
-If the version from which we are triggering upgrade is present in configmap, use the below command.
-
-```
-helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.version="0.9.0"
-```
-
-If the version from which we are triggering upgrade and the version to which upgrade is performed are not present in configmap use the below command
-
-```
-helm install pravega-operator charts/pravega-operator --set testmode.enabled=true --set testmode.fromVersion="0.8.0" --set testmode.version="0.9.0"
-```
-
-Alternatively, we can edit the configmap and add entry as `0.8.0:0.8.0,0.9.0` in the configmap and restart the pravega-operator pod
 
 ## NFS volume mount failure: wrong fs type
 
