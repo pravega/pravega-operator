@@ -13,21 +13,12 @@ Starting Operator version `0.4.3` we also support major version upgrades for Pra
 
 ## Upgrading till 0.4.5 or from 0.5.0 to above
 
-### Trigger the upgrade via helm
-
 Pravega operator can be upgraded to a version **[VERSION]** using the following command
 
 ```
 $ helm upgrade [PRAVEGA_OPERATOR_RELEASE_NAME] pravega/pravega-operator --version=[VERSION]
 ```
 
-### Trigger the upgrade manually
-
-The pravega operator with deployment name **[DEPLOYMENT_NAME]** can be upgraded manually by modifying the image tag using kubectl edit, patch or apply
-
-```
-$ kubectl edit [DEPLOYMENT_NAME]
-```
 The upgrade is handled as a [rolling update](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/) by Kubernetes and results in a new operator pod being created and the old one being terminated.
 
 ## Upgrading from 0.4.x to 0.5.0
