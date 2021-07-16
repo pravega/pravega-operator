@@ -972,7 +972,7 @@ func (p *PravegaCluster) ValidatePravegaVersion() error {
 	if match, _ := util.CompareVersions(normRequestVersion, normFoundVersion, "<"); match {
 		return fmt.Errorf("downgrading the cluster from version %s to %s is not supported", p.Status.CurrentVersion, requestVersion)
 	}
-	log.Printf("validateBookkeeperVersion:: normFoundVersion %s", normFoundVersion)
+	log.Printf("ValidatePravegaVersion:: normFoundVersion %s", normFoundVersion)
 
 	log.Print("ValidatePravegaVersion:: No error found...returning...")
 	return nil
