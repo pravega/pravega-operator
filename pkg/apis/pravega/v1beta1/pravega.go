@@ -228,6 +228,9 @@ type PravegaSpec struct {
 
 	// Details of authplugin to be copied into pravega controller
 	AuthImplementations *AuthImplementationSpec `json:"authImplementations,omitempty"`
+
+	// Name of Secret containing Password based Authentication Parameters like username, password
+	InfluxDBSecret string `json:"influxDBSecret,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {

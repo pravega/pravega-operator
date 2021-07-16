@@ -2188,6 +2188,10 @@ spec:
                       repository:
                         type: string
                     type: object
+                  influxDBSecret:
+                    description: Name of Secret containing Password based Authentication
+                      Parameters like username, password
+                    type: string
                   longtermStorage:
                     description: LongTermStorage is the configuration of Pravega's
                       tier 2 storage. If no configuration is provided, it will assume

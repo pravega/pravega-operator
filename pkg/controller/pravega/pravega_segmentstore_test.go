@@ -87,6 +87,7 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStorePodLabels:          annotationsMap,
 						SegmentStorePodAnnotations:     annotationsMap,
 						SegmentStoreEnvVars:            "SEG_CONFIG_MAP",
+						InfluxDBSecret:                 "influxdb-secret",
 						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
 							Secret:    "seg-secret",
 							MountPath: "",
@@ -120,8 +121,9 @@ var _ = Describe("PravegaSegmentstore", func() {
 						},
 					},
 					Authentication: &v1beta1.AuthenticationParameters{
-						Enabled:            true,
-						PasswordAuthSecret: "authentication-secret",
+						Enabled:                 true,
+						PasswordAuthSecret:      "authentication-secret",
+						SegmentStoreTokenSecret: "segment-store-secret",
 					},
 				}
 				p.WithDefaults()
@@ -187,6 +189,8 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
 					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
 					Ω(mounthostpath4).Should(Equal("/opt/pravega/conf/logback.xml"))
+					mounthostpath5 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[9].MountPath
+					Ω(mounthostpath5).Should(Equal("/etc/influxdb-secret-volume"))
 					Ω(err).Should(BeNil())
 				})
 
@@ -315,11 +319,14 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=443")).Should(BeTrue())
 					Ω(err).Should(BeNil())
 				})
-
+				It("should create a stateful set with filesystem as longtermstorage", func() {
+					sts := pravega.MakeSegmentStoreStatefulSet(p)
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
+					Ω(mounthostpath0).Should(Equal("/mnt/tier2"))
+				})
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
 				})
-
 			})
 		})
 
@@ -362,6 +369,10 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStoreServiceAnnotations:  annotationsMap,
 						SegmentStorePodLabels:           annotationsMap,
 						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
+						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
+							Secret:    "seg-secret",
+							MountPath: "/tmp/mount",
+						},
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},

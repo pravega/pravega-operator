@@ -87,6 +87,7 @@ var _ = Describe("Controller", func() {
 						ControllerPodAnnotations:       annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						SegmentStorePodLabels:          annotationsMap,
+						InfluxDBSecret:                 "influxdb-secret",
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},
@@ -181,6 +182,11 @@ var _ = Describe("Controller", func() {
 
 				})
 
+				It("should have VolumeMounts created for influxdb secret", func() {
+					deploy := pravega.MakeControllerPodTemplate(p)
+					mounthostpath := deploy.Spec.Containers[0].VolumeMounts[9].MountPath
+					Ω(mounthostpath).Should(Equal("/etc/influxdb-secret-volume"))
+				})
 				It("should create the service", func() {
 					svc := pravega.MakeControllerService(p)
 					Ω(svc.Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
