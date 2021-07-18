@@ -10,6 +10,7 @@
 package util
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -45,6 +46,15 @@ var _ = Describe("pravegacluster", func() {
 		})
 		It("should return true for result4", func() {
 			Ω(result4).To(Equal(true))
+		})
+	})
+	Context("Testing loglevel Function", func() {
+		var ans string
+		BeforeEach(func() {
+			ans = fmt.Sprintf("%s", LogLevel())
+		})
+		It("should return true for result", func() {
+			Ω(ans).To(Equal("debug"))
 		})
 	})
 	Context("ContainsVersion fn", func() {
