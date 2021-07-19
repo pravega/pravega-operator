@@ -10,8 +10,10 @@ SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
 REPO=testpravegaop/$(PROJECT_NAME)
-VERSION=$(shell git describe --always --tags --dirty | sed "s/\(.*\)-g`git rev-parse --short HEAD`/\1/")
+BASE_VERSION=0.5.5
+ID=$(shell git rev-list HEAD --count)
 GIT_SHA=$(shell git rev-parse --short HEAD)
+VERSION=$(BASE_VERSION)-$(ID)-$(GIT_SHA)
 TEST_IMAGE=$(REPO)-testimages:$(VERSION)
 GOOS=linux
 GOARCH=amd64
