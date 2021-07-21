@@ -74,6 +74,7 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
 	secret := p.Spec.Pravega.SegmentStoreSecret
+
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -488,6 +489,11 @@ func configureInfluxDBSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      influxDBSecretVolumeName,
 			MountPath: influxDBSecretMountDir,
+		})
+
+		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, corev1.EnvVar{
+			Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
+			Value: influxDBSecretMountDir,
 		})
 	}
 }

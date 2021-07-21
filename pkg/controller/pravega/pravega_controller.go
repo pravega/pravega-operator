@@ -281,6 +281,13 @@ func configureControllerInfluxDBSecrets(podSpec *corev1.PodSpec, p *api.PravegaC
 	if p.Spec.Pravega.InfluxDBSecret != "" {
 		addSecretVolumeWithMount(podSpec, p, influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret,
 			influxDBSecretVolumeName, influxDBSecretMountDir)
+
+		podSpec.Containers[0].Env = []corev1.EnvVar{
+			{
+				Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
+				Value: influxDBSecretMountDir,
+			},
+		}
 	}
 }
 
