@@ -103,6 +103,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			p     *v1beta1.PravegaCluster
 			file1 *os.File
 		)
+
 		BeforeEach(func() {
 			p = &v1beta1.PravegaCluster{
 				ObjectMeta: metav1.ObjectMeta{
@@ -110,60 +111,34 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				},
 			}
 			p.WithDefaults()
-			file1, _ = os.Create("filename")
-			file1, _ = os.OpenFile("filename", os.O_RDWR, 0644)
-			file1.WriteString("0.1.0:0.1.0 \n")
-			file1.WriteString("0.2.0:0.2.0 \n")
-			file1.WriteString("0.3.0:0.3.0,0.3.1,0.3.2 \n")
-			file1.WriteString("0.3.1:0.3.1,0.3.2 \n")
-			file1.WriteString("0.4.0:0.4.0 \n")
-			file1.WriteString("0.5.0:0.5.0,0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.5.1:0.5.1,0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.6.0:0.6.0,0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.6.1:0.6.1,0.6.2,0.7.0,0.7.1,0.8.0,0.9.0  \n")
-			file1.WriteString("0.6.2:0.6.2,0.7.0,0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.7.0:0.7.0,0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.7.1:0.7.1,0.8.0,0.9.0 \n")
-			file1.WriteString("0.8.0:0.8.0,0.9.0 \n")
-			file1.WriteString("0.9.0:0.9.0 \n")
 		})
+
 		Context("Spec version empty", func() {
 			var (
 				err error
 			)
 			BeforeEach(func() {
 				p.Spec.Version = ""
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return nil", func() {
 				Ω(err).To(BeNil())
 			})
 		})
+
 		Context("Version not in valid format", func() {
 			var (
 				err error
 			)
 			BeforeEach(func() {
 				p.Spec.Version = "999"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "request version is not in valid format")).Should(Equal(true))
 			})
 		})
 
-		Context("Version not supported", func() {
-			var (
-				err error
-			)
-			BeforeEach(func() {
-				p.Spec.Version = "0.8.3"
-				err = p.ValidatePravegaVersion("filename")
-			})
-			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "unsupported Bookkeeper cluster version")).Should(Equal(true))
-			})
-		})
 		Context("Spec version and current version same", func() {
 			var (
 				err error
@@ -171,26 +146,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			BeforeEach(func() {
 				p.Spec.Version = "0.7.0"
 				p.Status.CurrentVersion = "0.7.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return nil", func() {
 				Ω(err).To(BeNil())
 			})
 		})
-		Context("Unsupported current version", func() {
-			var (
-				err error
-			)
-			BeforeEach(func() {
-				p.Spec.Version = "0.7.0"
-				p.Status.CurrentVersion = "0.9.0"
-				err = p.ValidatePravegaVersion("filename")
-			})
-			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "failed to find current cluster version in the supported versions")).Should(Equal(true))
-			})
 
-		})
 		Context("current version not in correct format", func() {
 			var (
 				err error
@@ -198,27 +160,28 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			BeforeEach(func() {
 				p.Spec.Version = "0.7.0"
 				p.Status.CurrentVersion = "999"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "found version is not in valid format")).Should(Equal(true))
 			})
 
 		})
+
 		Context("unsupported upgrade to a version", func() {
 			var (
 				err error
 			)
 			BeforeEach(func() {
-				p.Status.CurrentVersion = "0.7.0"
-				p.Spec.Version = "0.7.2"
-				err = p.ValidatePravegaVersion("filename")
+				p.Status.CurrentVersion = "0.7.2"
+				p.Spec.Version = "0.7.0"
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "unsupported upgrade from version")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "downgrading the cluster from version 0.7.2 to 0.7.0 is not supported")).Should(Equal(true))
 			})
-
 		})
+
 		Context("supported upgrade to a version", func() {
 			var (
 				err error
@@ -226,12 +189,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			BeforeEach(func() {
 				p.Status.CurrentVersion = "0.7.0"
 				p.Spec.Version = "0.7.1"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return nil", func() {
 				Ω(err).To(BeNil())
 			})
 		})
+
 		Context("validation while cluster upgrade in progress", func() {
 			var (
 				err error
@@ -240,12 +204,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				p.Status.SetUpgradingConditionTrue(" ", " ")
 				p.Spec.Version = "0.7.1"
 				p.Status.TargetVersion = "0.7.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "failed to process the request, cluster is upgrading")).Should(Equal(true))
 			})
 		})
+
 		Context("validation while cluster rollback in progress", func() {
 			var (
 				err error
@@ -256,12 +221,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				p.Status.AddToVersionHistory("0.6.0")
 				p.Status.SetRollbackConditionTrue(" ", " ")
 				p.Spec.Version = "0.7.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "failed to process the request, rollback in progress")).Should(Equal(true))
 			})
 		})
+
 		Context("validation while cluster in error state", func() {
 			var (
 				err error
@@ -269,13 +235,14 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			BeforeEach(func() {
 				p.Status.SetErrorConditionTrue("some err", " ")
 				p.Spec.Version = "0.7.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "failed to process the request, cluster is in error state")).Should(Equal(true))
 			})
 		})
-		Context("validation while cluster in upgradefailed state", func() {
+
+		Context("validation while cluster in UpgradeFailed state", func() {
 			var (
 				err error
 			)
@@ -285,13 +252,14 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				p.Status.AddToVersionHistory("0.6.0")
 				p.Status.SetErrorConditionTrue("UpgradeFailed", " ")
 				p.Spec.Version = "0.7.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
 				Ω(strings.ContainsAny(err.Error(), "Rollback to version 0.7.0 not supported")).Should(Equal(true))
 			})
 		})
-		Context("validation while cluster in upgradefailed state and supported rollback version", func() {
+
+		Context("validation while cluster in UpgradeFailed state and supported rollback version", func() {
 			var (
 				err error
 			)
@@ -301,12 +269,13 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				p.Status.AddToVersionHistory("0.6.0")
 				p.Status.SetErrorConditionTrue("UpgradeFailed", " ")
 				p.Spec.Version = "0.6.0"
-				err = p.ValidatePravegaVersion("filename")
+				err = p.ValidatePravegaVersion()
 			})
 			It("should return nil", func() {
 				Ω(err).To(BeNil())
 			})
 		})
+
 		AfterEach(func() {
 			file1.Close()
 			os.Remove("filename")
@@ -333,6 +302,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			Ω(p.Spec.TLS.IsSecureController()).To(Equal(false))
 		})
 	})
+
 	Context("Checking various parameters", func() {
 		BeforeEach(func() {
 			p.Spec.Version = "0.6.0"
@@ -452,8 +422,8 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		It("Should return segmentstore configmap name", func() {
 			Ω(name).ShouldNot(BeNil())
 		})
-
 	})
+
 	Context("checking event generation utility", func() {
 		BeforeEach(func() {
 			p.WithDefaults()

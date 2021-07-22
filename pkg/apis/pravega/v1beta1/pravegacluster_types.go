@@ -11,7 +11,6 @@
 package v1beta1
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -898,13 +897,13 @@ func (p *PravegaCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateCreate() error {
 	log.Printf("validate create %s", p.Name)
-	return p.ValidatePravegaVersion("")
+	return p.ValidatePravegaVersion()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 	log.Printf("validate update %s", p.Name)
-	err := p.ValidatePravegaVersion("")
+	err := p.ValidatePravegaVersion()
 	if err != nil {
 		return err
 	}
@@ -922,42 +921,7 @@ func (p *PravegaCluster) ValidateDelete() error {
 	return nil
 }
 
-func getSupportedVersions(filename string) (map[string]string, error) {
-	var supportedVersions = map[string]string{}
-	filepath := filename
-	if filename == "" {
-		filepath = "/tmp/config/keys"
-	}
-
-	file, err := os.Open(filepath)
-
-	if err != nil {
-		log.Fatalf("failed opening file: %v", err)
-		return supportedVersions, nil
-	}
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	var txtlines []string
-
-	for scanner.Scan() {
-		txtlines = append(txtlines, scanner.Text())
-	}
-	defer file.Close()
-
-	for _, eachline := range txtlines {
-		entry := strings.Split(eachline, ":")
-		supportedVersions[entry[0]] = entry[1]
-	}
-	return supportedVersions, nil
-}
-
-func (p *PravegaCluster) ValidatePravegaVersion(filename string) error {
-	supportedVersions, err := getSupportedVersions(filename)
-	if err != nil {
-		return fmt.Errorf("Error retrieving suported versions %v", err)
-	}
-
+func (p *PravegaCluster) ValidatePravegaVersion() error {
 	if p.Spec.Version == "" {
 		p.Spec.Version = DefaultPravegaVersion
 	}
@@ -989,10 +953,6 @@ func (p *PravegaCluster) ValidatePravegaVersion(filename string) error {
 		return fmt.Errorf("request version is not in valid format: %v", err)
 	}
 
-	if _, ok := supportedVersions[normRequestVersion]; !ok {
-		return fmt.Errorf("unsupported Pravega cluster version %s", requestVersion)
-	}
-
 	if p.Status.CurrentVersion == "" {
 		// we're deploying for the very first time
 		return nil
@@ -1009,16 +969,11 @@ func (p *PravegaCluster) ValidatePravegaVersion(filename string) error {
 		return fmt.Errorf("found version is not in valid format, something bad happens: %v", err)
 	}
 
+	if match, _ := util.CompareVersions(normRequestVersion, normFoundVersion, "<"); match {
+		return fmt.Errorf("downgrading the cluster from version %s to %s is not supported", p.Status.CurrentVersion, requestVersion)
+	}
 	log.Printf("ValidatePravegaVersion:: normFoundVersion %s", normFoundVersion)
-	upgradeString, ok := supportedVersions[normFoundVersion]
-	if !ok {
-		// It should never happen
-		return fmt.Errorf("failed to find current cluster version in the supported versions")
-	}
-	upgradeList := strings.Split(upgradeString, ",")
-	if !util.ContainsVersion(upgradeList, normRequestVersion) {
-		return fmt.Errorf("unsupported upgrade from version %s to %s", p.Status.CurrentVersion, requestVersion)
-	}
+
 	log.Print("ValidatePravegaVersion:: No error found...returning...")
 	return nil
 }
