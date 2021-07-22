@@ -44,7 +44,10 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 						Secret:    "seg-secret",
 						MountPath: "",
 					},
-
+					InfluxDBSecret: &v1beta1.InfluxDBSecret{
+						Secret:    "influx-secret",
+						MountPath: "",
+					},
 					SegmentStoreInitContainers: []v1.Container{
 						v1.Container{
 							Name:    "testing",
@@ -125,6 +128,7 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 
 			p2.Spec.Pravega = p1.Spec.Pravega.DeepCopy()
 			p2.Spec.Pravega.SegmentStoreSecret = p1.Spec.Pravega.SegmentStoreSecret.DeepCopy()
+			p2.Spec.Pravega.InfluxDBSecret = p1.Spec.Pravega.InfluxDBSecret.DeepCopy()
 			p2.Spec.Pravega.AuthImplementations = p1.Spec.Pravega.AuthImplementations.DeepCopy()
 			p2.Spec.Pravega.AuthImplementations.AuthHandlers[0] = *p1.Spec.Pravega.AuthImplementations.AuthHandlers[0].DeepCopy()
 
@@ -244,9 +248,17 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			p1.Spec.ExternalAccess = nil
 			Ω(p1.Spec.ExternalAccess.DeepCopy()).Should(BeNil())
 		})
-		It("checking for nil TLS Sttic", func() {
+		It("checking for nil TLS Static", func() {
 			p1.Spec.TLS.Static = nil
 			Ω(p1.Spec.TLS.Static.DeepCopy()).Should(BeNil())
+		})
+		It("checking for nil InfluxDBsecret", func() {
+			p1.Spec.Pravega.InfluxDBSecret = nil
+			Ω(p1.Spec.Pravega.InfluxDBSecret.DeepCopy()).Should(BeNil())
+		})
+		It("checking for nil SegmentStore secret", func() {
+			p1.Spec.Pravega.SegmentStoreSecret = nil
+			Ω(p1.Spec.Pravega.SegmentStoreSecret.DeepCopy()).Should(BeNil())
 		})
 		It("checking for nil Pravega LongTermStorage", func() {
 			p1.Spec.Pravega.LongTermStorage = nil

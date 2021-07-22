@@ -87,7 +87,10 @@ var _ = Describe("Controller", func() {
 						ControllerPodAnnotations:       annotationsMap,
 						SegmentStoreServiceAnnotations: annotationsMap,
 						SegmentStorePodLabels:          annotationsMap,
-						InfluxDBSecret:                 "influxdb-secret",
+						InfluxDBSecret: &v1beta1.InfluxDBSecret{
+							Secret:    "influxdb-secret",
+							MountPath: "",
+						},
 						Image: &v1beta1.ImageSpec{
 							Repository: "bar/pravega",
 						},

@@ -87,7 +87,10 @@ var _ = Describe("PravegaSegmentstore", func() {
 						SegmentStorePodLabels:          annotationsMap,
 						SegmentStorePodAnnotations:     annotationsMap,
 						SegmentStoreEnvVars:            "SEG_CONFIG_MAP",
-						InfluxDBSecret:                 "influxdb-secret",
+						InfluxDBSecret: &v1beta1.InfluxDBSecret{
+							Secret:    "influxdb-secret",
+							MountPath: "",
+						},
 						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
 							Secret:    "seg-secret",
 							MountPath: "",

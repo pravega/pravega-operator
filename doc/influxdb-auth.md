@@ -19,6 +19,9 @@ stringData:
 2. Modify the Pravega manifest to include the secret name for influxdb
 
 ```
-influxDBSecret: "secret-basic-auth"
+influxDBSecret:
+  name: "secret-basic-auth"
+  path: "/etc/secret"
 ```
-3. Once Pravega is deployed, secret will be mounted in `/etc/influxdb-secret-volume`  for controller and segment store pods.
+
+3.  Once Pravega is deployed, secret will be mounted in  `/etc/secret` for controller and segment store pods. If the path is not mentioned, `/etc/influxdb-secret-volume` will be used as default path.

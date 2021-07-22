@@ -475,12 +475,12 @@ func configureCaBundleSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 }
 
 func configureInfluxDBSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
-	if p.Spec.Pravega.InfluxDBSecret != "" {
+	if p.Spec.Pravega.InfluxDBSecret.Secret != "" {
 		vol := corev1.Volume{
 			Name: influxDBSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: p.Spec.Pravega.InfluxDBSecret,
+					SecretName: p.Spec.Pravega.InfluxDBSecret.Secret,
 				},
 			},
 		}
@@ -488,12 +488,12 @@ func configureInfluxDBSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      influxDBSecretVolumeName,
-			MountPath: influxDBSecretMountDir,
+			MountPath: p.Spec.Pravega.InfluxDBSecret.MountPath,
 		})
 
 		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, corev1.EnvVar{
 			Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
-			Value: influxDBSecretMountDir,
+			Value: p.Spec.Pravega.InfluxDBSecret.MountPath,
 		})
 	}
 }
