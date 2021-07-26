@@ -2186,6 +2186,24 @@ spec:
                       repository:
                         type: string
                     type: object
+                  influxDBSecret:
+                    description: InfluxDB Secret specifies the secret name containing
+                      credentials and mount path volume that has to be configured
+                      in controller and segmentstore pods
+                    properties:
+                      mountPath:
+                        description: Path to the volume where the secret will be mounted
+                          This value is considered only when the secret is provided
+                          If this value is provided, the secret is mounted to specified
+                          Volume else default mount path is used.
+                        type: string
+                      secret:
+                        description: Secret specifies the name of Secret which needs
+                          to be configured
+                        type: string
+                    required:
+                    - secret
+                    type: object
                   longtermStorage:
                     description: LongTermStorage is the configuration of Pravega's
                       tier 2 storage. If no configuration is provided, it will assume

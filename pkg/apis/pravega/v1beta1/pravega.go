@@ -65,6 +65,9 @@ const (
 
 	// DefaultSegmentStoreLimitMemory is the default memory limit for Pravega
 	DefaultSegmentStoreLimitMemory = "2Gi"
+
+	// DefaultInfluxDBSecretMountDir is the default mountpath of influxdb secret
+	DefaultInfluxDBSecretMountDir = "/etc/influxdb-secret-volume"
 )
 
 // PravegaSpec defines the configuration of Pravega
@@ -228,6 +231,10 @@ type PravegaSpec struct {
 
 	// Details of authplugin to be copied into pravega controller
 	AuthImplementations *AuthImplementationSpec `json:"authImplementations,omitempty"`
+
+	// InfluxDB Secret specifies the secret name containing credentials and mount path volume
+	// that has to be configured in controller and segmentstore pods
+	InfluxDBSecret *InfluxDBSecret `json:"influxDBSecret,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -325,6 +332,14 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 	}
 
+	if s.InfluxDBSecret == nil {
+		changed = true
+		s.InfluxDBSecret = &InfluxDBSecret{}
+	}
+
+	if s.InfluxDBSecret.withDefaults() {
+		changed = true
+	}
 	if s.ControllerServiceAnnotations == nil {
 		changed = true
 		s.ControllerServiceAnnotations = map[string]string{}
@@ -384,6 +399,29 @@ type SegmentStoreSecret struct {
 func (s *SegmentStoreSecret) withDefaults() (changed bool) {
 	if s.Secret == "" {
 		s.MountPath = ""
+	}
+
+	return changed
+}
+
+// InfluxDBSecret defines the configuration of the secret for controller and
+// segmentstore
+type InfluxDBSecret struct {
+	// Secret specifies the name of Secret which needs to be configured
+	Secret string `json:"secret"`
+
+	// Path to the volume where the secret will be mounted
+	// This value is considered only when the secret is provided
+	// If this value is provided, the secret is mounted to specified Volume
+	// else default mount path is used.
+	// +optional
+	MountPath string `json:"mountPath"`
+}
+
+func (s *InfluxDBSecret) withDefaults() (changed bool) {
+	if s.Secret != "" && s.MountPath == "" {
+		s.MountPath = DefaultInfluxDBSecretMountDir
+		changed = true
 	}
 
 	return changed

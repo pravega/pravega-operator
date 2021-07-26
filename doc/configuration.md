@@ -17,3 +17,4 @@ This document explains how to configure Pravega
 * [Configuring Service and Sts Names](service-sts-name-configuration.md)
 * [Enable AuthHandlers](auth-handlers.md)
 * [Init Containers Usage](init-containers.md)
+* [Enable InfluxDB Authentication](influxdb-auth.md)

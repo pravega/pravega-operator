@@ -74,6 +74,7 @@ func MakeSegmentStorePodTemplate(p *api.PravegaCluster) corev1.PodTemplateSpec {
 func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configMapName := strings.TrimSpace(p.Spec.Pravega.SegmentStoreEnvVars)
 	secret := p.Spec.Pravega.SegmentStoreSecret
+
 	environment := []corev1.EnvFromSource{
 		{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -262,6 +263,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	configureLTSFilesystem(&podSpec, p.Spec.Pravega)
 
 	configureSegmentstoreAuthSecret(&podSpec, p)
+
+	configureInfluxDBSecret(&podSpec, p)
 
 	return podSpec
 }
@@ -467,6 +470,30 @@ func configureCaBundleSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      caBundleVolumeName,
 			MountPath: caBundleMountDir,
+		})
+	}
+}
+
+func configureInfluxDBSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
+	if p.Spec.Pravega.InfluxDBSecret.Secret != "" {
+		vol := corev1.Volume{
+			Name: influxDBSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: p.Spec.Pravega.InfluxDBSecret.Secret,
+				},
+			},
+		}
+		podSpec.Volumes = append(podSpec.Volumes, vol)
+
+		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
+			Name:      influxDBSecretVolumeName,
+			MountPath: p.Spec.Pravega.InfluxDBSecret.MountPath,
+		})
+
+		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, corev1.EnvVar{
+			Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
+			Value: p.Spec.Pravega.InfluxDBSecret.MountPath,
 		})
 	}
 }
