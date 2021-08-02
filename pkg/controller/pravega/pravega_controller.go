@@ -170,7 +170,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.ControllerReadinessCheck(10080, p.Spec.Authentication.IsEnabled()),
+							Command: util.ControllerReadinessCheck(p.Spec.Version, 10080, p.Spec.Authentication.IsEnabled()),
 						},
 					},
 					// Controller pods start fast. We give it up to 20 seconds to become ready.
@@ -181,7 +181,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(9090),
+							Command: util.HealthcheckCommand(p.Spec.Version, 9090, 10080),
 						},
 					},
 					// We start the liveness probe from the maximum time the pod can take

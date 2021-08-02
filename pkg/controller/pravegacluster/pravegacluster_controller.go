@@ -527,7 +527,7 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 			return err
 		}
 
-		if !util.IsVersionBelow07(p.Spec.Version) {
+		if !util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 			newsts := &appsv1.StatefulSet{}
 			name := p.StatefulSetNameForSegmentstoreAbove07()
 			err = r.client.Get(context.TODO(),
@@ -1026,7 +1026,7 @@ func (r *ReconcilePravegaCluster) isRollbackTriggered(p *pravegav1beta1.PravegaC
 
 //this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
 func (r *ReconcilePravegaCluster) IsClusterUpgradingTo07(p *pravegav1beta1.PravegaCluster) bool {
-	if !util.IsVersionBelow07(p.Spec.Version) && util.IsVersionBelow07(p.Status.CurrentVersion) {
+	if !util.IsVersionBelow(p.Spec.Version, "0.7.0") && util.IsVersionBelow(p.Status.CurrentVersion, "0.7.0") {
 		return true
 	}
 	return false

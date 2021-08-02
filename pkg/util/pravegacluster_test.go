@@ -10,6 +10,7 @@
 package util
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -26,13 +27,13 @@ func TestPravegacluster(t *testing.T) {
 
 var _ = Describe("pravegacluster", func() {
 
-	Context("IsVersionBelow07", func() {
+	Context("IsVersionBelow", func() {
 		var result1, result2, result3, result4 bool
 		BeforeEach(func() {
-			result1 = IsVersionBelow07("0.7.1")
-			result2 = IsVersionBelow07("0.6.0")
-			result3 = IsVersionBelow07("666")
-			result4 = IsVersionBelow07("")
+			result1 = IsVersionBelow("0.7.1", "0.7.0")
+			result2 = IsVersionBelow("0.6.0", "0.7.0")
+			result3 = IsVersionBelow("666", "0.7.0")
+			result4 = IsVersionBelow("", "0.7.0")
 		})
 		It("should return false for result1", func() {
 			Ω(result1).To(Equal(false))
@@ -47,13 +48,13 @@ var _ = Describe("pravegacluster", func() {
 			Ω(result4).To(Equal(true))
 		})
 	})
+
 	Context("ContainsVersion fn", func() {
 		var result1, result2 bool
 		BeforeEach(func() {
 			input := []string{"0.4.0", "0.5.0", "a.b.c"}
 			result1 = ContainsVersion(input, "0.4.0")
 			result2 = ContainsVersion(input, "0.7.0")
-
 		})
 		It("should return true for result", func() {
 			Ω(result1).To(Equal(true))
@@ -66,7 +67,6 @@ var _ = Describe("pravegacluster", func() {
 	Context("IsOrphan", func() {
 		var result1, result2, result3, result4 bool
 		BeforeEach(func() {
-
 			result1 = IsOrphan("segment-store-4", 3)
 			result2 = IsOrphan("segment-store-2", 3)
 			result3 = IsOrphan("segmentstore", 1)
@@ -85,6 +85,7 @@ var _ = Describe("pravegacluster", func() {
 			Ω(result4).To(Equal(false))
 		})
 	})
+
 	Context("OverrideDefaultJVMOptions", func() {
 		var result, result1 []string
 		BeforeEach(func() {
@@ -104,19 +105,16 @@ var _ = Describe("pravegacluster", func() {
 				"-yy:mem",
 				"",
 			}
-
 			result = OverrideDefaultJVMOptions(jvmOpts, customOpts)
 			result1 = OverrideDefaultJVMOptions(jvmOpts, result1)
-
 		})
 		It("should contain string", func() {
 			Ω(len(result)).ShouldNot(Equal(0))
 			Ω(result[0]).To(Equal("-Xms1024m"))
 			Ω(result1[0]).To(Equal("-Xms512m"))
-
 		})
-
 	})
+
 	Context("RemoveString", func() {
 		var opts []string
 		BeforeEach(func() {
@@ -125,7 +123,6 @@ var _ = Describe("pravegacluster", func() {
 				"test1",
 			}
 			opts = RemoveString(opts, "abc-test")
-
 		})
 		It("should return false for result", func() {
 			Ω(opts[0]).To(Equal("test1"))
@@ -141,8 +138,8 @@ var _ = Describe("pravegacluster", func() {
 			}
 			result = ContainsString(opts, "abc-test")
 			result1 = ContainsString(opts, "abc-test1")
-
 		})
+
 		It("should return true", func() {
 			Ω(result).To(Equal(true))
 		})
@@ -151,50 +148,66 @@ var _ = Describe("pravegacluster", func() {
 			Ω(result1).To(Equal(false))
 		})
 	})
-	Context("PodAntiAffinity", func() {
 
+	Context("PodAntiAffinity", func() {
 		affinity := PodAntiAffinity("segstore", "pravega")
 		It("should not be nil", func() {
 			Ω(affinity).ShouldNot(BeNil())
 		})
-
 	})
 
 	Context("DownwardAPIEnv()", func() {
-
 		env := DownwardAPIEnv()
 		It("should not be nil", func() {
 			Ω(env).ShouldNot(BeNil())
 		})
-
 	})
-	Context("HealthcheckCommand()", func() {
 
-		out := HealthcheckCommand(1234)
-		It("should not be nil", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
-		})
+	// Context("HealthcheckCommand()", func() {
+	// 	out := HealthcheckCommand("0.9.0", 1234, 6061)
+	// 	It("should not be nil", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// 	out = HealthcheckCommand("0.10.0", 1234, 6061)
+	// 	It("should not be nil", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// })
+	//
+	// Context("ControllerReadinessCheck()", func() {
+	// 	fmt.Println("here")
+	// 	out := ControllerReadinessCheck("0.9.0", 1234, true)
+	// 	It("Should not be Empty", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// 	out = ControllerReadinessCheck("0.9.0", 1234, false)
+	// 	It("Should not be Empty", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// 	out = ControllerReadinessCheck("0.10.0", 1234, true)
+	// 	It("Should not be Empty", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// })
+	//
+	// Context("SegmentStoreReadinessCheck()", func() {
+	// 	out := SegmentStoreReadinessCheck("0.9.0", 1234, 6061)
+	// 	It("Should not be Empty", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// 	out = SegmentStoreReadinessCheck("0.10.0", 1234, 6061)
+	// 	It("Should not be Empty", func() {
+	// 		Ω(len(out)).ShouldNot(Equal(0))
+	// 	})
+	// })
 
-	})
-	Context("ControllerReadinessCheck()", func() {
-		out := ControllerReadinessCheck(1234, true)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
-		})
-		out = ControllerReadinessCheck(1234, false)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
-		})
-	})
 	Context("Min()", func() {
-
 		It("Min should be 10", func() {
 			Ω(Min(10, 20)).Should(Equal(int32(10)))
 		})
 		It("Min should be 20", func() {
 			Ω(Min(30, 20)).Should(Equal(int32(20)))
 		})
-
 	})
 
 	Context("podReady", func() {
@@ -222,6 +235,7 @@ var _ = Describe("pravegacluster", func() {
 
 		})
 	})
+
 	Context("podFaulty", func() {
 		var result, result1 bool
 		BeforeEach(func() {
@@ -259,6 +273,7 @@ var _ = Describe("pravegacluster", func() {
 
 		})
 	})
+
 	Context("CompareConfigMap", func() {
 		var output1, output2 bool
 		BeforeEach(func() {
