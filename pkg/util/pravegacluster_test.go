@@ -10,7 +10,6 @@
 package util
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -175,7 +174,6 @@ var _ = Describe("pravegacluster", func() {
 	// })
 	//
 	// Context("ControllerReadinessCheck()", func() {
-	// 	fmt.Println("here")
 	// 	out := ControllerReadinessCheck("0.9.0", 1234, true)
 	// 	It("Should not be Empty", func() {
 	// 		Ω(len(out)).ShouldNot(Equal(0))

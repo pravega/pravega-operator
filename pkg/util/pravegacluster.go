@@ -36,11 +36,11 @@ func init() {
 }
 
 //function to check if the version is below 0.7 or not
-func IsVersionBelow07(ver string) bool {
-	if ver == "" {
+func IsVersionBelow(version string, comp string) bool {
+	if version == "" {
 		return true
 	}
-	result, _ := CompareVersions(ver, "0.7.0", "<")
+	result, _ := CompareVersions(version, comp, "<")
 	if result {
 		return true
 	}
@@ -69,29 +69,52 @@ func IsOrphan(k8sObjectName string, replicas int32) bool {
 	return int32(ordinal) >= replicas
 }
 
-func HealthcheckCommand(port int32) []string {
-	return []string{"/bin/sh", "-c", fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)}
+func HealthcheckCommand(version string, port int32, restport int32) []string {
+	command := ""
+	if IsVersionBelow(version, "0.10.0") {
+		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
+	} else {
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/liveness' | grep true", restport)
+	}
+	return []string{"/bin/sh", "-c", command}
 }
 
-//This function check for the readiness of the controller in the following cases
-//1) Auth and TLS Enabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
-//2) Auth Enabled and TLS Disabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
-//3) Auth Disabled and TLS Enabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
-//4) Auth and TLS Disabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
-func ControllerReadinessCheck(port int32, authflag bool) []string {
-	// This is to check the readiness of controller in case auth is Enabled
-	// here we are using login credential as testtls:testtls which should
-	// not be used as auth credential and we depend on controller giving us
-	// 401 error which means controller is properly configured with auth
-	// it checks both cases when tls is enabled as well as tls disabled
-	// with auth enabled
-	if authflag == true {
-		return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 || (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) ||  (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) || (curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 )", port, port, port, port)}
+func ControllerReadinessCheck(version string, port int32, authflag bool) []string {
+	command := ""
+	if IsVersionBelow(version, "0.10.0") {
+		//This function check for the readiness of the controller in the following cases
+		//1) Auth and TLS Enabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
+		//2) Auth Enabled and TLS Disabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
+		//3) Auth Disabled and TLS Enabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
+		//4) Auth and TLS Disabled- in this case, we check if the controller can create scopes or not by checking if _system scope is present or not
+		if authflag == true {
+			// This is to check the readiness of controller in case auth is Enabled
+			// here we are using login credential as testtls:testtls which should
+			// not be used as auth credential and we depend on controller giving us
+			// 401 error which means controller is properly configured with auth
+			// it checks both cases when tls is enabled as well as tls disabled
+			// with auth enabled
+			command = fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 || (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) ||  (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -v -k -u testtls:testtls -s -X GET 'https://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 ) || (curl -v -k -u testtls:testtls -s -X GET 'http://localhost:%d/v1/scopes/' 2>&1 -H 'accept: application/json' | grep 401 )", port, port, port, port)
+		} else {
+			// This is to check the readiness in case auth is not enabled
+			// and it covers both the cases with tls enabled and tls disabled
+			// along with auth disabled
+			command = fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)
+		}
+	} else {
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' | grep true", port)
 	}
-	// This is to check the readiness in case auth is not enabled
-	// and it covers both the cases with tls enabled and tls disabled
-	// along with auth disabled
-	return []string{"/bin/sh", "-c", fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)}
+	return []string{"/bin/sh", "-c", command}
+}
+
+func SegmentStoreReadinessCheck(version string, port int32, restport int32) []string {
+	command := ""
+	if IsVersionBelow(version, "0.10.0") {
+		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
+	} else {
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' | grep true", restport)
+	}
+	return []string{"/bin/sh", "-c", command}
 }
 
 // Min returns the smaller of x or y.
@@ -156,7 +179,9 @@ func ContainsVersion(list []string, version string) bool {
 }
 
 func NormalizeVersion(version string) (string, error) {
+	fmt.Println(version)
 	matches := versionRegexp.FindStringSubmatch(version)
+	fmt.Println(matches)
 	if matches == nil || len(matches) <= 1 {
 		return "", fmt.Errorf("failed to parse version %s", version)
 	}
