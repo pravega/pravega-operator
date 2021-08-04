@@ -166,42 +166,42 @@ var _ = Describe("pravegacluster", func() {
 		})
 	})
 
-	// Context("HealthcheckCommand()", func() {
-	// 	out := HealthcheckCommand("0.9.0", 1234, 6061)
-	// 	It("should not be nil", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// 	out = HealthcheckCommand("0.10.0", 1234, 6061)
-	// 	It("should not be nil", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// })
-	//
-	// Context("ControllerReadinessCheck()", func() {
-	// 	out := ControllerReadinessCheck("0.9.0", 1234, true)
-	// 	It("Should not be Empty", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// 	out = ControllerReadinessCheck("0.9.0", 1234, false)
-	// 	It("Should not be Empty", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// 	out = ControllerReadinessCheck("0.10.0", 1234, true)
-	// 	It("Should not be Empty", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// })
-	//
-	// Context("SegmentStoreReadinessCheck()", func() {
-	// 	out := SegmentStoreReadinessCheck("0.9.0", 1234, 6061)
-	// 	It("Should not be Empty", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// 	out = SegmentStoreReadinessCheck("0.10.0", 1234, 6061)
-	// 	It("Should not be Empty", func() {
-	// 		Ω(len(out)).ShouldNot(Equal(0))
-	// 	})
-	// })
+	Context("HealthcheckCommand()", func() {
+		out := HealthcheckCommand("0.9.0", 1234, 6061)
+		It("should not be nil", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+		out = HealthcheckCommand("0.10.0", 1234, 6061)
+		It("should not be nil", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+	})
+
+	Context("ControllerReadinessCheck()", func() {
+		out := ControllerReadinessCheck("0.9.0", 1234, true)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+		out = ControllerReadinessCheck("0.9.0", 1234, false)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+		out = ControllerReadinessCheck("0.10.0", 1234, true)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+	})
+
+	Context("SegmentStoreReadinessCheck()", func() {
+		out := SegmentStoreReadinessCheck("0.9.0", 1234, 6061)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+		out = SegmentStoreReadinessCheck("0.10.0", 1234, 6061)
+		It("Should not be Empty", func() {
+			Ω(len(out)).ShouldNot(Equal(0))
+		})
+	})
 
 	Context("Min()", func() {
 		It("Min should be 10", func() {
