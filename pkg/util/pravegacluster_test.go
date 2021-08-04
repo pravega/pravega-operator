@@ -167,39 +167,48 @@ var _ = Describe("pravegacluster", func() {
 	})
 
 	Context("HealthcheckCommand()", func() {
-		out := HealthcheckCommand("0.9.0", 1234, 6061)
-		It("should not be nil", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+		var r1, r2 []string
+		BeforeEach(func() {
+			r1 = HealthcheckCommand("0.9.0", 1234, 6061)
+			r2 = HealthcheckCommand("0.10.0", 1234, 6061)
 		})
-		out = HealthcheckCommand("0.10.0", 1234, 6061)
 		It("should not be nil", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+			Ω(len(r1)).ShouldNot(Equal(0))
+		})
+		It("should not be nil", func() {
+			Ω(len(r2)).ShouldNot(Equal(0))
 		})
 	})
 
 	Context("ControllerReadinessCheck()", func() {
-		out := ControllerReadinessCheck("0.9.0", 1234, true)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+		var r1, r2, r3 []string
+		BeforeEach(func() {
+			r1 = ControllerReadinessCheck("0.9.0", 1234, true)
+			r2 = ControllerReadinessCheck("0.9.0", 1234, false)
+			r3 = ControllerReadinessCheck("0.10.0", 1234, true)
 		})
-		out = ControllerReadinessCheck("0.9.0", 1234, false)
 		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+			Ω(len(r1)).ShouldNot(Equal(0))
 		})
-		out = ControllerReadinessCheck("0.10.0", 1234, true)
 		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+			Ω(len(r2)).ShouldNot(Equal(0))
+		})
+		It("Should not be Empty", func() {
+			Ω(len(r3)).ShouldNot(Equal(0))
 		})
 	})
 
 	Context("SegmentStoreReadinessCheck()", func() {
-		out := SegmentStoreReadinessCheck("0.9.0", 1234, 6061)
-		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+		var r1, r2 []string
+		BeforeEach(func() {
+			r1 = SegmentStoreReadinessCheck("0.9.0", 1234, 6061)
+			r2 = SegmentStoreReadinessCheck("0.10.0", 1234, 6061)
 		})
-		out = SegmentStoreReadinessCheck("0.10.0", 1234, 6061)
 		It("Should not be Empty", func() {
-			Ω(len(out)).ShouldNot(Equal(0))
+			Ω(len(r1)).ShouldNot(Equal(0))
+		})
+		It("Should not be Empty", func() {
+			Ω(len(r2)).ShouldNot(Equal(0))
 		})
 	})
 
