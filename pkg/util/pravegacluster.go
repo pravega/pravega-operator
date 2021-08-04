@@ -28,6 +28,7 @@ var (
 )
 
 const (
+	compareVersion          string = "0.10.0"
 	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+\.[0-9]+)`
 )
 
@@ -35,12 +36,15 @@ func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
 }
 
-//function to check if the version is below 0.7 or not
-func IsVersionBelow(version string, comp string) bool {
-	if version == "" {
+//function to check if v1 is below v2 or not
+func IsVersionBelow(v1 string, v2 string) bool {
+	if v1 == "" {
 		return true
 	}
-	result, _ := CompareVersions(version, comp, "<")
+	if v2 == "" {
+		return false
+	}
+	result, _ := CompareVersions(v1, v2, "<")
 	if result {
 		return true
 	}
@@ -71,17 +75,17 @@ func IsOrphan(k8sObjectName string, replicas int32) bool {
 
 func HealthcheckCommand(version string, port int32, restport int32) []string {
 	command := ""
-	if IsVersionBelow(version, "0.10.0") {
+	if IsVersionBelow(version, compareVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/liveness' | grep true", restport)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/liveness'", restport)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
 
 func ControllerReadinessCheck(version string, port int32, authflag bool) []string {
 	command := ""
-	if IsVersionBelow(version, "0.10.0") {
+	if IsVersionBelow(version, compareVersion) {
 		//This function check for the readiness of the controller in the following cases
 		//1) Auth and TLS Enabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
 		//2) Auth Enabled and TLS Disabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
@@ -102,17 +106,17 @@ func ControllerReadinessCheck(version string, port int32, authflag bool) []strin
 			command = fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)
 		}
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' | grep true", port)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness'", port)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
 
 func SegmentStoreReadinessCheck(version string, port int32, restport int32) []string {
 	command := ""
-	if IsVersionBelow(version, "0.10.0") {
+	if IsVersionBelow(version, compareVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' | grep true", restport)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness'", restport)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
@@ -179,9 +183,7 @@ func ContainsVersion(list []string, version string) bool {
 }
 
 func NormalizeVersion(version string) (string, error) {
-	fmt.Println(version)
 	matches := versionRegexp.FindStringSubmatch(version)
-	fmt.Println(matches)
 	if matches == nil || len(matches) <= 1 {
 		return "", fmt.Errorf("failed to parse version %s", version)
 	}

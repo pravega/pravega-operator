@@ -358,6 +358,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		changed = true
 		s.SegmentStorePodLabels = map[string]string{}
 	}
+
 	if s.ControllerSvcNameSuffix == "" {
 		changed = true
 		s.ControllerSvcNameSuffix = "pravega-controller"

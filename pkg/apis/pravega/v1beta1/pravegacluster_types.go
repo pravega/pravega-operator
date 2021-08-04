@@ -133,7 +133,7 @@ type ClusterSpec struct {
 	// The version must follow the [semver]( http://semver.org) format, for example "3.2.13".
 	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
 	//
-	// If version is not set, default is "0.4.0".
+	// If version is not set, default value will be set.
 	// +optional
 	Version string `json:"version"`
 
