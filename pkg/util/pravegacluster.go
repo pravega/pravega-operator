@@ -78,7 +78,7 @@ func HealthcheckCommand(version string, port int32, restport int32) []string {
 	if IsVersionBelow(version, compareVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/liveness'", restport)
+		command = fmt.Sprintf("(netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d) && (curl -s -X GET 'http://localhost:%d/v1/health/liveness' || curl -s -k -X GET 'https://localhost:%d/v1/health/liveness')", port, port, restport, restport)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
@@ -106,7 +106,7 @@ func ControllerReadinessCheck(version string, port int32, authflag bool) []strin
 			command = fmt.Sprintf("echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=true' &&  curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system'|| (echo $JAVA_OPTS | grep 'controller.auth.tlsEnabled=false' && curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (echo $JAVA_OPTS | grep 'controller.security.tls.enable=true' && echo $JAVA_OPTS | grep -v 'controller.auth.tlsEnabled' && curl -s -X GET 'https://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system' ) || (curl -s -X GET 'http://localhost:%d/v1/scopes/' -H 'accept: application/json' | grep '_system') ", port, port, port, port)
 		}
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness'", port)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' || curl -s -k -X GET 'https://localhost:%d/v1/health/readiness'", port, port)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
@@ -116,7 +116,7 @@ func SegmentStoreReadinessCheck(version string, port int32, restport int32) []st
 	if IsVersionBelow(version, compareVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
-		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness'", restport)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' || curl -s -k -X GET 'https://localhost:%d/v1/health/readiness'", restport, restport)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
