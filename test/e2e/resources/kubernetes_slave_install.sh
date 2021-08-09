@@ -26,8 +26,8 @@ echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" \
   && sudo apt-get update
 sudo apt-get update \
   && sudo apt-get install -yq \
-  kubelet \
-  kubeadm \
+  kubelet=1.21.2-00 \
+  kubeadm=1.21.2-00 \
   kubernetes-cni
 sudo apt-mark hold kubelet kubeadm kubectl
 UUID=`cat /etc/fstab | grep swap | awk '{print $1}' | tr -d "#UUID="`
