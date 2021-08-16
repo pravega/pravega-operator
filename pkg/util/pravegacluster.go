@@ -28,7 +28,7 @@ var (
 )
 
 const (
-	compareVersion          string = "0.10.0"
+	healthcheckVersion      string = "0.10.0"
 	MajorMinorVersionRegexp string = `^v?(?P<Version>[0-9]+\.[0-9]+\.[0-9]+)`
 )
 
@@ -75,17 +75,17 @@ func IsOrphan(k8sObjectName string, replicas int32) bool {
 
 func HealthcheckCommand(version string, port int32, restport int32) []string {
 	command := ""
-	if IsVersionBelow(version, compareVersion) {
+	if IsVersionBelow(version, healthcheckVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
-		command = fmt.Sprintf("(netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d) && (curl -s -X GET 'http://localhost:%d/v1/health/liveness' || curl -s -k -X GET 'https://localhost:%d/v1/health/liveness')", port, port, restport, restport)
+		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/liveness' || curl -s -k -X GET 'https://localhost:%d/v1/health/liveness'", restport, restport)
 	}
 	return []string{"/bin/sh", "-c", command}
 }
 
 func ControllerReadinessCheck(version string, port int32, authflag bool) []string {
 	command := ""
-	if IsVersionBelow(version, compareVersion) {
+	if IsVersionBelow(version, healthcheckVersion) {
 		//This function check for the readiness of the controller in the following cases
 		//1) Auth and TLS Enabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
 		//2) Auth Enabled and TLS Disabled- in this case, we check if the controller is properly enabled with authentication or not and we do a get on controller and with dummy credentials(testtls:testtls) and the controller returns 401 error in this case if it's correctly configured
@@ -113,7 +113,7 @@ func ControllerReadinessCheck(version string, port int32, authflag bool) []strin
 
 func SegmentStoreReadinessCheck(version string, port int32, restport int32) []string {
 	command := ""
-	if IsVersionBelow(version, compareVersion) {
+	if IsVersionBelow(version, healthcheckVersion) {
 		command = fmt.Sprintf("netstat -ltn 2> /dev/null | grep %d || ss -ltn 2> /dev/null | grep %d", port, port)
 	} else {
 		command = fmt.Sprintf("curl -s -X GET 'http://localhost:%d/v1/health/readiness' || curl -s -k -X GET 'https://localhost:%d/v1/health/readiness'", restport, restport)
