@@ -55,7 +55,7 @@ func MakeSegmentStoreStatefulSet(p *api.PravegaCluster) *appsv1.StatefulSet {
 			},
 		},
 	}
-	if util.IsVersionBelow07(p.Spec.Version) {
+	if util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 		statefulSet.Spec.VolumeClaimTemplates = makeCacheVolumeClaimTemplate(p)
 	}
 	return statefulSet
@@ -179,7 +179,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 			volumeMounts = append(volumeMounts, m)
 		}
 	}
-	if util.IsVersionBelow07(p.Spec.Version) {
+	if util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      cacheVolumeName,
 			MountPath: cacheVolumeMountPoint,
@@ -209,7 +209,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				ReadinessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(int32(containerport)),
+							Command: util.SegmentStoreReadinessCheck(p.Spec.Version, int32(containerport), 6061),
 						},
 					},
 					// Segment Stores can take a few minutes to become ready when the cluster
@@ -222,7 +222,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
 						Exec: &corev1.ExecAction{
-							Command: util.HealthcheckCommand(int32(containerport)),
+							Command: util.HealthcheckCommand(p.Spec.Version, int32(containerport), 6061),
 						},
 					},
 					// In the readiness probe we allow the pod to take up to 5 minutes

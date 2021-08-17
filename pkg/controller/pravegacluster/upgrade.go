@@ -408,7 +408,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 
 //this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
 func (r *ReconcilePravegaCluster) IsClusterRollbackingFrom07(p *pravegav1beta1.PravegaCluster) bool {
-	if util.IsVersionBelow07(p.Spec.Version) && r.IsAbove07STSPresent(p) {
+	if util.IsVersionBelow(p.Spec.Version, "0.7.0") && r.IsAbove07STSPresent(p) {
 		return true
 	}
 	return false
@@ -452,7 +452,7 @@ func (r *ReconcilePravegaCluster) deleteExternalServices(p *pravegav1beta1.Prave
 	var name string = ""
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		service := &corev1.Service{}
-		if !util.IsVersionBelow07(p.Spec.Version) {
+		if !util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 			name = p.ServiceNameForSegmentStoreBelow07(i)
 		} else {
 			name = p.ServiceNameForSegmentStoreAbove07(i)

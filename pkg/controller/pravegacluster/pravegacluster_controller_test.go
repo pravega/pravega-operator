@@ -235,7 +235,6 @@ var _ = Describe("PravegaCluster Controller", func() {
 					Ω(foundPravega.Spec.ExternalAccess.Enabled).Should(Equal(false))
 					Ω(foundPravega.Spec.ExternalAccess.DomainName).Should(Equal(""))
 					Ω(foundPravega.Spec.Pravega).ShouldNot(BeNil())
-					fmt.Println("DEFAULTS ARE SET")
 				})
 			})
 

@@ -133,7 +133,7 @@ type ClusterSpec struct {
 	// The version must follow the [semver]( http://semver.org) format, for example "3.2.13".
 	// Only Pravega released versions are supported: https://github.com/pravega/pravega/releases
 	//
-	// If version is not set, default is "0.4.0".
+	// If version is not set, default value will be set.
 	// +optional
 	Version string `json:"version"`
 
@@ -207,7 +207,7 @@ func (s *ClusterSpec) withDefaults(p *PravegaCluster) (changed bool) {
 		s.Pravega.SegmentStorePodAffinity = util.PodAntiAffinity("pravega-segmentstore", p.GetName())
 	}
 
-	if util.IsVersionBelow07(s.Version) && s.Pravega.CacheVolumeClaimTemplate == nil {
+	if util.IsVersionBelow(s.Version, "0.7.0") && s.Pravega.CacheVolumeClaimTemplate == nil {
 		changed = true
 		s.Pravega.CacheVolumeClaimTemplate = &corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -454,7 +454,7 @@ func (dst *PravegaCluster) updatePravegaOwnerReferences() error {
 }
 
 func (dst *PravegaCluster) updateSSSReferences(ownerRefs []metav1.OwnerReference) error {
-	if util.IsVersionBelow07(dst.Spec.Version) {
+	if util.IsVersionBelow(dst.Spec.Version, "0.7.0") {
 		numPvcs := int(dst.Spec.Pravega.SegmentStoreReplicas)
 		for i := 0; i < numPvcs; i++ {
 			pvcName := "cache-" + dst.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
@@ -1196,7 +1196,7 @@ func (p *PravegaCluster) validateConfigMap() error {
 
 //to return name of segmentstore based on the version
 func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
-	if util.IsVersionBelow07(p.Spec.Version) {
+	if util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 		return p.StatefulSetNameForSegmentstoreBelow07()
 	}
 	return p.StatefulSetNameForSegmentstoreAbove07()
@@ -1278,7 +1278,7 @@ func (p *PravegaCluster) ServiceNameForController() string {
 }
 
 func (p *PravegaCluster) ServiceNameForSegmentStore(index int32) string {
-	if util.IsVersionBelow07(p.Spec.Version) {
+	if util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 		return p.ServiceNameForSegmentStoreBelow07(index)
 	}
 	return p.ServiceNameForSegmentStoreAbove07(index)

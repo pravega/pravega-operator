@@ -16,7 +16,9 @@ $ kubectl create secret generic controller-tls \
 $ kubectl create secret generic segmentstore-tls \
   --from-file=./segmentstore01.pem \
   --from-file=./ca-cert \
-  --from-file=./segmentstore01.key.pem
+  --from-file=./segmentstore01.key.pem \
+  --from-file=./segmentstore01.jks \
+  --from-file=./password
 ```
 
 Then specify the secret names in the `tls` block and the TLS parameters in the `options` block.
@@ -37,9 +39,14 @@ spec:
       controller.security.tls.enable: "true"
       controller.security.tls.server.certificate.location: "/etc/secret-volume/controller01.pem"
       controller.security.tls.server.privateKey.location: "/etc/secret-volume/controller01.key.pem"
+      controller.security.tls.trustStore.location: "/etc/secret-volume/ca-cert"
+      controller.security.tls.server.keyStore.location: "/etc/secret-volume/controller01.jks"
+      controller.security.tls.server.keyStore.pwd.location: "/etc/secret-volume/password"
       pravegaservice.security.tls.enable: "true"
       pravegaservice.security.tls.server.certificate.location: "/etc/secret-volume/segmentStore01.pem"
       pravegaservice.security.tls.server.privateKey.location: "/etc/secret-volume/segmentStore01.key.pem"
+      pravegaservice.security.tls.server.keyStore.location: "/etc/secret-volume/segmentStore01.jks"
+      pravegaservice.security.tls.server.keyStore.pwd.location: "/etc/secret-volume/password"
 ...
 ```
 
