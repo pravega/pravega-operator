@@ -8,8 +8,8 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 ARG DOCKER_REGISTRY
-ARG GO_VERSION=1.13.8
-ARG ALPINE_VERSION=3.11
+ARG GO_VERSION=1.16
+ARG ALPINE_VERSION=3.14
 
 FROM ${DOCKER_REGISTRY:+$DOCKER_REGISTRY/}golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
 
@@ -25,6 +25,7 @@ WORKDIR /src
 COPY pkg ./pkg
 COPY cmd ./cmd
 COPY go.mod ./
+COPY go.sum ./
 
 # Download all dependencies.
 RUN go mod download
