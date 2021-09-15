@@ -23,7 +23,7 @@ Here is an example,
 ...
 spec:
   pravega:
-    controllerJvmOptions: ["-XX:MaxDirectMemorySize=1g"]
+    controllerjvmOptions: ["-XX:MaxDirectMemorySize=1g"]
     segmentStoreJVMOptions: ["-XX:MaxDirectMemorySize=1g"]
 ...
 ```
