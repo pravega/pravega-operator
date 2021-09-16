@@ -75,23 +75,23 @@ segmentStoreResources:
     cpu: "8000m"
 ```
 
-2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM and the rest for Direct Memory (12GB) i.e. POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (12GB).
-We need to ensure that the sum of JVM Heap and Direct Memory is not higher than the pod memory limit. In general, we can keep the JVM Heap fixed to 4GB and make the Direct Memory as the variable part.
-These two options can be configured through the following field of the manifest file
+2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory such that sum of JVM Heap and JVM Direct Memory is strictly lower than the POD_MEM_LIMIT memory (e.g., 0.5GB-1GB) so as to avoid pod crash during high load situations due to lack of memory resources. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM Heap and 11GB for Direct Memory leaving 1GB unallocated so as to assure that the pod do not reach the maximum capacity. Conceptually POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (11GB) + Unallocated Memory (1GB)
+
+**NOTE:** These two options (JVM Heap and Direct Memory) can be configured through the following field of the manifest file
 ```
-segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=12g"]
+segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=11g"]
 ```
 
-3. The cache should be configured at least 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty). This value is configured in the pravega options part of the manifest file
+3. The cache should be configured at least 1 or 2 GB below the Direct Memory value provided since the Direct Memory is used by other components as well (like Netty/Bookkeeper). This value is configured in the pravega options part of the manifest file
 ```
 options:
-  pravegaservice.cache.size.max: "11811160064"
+  pravegaservice.cache.size.max: "9663676416"
 ```
 
 To summarize the way in which the segmentstore pod memory is distributed:
 
 ```
-POD_MEM_LIMIT = JVM Heap + Direct Memory
+POD_MEM_LIMIT = JVM Heap + Direct Memory + Unallocted Memory
 Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
 ```
 **Note:** If we are upgrading pravega version to 0.9 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
