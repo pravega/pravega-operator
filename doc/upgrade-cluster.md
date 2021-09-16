@@ -91,7 +91,7 @@ options:
 To summarize the way in which the segmentstore pod memory is distributed:
 
 ```
-POD_MEM_LIMIT = JVM Heap + Direct Memory + Unallocted Memory
+POD_MEM_LIMIT = JVM Heap + Direct Memory + Unallocated Memory
 Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
 ```
 **Note:** If we are upgrading pravega version to 0.9 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
