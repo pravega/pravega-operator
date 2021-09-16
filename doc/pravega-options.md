@@ -27,7 +27,8 @@ spec:
     segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=11g", "-XX:+ExitOnOutOfMemoryError", "-XX:+CrashOnOutOfMemoryError", "-XX:+HeapDumpOnOutOfMemoryError"]
 ...
 ```
-We do not provide any JVM options as defaults within the operator code for the Controller or the Segmentstore. These options can be passed into the operator through the deployment manifest. 
+We do not provide any JVM options as defaults within the operator code for the Controller or the Segmentstore. These options can be passed into the operator through the deployment manifest.
+
 **NOTE:** For setting segementStore options **`-XX:MaxDirectMemorySize`**, **`-Xmx`** and **`pravegaservice.cache.size.max`** ,follow the guidelines provided in the [doc](https://github.com/pravega/pravega/blob/master/documentation/src/docs/admin-guide/segmentstore-memory.md)
 
 ### SegmentStore Custom Configuration
