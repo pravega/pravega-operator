@@ -3,10 +3,7 @@ module github.com/pravega/pravega-operator
 go 1.13
 
 require (
-	github.com/alexkohler/nakedret v1.0.0 // indirect
-	github.com/gordonklaus/ineffassign v0.0.0-20210914165742-4cc7213b9bc8 // indirect
 	github.com/hashicorp/go-version v1.1.0
-	github.com/jgautheron/goconst v1.4.0 // indirect
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
 	github.com/operator-framework/operator-lib v0.7.0
@@ -15,7 +12,7 @@ require (
 	github.com/pravega/zookeeper-operator v0.2.8
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
 	github.com/sirupsen/logrus v1.7.0
-	github.com/stripe/safesql v0.2.0 // indirect
+	golang.org/x/tools v0.1.5 // indirect
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v12.0.0+incompatible
@@ -27,6 +24,8 @@ replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm
+
+	github.com/go-logr/zapr => github.com/go-logr/zapr v0.4.0
 
 	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.12.0
 
