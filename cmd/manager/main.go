@@ -17,12 +17,12 @@ import (
 	"runtime"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
 	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
+	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/pravega/pravega-operator/pkg/version"
 	log "github.com/sirupsen/logrus"
 
@@ -30,8 +30,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	logz "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
@@ -56,7 +57,10 @@ func printVersion() {
 
 func main() {
 	flag.Parse()
-	logf.SetLogger(logf.ZapLogger(false))
+
+	// The logger instantiated here can be changed to any logger
+	// implementing the logr.Logger interface.
+	logf.SetLogger(logz.New(logz.UseDevMode(false)))
 
 	printVersion()
 
@@ -79,8 +83,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	operatorNs, err := k8sutil.GetOperatorNamespace()
+	if err != nil {
+		log.Error(err, "failed to get operator namespace")
+		os.Exit(1)
+	}
+
 	// Become the leader before proceeding
-	leader.Become(context.TODO(), "pravega-operator-lock")
+	err = util.BecomeLeader(context.TODO(), cfg, "pravega-operator-lock", operatorNs)
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})

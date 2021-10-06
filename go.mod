@@ -3,28 +3,33 @@ module github.com/pravega/pravega-operator
 go 1.13
 
 require (
-	github.com/alexkohler/nakedret v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.1.0
-	github.com/jgautheron/goconst v1.4.0 // indirect
-	github.com/onsi/ginkgo v1.12.0
-	github.com/onsi/gomega v1.9.0
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.13.0
+	github.com/operator-framework/operator-lib v0.7.0
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/pravega/bookkeeper-operator v0.1.3
 	github.com/pravega/zookeeper-operator v0.2.8
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
-	github.com/sirupsen/logrus v1.5.0
-	golang.org/x/tools v0.0.0-20201002184944-ecd9fd270d5d // indirect
-	k8s.io/api v0.17.5
-	k8s.io/apimachinery v0.17.5
+	github.com/sirupsen/logrus v1.7.0
+	golang.org/x/tools v0.1.5 // indirect
+	k8s.io/api v0.21.1
+	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/utils v0.0.0-20191114200735-6ca3b61696b6
-	sigs.k8s.io/controller-runtime v0.5.2
+	sigs.k8s.io/controller-runtime v0.9.0
 )
 
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm
+
+	github.com/go-logr/zapr => github.com/go-logr/zapr v0.4.0
+
+	github.com/onsi/ginkgo => github.com/onsi/ginkgo v1.12.0
+
+	github.com/onsi/gomega => github.com/onsi/gomega v1.9.0
 
 	k8s.io/api => k8s.io/api v0.17.5
 
@@ -73,4 +78,6 @@ replace (
 	k8s.io/sample-cli-plugin => k8s.io/sample-cli-plugin v0.17.5
 
 	k8s.io/sample-controller => k8s.io/sample-controller v0.17.5
+
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.5.2
 )
