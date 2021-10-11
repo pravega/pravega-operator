@@ -75,9 +75,9 @@ segmentStoreResources:
     cpu: "8000m"
 ```
 
-2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory such that sum of JVM Heap and JVM Direct Memory is strictly lower than the POD_MEM_LIMIT memory (e.g., 0.5GB-1GB) so as to avoid pod crash during high load situations due to lack of memory resources. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM Heap and 11GB for Direct Memory leaving 1GB unallocated so as to assure that the pod do not reach the maximum capacity. Conceptually POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (11GB) + Unallocated Memory (1GB).
+2. Distribute the pod's memory (POD_MEM_LIMIT) between JVM Heap and Direct Memory such that sum of JVM Heap and JVM Direct Memory is strictly lower than the POD_MEM_LIMIT memory (e.g., 0.5GB-1GB) so as to avoid pod crash during high load situations due to lack of memory resources. For instance, if POD_MEM_LIMIT=16GB then we can set 4GB for JVM Heap and 11GB for Direct Memory leaving 1GB unallocated so as to assure that the pod do not reach the maximum capacity. That is, POD_MEM_LIMIT (16GB) = JVM Heap (4GB) + Direct Memory (11GB) + Unallocated Memory (1GB).
 
-**NOTE:** These two options (JVM Heap and Direct Memory) can be configured through the following field of the manifest file
+**NOTE:** These two options (JVM Heap and Direct Memory) can be configured through the following field of the manifest file:
 ```
 segmentStoreJVMOptions: ["-Xmx4g", "-XX:MaxDirectMemorySize=11g"]
 ```
@@ -88,13 +88,13 @@ options:
   pravegaservice.cache.size.max: "9663676416"
 ```
 
-To summarize the way in which the segmentstore pod memory is distributed:
+To summarize the way in which the Segment Store pod memory is distributed:
 
 ```
 POD_MEM_LIMIT = JVM Heap + Direct Memory + Unallocated Memory
 Direct Memory = pravegaservice.cache.size.max + 1GB/2GB (other uses)
 ```
-For an in depth understanding of segmentStore options, refer to the [doc](https://github.com/pravega/pravega/blob/master/documentation/src/docs/admin-guide/segmentstore-memory.md)
+For an in depth understanding of Segment Store options, refer to this [document](https://github.com/pravega/pravega/blob/master/documentation/src/docs/admin-guide/segmentstore-memory.md).
 
 **Note:** If we are upgrading pravega version to 0.9 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
 ```
