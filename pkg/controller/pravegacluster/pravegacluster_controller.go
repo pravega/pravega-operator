@@ -19,6 +19,7 @@ import (
 	"time"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -176,7 +177,7 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 }
 
 func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
-	if p.DeletionTimestamp.IsZero() {
+	if p.DeletionTimestamp.IsZero() && !config.DisableFinalizer {
 		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
 			if err = r.client.Update(context.TODO(), p); err != nil {

@@ -16,3 +16,10 @@ package config
 // - Disables Segment Store minimum number of replicas
 // - Enables privileged mode for Segment Store / Controller containers
 var TestMode bool
+
+// DisableFinalizer disables the finalizers for pravega clusters and
+// skips the znode cleanup phase when pravega cluster get deleted.
+// This is useful when operator deletion may happen before pravega clusters deletion.
+// NOTE: enabling this flag with caution! It causes stale znode data in zk uncleaned and
+// leads to conflicts with subsequent pravega clusters deployments
+var DisableFinalizer bool

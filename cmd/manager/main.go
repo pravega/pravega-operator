@@ -44,6 +44,7 @@ var (
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
+	flag.BoolVar(&controllerconfig.DisableFinalizer, "disableFinalizer", false, "Disable finalizers for pravegacliusters. Use this flag with awareness of the consequences")
 	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 }
 
