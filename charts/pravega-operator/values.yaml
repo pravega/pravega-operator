@@ -60,4 +60,3 @@ hooks:
   ## custom resources have been cleaned up
   delete: true
 
-disableFinalizer: false

@@ -27,12 +27,8 @@ spec:
           name: metrics
         command:
         - pravega-operator
-        args:
         {{- if .Values.testmode.enabled }}
-        - -test
-        {{- end }}
-        {{- if .Values.disableFinalizer }}
-        - -disableFinalizer
+        args: [-test]
         {{- end }}
         env:
         - name: WATCH_NAMESPACE
