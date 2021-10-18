@@ -17,9 +17,9 @@ package config
 // - Enables privileged mode for Segment Store / Controller containers
 var TestMode bool
 
-// DisableFinalizer disables the finalizers for pravega clusters and
-// skips the znode cleanup phase when pravega cluster get deleted.
-// This is useful when operator deletion may happen before pravega clusters deletion.
-// NOTE: enabling this flag with caution! It causes stale znode data in zk uncleaned and
-// leads to conflicts with subsequent pravega clusters deployments
+// DisableFinalizer disables the finalizers for Pravega clusters and
+// skips the znode cleanup phase when Pravega cluster get deleted.
+// This is useful when operator deletion may happen before Pravega clusters deletion.
+// NOTE: enabling this flag with caution! It causes stale znode data in zookeeper and
+// leads to conflicts with subsequent Pravega clusters deployments.
 var DisableFinalizer bool
