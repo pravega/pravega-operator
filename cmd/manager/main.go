@@ -44,6 +44,7 @@ var (
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
+	flag.BoolVar(&controllerconfig.DisableFinalizer, "disableFinalizer", false, "Disable finalizers for pravegaclusters. Use this flag with awareness of the consequences")
 	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 }
 
@@ -70,6 +71,10 @@ func main() {
 
 	if controllerconfig.TestMode {
 		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
+	}
+
+	if controllerconfig.DisableFinalizer {
+		log.Warn("----- Running with finalizer disabled. -----")
 	}
 
 	namespace, err := k8sutil.GetWatchNamespace()
