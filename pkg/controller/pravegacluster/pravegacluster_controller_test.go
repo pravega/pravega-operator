@@ -22,6 +22,7 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -477,6 +478,7 @@ var _ = Describe("PravegaCluster Controller", func() {
 				Context("reconcileFinalizers", func() {
 					BeforeEach(func() {
 						p.WithDefaults()
+						config.DisableFinalizer = false
 						client.Update(context.TODO(), p)
 						err = r.reconcileFinalizers(p)
 						now := metav1.Now()
@@ -486,6 +488,25 @@ var _ = Describe("PravegaCluster Controller", func() {
 					})
 					It("should give error due to failure in connecting to zookeeper", func() {
 						Expect(err).To(HaveOccurred())
+					})
+				})
+
+				Context("reconcileFinalizers", func() {
+					BeforeEach(func() {
+						p.WithDefaults()
+
+					})
+					It("should have 1 finalizer", func() {
+						config.DisableFinalizer = false
+						err = r.reconcileFinalizers(p)
+						Expect(p.ObjectMeta.Finalizers).To(HaveLen(1))
+						Expect(err).NotTo(HaveOccurred())
+					})
+					It("should have 0 finalizer", func() {
+						config.DisableFinalizer = true
+						err = r.reconcileFinalizers(p)
+						Expect(p.ObjectMeta.Finalizers).To(HaveLen(0))
+						Expect(err).NotTo(HaveOccurred())
 					})
 				})
 
