@@ -73,6 +73,10 @@ func main() {
 		log.Warn("----- Running in test mode. Make sure you are NOT in production -----")
 	}
 
+	if controllerconfig.DisableFinalizer {
+		log.Warn("----- Running with finalizer disabled. -----")
+	}
+
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
 		log.Fatal(err, "failed to get watch namespace")
