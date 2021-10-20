@@ -21,8 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewDefaultCluster returns a cluster with an empty spec, which will be filled
-// with default values
+// NewDefaultCluster returns a cluster with some of the fields already filled in spec and the remaining fields
+// will be filled with default values
 func NewDefaultCluster(namespace string) *api.PravegaCluster {
 	return &api.PravegaCluster{
 		TypeMeta: metav1.TypeMeta{
@@ -33,7 +33,22 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 			Name:      "pravega",
 			Namespace: namespace,
 		},
-		Spec: api.ClusterSpec{},
+		Spec: api.ClusterSpec{
+			Pravega: &api.PravegaSpec{
+				Options:                map[string]string{"pravegaservice.cache.size.max": "1610612736"},
+				SegmentStoreJVMOptions: []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"},
+				SegmentStoreResources: &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -41,6 +56,20 @@ func NewClusterWithVersion(namespace, version string) *api.PravegaCluster {
 	cluster := NewDefaultCluster(namespace)
 	cluster.Spec = api.ClusterSpec{
 		Version: version,
+		Pravega: &api.PravegaSpec{
+			Options:                map[string]string{"pravegaservice.cache.size.max": "1610612736"},
+			SegmentStoreJVMOptions: []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"},
+			SegmentStoreResources: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1000m"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2000m"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+			},
+		},
 	}
 	return cluster
 }
