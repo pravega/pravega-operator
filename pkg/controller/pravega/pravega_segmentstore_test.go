@@ -500,5 +500,175 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 			})
 		})
+		Context("With CustomStorage as Tier2", func() {
+			var (
+				customReq *corev1.ResourceRequirements
+				err       error
+			)
+			BeforeEach(func() {
+				annotationsMap := map[string]string{
+					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
+				}
+				customReq = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("4"),
+						corev1.ResourceMemory: resource.MustParse("6Gi"),
+					},
+				}
+				p.Spec = v1beta1.ClusterSpec{
+					Version: "0.5.0",
+					ExternalAccess: &v1beta1.ExternalAccess{
+						Enabled:    true,
+						Type:       corev1.ServiceTypeClusterIP,
+						DomainName: "pravega.com.",
+					},
+					BookkeeperUri: v1beta1.DefaultBookkeeperUri,
+					Pravega: &v1beta1.PravegaSpec{
+						ControllerReplicas:              2,
+						SegmentStoreReplicas:            4,
+						ControllerServiceAccountName:    "pravega-components",
+						SegmentStoreServiceAccountName:  "pravega-components",
+						ControllerResources:             customReq,
+						SegmentStoreResources:           customReq,
+						ControllerServiceAnnotations:    annotationsMap,
+						ControllerPodLabels:             annotationsMap,
+						SegmentStoreServiceAnnotations:  annotationsMap,
+						SegmentStorePodLabels:           annotationsMap,
+						SegmentStoreExternalServiceType: corev1.ServiceTypeLoadBalancer,
+						SegmentStoreSecret: &v1beta1.SegmentStoreSecret{
+							Secret:    "seg-secret",
+							MountPath: "/tmp/mount",
+						},
+						Image: &v1beta1.ImageSpec{
+							Repository: "bar/pravega",
+						},
+						ControllerJvmOptions:   []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						SegmentStoreJVMOptions: []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"},
+						Options: map[string]string{
+							"dummy-key":             "dummy-value",
+							"configMapVolumeMounts": "prvg-logback:logback.xml=/opt/pravega/conf/logback.xml",
+							"emptyDirVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+							"hostPathVolumeMounts":  "heap-dump=/tmp/dumpfile/heap,log=/opt/pravega/logs",
+						},
+						LongTermStorage: &v1beta1.LongTermStorageSpec{
+							Custom: &v1beta1.CustomSpec{
+								Options: map[string]string{
+									"key": "dummy-value",
+								},
+								Env: map[string]string{
+									"AWS_KEY": "key",
+								},
+							},
+						},
+					},
+					TLS: &v1beta1.TLSPolicy{
+						Static: &v1beta1.StaticTLS{
+							ControllerSecret:   "controller-secret",
+							SegmentStoreSecret: "segmentstore-secret",
+							CaBundle:           "ecs-cert",
+						},
+					},
+					Authentication: &v1beta1.AuthenticationParameters{
+						Enabled:            true,
+						PasswordAuthSecret: "authentication-secret",
+					},
+				}
+				p.WithDefaults()
+			})
+
+			Context("First reconcile", func() {
+				It("shouldn't error", func() {
+					Ω(err).Should(BeNil())
+				})
+			})
+
+			Context("SegmentStore", func() {
+
+				It("should create a headless service", func() {
+					_ = pravega.MakeSegmentStoreHeadlessService(p)
+					Ω(err).Should(BeNil())
+				})
+
+				It("should create a pod disruption budget", func() {
+					_ = pravega.MakeSegmentstorePodDisruptionBudget(p)
+					Ω(err).Should(BeNil())
+				})
+
+				It("should create a config-map and set the JVM options given by user", func() {
+					cm := pravega.MakeSegmentstoreConfigMap(p)
+					javaOpts := cm.Data["JAVA_OPTS"]
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.clusterName=default")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxDirectMemorySize=1g")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-XX:MaxRAMPercentage=50.0")).Should(BeTrue())
+					Ω(strings.Contains(javaOpts, "-Dpravegaservice.service.listener.port=12345")).Should(BeTrue())
+					Ω(err).Should(BeNil())
+				})
+				It("should create a stateful set", func() {
+					sts := pravega.MakeSegmentStoreStatefulSet(p)
+					mounthostpath0 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
+					Ω(mounthostpath0).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath1 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[1].MountPath
+					Ω(mounthostpath1).Should(Equal("/opt/pravega/logs"))
+					mounthostpath2 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[2].MountPath
+					Ω(mounthostpath2).Should(Equal("/tmp/dumpfile/heap"))
+					mounthostpath3 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[3].MountPath
+					Ω(mounthostpath3).Should(Equal("/opt/pravega/logs"))
+					mounthostpath4 := sts.Spec.Template.Spec.Containers[0].VolumeMounts[4].MountPath
+					Ω(mounthostpath4).Should(Equal("/opt/pravega/conf/logback.xml"))
+					Ω(err).Should(BeNil())
+				})
+				It("should set external access service type to LoadBalancer", func() {
+					_ = pravega.MakeSegmentStoreExternalServices(p)
+					Ω(err).Should(BeNil())
+				})
+			})
+			Context("Create External service with external service type and access type empty", func() {
+				BeforeEach(func() {
+					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
+					p.Spec.ExternalAccess.Type = ""
+					p.Spec.ExternalAccess.DomainName = "example"
+
+				})
+				It("should create external service with access type loadbalancer", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.Type).To(Equal(corev1.ServiceTypeLoadBalancer))
+					Ω(err).Should(BeNil())
+				})
+			})
+			Context("Create External service with SegmentStoreExternalTrafficPolicy as cluster", func() {
+				BeforeEach(func() {
+					p.Spec.Pravega.SegmentStoreExternalTrafficPolicy = "cluster"
+				})
+				It("should create external service with ExternalTrafficPolicy type cluster", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.ExternalTrafficPolicy).To(Equal(corev1.ServiceExternalTrafficPolicyTypeCluster))
+				})
+			})
+			Context("Create External service with LoadBalancerIP", func() {
+				BeforeEach(func() {
+					p.Spec.Pravega.SegmentStoreLoadBalancerIP = "10.240.12.18"
+				})
+				It("should create external service with LoadBalancerIP", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.LoadBalancerIP).To(Equal("10.240.12.18"))
+				})
+			})
+			Context("Create External service with external service type empty", func() {
+				BeforeEach(func() {
+					m := make(map[string]string)
+					p.Spec.Pravega.SegmentStoreServiceAnnotations = m
+					p.Spec.Pravega.SegmentStoreExternalServiceType = ""
+				})
+				It("should create the service with external access type ClusterIP", func() {
+					svc := pravega.MakeSegmentStoreExternalServices(p)
+					Ω(svc[0].Spec.Type).To(Equal(corev1.ServiceTypeClusterIP))
+					Ω(err).Should(BeNil())
+				})
+			})
+		})
 	})
 })
