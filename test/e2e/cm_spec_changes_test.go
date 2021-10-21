@@ -42,10 +42,11 @@ func testCMUpgradeCluster(t *testing.T) {
 	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
 
 	cluster.WithDefaults()
-	jvmOpts := []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"}
-	cluster.Spec.Pravega.Options["pravegaservice.containerCount"] = "3"
-	cluster.Spec.Pravega.ControllerJvmOptions = jvmOpts
-	cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
+	jvmOptsController := []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"}
+	jvmOptsSegmentStore := append(cluster.Spec.Pravega.SegmentStoreJVMOptions, "-XX:MaxRAMPercentage=50.0")
+	cluster.Spec.Pravega.Options["pravegaservice.container.count"] = "3"
+	cluster.Spec.Pravega.ControllerJvmOptions = jvmOptsController
+	cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
 
 	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cluster)
 	g.Expect(err).NotTo(HaveOccurred())
@@ -62,17 +63,18 @@ func testCMUpgradeCluster(t *testing.T) {
 	// Check configmap has correct values
 	c_cm := pravega.ConfigMapNameForController()
 	ss_cm := pravega.ConfigMapNameForSegmentstore()
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOpts)
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
 	g.Expect(err).NotTo(HaveOccurred())
-	jvmOpts = append(jvmOpts, "pravegaservice.service.listener.port=12345")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOpts)
+	jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=12345")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//updating pravega options
-	jvmOpts = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
-	pravega.Spec.Pravega.ControllerJvmOptions = jvmOpts
-	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOpts
-	pravega.Spec.Pravega.Options["bookkeeper.bkAckQuorumSize"] = "2"
+	jvmOptsController = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
+	jvmOptsSegmentStore = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
+	pravega.Spec.Pravega.ControllerJvmOptions = jvmOptsController
+	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
+	pravega.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "2"
 	pravega.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "443"
 	pravega.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
 	pravega.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
@@ -102,24 +104,24 @@ func testCMUpgradeCluster(t *testing.T) {
 	time.Sleep(60 * time.Second)
 
 	// Check configmap is  Updated
-	jvmOpts = append(jvmOpts, "bookkeeper.bkAckQuorumSize=2")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOpts)
+	jvmOptsController = append(jvmOptsController, "bookkeeper.ack.quorum.size=2")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
 	g.Expect(err).NotTo(HaveOccurred())
-	jvmOpts = append(jvmOpts, "pravegaservice.service.listener.port=443")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOpts)
+	jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=443")
+	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	//updating pravega option
-	pravega.Spec.Pravega.Options["pravegaservice.containerCount"] = "10"
+	pravega.Spec.Pravega.Options["pravegaservice.container.count"] = "10"
 
 	//updating pravegacluster
 	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
 
 	//should give an error
-	g.Expect(strings.ContainsAny(err.Error(), "controller.containerCount should not be changed")).To(Equal(true))
+	g.Expect(strings.ContainsAny(err.Error(), "controller.container.count should not be changed")).To(Equal(true))
 
 	// Delete cluster
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
