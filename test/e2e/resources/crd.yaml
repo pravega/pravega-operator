@@ -2212,6 +2212,20 @@ spec:
                       that a PersistentVolumeClaim called "pravega-longterm" is present
                       and it will use it as Tier 2
                     properties:
+                      custom:
+                        description: Custom Storage as a Tier2 backend
+                        properties:
+                          env:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          options:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        required:
+                        - env
+                        type: object
                       ecs:
                         description: Ecs is used to configure a Dell EMC ECS system
                           as a Tier 2 backend
