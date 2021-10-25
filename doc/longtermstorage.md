@@ -6,6 +6,7 @@ The following LongTermStorage storage providers are supported:
 - [Filesystem: Google Filestore](#use-google-filestore-storage-as-longtermstorage)
 - [S3: Dell EMC ECS](#use-dell-emc-ecs-as-longtermstorage)
 - [HDFS](#use-hdfs-as-longtermstorage)
+- [Custom Storage](#use-custom-storage-as-longtermstorage)
 
 ### Use NFS as LongTermStorage
 
