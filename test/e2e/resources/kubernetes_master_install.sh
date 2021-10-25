@@ -44,5 +44,5 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl get nodes
 kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
 kubectl get nodes
-sudo apt-get install binutils bison gcc -y
+sudo apt-get install binutils bison gcc make -y
 mkdir /export

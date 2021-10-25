@@ -284,6 +284,12 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 		javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
 	}
 
+	if p.Spec.Pravega.LongTermStorage.Custom != nil {
+		for name, value := range p.Spec.Pravega.LongTermStorage.Custom.Options {
+			javaOpts = append(javaOpts, fmt.Sprintf("-D%v=%v", name, value))
+		}
+	}
+
 	sort.Strings(javaOpts)
 
 	authEnabledStr := fmt.Sprint(p.Spec.Authentication.IsEnabled())
@@ -309,7 +315,6 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	for k, v := range getTier2StorageOptions(p.Spec.Pravega) {
 		configData[k] = v
 	}
-
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
@@ -359,6 +364,12 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 			"TIER2_STORAGE": "HDFS",
 			"HDFS_URL":      pravegaSpec.LongTermStorage.Hdfs.Uri,
 			"HDFS_ROOT":     pravegaSpec.LongTermStorage.Hdfs.Root,
+		}
+	}
+
+	if pravegaSpec.LongTermStorage.Custom != nil {
+		if pravegaSpec.LongTermStorage.Custom.Env != nil {
+			return pravegaSpec.LongTermStorage.Custom.Env
 		}
 	}
 

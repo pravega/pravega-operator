@@ -456,6 +456,9 @@ type LongTermStorageSpec struct {
 
 	// Hdfs is used to configure an HDFS system as a Tier 2 backend
 	Hdfs *HDFSSpec `json:"hdfs,omitempty"`
+
+	// Custom Storage as a Tier2 backend
+	Custom *CustomSpec `json:"custom,omitempty"`
 }
 
 // AuthImpemenationSpec helps to inject plugins to contoller pod
@@ -471,7 +474,7 @@ type AuthHandlerSpec struct {
 }
 
 func (s *LongTermStorageSpec) withDefaults() (changed bool) {
-	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil {
+	if s.FileSystem == nil && s.Ecs == nil && s.Hdfs == nil && s.Custom == nil {
 		changed = true
 		fs := &FileSystemSpec{
 			PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
@@ -510,4 +513,10 @@ type HDFSSpec struct {
 	Root string `json:"root"`
 	// +optional
 	ReplicationFactor int32 `json:"replicationFactor"`
+}
+
+// CustomSpec contains the options and env variables to be passed to segmentstore
+type CustomSpec struct {
+	Options map[string]string `json:"options,omitempty"`
+	Env     map[string]string `json:"env"`
 }

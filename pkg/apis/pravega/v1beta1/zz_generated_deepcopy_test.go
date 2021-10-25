@@ -160,6 +160,19 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 				},
 			}
 			p2.Spec.Pravega.LongTermStorage.Hdfs = p1.Spec.Pravega.LongTermStorage.Hdfs.DeepCopy()
+
+			p2.Spec.Pravega.LongTermStorage.Custom = p1.Spec.Pravega.LongTermStorage.Custom.DeepCopy()
+			p1.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{
+				Custom: &v1beta1.CustomSpec{
+					Options: map[string]string{
+						"key": "dummy-value",
+					},
+					Env: map[string]string{
+						"AWS_KEY": "key",
+					},
+				},
+			}
+			p2.Spec.Pravega.LongTermStorage.Custom = p1.Spec.Pravega.LongTermStorage.Custom.DeepCopy()
 		})
 		It("value of str1 and str2 should be equal", func() {
 			Ω(str2).To(Equal(str1))
