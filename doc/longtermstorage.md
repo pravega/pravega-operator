@@ -238,3 +238,34 @@ spec:
       root: /example
       replicationFactor: 3
 ```
+
+### Use Custom Storage as LongTermStorage
+
+Pravega can also use Custom storage such as `S3` for LongTermStorage.
+
+Modify the Pravega manifest to include custom storage as LongTermStorage in [helm charts](https://github.com/pravega/charts/blob/master/charts/pravega/values.yaml).
+
+**NOTE:** The type of tier2storage has to be passed as env variable `TIER2_STORAGE`, as shown in the below example.
+```
+storage:
+
+  longtermStorage:
+    ## configure the long term storage backend type
+    ## accepted values : filesystem/ecs/hdfs
+    ## default option is filesystem
+    type: custom
+    custom:
+      options:
+        pravegaservice.storage.layout: "CHUNKED_STORAGE"
+        pravegaservice.storage.impl.name: "S3"
+        s3.bucket: "aws-sdk-test"
+        s3.prefix: "10-11-1"
+        s3.connect.config.uri.override: "false"
+        s3.connect.config.uri: <uri>
+        s3.connect.config.access.key: <access key>
+        s3.connect.config.secret.key: <secret key>
+      env:
+        TIER2_STORAGE: "S3"
+        AWS_ACCESS_KEY_ID: "key"
+        AWS_SECRET_ACCESS_KEY: "secret"
+```

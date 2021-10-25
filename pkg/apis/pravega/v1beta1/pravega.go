@@ -515,7 +515,8 @@ type HDFSSpec struct {
 	ReplicationFactor int32 `json:"replicationFactor"`
 }
 
+// CustomSpec contains the options and env variables to be passed to segmentstore
 type CustomSpec struct {
-	Options map[string]string `json:"options"`
+	Options map[string]string `json:"options,omitempty"`
 	Env     map[string]string `json:"env"`
 }

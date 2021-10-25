@@ -367,7 +367,7 @@ func getTier2StorageOptions(pravegaSpec *api.PravegaSpec) map[string]string {
 		}
 	}
 
-	if pravegaSpec.LongTermStorage.Custom != nil {
+  if pravegaSpec.LongTermStorage.Custom != nil {
 		if pravegaSpec.LongTermStorage.Custom.Env != nil {
 
 			return pravegaSpec.LongTermStorage.Custom.Env

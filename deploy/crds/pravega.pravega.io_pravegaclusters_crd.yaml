@@ -2223,7 +2223,6 @@ spec:
                             type: object
                         required:
                         - env
-                        - options
                         type: object
                       ecs:
                         description: Ecs is used to configure a Dell EMC ECS system
