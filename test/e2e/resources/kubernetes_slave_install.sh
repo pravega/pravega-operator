@@ -18,7 +18,7 @@ sudo apt-get install docker-ce=5:19.03.9~3-0~ubuntu-focal -y
 echo "docker install"
 sudo systemctl enable --now docker
 apt-get update && apt-get install -y \
-  apt-transport-https ca-certificates curl software-properties-common gnupg2
+  apt-transport-https ca-certificates curl software-properties-common gnupg2 make
 echo "installed certs"
 sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" \
