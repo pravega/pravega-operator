@@ -1207,9 +1207,16 @@ func (p *PravegaCluster) validateConfigMap() error {
 }
 
 func (p *PravegaCluster) ValidateSegmentStore() error {
-	totalMemoryQuantity := p.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceMemory]
-	if (resource.Quantity{}) == totalMemoryQuantity {
-		return fmt.Errorf("Missing required value for field .spec.pravega.segmentStoreResources.requests.memory")
+	totalMemoryLimitsQuantity := p.Spec.Pravega.SegmentStoreResources.Limits[corev1.ResourceMemory]
+	totalMemoryRequestsQuantity := p.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceMemory]
+	if (resource.Quantity{}) == totalMemoryLimitsQuantity {
+		return fmt.Errorf("Missing required value for field spec.pravega.segmentStoreResources.limits.memory")
+	}
+
+	totalMemoryLimits := totalMemoryLimitsQuantity.Value()
+	totalMemoryRequests := totalMemoryRequestsQuantity.Value()
+	if totalMemoryLimits < totalMemoryRequests {
+		return fmt.Errorf("spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory")
 	}
 
 	cacheSizeString := p.Spec.Pravega.Options["pravegaservice.cache.size.max"]
@@ -1240,13 +1247,12 @@ func (p *PravegaCluster) ValidateSegmentStore() error {
 	}
 	maxDirectMemoryQuantity := resource.MustParse(maxDirectMemoryString)
 
-	totalMemory := totalMemoryQuantity.Value()
 	xmx := xmxQuantity.Value()
 	maxDirectMemorySize := maxDirectMemoryQuantity.Value()
 	cacheSize := cacheSizeQuantity.Value()
 
-	if totalMemory <= maxDirectMemorySize+xmx {
-		return fmt.Errorf("MaxDirectMemorySize(%v B) along with JVM Xmx value(%v B) is greater than or equal to the total available memory(%v B)!", maxDirectMemorySize, xmx, totalMemory)
+	if totalMemoryLimits <= maxDirectMemorySize+xmx {
+		return fmt.Errorf("MaxDirectMemorySize(%v B) along with JVM Xmx value(%v B) is greater than or equal to the total available memory(%v B)!", maxDirectMemorySize, xmx, totalMemoryLimits)
 	}
 
 	if maxDirectMemorySize <= xmx {
