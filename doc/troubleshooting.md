@@ -21,10 +21,11 @@
 
 While installing pravega, if we get the error as  below,
 ```
-helm install pravega charts/pravega
+helm repo add pravega https://charts.pravega.io
+helm install [RELEASE_NAME] pravega/pravega
 Error: Internal error occurred: failed calling webhook "pravegawebhook.pravega.io": Post https://pravega-webhook-svc.default.svc:443/validate-pravega-pravega-io-v1beta1-pravegacluster?timeout=30s: x509: certificate signed by unknown authority
 ```
-We need to ensure that certificates are installed before installing the operator. Please refer [prerequisite](../charts/pravega-operator/README.md#Prerequisites)
+We need to ensure that certificates are installed before installing the operator. Please refer to the [prerequisites](https://github.com/pravega/charts/tree/master/charts/pravega-operator#prerequisites).
 
 ## Segment store in CrashLoopBackOff
 
@@ -201,7 +202,7 @@ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperU
 
 ## Operator pod in container creating state
 
-while installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly.Please refer [prerequisite](../charts/pravega-operator/README.md#Prerequisites)
+while installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly. Please refer to the [prerequisites](https://github.com/pravega/charts/tree/master/charts/pravega-operator#prerequisites).
 
 ## Recover Operator when node fails
 

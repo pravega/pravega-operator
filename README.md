@@ -18,7 +18,7 @@ For setting up pravega quickly, check our [complete Pravega Installation script]
 
 ## Install the Operator
 
-To understand how to deploy a Pravega Operator refer to [Operator Deployment](charts/pravega-operator#deploying-pravega-operator).
+To understand how to deploy a Pravega Operator refer to [Operator Deployment](https://github.com/pravega/charts/tree/master/charts/pravega-operator#deploying-pravega-operator).
 
 ## Upgrade the Operator
 
@@ -26,8 +26,8 @@ For upgrading the pravega operator check the document [Operator Upgrade](doc/ope
 
 ## Features
 
-- [x] [Create and destroy a Pravega cluster](charts/pravega/README.md)
-- [x] [Resize cluster](charts/pravega/README.md#updating-pravega-cluster)
+- [x] [Create and destroy a Pravega cluster](https://github.com/pravega/charts/tree/master/charts/pravega#deploying-pravega)
+- [x] [Resize cluster](https://github.com/pravega/charts/tree/master/charts/pravega#updating-pravega-cluster)
 - [x] [Rolling upgrades/Rollback](doc/upgrade-cluster.md)
 - [x] [Pravega Configuration tuning](doc/configuration.md)
 - [x] Input validation
