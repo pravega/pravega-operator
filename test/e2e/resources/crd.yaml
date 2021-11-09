@@ -1980,6 +1980,57 @@ spec:
                             type: array
                         type: object
                     type: object
+                  controllerProbes:
+                    description: Probes specifies the timeout values for the Readiness
+                      and Liveness Probes for the controller pods.
+                    properties:
+                      livenessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                      readinessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                    type: object
                   controllerReplicas:
                     description: ControllerReplicas defines the number of Controller
                       replicas. Defaults to 0.
@@ -4022,6 +4073,57 @@ spec:
                               - topologyKey
                               type: object
                             type: array
+                        type: object
+                    type: object
+                  segmentStoreProbes:
+                    description: Probes specifies the timeout values for the Readiness
+                      and Liveness Probes for the segmentstore pods.
+                    properties:
+                      livenessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                      readinessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
                         type: object
                     type: object
                   segmentStoreReplicas:

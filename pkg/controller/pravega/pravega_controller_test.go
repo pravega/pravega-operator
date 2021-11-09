@@ -119,6 +119,22 @@ var _ = Describe("Controller", func() {
 								},
 							},
 						},
+						ControllerProbes: &v1beta1.Probes{
+							ReadinessProbe: &v1beta1.Probe{
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       5,
+								FailureThreshold:    5,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      2,
+							},
+							LivenessProbe: &v1beta1.Probe{
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       5,
+								FailureThreshold:    5,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      2,
+							},
+						},
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -132,6 +148,7 @@ var _ = Describe("Controller", func() {
 						ControllerTokenSecret: "controllerauth-secret",
 					},
 				}
+
 				p.WithDefaults()
 				no := int64(0)
 				securitycontext := corev1.PodSecurityContext{
@@ -207,6 +224,20 @@ var _ = Describe("Controller", func() {
 					Ω(podTemplate.Spec.InitContainers[2].Image).To(Equal("testimage2"))
 					Ω(podTemplate.Spec.InitContainers[2].VolumeMounts[0].Name).To(Equal("authplugin"))
 					Ω(podTemplate.Spec.InitContainers[2].VolumeMounts[0].MountPath).To(Equal("/ifs/data"))
+				})
+				It("should have probe timeout values set to the values given by user", func() {
+					podTemplate := pravega.MakeControllerPodTemplate(p)
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.InitialDelaySeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.PeriodSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.FailureThreshold).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.TimeoutSeconds).Should(Equal(int32(2)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(2)))
+
 				})
 			})
 
@@ -351,6 +382,19 @@ var _ = Describe("Controller", func() {
 					Ω(podTemplate.Spec.InitContainers[0].VolumeMounts[0].Name).To(Equal("authplugin"))
 					Ω(podTemplate.Spec.InitContainers[0].VolumeMounts[0].MountPath).To(Equal("/opt/pravega/pluginlib"))
 
+				})
+				It("should have probe timeout values set to their default value", func() {
+					podTemplate := pravega.MakeControllerPodTemplate(p)
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.InitialDelaySeconds).Should(Equal(int32(60)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.PeriodSeconds).Should(Equal(int32(15)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.FailureThreshold).Should(Equal(int32(4)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.TimeoutSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds).Should(Equal(int32(20)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(60)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(3)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(3)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(60)))
 				})
 				It("should create the service", func() {
 					svc := pravega.MakeControllerService(p)

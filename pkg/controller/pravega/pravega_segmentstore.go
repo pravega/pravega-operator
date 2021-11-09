@@ -216,8 +216,11 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					// is configured with external enabled as they need to wait for the allocation
 					// of the external IP address.
 					// This config gives it up to 5 minutes to become ready.
-					PeriodSeconds:    10,
-					FailureThreshold: 30,
+					InitialDelaySeconds: p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.InitialDelaySeconds,
+					TimeoutSeconds:      p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.TimeoutSeconds,
+					SuccessThreshold:    p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.SuccessThreshold,
+					FailureThreshold:    p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.FailureThreshold,
+					PeriodSeconds:       p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.PeriodSeconds,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -230,9 +233,11 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					// a 5-minute grace period before starting monitoring the container.
 					// If the pod fails the health check during 1 minute, Kubernetes
 					// will restart it.
-					InitialDelaySeconds: 300,
-					PeriodSeconds:       15,
-					FailureThreshold:    4,
+					InitialDelaySeconds: p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.InitialDelaySeconds,
+					TimeoutSeconds:      p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.TimeoutSeconds,
+					SuccessThreshold:    p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.SuccessThreshold,
+					FailureThreshold:    p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold,
+					PeriodSeconds:       p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.PeriodSeconds,
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &config.TestMode,

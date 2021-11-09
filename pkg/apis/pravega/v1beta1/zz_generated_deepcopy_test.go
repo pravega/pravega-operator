@@ -132,6 +132,12 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			p2.Spec.Pravega.AuthImplementations = p1.Spec.Pravega.AuthImplementations.DeepCopy()
 			p2.Spec.Pravega.AuthImplementations.AuthHandlers[0] = *p1.Spec.Pravega.AuthImplementations.AuthHandlers[0].DeepCopy()
 
+			p1.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds = 5
+			p1.Spec.Pravega.ControllerProbes.LivenessProbe.FailureThreshold = 2
+			p2.Spec.Pravega.ControllerProbes = p1.Spec.Pravega.ControllerProbes.DeepCopy()
+			p1.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.InitialDelaySeconds = 5
+			p1.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold = 2
+			p2.Spec.Pravega.SegmentStoreProbes = p1.Spec.Pravega.SegmentStoreProbes.DeepCopy()
 			p2.Spec.Pravega.LongTermStorage = p1.Spec.Pravega.LongTermStorage.DeepCopy()
 			p1.Spec.Pravega.LongTermStorage = &v1beta1.LongTermStorageSpec{
 				Ecs: &v1beta1.ECSSpec{
@@ -301,6 +307,14 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			p1.Spec.Pravega.AuthImplementations = nil
 			Ω(p1.Spec.Pravega.AuthImplementations.DeepCopy()).Should(BeNil())
 		})
+		It("checking for nil ControllerProbes", func() {
+			p1.Spec.Pravega.ControllerProbes = nil
+			Ω(p1.Spec.Pravega.ControllerProbes.DeepCopy()).Should(BeNil())
+		})
+		It("checking for nil SegmentStoreProbes", func() {
+			p1.Spec.Pravega.SegmentStoreProbes = nil
+			Ω(p1.Spec.Pravega.SegmentStoreProbes.DeepCopy()).Should(BeNil())
+		})
 		It("checking for nil member status", func() {
 			var memberstatus *v1beta1.MembersStatus
 			memberstatus2 := memberstatus.DeepCopy()
@@ -372,6 +386,16 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			}
 			clusterlist2 := clusterlist.DeepCopyObject()
 			Ω(clusterlist2).ShouldNot(BeNil())
+		})
+		It("checking value of probes", func() {
+			Ω(p2.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(5)))
+			Ω(p2.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold).To(Equal(int32(2)))
+			p1.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds = 0
+			p1.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold = 1
+			p1.Spec.Pravega.ControllerProbes.ReadinessProbe.DeepCopyInto(p2.Spec.Pravega.ControllerProbes.ReadinessProbe)
+			p2.Spec.Pravega.SegmentStoreProbes.LivenessProbe = p1.Spec.Pravega.SegmentStoreProbes.LivenessProbe.DeepCopy()
+			Ω(p2.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(0)))
+			Ω(p2.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold).To(Equal(int32(1)))
 		})
 	})
 })
