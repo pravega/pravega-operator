@@ -237,7 +237,6 @@ var _ = Describe("Controller", func() {
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(5)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(2)))
-
 				})
 			})
 
@@ -391,7 +390,7 @@ var _ = Describe("Controller", func() {
 					Ω(podTemplate.Spec.Containers[0].LivenessProbe.SuccessThreshold).Should(Equal(int32(1)))
 					Ω(podTemplate.Spec.Containers[0].LivenessProbe.TimeoutSeconds).Should(Equal(int32(5)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds).Should(Equal(int32(20)))
-					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(60)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(10)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(3)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(3)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(60)))

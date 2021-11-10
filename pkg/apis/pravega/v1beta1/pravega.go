@@ -75,7 +75,7 @@ const (
 
 	// DefaultReadinessProbePeriodSeconds is the default probe period (in seconds)
 	// for the readiness probe
-	DefaultControllerReadinessProbePeriodSeconds = 60
+	DefaultControllerReadinessProbePeriodSeconds = 10
 
 	// DefaultReadinessProbeFailureThreshold is the default probe failure threshold
 	// for the readiness probe
@@ -492,23 +492,23 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	}
 	if s.ControllerProbes.ReadinessProbe == nil {
 		changed = true
-		s.ControllerProbes.ReadinessProbe = &Probe{}
-		s.ControllerProbes.ReadinessProbe.InitialDelaySeconds = DefaultControllerReadinessProbeInitialDelaySeconds
-		s.ControllerProbes.ReadinessProbe.PeriodSeconds = DefaultControllerReadinessProbePeriodSeconds
-		s.ControllerProbes.ReadinessProbe.FailureThreshold = DefaultControllerReadinessProbeFailureThreshold
-		s.ControllerProbes.ReadinessProbe.SuccessThreshold = DefaultControllerReadinessProbeSuccessThreshold
-		s.ControllerProbes.ReadinessProbe.TimeoutSeconds = DefaultControllerReadinessProbeTimeoutSeconds
-
+		s.ControllerProbes.ReadinessProbe = &Probe{
+			InitialDelaySeconds: DefaultControllerReadinessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultControllerReadinessProbePeriodSeconds,
+			FailureThreshold:    DefaultControllerReadinessProbeFailureThreshold,
+			SuccessThreshold:    DefaultControllerReadinessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultControllerReadinessProbeTimeoutSeconds,
+		}
 	}
-
 	if s.ControllerProbes.LivenessProbe == nil {
 		changed = true
-		s.ControllerProbes.LivenessProbe = &Probe{}
-		s.ControllerProbes.LivenessProbe.InitialDelaySeconds = DefaultControllerLivenessProbeInitialDelaySeconds
-		s.ControllerProbes.LivenessProbe.PeriodSeconds = DefaultControllerLivenessProbePeriodSeconds
-		s.ControllerProbes.LivenessProbe.FailureThreshold = DefaultControllerLivenessProbeFailureThreshold
-		s.ControllerProbes.LivenessProbe.SuccessThreshold = DefaultControllerLivenessProbeSuccessThreshold
-		s.ControllerProbes.LivenessProbe.TimeoutSeconds = DefaultControllerLivenessProbeTimeoutSeconds
+		s.ControllerProbes.LivenessProbe = &Probe{
+			InitialDelaySeconds: DefaultControllerLivenessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultControllerLivenessProbePeriodSeconds,
+			FailureThreshold:    DefaultControllerLivenessProbeFailureThreshold,
+			SuccessThreshold:    DefaultControllerLivenessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultControllerLivenessProbeTimeoutSeconds,
+		}
 	}
 	if s.SegmentStoreProbes == nil {
 		changed = true
@@ -516,22 +516,23 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	}
 	if s.SegmentStoreProbes.ReadinessProbe == nil {
 		changed = true
-		s.SegmentStoreProbes.ReadinessProbe = &Probe{}
-		s.SegmentStoreProbes.ReadinessProbe.InitialDelaySeconds = DefaultSegmentStoreReadinessProbeInitialDelaySeconds
-		s.SegmentStoreProbes.ReadinessProbe.PeriodSeconds = DefaultSegmentStoreReadinessProbePeriodSeconds
-		s.SegmentStoreProbes.ReadinessProbe.FailureThreshold = DefaultSegmentStoreReadinessProbeFailureThreshold
-		s.SegmentStoreProbes.ReadinessProbe.SuccessThreshold = DefaultSegmentStoreReadinessProbeSuccessThreshold
-		s.SegmentStoreProbes.ReadinessProbe.TimeoutSeconds = DefaultSegmentStoreReadinessProbeTimeoutSeconds
+		s.SegmentStoreProbes.ReadinessProbe = &Probe{
+			InitialDelaySeconds: DefaultSegmentStoreReadinessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultSegmentStoreReadinessProbePeriodSeconds,
+			FailureThreshold:    DefaultSegmentStoreReadinessProbeFailureThreshold,
+			SuccessThreshold:    DefaultSegmentStoreReadinessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultSegmentStoreReadinessProbeTimeoutSeconds,
+		}
 	}
-
 	if s.SegmentStoreProbes.LivenessProbe == nil {
 		changed = true
-		s.SegmentStoreProbes.LivenessProbe = &Probe{}
-		s.SegmentStoreProbes.LivenessProbe.InitialDelaySeconds = DefaultSegmentStoreLivenessProbeInitialDelaySeconds
-		s.SegmentStoreProbes.LivenessProbe.PeriodSeconds = DefaultSegmentStoreLivenessProbePeriodSeconds
-		s.SegmentStoreProbes.LivenessProbe.FailureThreshold = DefaultSegmentStoreLivenessProbeFailureThreshold
-		s.SegmentStoreProbes.LivenessProbe.SuccessThreshold = DefaultSegmentStoreLivenessProbeSuccessThreshold
-		s.SegmentStoreProbes.LivenessProbe.TimeoutSeconds = DefaultSegmentStoreLivenessProbeTimeoutSeconds
+		s.SegmentStoreProbes.LivenessProbe = &Probe{
+			InitialDelaySeconds: DefaultSegmentStoreLivenessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultSegmentStoreLivenessProbePeriodSeconds,
+			FailureThreshold:    DefaultSegmentStoreLivenessProbeFailureThreshold,
+			SuccessThreshold:    DefaultSegmentStoreLivenessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultSegmentStoreLivenessProbeTimeoutSeconds,
+		}
 	}
 	return changed
 }

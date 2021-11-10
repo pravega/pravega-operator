@@ -213,9 +213,8 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 						},
 					},
 					// Segment Stores can take a few minutes to become ready when the cluster
-					// is configured with external enabled as they need to wait for the allocation
+					// is configured with external access enabled as they need to wait for the allocation
 					// of the external IP address.
-					// This config gives it up to 5 minutes to become ready.
 					InitialDelaySeconds: p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.InitialDelaySeconds,
 					TimeoutSeconds:      p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.TimeoutSeconds,
 					SuccessThreshold:    p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.SuccessThreshold,
@@ -228,11 +227,6 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 							Command: util.HealthcheckCommand(p.Spec.Version, int32(containerport), 6061),
 						},
 					},
-					// In the readiness probe we allow the pod to take up to 5 minutes
-					// to become ready. Therefore, the liveness probe will give it
-					// a 5-minute grace period before starting monitoring the container.
-					// If the pod fails the health check during 1 minute, Kubernetes
-					// will restart it.
 					InitialDelaySeconds: p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.InitialDelaySeconds,
 					TimeoutSeconds:      p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.TimeoutSeconds,
 					SuccessThreshold:    p.Spec.Pravega.SegmentStoreProbes.LivenessProbe.SuccessThreshold,

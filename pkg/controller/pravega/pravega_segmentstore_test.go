@@ -242,7 +242,6 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(5)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(2)))
-
 				})
 			})
 		})
