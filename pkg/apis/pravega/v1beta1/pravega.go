@@ -415,9 +415,33 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
+	if s.SegmentStoreResources == nil {
+		changed = true
+		s.SegmentStoreResources = &v1.ResourceRequirements{
+			Requests: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreRequestCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreRequestMemory),
+			},
+			Limits: v1.ResourceList{
+				v1.ResourceCPU:    resource.MustParse(DefaultSegmentStoreLimitCPU),
+				v1.ResourceMemory: resource.MustParse(DefaultSegmentStoreLimitMemory),
+			},
+		}
+	}
+
 	if s.SegmentStoreResources.Requests[v1.ResourceMemory] == (resource.Quantity{}) {
 		changed = true
 		s.SegmentStoreResources.Requests[v1.ResourceMemory] = s.SegmentStoreResources.Limits[v1.ResourceMemory]
+	}
+
+	if s.SegmentStoreResources.Limits[v1.ResourceCPU] == (resource.Quantity{}) {
+		changed = true
+		s.SegmentStoreResources.Limits[v1.ResourceCPU] = resource.MustParse(DefaultSegmentStoreLimitCPU)
+	}
+
+	if s.SegmentStoreResources.Requests[v1.ResourceCPU] == (resource.Quantity{}) {
+		changed = true
+		s.SegmentStoreResources.Requests[v1.ResourceCPU] = resource.MustParse(DefaultSegmentStoreRequestCPU)
 	}
 
 	if s.SegmentStoreSecret == nil {

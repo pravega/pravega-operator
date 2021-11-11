@@ -18,6 +18,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -461,6 +463,287 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 		})
 		It("should  be nil", func() {
 			Ω(err).Should(BeNil())
+		})
+	})
+
+	Context("Validate Segment Store Memory Settings", func() {
+		var (
+			p *v1beta1.PravegaCluster
+		)
+
+		BeforeEach(func() {
+			p = &v1beta1.PravegaCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+			}
+			p.WithDefaults()
+		})
+
+		Context("validating with the correct spec", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return nil", func() {
+				Ω(err).Should(BeNil())
+			})
+		})
+
+		Context("empty segmentStoreResources object", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.SegmentStoreResources = nil
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
+			})
+		})
+
+		Context("memory limits and requests are not set", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("1000m"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("2000m"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
+			})
+		})
+
+		Context("memory requests is greater than memory limits", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("5Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
+			})
+		})
+
+		Context("pravegaservice.cache.size.max is not set", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = ""
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Missing required value for option pravegaservice.cache.size.max")).Should(Equal(true))
+			})
+		})
+
+		Context("JVM option -Xmx is not set", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Missing required value for Segment Store JVM Option -Xmx")).Should(Equal(true))
+			})
+		})
+
+		Context("JVM option -XX:MaxDirectMemorySize is not set", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Missing required value for Segment Store JVM option -XX:MaxDirectMemorySize")).Should(Equal(true))
+			})
+		})
+
+		Context("sum of MaxDirectMemorySize and Xmx is greater than total memory limit", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("3Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("3Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "MaxDirectMemorySize along with JVM Xmx value is greater than or equal to the total available memory!")).Should(Equal(true))
+			})
+		})
+
+		Context("pravegaservice.cache.size.max is greater than MaxDirectMemorySize", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "3221225472"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				err = p.ValidateSegmentStoreMemorySettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Cache size configured is greater than or equal to the JVM MaxDirectMemorySize value")).Should(Equal(true))
+			})
+		})
+
+		Context("memory requests is not set", func() {
+			var (
+				changed bool
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("1000m"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				changed = p.WithDefaults()
+			})
+
+			It("Should set memory requests to memory limits", func() {
+				Ω(changed).Should(Equal(true))
+			})
+		})
+
+		Context("CPU requests and limits are not set", func() {
+			var (
+				changed bool
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				changed = p.WithDefaults()
+			})
+
+			It("Should set cpu requests and limits to default values", func() {
+				Ω(changed).Should(Equal(true))
+			})
 		})
 	})
 })

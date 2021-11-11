@@ -901,7 +901,7 @@ func (p *PravegaCluster) ValidateCreate() error {
 	if err != nil {
 		return err
 	}
-	err = p.ValidateSegmentStore()
+	err = p.ValidateSegmentStoreMemorySettings()
 	if err != nil {
 		return err
 	}
@@ -919,7 +919,7 @@ func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 	if err != nil {
 		return err
 	}
-	err = p.ValidateSegmentStore()
+	err = p.ValidateSegmentStoreMemorySettings()
 	if err != nil {
 		return err
 	}
@@ -1206,7 +1206,16 @@ func (p *PravegaCluster) validateConfigMap() error {
 	return nil
 }
 
-func (p *PravegaCluster) ValidateSegmentStore() error {
+// ValidateSegmentStoreMemorySettings checks whether the user has passed the required values for segment store memory settings.
+// The required values includes: SegmentStoreResources.limits.memory, pravegaservice.cache.size.max , -XX:MaxDirectMemorySize and -Xmx.
+// Once the required values are set, the method also checks whether the following conditions are met:
+// Total Memory > JVM Heap (-Xmx) + JVM Direct Memory (-XX:MaxDirectMemorySize)
+// JVM Direct memory > Segment Store read cache size (pravegaservice.cache.size.max).
+func (p *PravegaCluster) ValidateSegmentStoreMemorySettings() error {
+	if p.Spec.Pravega.SegmentStoreResources == nil {
+		return fmt.Errorf("Missing required value for field spec.pravega.segmentStoreResources.limits.memory")
+	}
+
 	totalMemoryLimitsQuantity := p.Spec.Pravega.SegmentStoreResources.Limits[corev1.ResourceMemory]
 	totalMemoryRequestsQuantity := p.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceMemory]
 	if (resource.Quantity{}) == totalMemoryLimitsQuantity {
@@ -1251,12 +1260,8 @@ func (p *PravegaCluster) ValidateSegmentStore() error {
 	maxDirectMemorySize := maxDirectMemoryQuantity.Value()
 	cacheSize := cacheSizeQuantity.Value()
 
-	if totalMemoryLimits <= maxDirectMemorySize+xmx {
+	if totalMemoryLimits <= (maxDirectMemorySize + xmx) {
 		return fmt.Errorf("MaxDirectMemorySize(%v B) along with JVM Xmx value(%v B) is greater than or equal to the total available memory(%v B)!", maxDirectMemorySize, xmx, totalMemoryLimits)
-	}
-
-	if maxDirectMemorySize <= xmx {
-		return fmt.Errorf("JVM Xmx(%v B) configured is greater than or equal to the JVM MaxDirectMemorySize(%v B) value", xmx, maxDirectMemorySize)
 	}
 
 	if maxDirectMemorySize <= cacheSize {
