@@ -316,11 +316,11 @@ type PravegaSpec struct {
 	// that has to be configured in controller and segmentstore pods
 	InfluxDBSecret *InfluxDBSecret `json:"influxDBSecret,omitempty"`
 
-	// Probes specifies the timeout values for the Readiness and Liveness Probes
+	// ControllerProbes specifies the values for configurable fields of Readiness and Liveness Probes
 	// for the controller pods.
 	ControllerProbes *Probes `json:"controllerProbes,omitempty"`
 
-	// Probes specifies the timeout values for the Readiness and Liveness Probes
+	// SegmentStoreProbes specifies the values for configurable fields of Readiness and Liveness Probes
 	// for the segmentstore pods.
 	SegmentStoreProbes *Probes `json:"segmentStoreProbes,omitempty"`
 }

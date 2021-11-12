@@ -1981,8 +1981,8 @@ spec:
                         type: object
                     type: object
                   controllerProbes:
-                    description: Probes specifies the timeout values for the Readiness
-                      and Liveness Probes for the controller pods.
+                    description: ControllerProbes specifies the values for configurable
+                      fields of Readiness and Liveness Probes for the controller pods.
                     properties:
                       livenessProbe:
                         properties:
@@ -4076,8 +4076,9 @@ spec:
                         type: object
                     type: object
                   segmentStoreProbes:
-                    description: Probes specifies the timeout values for the Readiness
-                      and Liveness Probes for the segmentstore pods.
+                    description: SegmentStoreProbes specifies the values for configurable
+                      fields of Readiness and Liveness Probes for the segmentstore
+                      pods.
                     properties:
                       livenessProbe:
                         properties:
