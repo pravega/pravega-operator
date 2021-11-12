@@ -147,4 +147,4 @@ $> git push origin issue-234-unique-branch-name
 ```
 
 #### Deploying in Test Mode
-The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in `values.yaml` file of operator charts. Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.
+The Operator can be run in `test mode` if we want to deploy pravega on minikube or on a cluster with very limited resources by enabling `testmode: true` in [values.yaml](https://github.com/pravega/pravega-operator/blob/master/charts/pravega-operator/values.yaml) file of [operator charts](https://github.com/pravega/pravega-operator/tree/master/charts/pravega-operator). Operator running in test mode skips minimum replica requirement checks on Pravega components. Test mode provides a bare minimum setup and is not recommended to be used in production environments.

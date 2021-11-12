@@ -87,7 +87,7 @@ See: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/cus
 2. Cert-Manager v0.15.0+ or some other certificate management solution must be deployed for managing webhook service certificates. The upgrade trigger script assumes that the user has [cert-manager](https://cert-manager.io/docs/installation/kubernetes/) installed but any other cert management solution can also be used and script would need to be modified accordingly.
 To install cert-manager check [this](https://cert-manager.io/docs/installation/kubernetes/).
 
-3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator/tree/master/charts/bookkeeper-operator) version `0.1.3` or below must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade. You can upgrade to higher bookkeeper-operator versions later, if required.
+3. [Bookkeeper Operator](https://github.com/pravega/bookkeeper-operator) version `0.1.3` or below must be deployed in the same namespace as Pravega Operator, prior to triggering the upgrade. You can upgrade to higher bookkeeper-operator versions later, if required.
 
 4. Install an Issuer and a Certificate (either self-signed or CA signed) in the same namespace as the Pravega Operator (refer to [this](https://github.com/pravega/pravega-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace).
 
