@@ -33,7 +33,7 @@ This is a minor release with backward compatible changes and bug fixes.
     `$ git push origin <release-branch-name>`
     
 5. Create a new release candidate tag on this branch. 
-   Tag name should correspond to release-branch-name-<release-candidate-version>. 
+   Tag name should correspond to `release-branch-name-<release-candidate-version>`.
    For example: `0.3.3-rc1` for the first release candidate.
    
     `$ git tag -a <tag-name> -m "<description>"`

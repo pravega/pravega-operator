@@ -1,4 +1,4 @@
-# Configuring SegmentStore Headless Service Name
+# Configuring Segment Store Headless Service Name
 
 By default segmentstore headless service name is configured as  `[PRAVEGA_CLUSTER_NAME]-pravega-segmentstore-headless`.
 

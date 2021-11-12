@@ -1,4 +1,4 @@
-## Configuration
+# Configuration
 
 This document explains how to configure Pravega
 

@@ -1,4 +1,4 @@
-## Manual installation
+# Manual Installation
 
 * [Install the Operator manually](#install-the-operator-manually)
 * [Set up LongTermStorage](#set-up-longtermstorage)

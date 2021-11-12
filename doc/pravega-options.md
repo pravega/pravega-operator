@@ -1,4 +1,4 @@
-## Pravega options
+# Pravega Options
 
 Pravega has many configuration options for setting up metrics, tuning, etc. The available options can be found [here](https://github.com/pravega/pravega/blob/master/config/config.properties) and are expressed through the pravega/options part of the resource specification.
 

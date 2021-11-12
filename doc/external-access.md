@@ -1,4 +1,4 @@
-# Enable external access
+# Enable External Access
 
 By default, a Pravega cluster uses `ClusterIP` services which are only accessible from within Kubernetes. However, when creating the Pravega cluster resource, you can opt to enable external access.
 

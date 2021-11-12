@@ -1,4 +1,4 @@
-# Pravega cluster upgrade
+# Pravega Cluster Upgrade
 
 This document shows how to upgrade a Pravega cluster managed by the operator to a desired version while preserving the cluster's state and data whenever possible.
 
