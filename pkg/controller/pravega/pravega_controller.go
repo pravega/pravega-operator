@@ -173,10 +173,11 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 							Command: util.ControllerReadinessCheck(p.Spec.Version, 10080, p.Spec.Authentication.IsEnabled()),
 						},
 					},
-					// Controller pods start fast. We give it up to 20 seconds to become ready.
-					InitialDelaySeconds: 20,
-					TimeoutSeconds:      60,
-					SuccessThreshold:    3,
+					InitialDelaySeconds: p.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds,
+					TimeoutSeconds:      p.Spec.Pravega.ControllerProbes.ReadinessProbe.TimeoutSeconds,
+					SuccessThreshold:    p.Spec.Pravega.ControllerProbes.ReadinessProbe.SuccessThreshold,
+					FailureThreshold:    p.Spec.Pravega.ControllerProbes.ReadinessProbe.FailureThreshold,
+					PeriodSeconds:       p.Spec.Pravega.ControllerProbes.ReadinessProbe.PeriodSeconds,
 				},
 				LivenessProbe: &corev1.Probe{
 					Handler: corev1.Handler{
@@ -184,13 +185,11 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 							Command: util.HealthcheckCommand(p.Spec.Version, 9090, 10080),
 						},
 					},
-					// We start the liveness probe from the maximum time the pod can take
-					// before becoming ready.
-					// If the pod fails the health check during 1 minute, Kubernetes
-					// will restart it.
-					InitialDelaySeconds: 60,
-					PeriodSeconds:       15,
-					FailureThreshold:    4,
+					InitialDelaySeconds: p.Spec.Pravega.ControllerProbes.LivenessProbe.InitialDelaySeconds,
+					TimeoutSeconds:      p.Spec.Pravega.ControllerProbes.LivenessProbe.TimeoutSeconds,
+					SuccessThreshold:    p.Spec.Pravega.ControllerProbes.LivenessProbe.SuccessThreshold,
+					PeriodSeconds:       p.Spec.Pravega.ControllerProbes.LivenessProbe.PeriodSeconds,
+					FailureThreshold:    p.Spec.Pravega.ControllerProbes.LivenessProbe.FailureThreshold,
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Privileged: &config.TestMode,

@@ -4022,6 +4022,58 @@ spec:
                             type: array
                         type: object
                     type: object
+                  segmentStoreProbes:
+                    description: SegmentStoreProbes specifies the values for configurable
+                      fields of Readiness and Liveness Probes for the segmentstore
+                      pods.
+                    properties:
+                      livenessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                      readinessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                    type: object
                   segmentStoreReplicas:
                     description: SegmentStoreReplicas defines the number of Segment
                       Store replicas. Defaults to 0.
@@ -5016,6 +5068,57 @@ spec:
                       access. Options are "LoadBalancer" and "NodePort". By default,
                       if external access is enabled, it will use "LoadBalancer"
                     type: string
+                  controllerProbes:
+                    description: ControllerProbes specifies the values for configurable
+                      fields of Readiness and Liveness Probes for the controller pods.
+                    properties:
+                      livenessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                      readinessProbe:
+                        properties:
+                          failureThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          initialDelaySeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          periodSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          successThreshold:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                          timeoutSeconds:
+                            format: int32
+                            minimum: 0
+                            type: integer
+                        type: object
+                    type: object
                   controllerReplicas:
                     description: ControllerReplicas defines the number of Controller
                       replicas. Defaults to 1.

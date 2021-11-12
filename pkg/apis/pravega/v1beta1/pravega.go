@@ -68,6 +68,86 @@ const (
 
 	// DefaultInfluxDBSecretMountDir is the default mountpath of influxdb secret
 	DefaultInfluxDBSecretMountDir = "/etc/influxdb-secret-volume"
+
+	// DefaultReadinessProbeInitialDelaySeconds is the default initial delay (in seconds)
+	// for the readiness probe
+	DefaultControllerReadinessProbeInitialDelaySeconds = 20
+
+	// DefaultReadinessProbePeriodSeconds is the default probe period (in seconds)
+	// for the readiness probe
+	DefaultControllerReadinessProbePeriodSeconds = 10
+
+	// DefaultReadinessProbeFailureThreshold is the default probe failure threshold
+	// for the readiness probe
+	DefaultControllerReadinessProbeFailureThreshold = 3
+
+	// DefaultReadinessProbeSuccessThreshold is the default probe success threshold
+	// for the readiness probe
+	DefaultControllerReadinessProbeSuccessThreshold = 3
+
+	// DefaultReadinessProbeTimeoutSeconds is the default probe timeout (in seconds)
+	// for the readiness probe
+	DefaultControllerReadinessProbeTimeoutSeconds = 60
+
+	// DefaultLivenessProbeInitialDelaySeconds is the default initial delay (in seconds)
+	// for the liveness probe
+	DefaultControllerLivenessProbeInitialDelaySeconds = 60
+
+	// DefaultLivenessProbePeriodSeconds is the default probe period (in seconds)
+	// for the liveness probe
+	DefaultControllerLivenessProbePeriodSeconds = 15
+
+	// DefaultLivenessProbeFailureThreshold is the default probe failure threshold
+	// for the liveness probe
+	DefaultControllerLivenessProbeFailureThreshold = 4
+
+	// DefaultLivenessProbeSuccessThreshold is the default probe success threshold
+	// for the liveness probe
+	DefaultControllerLivenessProbeSuccessThreshold = 1
+
+	// DefaultLivenessProbeTimeoutSeconds is the default probe timeout (in seconds)
+	// for the liveness probe
+	DefaultControllerLivenessProbeTimeoutSeconds = 5
+
+	// DefaultReadinessProbeInitialDelaySeconds is the default initial delay (in seconds)
+	// for the readiness probe
+	DefaultSegmentStoreReadinessProbeInitialDelaySeconds = 10
+
+	// DefaultReadinessProbePeriodSeconds is the default probe period (in seconds)
+	// for the readiness probe
+	DefaultSegmentStoreReadinessProbePeriodSeconds = 10
+
+	// DefaultReadinessProbeFailureThreshold is the default probe failure threshold
+	// for the readiness probe
+	DefaultSegmentStoreReadinessProbeFailureThreshold = 30
+
+	// DefaultReadinessProbeSuccessThreshold is the default probe success threshold
+	// for the readiness probe
+	DefaultSegmentStoreReadinessProbeSuccessThreshold = 1
+
+	// DefaultReadinessProbeTimeoutSeconds is the default probe timeout (in seconds)
+	// for the readiness probe
+	DefaultSegmentStoreReadinessProbeTimeoutSeconds = 5
+
+	// DefaultLivenessProbeInitialDelaySeconds is the default initial delay (in seconds)
+	// for the liveness probe
+	DefaultSegmentStoreLivenessProbeInitialDelaySeconds = 300
+
+	// DefaultLivenessProbePeriodSeconds is the default probe period (in seconds)
+	// for the liveness probe
+	DefaultSegmentStoreLivenessProbePeriodSeconds = 15
+
+	// DefaultLivenessProbeFailureThreshold is the default probe failure threshold
+	// for the liveness probe
+	DefaultSegmentStoreLivenessProbeFailureThreshold = 4
+
+	// DefaultLivenessProbeSuccessThreshold is the default probe success threshold
+	// for the liveness probe
+	DefaultSegmentStoreLivenessProbeSuccessThreshold = 1
+
+	// DefaultLivenessProbeTimeoutSeconds is the default probe timeout (in seconds)
+	// for the liveness probe
+	DefaultSegmentStoreLivenessProbeTimeoutSeconds = 5
 )
 
 // PravegaSpec defines the configuration of Pravega
@@ -235,6 +315,32 @@ type PravegaSpec struct {
 	// InfluxDB Secret specifies the secret name containing credentials and mount path volume
 	// that has to be configured in controller and segmentstore pods
 	InfluxDBSecret *InfluxDBSecret `json:"influxDBSecret,omitempty"`
+
+	// ControllerProbes specifies the values for configurable fields of Readiness and Liveness Probes
+	// for the controller pods.
+	ControllerProbes *Probes `json:"controllerProbes,omitempty"`
+
+	// SegmentStoreProbes specifies the values for configurable fields of Readiness and Liveness Probes
+	// for the segmentstore pods.
+	SegmentStoreProbes *Probes `json:"segmentStoreProbes,omitempty"`
+}
+
+type Probes struct {
+	ReadinessProbe *Probe `json:"readinessProbe,omitempty"`
+	LivenessProbe  *Probe `json:"livenessProbe,omitempty"`
+}
+
+type Probe struct {
+	// +kubebuilder:validation:Minimum=0
+	InitialDelaySeconds int32 `json:"initialDelaySeconds,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	PeriodSeconds int32 `json:"periodSeconds,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	FailureThreshold int32 `json:"failureThreshold,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	SuccessThreshold int32 `json:"successThreshold,omitempty"`
+	// +kubebuilder:validation:Minimum=0
+	TimeoutSeconds int32 `json:"timeoutSeconds,omitempty"`
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
@@ -379,6 +485,54 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 	if s.SegmentStorePodAnnotations == nil {
 		changed = true
 		s.SegmentStorePodAnnotations = map[string]string{}
+	}
+	if s.ControllerProbes == nil {
+		changed = true
+		s.ControllerProbes = &Probes{}
+	}
+	if s.ControllerProbes.ReadinessProbe == nil {
+		changed = true
+		s.ControllerProbes.ReadinessProbe = &Probe{
+			InitialDelaySeconds: DefaultControllerReadinessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultControllerReadinessProbePeriodSeconds,
+			FailureThreshold:    DefaultControllerReadinessProbeFailureThreshold,
+			SuccessThreshold:    DefaultControllerReadinessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultControllerReadinessProbeTimeoutSeconds,
+		}
+	}
+	if s.ControllerProbes.LivenessProbe == nil {
+		changed = true
+		s.ControllerProbes.LivenessProbe = &Probe{
+			InitialDelaySeconds: DefaultControllerLivenessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultControllerLivenessProbePeriodSeconds,
+			FailureThreshold:    DefaultControllerLivenessProbeFailureThreshold,
+			SuccessThreshold:    DefaultControllerLivenessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultControllerLivenessProbeTimeoutSeconds,
+		}
+	}
+	if s.SegmentStoreProbes == nil {
+		changed = true
+		s.SegmentStoreProbes = &Probes{}
+	}
+	if s.SegmentStoreProbes.ReadinessProbe == nil {
+		changed = true
+		s.SegmentStoreProbes.ReadinessProbe = &Probe{
+			InitialDelaySeconds: DefaultSegmentStoreReadinessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultSegmentStoreReadinessProbePeriodSeconds,
+			FailureThreshold:    DefaultSegmentStoreReadinessProbeFailureThreshold,
+			SuccessThreshold:    DefaultSegmentStoreReadinessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultSegmentStoreReadinessProbeTimeoutSeconds,
+		}
+	}
+	if s.SegmentStoreProbes.LivenessProbe == nil {
+		changed = true
+		s.SegmentStoreProbes.LivenessProbe = &Probe{
+			InitialDelaySeconds: DefaultSegmentStoreLivenessProbeInitialDelaySeconds,
+			PeriodSeconds:       DefaultSegmentStoreLivenessProbePeriodSeconds,
+			FailureThreshold:    DefaultSegmentStoreLivenessProbeFailureThreshold,
+			SuccessThreshold:    DefaultSegmentStoreLivenessProbeSuccessThreshold,
+			TimeoutSeconds:      DefaultSegmentStoreLivenessProbeTimeoutSeconds,
+		}
 	}
 	return changed
 }

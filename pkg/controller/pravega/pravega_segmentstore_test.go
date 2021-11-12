@@ -115,6 +115,22 @@ var _ = Describe("PravegaSegmentstore", func() {
 							},
 						},
 						DebugLogging: true,
+						SegmentStoreProbes: &v1beta1.Probes{
+							ReadinessProbe: &v1beta1.Probe{
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       5,
+								FailureThreshold:    5,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      2,
+							},
+							LivenessProbe: &v1beta1.Probe{
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       5,
+								FailureThreshold:    5,
+								SuccessThreshold:    1,
+								TimeoutSeconds:      2,
+							},
+						},
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -213,6 +229,19 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(podTemplate.Spec.InitContainers[0].Name).To(Equal("testing"))
 					Ω(podTemplate.Spec.InitContainers[0].Image).To(Equal("dummy-image"))
 					Ω(strings.Contains(podTemplate.Spec.InitContainers[0].Command[2], "ls;pwd")).Should(BeTrue())
+				})
+				It("should have probe timeout values set to the values given by user", func() {
+					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.InitialDelaySeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.PeriodSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.FailureThreshold).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.TimeoutSeconds).Should(Equal(int32(2)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(2)))
 				})
 			})
 		})
@@ -329,6 +358,19 @@ var _ = Describe("PravegaSegmentstore", func() {
 				})
 				It("should set external access service type to LoadBalancer", func() {
 					Ω(p.Spec.ExternalAccess.Type).Should(Equal(corev1.ServiceTypeClusterIP))
+				})
+				It("should have probe timeout values set to their default value", func() {
+					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.InitialDelaySeconds).Should(Equal(int32(300)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.PeriodSeconds).Should(Equal(int32(15)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.FailureThreshold).Should(Equal(int32(4)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].LivenessProbe.TimeoutSeconds).Should(Equal(int32(5)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.InitialDelaySeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.PeriodSeconds).Should(Equal(int32(10)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(30)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
+					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(5)))
 				})
 			})
 		})
