@@ -102,6 +102,34 @@ func NewClusterWithNoSegmentStoreMemoryLimits(namespace string) *api.PravegaClus
 	}
 }
 
+func NewClusterWithNoSegmentStoreCpuLimits(namespace string) *api.PravegaCluster {
+	return &api.PravegaCluster{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "PravegaCluster",
+			APIVersion: "pravega.pravega.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pravega",
+			Namespace: namespace,
+		},
+		Spec: api.ClusterSpec{
+			Pravega: &api.PravegaSpec{
+				Options:                map[string]string{"pravegaservice.cache.size.max": "1610612736"},
+				SegmentStoreJVMOptions: []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"},
+				SegmentStoreResources: &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				},
+			},
+		},
+	}
+}
+
 func newTestJob(namespace string, command string) *batchv1.Job {
 	deadline := int64(180)
 	retries := int32(1)

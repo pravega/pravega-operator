@@ -434,14 +434,9 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.SegmentStoreResources.Requests[v1.ResourceMemory] = s.SegmentStoreResources.Limits[v1.ResourceMemory]
 	}
 
-	if s.SegmentStoreResources.Limits[v1.ResourceCPU] == (resource.Quantity{}) {
-		changed = true
-		s.SegmentStoreResources.Limits[v1.ResourceCPU] = resource.MustParse(DefaultSegmentStoreLimitCPU)
-	}
-
 	if s.SegmentStoreResources.Requests[v1.ResourceCPU] == (resource.Quantity{}) {
 		changed = true
-		s.SegmentStoreResources.Requests[v1.ResourceCPU] = resource.MustParse(DefaultSegmentStoreRequestCPU)
+		s.SegmentStoreResources.Requests[v1.ResourceCPU] = s.SegmentStoreResources.Limits[v1.ResourceCPU]
 	}
 
 	if s.SegmentStoreSecret == nil {

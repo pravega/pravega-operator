@@ -51,7 +51,23 @@ func testWebhook(t *testing.T) {
 	noSegmentStoreResource.Spec.Pravega.SegmentStoreResources = nil
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noSegmentStoreResource)
 	g.Expect(err).To(HaveOccurred(), "Spec.Pravega.SegmentStoreResources cannot be empty")
-	g.Expect(err.Error()).To(ContainSubstring("Missing required value for field spec.pravega.segmentStoreResources.limits.memory"))
+	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources cannot be empty"))
+
+	// Test webhook with with no segementStoreResources.Limits object
+	noSegmentStoreResourceLimits := pravega_e2eutil.NewDefaultCluster(namespace)
+	noSegmentStoreResourceLimits.WithDefaults()
+	noSegmentStoreResourceLimits.Spec.Pravega.SegmentStoreResources.Limits = nil
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noSegmentStoreResourceLimits)
+	g.Expect(err).To(HaveOccurred(), "Spec.Pravega.SegmentStoreResources.Limits cannot be empty")
+	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources.limits cannot be empty"))
+
+	// Test webhook with with no segementStoreResources.Requests object
+	noSegmentStoreResourceRequests := pravega_e2eutil.NewDefaultCluster(namespace)
+	noSegmentStoreResourceRequests.WithDefaults()
+	noSegmentStoreResourceRequests.Spec.Pravega.SegmentStoreResources.Requests = nil
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noSegmentStoreResourceRequests)
+	g.Expect(err).To(HaveOccurred(), "Spec.Pravega.SegmentStoreResources.Requests cannot be empty")
+	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources.requests cannot be empty"))
 
 	// Test webhook with no value for segment store memory limits
 	noMemoryLimits := pravega_e2eutil.NewClusterWithNoSegmentStoreMemoryLimits(namespace)
@@ -60,6 +76,13 @@ func testWebhook(t *testing.T) {
 	g.Expect(err).To(HaveOccurred(), "Segment Store memory limits cannot be empty")
 	g.Expect(err.Error()).To(ContainSubstring("Missing required value for field spec.pravega.segmentStoreResources.limits.memory"))
 
+	// Test webhook with no value for segment store cpu limits
+	noCpuLimits := pravega_e2eutil.NewClusterWithNoSegmentStoreCpuLimits(namespace)
+	noCpuLimits.WithDefaults()
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noCpuLimits)
+	g.Expect(err).To(HaveOccurred(), "Segment Store cpu limits cannot be empty")
+	g.Expect(err.Error()).To(ContainSubstring("Missing required value for field spec.pravega.segmentStoreResources.limits.cpu"))
+
 	// Test webhook with segment store memory requests being greater than memory limits
 	memoryRequestsGreaterThanLimits := pravega_e2eutil.NewDefaultCluster(namespace)
 	memoryRequestsGreaterThanLimits.WithDefaults()
@@ -67,6 +90,14 @@ func testWebhook(t *testing.T) {
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, memoryRequestsGreaterThanLimits)
 	g.Expect(err).To(HaveOccurred(), "Segment Store memory requests should be less than or equal to limits")
 	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory"))
+
+	// Test webhook with segment store cpu requests being greater than cpu limits
+	cpuRequestsGreaterThanLimits := pravega_e2eutil.NewDefaultCluster(namespace)
+	cpuRequestsGreaterThanLimits.WithDefaults()
+	cpuRequestsGreaterThanLimits.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceCPU] = resource.MustParse("3000m")
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cpuRequestsGreaterThanLimits)
+	g.Expect(err).To(HaveOccurred(), "Segment Store cpu requests should be less than or equal to limits")
+	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources.requests.cpu value must be less than or equal to spec.pravega.segmentStoreResources.limits.cpu"))
 
 	// Test webhook with no value for option pravegaservice.cache.size.max
 	cacheSizeMax := pravega_e2eutil.NewDefaultCluster(namespace)
@@ -98,7 +129,7 @@ func testWebhook(t *testing.T) {
 	sumMaxDirectMemorySizeAndXmx.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2560m"}
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, sumMaxDirectMemorySizeAndXmx)
 	g.Expect(err).To(HaveOccurred(), "sum of MaxDirectMemorySize and Xmx should be less than total memory limit")
-	g.Expect(err.Error()).To(ContainSubstring("MaxDirectMemorySize(2684354560 B) along with JVM Xmx value(2147483648 B) is greater than or equal to the total available memory(4294967296 B)!"))
+	g.Expect(err.Error()).To(ContainSubstring("MaxDirectMemorySize(2684354560 B) along with JVM Xmx value(2147483648 B) should be less than the total available memory(4294967296 B)!"))
 
 	// Test Webhook with pravegaservice.cache.size.max being greater than MaxDirectMemorySize
 	cacheSizeGreaterThanMaxDirectMemorySize := pravega_e2eutil.NewDefaultCluster(namespace)
@@ -106,7 +137,7 @@ func testWebhook(t *testing.T) {
 	cacheSizeGreaterThanMaxDirectMemorySize.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "3221225472"
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cacheSizeGreaterThanMaxDirectMemorySize)
 	g.Expect(err).To(HaveOccurred(), "cache size configured should be less than MaxDirectMemorySize")
-	g.Expect(err.Error()).To(ContainSubstring("Cache size(3221225472 B) configured is greater than or equal to the JVM MaxDirectMemorySize(2684354560 B) value"))
+	g.Expect(err.Error()).To(ContainSubstring("Cache size(3221225472 B) configured should be less than the JVM MaxDirectMemorySize(2684354560 B) value"))
 
 	// Test webhook with a valid Pravega cluster version format
 	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.6.0")
