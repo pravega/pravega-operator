@@ -1221,7 +1221,10 @@ func (p *PravegaCluster) ValidateSegmentStoreMemorySettings() error {
 	}
 
 	if p.Spec.Pravega.SegmentStoreResources.Requests == nil {
-		return fmt.Errorf("spec.pravega.segmentStoreResources.requests cannot be empty")
+		p.Spec.Pravega.SegmentStoreResources.Requests = map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    {},
+			corev1.ResourceMemory: {},
+		}
 	}
 
 	totalMemoryLimitsQuantity := p.Spec.Pravega.SegmentStoreResources.Limits[corev1.ResourceMemory]

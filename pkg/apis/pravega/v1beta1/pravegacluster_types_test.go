@@ -543,10 +543,34 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 
 		Context("empty segmentStoreResources.requests object", func() {
 			var (
+				changed bool
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
+				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("2000m"),
+						corev1.ResourceMemory: resource.MustParse("4Gi"),
+					},
+				}
+				changed = p.WithDefaults()
+			})
+
+			It("Should set memory and cpu requests to memory and cpu limits respectively", func() {
+				Ω(changed).Should(Equal(true))
+			})
+		})
+
+		Context("empty segmentStoreResources.requests object validation check", func() {
+			var (
 				err error
 			)
 
 			BeforeEach(func() {
+				p.Spec.Pravega.Options["pravegaservice.cache.size.max"] = "1610612736"
+				p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"}
 				p.Spec.Pravega.SegmentStoreResources = &corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:    resource.MustParse("2000m"),
@@ -556,8 +580,8 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidateSegmentStoreMemorySettings()
 			})
 
-			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources.requests cannot be empty")).Should(Equal(true))
+			It("should return nil", func() {
+				Ω(err).Should(BeNil())
 			})
 		})
 

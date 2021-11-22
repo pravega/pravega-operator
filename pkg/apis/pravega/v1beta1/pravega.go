@@ -429,6 +429,14 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		}
 	}
 
+	if s.SegmentStoreResources.Requests == nil {
+		changed = true
+		s.SegmentStoreResources.Requests = map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    s.SegmentStoreResources.Limits[v1.ResourceCPU],
+			corev1.ResourceMemory: s.SegmentStoreResources.Limits[v1.ResourceMemory],
+		}
+	}
+
 	if s.SegmentStoreResources.Requests[v1.ResourceMemory] == (resource.Quantity{}) {
 		changed = true
 		s.SegmentStoreResources.Requests[v1.ResourceMemory] = s.SegmentStoreResources.Limits[v1.ResourceMemory]

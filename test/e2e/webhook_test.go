@@ -65,9 +65,18 @@ func testWebhook(t *testing.T) {
 	noSegmentStoreResourceRequests := pravega_e2eutil.NewDefaultCluster(namespace)
 	noSegmentStoreResourceRequests.WithDefaults()
 	noSegmentStoreResourceRequests.Spec.Pravega.SegmentStoreResources.Requests = nil
-	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noSegmentStoreResourceRequests)
-	g.Expect(err).To(HaveOccurred(), "Spec.Pravega.SegmentStoreResources.Requests cannot be empty")
-	g.Expect(err.Error()).To(ContainSubstring("spec.pravega.segmentStoreResources.requests cannot be empty"))
+	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, noSegmentStoreResourceRequests)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	//creating the setup for running the test
+	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
 
 	// Test webhook with no value for segment store memory limits
 	noMemoryLimits := pravega_e2eutil.NewClusterWithNoSegmentStoreMemoryLimits(namespace)
@@ -142,7 +151,7 @@ func testWebhook(t *testing.T) {
 	// Test webhook with a valid Pravega cluster version format
 	validVersion := pravega_e2eutil.NewClusterWithVersion(namespace, "0.6.0")
 	validVersion.WithDefaults()
-	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, validVersion)
+	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, validVersion)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	podSize := 2
