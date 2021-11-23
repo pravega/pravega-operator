@@ -1,4 +1,4 @@
-## LongTermStorage
+# Long Term Storage
 
 The following LongTermStorage storage providers are supported:
 

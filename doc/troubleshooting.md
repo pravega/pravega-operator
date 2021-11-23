@@ -202,7 +202,7 @@ helm install [RELEASE_NAME] pravega/pravega --version=[VERSION] --set zookeeperU
 
 ## Operator pod in container creating state
 
-while installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly. Please refer to the [prerequisites](https://github.com/pravega/charts/tree/master/charts/pravega-operator#prerequisites).
+While installing operator, if the operator pod goes in `ContainerCreating` state for long time, make sure certificates are installed correctly. Please refer to the [prerequisites](https://github.com/pravega/charts/tree/master/charts/pravega-operator#prerequisites).
 
 ## Recover Operator when node fails
 

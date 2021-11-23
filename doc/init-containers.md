@@ -1,4 +1,4 @@
-## Init Containers
+# Init Containers
 
 Users can mention the details in init containers to perform certain operations before the main container starts. This is supported in controller as well as segmentstore.
 

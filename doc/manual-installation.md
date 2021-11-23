@@ -1,4 +1,4 @@
-## Manual installation
+# Manual Installation
 
 * [Install the Operator manually](#install-the-operator-manually)
 * [Set up LongTermStorage](#set-up-longtermstorage)
@@ -95,7 +95,7 @@ where:
 - `[ZOOKEEPER_SVC]` is the name of client service of your Zookeeper deployment.
 - `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
 
-Check out other sample CR files in the [example](../example) directory.
+Check out other sample CR files in the [example](https://github.com/pravega/pravega-operator/tree/master/example) directory.
 
 Deploy the Pravega cluster.
 

@@ -1,4 +1,4 @@
-## AuthImplementations
+# Auth Handler Implementations
 
 If we need to enable auth handlers in Pravega controller, modify the Pravega manifest and ensure that following fields are present in the yaml file.
 

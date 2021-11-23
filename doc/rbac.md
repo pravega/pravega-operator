@@ -1,4 +1,4 @@
-## Setting up RBAC for Pravega operator
+# Setting up RBAC for Pravega operator
 
 ### Use non-default service accounts
 
