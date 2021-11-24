@@ -1,6 +1,6 @@
 module github.com/pravega/pravega-operator
 
-go 1.13
+go 1.16
 
 require (
 	github.com/hashicorp/go-version v1.1.0
