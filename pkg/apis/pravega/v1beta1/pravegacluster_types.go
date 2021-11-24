@@ -897,7 +897,15 @@ func (p *PravegaCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (p *PravegaCluster) ValidateCreate() error {
 	log.Printf("validate create %s", p.Name)
-	return p.ValidatePravegaVersion()
+	err := p.ValidatePravegaVersion()
+	if err != nil {
+		return err
+	}
+	err = p.ValidateSegmentStoreMemorySettings()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -908,6 +916,10 @@ func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 		return err
 	}
 	err = p.validateConfigMap()
+	if err != nil {
+		return err
+	}
+	err = p.ValidateSegmentStoreMemorySettings()
 	if err != nil {
 		return err
 	}
@@ -1191,6 +1203,96 @@ func (p *PravegaCluster) validateConfigMap() error {
 		}
 	}
 	log.Print("validateConfigMap:: No error found...returning...")
+	return nil
+}
+
+// ValidateSegmentStoreMemorySettings checks whether the user has passed the required values for segment store memory settings.
+// The required values includes: SegmentStoreResources.limits.memory, pravegaservice.cache.size.max , -XX:MaxDirectMemorySize and -Xmx.
+// Once the required values are set, the method also checks whether the following conditions are met:
+// Total Memory > JVM Heap (-Xmx) + JVM Direct Memory (-XX:MaxDirectMemorySize)
+// JVM Direct memory > Segment Store read cache size (pravegaservice.cache.size.max).
+func (p *PravegaCluster) ValidateSegmentStoreMemorySettings() error {
+	if p.Spec.Pravega.SegmentStoreResources == nil {
+		return fmt.Errorf("spec.pravega.segmentStoreResources cannot be empty")
+	}
+
+	if p.Spec.Pravega.SegmentStoreResources.Limits == nil {
+		return fmt.Errorf("spec.pravega.segmentStoreResources.limits cannot be empty")
+	}
+
+	if p.Spec.Pravega.SegmentStoreResources.Requests == nil {
+		p.Spec.Pravega.SegmentStoreResources.Requests = map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    {},
+			corev1.ResourceMemory: {},
+		}
+	}
+
+	totalMemoryLimitsQuantity := p.Spec.Pravega.SegmentStoreResources.Limits[corev1.ResourceMemory]
+	totalMemoryRequestsQuantity := p.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceMemory]
+	totalCpuLimitsQuantity := p.Spec.Pravega.SegmentStoreResources.Limits[corev1.ResourceCPU]
+	totalCpuRequestsQuantity := p.Spec.Pravega.SegmentStoreResources.Requests[corev1.ResourceCPU]
+
+	if totalMemoryLimitsQuantity == (resource.Quantity{}) {
+		return fmt.Errorf("Missing required value for field spec.pravega.segmentStoreResources.limits.memory")
+	}
+
+	if totalCpuLimitsQuantity == (resource.Quantity{}) {
+		return fmt.Errorf("Missing required value for field spec.pravega.segmentStoreResources.limits.cpu")
+	}
+
+	totalMemoryLimits := totalMemoryLimitsQuantity.Value()
+	totalMemoryRequests := totalMemoryRequestsQuantity.Value()
+	totalCpuLimits := totalCpuLimitsQuantity.Value()
+	totalCpuRequests := totalCpuRequestsQuantity.Value()
+
+	if totalMemoryLimits < totalMemoryRequests {
+		return fmt.Errorf("spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory")
+	}
+
+	if totalCpuLimits < totalCpuRequests {
+		return fmt.Errorf("spec.pravega.segmentStoreResources.requests.cpu value must be less than or equal to spec.pravega.segmentStoreResources.limits.cpu")
+	}
+
+	cacheSizeString := p.Spec.Pravega.Options["pravegaservice.cache.size.max"]
+	if cacheSizeString == "" {
+		return fmt.Errorf("Missing required value for option pravegaservice.cache.size.max")
+	}
+	cacheSizeQuantity := resource.MustParse(cacheSizeString)
+	maxDirectMemoryString := ""
+	xmxString := ""
+
+	for _, value := range p.Spec.Pravega.SegmentStoreJVMOptions {
+		if strings.Contains(value, "-Xmx") {
+			xmxString = strings.ToUpper(strings.TrimPrefix(value, "-Xmx")) + "i"
+		}
+
+		if strings.Contains(value, "-XX:MaxDirectMemorySize=") {
+			maxDirectMemoryString = strings.ToUpper(strings.TrimPrefix(value, "-XX:MaxDirectMemorySize=")) + "i"
+		}
+	}
+
+	if xmxString == "" {
+		return fmt.Errorf("Missing required value for Segment Store JVM Option -Xmx")
+	}
+	xmxQuantity := resource.MustParse(xmxString)
+
+	if maxDirectMemoryString == "" {
+		return fmt.Errorf("Missing required value for Segment Store JVM option -XX:MaxDirectMemorySize")
+	}
+	maxDirectMemoryQuantity := resource.MustParse(maxDirectMemoryString)
+
+	xmx := xmxQuantity.Value()
+	maxDirectMemorySize := maxDirectMemoryQuantity.Value()
+	cacheSize := cacheSizeQuantity.Value()
+
+	if totalMemoryLimits <= (maxDirectMemorySize + xmx) {
+		return fmt.Errorf("MaxDirectMemorySize(%v B) along with JVM Xmx value(%v B) should be less than the total available memory(%v B)!", maxDirectMemorySize, xmx, totalMemoryLimits)
+	}
+
+	if maxDirectMemorySize <= cacheSize {
+		return fmt.Errorf("Cache size(%v B) configured should be less than the JVM MaxDirectMemorySize(%v B) value", cacheSize, maxDirectMemorySize)
+	}
+
 	return nil
 }
 
