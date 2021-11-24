@@ -12,7 +12,6 @@ require (
 	github.com/pravega/zookeeper-operator v0.2.8
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
 	github.com/sirupsen/logrus v1.7.0
-	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
