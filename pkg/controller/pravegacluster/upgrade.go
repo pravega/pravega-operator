@@ -273,6 +273,13 @@ func (r *ReconcilePravegaCluster) syncControllerVersion(p *pravegav1beta1.Praveg
 
 		configMap := pravega.MakeControllerConfigMap(p)
 		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		currentConfigMap := &corev1.ConfigMap{}
+		cmName := p.ConfigMapNameForController()
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: cmName, Namespace: p.Namespace}, currentConfigMap)
+		if err != nil {
+			return false, fmt.Errorf("failed to get configmap (%s): %v", cmName, err)
+		}
+		configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
 		err = r.client.Update(context.TODO(), configMap)
 		if err != nil {
 			return false, err
@@ -342,6 +349,13 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreVersion(p *pravegav1beta1.Prav
 
 		configMap := pravega.MakeSegmentstoreConfigMap(p)
 		controllerutil.SetControllerReference(p, configMap, r.scheme)
+		currentConfigMap := &corev1.ConfigMap{}
+		cmName := p.ConfigMapNameForSegmentstore()
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: cmName, Namespace: p.Namespace}, currentConfigMap)
+		if err != nil {
+			return false, fmt.Errorf("failed to get configmap (%s): %v", cmName, err)
+		}
+		configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
 		err = r.client.Update(context.TODO(), configMap)
 		if err != nil {
 			return false, err
@@ -587,6 +601,9 @@ func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1beta1.Pravega
 		return fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
 	}
 	*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
+	currentSts := &appsv1.StatefulSet{}
+
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oldsts.Name, Namespace: p.Namespace}, currentSts)
 	err = r.client.Update(context.TODO(), oldsts)
 	if err != nil {
 		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)

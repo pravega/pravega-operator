@@ -4,7 +4,7 @@ The purpose of this script is to sequentially deploy all the dependencies (i.e. 
 
 ## Prerequisites
 
-  - Kubernetes 1.15+ with Beta APIs
+  - Kubernetes 1.16+ with Beta APIs
   - Helm 3.2.1+
   - LongTerm Storage ([options for long term storage](https://github.com/pravega/pravega-operator/blob/master/doc/longtermstorage.md))
   - Cert-Manager v0.15.0+

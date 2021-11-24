@@ -536,6 +536,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				sts1 = pravega.MakeSegmentStoreStatefulSet(p)
 				r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreBelow07(), Namespace: p.Namespace}, sts)
 				r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreAbove07(), Namespace: p.Namespace}, sts1)
+				sts1.ObjectMeta.ResourceVersion = "2"
 				err = r.scaleSegmentStoreSTS(p, sts, sts1)
 			})
 			It("Error should be nil", func() {

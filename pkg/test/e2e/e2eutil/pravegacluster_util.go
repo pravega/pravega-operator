@@ -266,7 +266,7 @@ func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
 	}
 
-	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
 	if err != nil {
 		return err
 	}
@@ -594,7 +594,7 @@ func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx 
 	}
 
 	// Checking if all pods are getting restarted
-	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
 	if err != nil {
 		return err
 	}
@@ -614,7 +614,7 @@ func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx 
 	}
 
 	//Checking if all pods are in ready state
-	podList, err = f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+	podList, err = f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
 	if err != nil {
 		return err
 	}
@@ -646,7 +646,7 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(listOptions)
+		podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -669,7 +669,7 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(listOptions)
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -704,7 +704,7 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(z.Namespace).List(listOptions)
+		podList, err := f.KubeClient.CoreV1().Pods(z.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -727,7 +727,7 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(z.Namespace).List(listOptions)
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(z.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -763,7 +763,7 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(b.Namespace).List(listOptions)
+		podList, err := f.KubeClient.CoreV1().Pods(b.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -786,7 +786,7 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(b.Namespace).List(listOptions)
+		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(b.Namespace).List(goctx.TODO(), listOptions)
 		if err != nil {
 			return false, err
 		}
@@ -822,7 +822,7 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 	}
 
 	err = wait.Poll(RetryInterval, VerificationTimeout, func() (done bool, err error) {
-		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(testJob.Name, metav1.GetOptions{})
+		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(goctx.TODO(), testJob.Name, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -935,7 +935,7 @@ func GetDeployment(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
 	t.Log("restarting tier2 storage")
 	tier2 := NewTier2(namespace)
-	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{})
+	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
 
 	if err == nil {
 		err := f.Client.Delete(goctx.TODO(), tier2)
@@ -945,7 +945,7 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	}
 
 	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
-		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(tier2.Name, metav1.GetOptions{})
+		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
