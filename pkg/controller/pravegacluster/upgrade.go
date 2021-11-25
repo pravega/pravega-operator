@@ -601,9 +601,6 @@ func (r *ReconcilePravegaCluster) scaleSegmentStoreSTS(p *pravegav1beta1.Pravega
 		return fmt.Errorf("updating statefulset (%s) failed due to %v", newsts.Name, err)
 	}
 	*oldsts.Spec.Replicas = *oldsts.Spec.Replicas - 2
-	currentSts := &appsv1.StatefulSet{}
-
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: oldsts.Name, Namespace: p.Namespace}, currentSts)
 	err = r.client.Update(context.TODO(), oldsts)
 	if err != nil {
 		return fmt.Errorf("updating statefulset (%s) failed due to %v", oldsts.Name, err)
