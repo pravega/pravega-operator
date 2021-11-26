@@ -177,6 +177,12 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 }
 
 func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
+	currentPravegaCluster := &pravegav1beta1.PravegaCluster{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
+	if err != nil {
+		return fmt.Errorf("failed to get pravega cluster (%s): %v", p.Name, err)
+	}
+	p.ObjectMeta.ResourceVersion = currentPravegaCluster.ObjectMeta.ResourceVersion
 	if p.DeletionTimestamp.IsZero() && !config.DisableFinalizer {
 		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
@@ -239,6 +245,7 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
+			configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
 			err := r.client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
@@ -273,6 +280,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
+			configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
 			segmentStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
 			err := r.client.Update(context.TODO(), configMap)
 			if err != nil {

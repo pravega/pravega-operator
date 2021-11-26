@@ -254,8 +254,9 @@ type PravegaSpec struct {
 	ControllerPodLabels map[string]string `json:"controllerPodLabels"`
 
 	// Annotations to be added to controller pods
-	// +optonal
+	// +optional
 	ControllerPodAnnotations map[string]string `json:"controllerPodAnnotations"`
+
 	// Type specifies the service type to achieve external access.
 	// Options are "LoadBalancer" and "NodePort".
 	// By default, if external access is enabled, it will use "LoadBalancer"
