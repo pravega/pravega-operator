@@ -172,13 +172,6 @@ spec:
       #     AWS_ACCESS_KEY_ID: "key"
       #     AWS_SECRET_ACCESS_KEY: "secret"
 
-    # cacheVolumeClaimTemplate:
-    #   accessModes: [ "ReadWriteOnce" ]
-    #   storageClassName: "standard"
-    #   resources:
-    #     requests:
-    #       storage: 20Gi
-
     # See https://github.com/pravega/pravega/blob/3f5b65084ae17e74c8ef8e6a40e78e61fa98737b/config/config.properties
     # for available configuration properties
     options:
