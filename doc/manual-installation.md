@@ -31,6 +31,7 @@ Create the operator role, role binding and service account.
 $ kubectl create -f deploy/role.yaml
 $ kubectl create -f deploy/role_binding.yaml
 $ kubectl create -f deploy/service_account.yaml
+$ kubectl create -f deploy/version_map.yaml
 ```
 Install the operator.
 ```
@@ -62,53 +63,18 @@ In this example we are going to use a `pravega-tier2` PVC using [NFS as the stor
 
 ### Install the Pravega cluster manually
 
-Once the operator is installed, you can use the following YAML template to install a small development Pravega Cluster (1 Controller, 3 Segment Stores). Create a `pravega.yaml` file with the following content.
-
-```yaml
-apiVersion: "pravega.pravega.io/v1beta1"
-kind: "PravegaCluster"
-metadata:
-  name: "pravega"
-spec:
-  version: 0.7.0
-  zookeeperUri: [ZOOKEEPER_SVC]:2181
-  bookkeeperUri: [BOOKKEEPER_SVC]:3181"
-  pravega:
-    controllerReplicas: 1
-    segmentStoreReplicas: 3
-    cacheVolumeClaimTemplate:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 20Gi
-    image:
-      repository: pravega/pravega
-    longtermStorage:
-      filesystem:
-        persistentVolumeClaim:
-          claimName: pravega-tier2
-```
-
-where:
-
-- `[ZOOKEEPER_SVC]` is the name of client service of your Zookeeper deployment.
-- `[BOOKKEEPER_SVC]` is the name of the headless service of your Bookkeeper deployment.
-
-Check out other sample CR files in the [example](https://github.com/pravega/pravega-operator/tree/master/example) directory.
-
-Deploy the Pravega cluster.
+Deploying the Pravega cluster.
 
 ```
-$ kubectl create -f pravega.yaml
+$ kubectl create -f deploy/crds/pravega-cr.yaml
 ```
 
 Verify that the cluster instances and its components are being created.
 
 ```
 $ kubectl get PravegaCluster
-NAME      VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
-pravega   0.7.0     4                 0               25s
+NAME      VERSION   DESIRED VERSION   DESIRED MEMBERS   READY MEMBERS   AGE
+pravega   0.10.0    0.10.0            4                 0               58s
 ```
 
 **Note:** If we are installing pravega version 0.9.0 or above using operator version 0.5.1 or below, add the below JVM options for controller and segmentstore in addition to the current JVM options.
@@ -121,7 +87,7 @@ controllerjvmOptions: ["-XX:+UseContainerSupport","-XX:+IgnoreUnrecognizedVMOpti
 ### Uninstall the Pravega cluster manually
 
 ```
-$ kubectl delete -f pravega.yaml
+$ kubectl delete -f deploy/crds/pravega-cr.yaml
 $ kubectl delete pvc pravega-tier2
 ```
 
