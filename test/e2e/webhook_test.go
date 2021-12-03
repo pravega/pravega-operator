@@ -171,6 +171,115 @@ func testWebhook(t *testing.T) {
 	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
 	g.Expect(err).NotTo(HaveOccurred())
 
+	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	//creating the setup for running the bookkeeper validation check
+	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	invalidEnsembleSize := pravega_e2eutil.NewDefaultCluster(namespace)
+	invalidEnsembleSize.WithDefaults()
+	invalidEnsembleSize.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3.4"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidEnsembleSize)
+	g.Expect(err).To(HaveOccurred(), "Invalid value for option bookkeeper.ensemble.size")
+	g.Expect(err.Error()).To(ContainSubstring("Cannot convert ensemble size from string to integer"))
+
+	invalidWriteQuorumSize := pravega_e2eutil.NewDefaultCluster(namespace)
+	invalidWriteQuorumSize.WithDefaults()
+	invalidWriteQuorumSize.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "3!4!"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidWriteQuorumSize)
+	g.Expect(err).To(HaveOccurred(), "Invalid value for option bookkeeper.write.quorum.size")
+	g.Expect(err.Error()).To(ContainSubstring("Cannot convert write quorum size from string to integer"))
+
+	invalidAckQuorumSize := pravega_e2eutil.NewDefaultCluster(namespace)
+	invalidAckQuorumSize.WithDefaults()
+	invalidAckQuorumSize.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "!44"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidAckQuorumSize)
+	g.Expect(err).To(HaveOccurred(), "Invalid value for option bookkeeper.ack.quorum.size")
+	g.Expect(err.Error()).To(ContainSubstring("Cannot convert ack quorum size from string to integer"))
+
+	invalidMinimumRacksCountEnable := pravega_e2eutil.NewDefaultCluster(namespace)
+	invalidMinimumRacksCountEnable.WithDefaults()
+	invalidMinimumRacksCountEnable.Spec.Pravega.Options["bookkeeper.write.quorum.racks.minimumCount.enable"] = "True"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, invalidMinimumRacksCountEnable)
+	g.Expect(err).To(HaveOccurred(), "Invalid value for option bookkeeper.write.quorum.racks.minimumCount.enable")
+	g.Expect(err.Error()).To(ContainSubstring("bookkeeper.write.quorum.racks.minimumCount.enable can be only set to \"true\" \"false\" or \"\""))
+
+	ensembleSizeToOneAndRacksMinimumCountToTrue := pravega_e2eutil.NewDefaultCluster(namespace)
+	ensembleSizeToOneAndRacksMinimumCountToTrue.WithDefaults()
+	ensembleSizeToOneAndRacksMinimumCountToTrue.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "1"
+	ensembleSizeToOneAndRacksMinimumCountToTrue.Spec.Pravega.Options["bookkeeper.write.quorum.racks.minimumCount.enable"] = "true"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeToOneAndRacksMinimumCountToTrue)
+	g.Expect(err).To(HaveOccurred(), "Minimum Racks count should not be set to true when ensemble size is 1")
+	g.Expect(err.Error()).To(ContainSubstring("bookkeeper.write.quorum.racks.minimumCount.enable should be set to false if bookkeeper.ensemble.size is 1"))
+
+	ensembleSizeLessThanWriteQuorumSize := pravega_e2eutil.NewDefaultCluster(namespace)
+	ensembleSizeLessThanWriteQuorumSize.WithDefaults()
+	ensembleSizeLessThanWriteQuorumSize.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+	ensembleSizeLessThanWriteQuorumSize.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "4"
+	ensembleSizeLessThanWriteQuorumSize.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeLessThanWriteQuorumSize)
+	g.Expect(err).To(HaveOccurred(), "Ensemble size should be greater than write quorum size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size"))
+
+	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault := pravega_e2eutil.NewDefaultCluster(namespace)
+	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault.WithDefaults()
+	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "2"
+	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = ""
+	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault)
+	g.Expect(err).To(HaveOccurred(), "Ensemble size should be greater than the default value of write quorum size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the default value of bookkeeper.write.quorum.size which is 3"))
+
+	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree := pravega_e2eutil.NewDefaultCluster(namespace)
+	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.WithDefaults()
+	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ensemble.size"] = ""
+	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "4"
+	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree)
+	g.Expect(err).To(HaveOccurred(), "The value for write quorum size should be less than default value of ensemble size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the default value of option bookkeeper.ensemble.size which is 3"))
+
+	writeQuorumSizeLessThanAckQuorumSize := pravega_e2eutil.NewDefaultCluster(namespace)
+	writeQuorumSizeLessThanAckQuorumSize.WithDefaults()
+	writeQuorumSizeLessThanAckQuorumSize.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+	writeQuorumSizeLessThanAckQuorumSize.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "2"
+	writeQuorumSizeLessThanAckQuorumSize.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeLessThanAckQuorumSize)
+	g.Expect(err).To(HaveOccurred(), "The value for write quorum size should be greater than or equal to ack quorum size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should less than or equal to the value of option bookkeeper.write.quorum.size"))
+
+	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault := pravega_e2eutil.NewDefaultCluster(namespace)
+	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.WithDefaults()
+	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "2"
+	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault)
+	g.Expect(err).To(HaveOccurred(), "Write quorum size should be greater than the default value of ack quorum size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the default value of bookkeeper.ack.quorum.size which is 3"))
+
+	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree := pravega_e2eutil.NewDefaultCluster(namespace)
+	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.WithDefaults()
+	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = ""
+	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "4"
+	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree)
+	g.Expect(err).To(HaveOccurred(), "The value for ack quorum size should be less than default value of write quorum size")
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the default value of option bookkeeper.write.quorum.size which is 3"))
+
+	validBookkeeperSettings := pravega_e2eutil.NewDefaultCluster(namespace)
+	validBookkeeperSettings.WithDefaults()
+	validBookkeeperSettings.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "4"
+	validBookkeeperSettings.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "3"
+	validBookkeeperSettings.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "2"
+	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, validBookkeeperSettings)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	// Deleting the bookkeeper validation check cluster
+	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
+	g.Expect(err).NotTo(HaveOccurred())
+
 	// No need to do cleanup since the cluster CR has already been deleted
 	doCleanup = false
 

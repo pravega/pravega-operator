@@ -905,6 +905,10 @@ func (p *PravegaCluster) ValidateCreate() error {
 	if err != nil {
 		return err
 	}
+	err = p.ValidateBookkeperSettings()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -920,6 +924,10 @@ func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 		return err
 	}
 	err = p.ValidateSegmentStoreMemorySettings()
+	if err != nil {
+		return err
+	}
+	err = p.ValidateBookkeperSettings()
 	if err != nil {
 		return err
 	}
@@ -1291,6 +1299,72 @@ func (p *PravegaCluster) ValidateSegmentStoreMemorySettings() error {
 
 	if maxDirectMemorySize <= cacheSize {
 		return fmt.Errorf("Cache size(%v B) configured should be less than the JVM MaxDirectMemorySize(%v B) value", cacheSize, maxDirectMemorySize)
+	}
+
+	return nil
+}
+
+// ValidateBookkeeperSettings checks that the value passed for the options bookkeeper.ensemble.size (E) bookkeeper.write.quorum.size (W)
+// and bookkeeper.ack.quorum.size (A) adheres to the following rule, E >= W >= A.
+// The method also checks for the option bookkeeper.write.quorum.racks.minimumCount.enable which should be set to false when bookkeeper.ensemble.size is 1.
+// Note: The default value of E , W and A is 3.
+func (p *PravegaCluster) ValidateBookkeperSettings() error {
+	// Intializing ensemble size, write quorum size and ack quorum size to default value of 3
+	ensembleSizeInt, writeQuorumSizeInt, ackQuorumSizeInt := 3, 3, 3
+	var err error
+
+	ensembleSize := p.Spec.Pravega.Options["bookkeeper.ensemble.size"]
+	writeQuorumSize := p.Spec.Pravega.Options["bookkeeper.write.quorum.size"]
+	ackQuorumSize := p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"]
+	writeQuorumRacks := p.Spec.Pravega.Options["bookkeeper.write.quorum.racks.minimumCount.enable"]
+
+	if len(ensembleSize) > 0 {
+		ensembleSizeInt, err = strconv.Atoi(ensembleSize)
+		if err != nil {
+			return fmt.Errorf("Cannot convert ensemble size from string to integer: %v", err)
+		}
+	}
+
+	if len(writeQuorumSize) > 0 {
+		writeQuorumSizeInt, err = strconv.Atoi(writeQuorumSize)
+		if err != nil {
+			return fmt.Errorf("Cannot convert write quorum size from string to integer: %v", err)
+		}
+	}
+
+	if len(ackQuorumSize) > 0 {
+		ackQuorumSizeInt, err = strconv.Atoi(ackQuorumSize)
+		if err != nil {
+			return fmt.Errorf("Cannot convert ack quorum size from string to integer: %v", err)
+		}
+	}
+
+	if writeQuorumRacks != "true" && writeQuorumRacks != "false" && writeQuorumRacks != "" {
+		return fmt.Errorf("bookkeeper.write.quorum.racks.minimumCount.enable can be only set to \"true\" \"false\" or \"\"")
+	}
+
+	if writeQuorumRacks == "true" && ensembleSizeInt == 1 {
+		return fmt.Errorf("bookkeeper.write.quorum.racks.minimumCount.enable should be set to false if bookkeeper.ensemble.size is 1")
+	}
+
+	if ensembleSizeInt < writeQuorumSizeInt {
+		if ensembleSize == "" {
+			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the default value of option bookkeeper.ensemble.size which is 3")
+		}
+		if writeQuorumSize == "" {
+			return fmt.Errorf("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the default value of bookkeeper.write.quorum.size which is 3")
+		}
+		return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size")
+	}
+
+	if writeQuorumSizeInt < ackQuorumSizeInt {
+		if writeQuorumSize == "" {
+			return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the default value of option bookkeeper.write.quorum.size which is 3")
+		}
+		if ackQuorumSize == "" {
+			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the default value of bookkeeper.ack.quorum.size which is 3")
+		}
+		return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should less than or equal to the value of option bookkeeper.write.quorum.size")
 	}
 
 	return nil
