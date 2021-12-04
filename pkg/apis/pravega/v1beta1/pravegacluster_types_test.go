@@ -964,7 +964,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the default value of bookkeeper.write.quorum.size which is 3")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
@@ -981,11 +981,11 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the default value of option bookkeeper.ensemble.size which is 3")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
-		Context("Validating wether minimum racks count is set to true false or \"\"", func() {
+		Context("Validating whether minimum racks count is set to true false or \"\"", func() {
 			var (
 				err error
 			)
@@ -1031,7 +1031,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should less than or equal to the value of option bookkeeper.write.quorum.size")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size")).Should(Equal(true))
 			})
 		})
 
@@ -1048,7 +1048,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the default value of bookkeeper.ack.quorum.size which is 3")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
@@ -1065,7 +1065,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the default value of option bookkeeper.write.quorum.size which is 3")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 	})

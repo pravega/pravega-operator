@@ -1349,22 +1349,22 @@ func (p *PravegaCluster) ValidateBookkeperSettings() error {
 
 	if ensembleSizeInt < writeQuorumSizeInt {
 		if ensembleSize == "" {
-			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the default value of option bookkeeper.ensemble.size which is 3")
+			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)")
 		}
 		if writeQuorumSize == "" {
-			return fmt.Errorf("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the default value of bookkeeper.write.quorum.size which is 3")
+			return fmt.Errorf("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")
 		}
 		return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size")
 	}
 
 	if writeQuorumSizeInt < ackQuorumSizeInt {
 		if writeQuorumSize == "" {
-			return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the default value of option bookkeeper.write.quorum.size which is 3")
+			return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")
 		}
 		if ackQuorumSize == "" {
-			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the default value of bookkeeper.ack.quorum.size which is 3")
+			return fmt.Errorf("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)")
 		}
-		return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should less than or equal to the value of option bookkeeper.write.quorum.size")
+		return fmt.Errorf("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size")
 	}
 
 	return nil

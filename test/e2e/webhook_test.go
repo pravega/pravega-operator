@@ -230,7 +230,7 @@ func testWebhook(t *testing.T) {
 	ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeLessThanEqualToTwoWriteQuorumSizeSetToDefault)
 	g.Expect(err).To(HaveOccurred(), "Ensemble size should be greater than the default value of write quorum size")
-	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the default value of bookkeeper.write.quorum.size which is 3"))
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)"))
 
 	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree := pravega_e2eutil.NewDefaultCluster(namespace)
 	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.WithDefaults()
@@ -239,7 +239,7 @@ func testWebhook(t *testing.T) {
 	ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, ensembleSizeSetToDefaultWriteQuorumSizeGreaterThanThree)
 	g.Expect(err).To(HaveOccurred(), "The value for write quorum size should be less than default value of ensemble size")
-	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the default value of option bookkeeper.ensemble.size which is 3"))
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)"))
 
 	writeQuorumSizeLessThanAckQuorumSize := pravega_e2eutil.NewDefaultCluster(namespace)
 	writeQuorumSizeLessThanAckQuorumSize.WithDefaults()
@@ -248,7 +248,7 @@ func testWebhook(t *testing.T) {
 	writeQuorumSizeLessThanAckQuorumSize.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeLessThanAckQuorumSize)
 	g.Expect(err).To(HaveOccurred(), "The value for write quorum size should be greater than or equal to ack quorum size")
-	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should less than or equal to the value of option bookkeeper.write.quorum.size"))
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size"))
 
 	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault := pravega_e2eutil.NewDefaultCluster(namespace)
 	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.WithDefaults()
@@ -257,7 +257,7 @@ func testWebhook(t *testing.T) {
 	writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeLessThanEqualToTwoAckQuorumSizeSetToDefault)
 	g.Expect(err).To(HaveOccurred(), "Write quorum size should be greater than the default value of ack quorum size")
-	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the default value of bookkeeper.ack.quorum.size which is 3"))
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)"))
 
 	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree := pravega_e2eutil.NewDefaultCluster(namespace)
 	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.WithDefaults()
@@ -266,7 +266,7 @@ func testWebhook(t *testing.T) {
 	writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "4"
 	_, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, writeQuorumSizeSetToDefaultAckQuorumSizeGreaterThanThree)
 	g.Expect(err).To(HaveOccurred(), "The value for ack quorum size should be less than default value of write quorum size")
-	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the default value of option bookkeeper.write.quorum.size which is 3"))
+	g.Expect(err.Error()).To(ContainSubstring("The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)"))
 
 	validBookkeeperSettings := pravega_e2eutil.NewDefaultCluster(namespace)
 	validBookkeeperSettings.WithDefaults()
