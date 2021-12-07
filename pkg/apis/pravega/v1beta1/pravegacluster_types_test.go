@@ -857,4 +857,216 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 		})
 	})
+
+	Context("Validate Bookie Settings", func() {
+		var (
+			p *v1beta1.PravegaCluster
+		)
+
+		BeforeEach(func() {
+			p = &v1beta1.PravegaCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+			}
+			p.WithDefaults()
+		})
+
+		Context("Validating with correct values for Ensemble Size, Write Quorum size and Ack quorum size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "3"
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("Should return nil", func() {
+				Ω(err).Should(BeNil())
+			})
+		})
+
+		Context("Invalid Value for Enseble size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3.4"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Cannot convert ensemble size from string to integer")).Should(Equal(true))
+			})
+		})
+
+		Context("Invalid Value for Write Quorum size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "3##4"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Cannot convert write quorum size from string to integer")).Should(Equal(true))
+			})
+		})
+
+		Context("Invalid Value for Ack Quorum size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "2!342"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "Cannot convert ack quorum size from string to integer")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Ensemble Size < Write Quorum Size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "4"
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Ensemble size <=2 and Write quorum size is set to default", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "2"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = ""
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Write quorum size > 3 and Ensemble size is set to default", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = ""
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "4"
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "3"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating whether minimum racks count is set to true false or \"\"", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.racks.minimumCount.enable"] = "True"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable can be only set to \"true\" \"false\" or \"\"")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Enseble Size set to 1 and minimum count enabled is set to true", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "1"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = ""
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.racks.minimumCount.enable"] = "true"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable should be set to false if bookkeeper.ensemble.size is 1")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Write quorum size < Acq quorum size", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "4"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "4"
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "5"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Write quorum size <=2 and Acq quorum size is set to default", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = "2"
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = ""
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with Ack quorum size > 3 and Write quorum size is set to default", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Pravega.Options["bookkeeper.ensemble.size"] = "3"
+				p.Spec.Pravega.Options["bookkeeper.write.quorum.size"] = ""
+				p.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "4"
+				err = p.ValidateBookkeperSettings()
+			})
+
+			It("should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
+			})
+		})
+	})
 })

@@ -383,6 +383,21 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.Options = map[string]string{}
 	}
 
+	if s.Options["bookkeeper.ensemble.size"] == "" {
+		changed = true
+		s.Options["bookkeeper.ensemble.size"] = "3"
+	}
+
+	if s.Options["bookkeeper.write.quorum.size"] == "" {
+		changed = true
+		s.Options["bookkeeper.write.quorum.size"] = "3"
+	}
+
+	if s.Options["bookkeeper.ack.quorum.size"] == "" {
+		changed = true
+		s.Options["bookkeeper.ack.quorum.size"] = "3"
+	}
+
 	if s.ControllerJvmOptions == nil {
 		changed = true
 		s.ControllerJvmOptions = []string{}
