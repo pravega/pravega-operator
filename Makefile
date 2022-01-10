@@ -10,7 +10,7 @@ SHELL=/bin/bash -o pipefail
 
 PROJECT_NAME=pravega-operator
 REPO=testpravegaop/$(PROJECT_NAME)
-BASE_VERSION=0.5.6
+BASE_VERSION=0.5.7
 ID=$(shell git rev-list HEAD --count)
 GIT_SHA=$(shell git rev-parse --short HEAD)
 VERSION=$(BASE_VERSION)-$(ID)-$(GIT_SHA)
