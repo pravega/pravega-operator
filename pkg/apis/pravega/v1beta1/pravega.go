@@ -350,7 +350,7 @@ func (s *PravegaSpec) withDefaults() (changed bool) {
 		s.ControllerReplicas = 1
 	}
 
-	if !config.TestMode && s.RollbackTimeout < 1 {
+	if s.RollbackTimeout < 1 {
 		changed = true
 		s.RollbackTimeout = 10
 	}
