@@ -18,7 +18,6 @@ import (
 	"strings"
 	"time"
 
-	k8s "github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1alpha1"
 	"github.com/pravega/pravega-operator/pkg/util"
@@ -56,6 +55,9 @@ const (
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
 	DefaultPravegaVersion = "0.9.0"
+
+	// OperatorNameEnvVar is env variable for operator name
+	OperatorNameEnvVar = "OPERATOR_NAME"
 )
 
 func init() {
@@ -1532,7 +1534,7 @@ func (p *PravegaCluster) WaitForClusterToTerminate(kubeClient client.Client) (er
 
 func (p *PravegaCluster) NewEvent(name string, reason string, message string, eventType string) *corev1.Event {
 	now := metav1.Now()
-	operatorName, _ := k8s.GetOperatorName()
+	operatorName, _ := OperatorName()
 	generateName := name + "-"
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1561,7 +1563,7 @@ func (p *PravegaCluster) NewEvent(name string, reason string, message string, ev
 
 func (p *PravegaCluster) NewApplicationEvent(name string, reason string, message string, eventType string) *corev1.Event {
 	now := metav1.Now()
-	operatorName, _ := k8s.GetOperatorName()
+	operatorName, _ := OperatorName()
 	generateName := name + "-"
 	event := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1584,4 +1586,16 @@ func (p *PravegaCluster) NewApplicationEvent(name string, reason string, message
 		ReportingInstance:   os.Getenv("POD_NAME"),
 	}
 	return &event
+}
+
+// OperatorName returns the operator name
+func OperatorName() (string, error) {
+	operatorName, found := os.LookupEnv(OperatorNameEnvVar)
+	if !found {
+		return "", fmt.Errorf("environment variable %s is not set", OperatorNameEnvVar)
+	}
+	if len(operatorName) == 0 {
+		return "", fmt.Errorf("environment variable %s is empty", OperatorNameEnvVar)
+	}
+	return operatorName, nil
 }
