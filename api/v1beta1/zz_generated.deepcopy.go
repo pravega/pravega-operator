@@ -541,6 +541,20 @@ func (in *PravegaSpec) DeepCopyInto(out *PravegaSpec) {
 		*out = new(Probes)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ControllerPodTolerations != nil {
+		in, out := &in.ControllerPodTolerations, &out.ControllerPodTolerations
+		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.SegmentStorePodTolerations != nil {
+		in, out := &in.SegmentStorePodTolerations, &out.SegmentStorePodTolerations
+		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
