@@ -102,7 +102,7 @@ func main() {
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(cfg, manager.Options{Namespace: namespace, Port: 9443})
 
 	if err != nil {
 		log.Fatal(err)
