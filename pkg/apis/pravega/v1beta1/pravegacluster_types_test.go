@@ -1206,7 +1206,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "controller and segmentstore signing key should have same value")).Should(Equal(true))
+				Ω(strings.ContainsAny(err.Error(), "controller and segmentstore token signing key should have same value")).Should(Equal(true))
 			})
 		})
 	})

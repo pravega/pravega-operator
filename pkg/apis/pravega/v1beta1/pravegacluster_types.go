@@ -1255,7 +1255,7 @@ func (p *PravegaCluster) ValidateAuthenticationSettings() error {
 			return fmt.Errorf("autoScale.security.auth.token.signingKey.basis field is not present")
 		}
 		if signingkey1 != signingkey2 {
-			return fmt.Errorf("controller and segmentstore signing key should have same value")
+			return fmt.Errorf("controller and segmentstore token signing key should have same value")
 		}
 	} else {
 		newkey, ok := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
