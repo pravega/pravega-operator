@@ -911,6 +911,11 @@ func (p *PravegaCluster) ValidateCreate() error {
 	if err != nil {
 		return err
 	}
+
+	err = p.ValidateAuthenticationSettings()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -930,6 +935,10 @@ func (p *PravegaCluster) ValidateUpdate(old runtime.Object) error {
 		return err
 	}
 	err = p.ValidateBookkeperSettings()
+	if err != nil {
+		return err
+	}
+	err = p.ValidateAuthenticationSettings()
 	if err != nil {
 		return err
 	}
@@ -1000,6 +1009,7 @@ func (p *PravegaCluster) ValidatePravegaVersion() error {
 	return nil
 }
 
+//
 func (p *PravegaCluster) validateConfigMap() error {
 	configmap := &corev1.ConfigMap{}
 	err := Mgr.GetClient().Get(context.TODO(),
@@ -1213,6 +1223,50 @@ func (p *PravegaCluster) validateConfigMap() error {
 		}
 	}
 	log.Print("validateConfigMap:: No error found...returning...")
+	return nil
+}
+
+// ValidateAuthenticationSettings checks for correct options passed to pravega
+// when authentication is enabled/disabled.
+func (p *PravegaCluster) ValidateAuthenticationSettings() error {
+	if p.Spec.Authentication.Enabled == true {
+		newkey, ok := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
+		oldkey := ""
+		if !ok {
+			oldkey, ok = p.Spec.Pravega.Options["autoScale.authEnabled"]
+		}
+		if !ok {
+			return fmt.Errorf("autoScale.controller.connect.security.auth.enable field is not present")
+		} else if newkey == "false" || oldkey == "false" {
+			return fmt.Errorf("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")
+		}
+		signingkey1, ok := p.Spec.Pravega.Options["controller.security.auth.delegationToken.signingKey.basis"]
+		if !ok {
+			signingkey1, ok = p.Spec.Pravega.Options["controller.auth.tokenSigningKey"]
+		}
+		if !ok {
+			return fmt.Errorf("controller.security.auth.delegationToken.signingKey.basis field is not present")
+		}
+		signingkey2, ok := p.Spec.Pravega.Options["autoScale.security.auth.token.signingKey.basis"]
+		if !ok {
+			signingkey2, ok = p.Spec.Pravega.Options["autoScale.tokenSigningKey"]
+		}
+		if !ok {
+			return fmt.Errorf("autoScale.security.auth.token.signingKey.basis field is not present")
+		}
+		if signingkey1 != signingkey2 {
+			return fmt.Errorf("controller and segmentstore signing key should have same value")
+		}
+	} else {
+		newkey, ok := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
+		oldkey := ""
+		if !ok {
+			oldkey, ok = p.Spec.Pravega.Options["autoScale.authEnabled"]
+		}
+		if ok && (oldkey == "true" || newkey == "true") {
+			return fmt.Errorf("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true")
+		}
+	}
 	return nil
 }
 

@@ -1069,4 +1069,145 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 		})
 	})
+	Context("Validate Authentication Settings", func() {
+		var (
+			p *v1beta1.PravegaCluster
+		)
+
+		BeforeEach(func() {
+			p = &v1beta1.PravegaCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+			}
+			p.WithDefaults()
+		})
+
+		Context("Validating with authentication enabled and correct options", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
+				p.Spec.Pravega.Options["controller.security.auth.delegationToken.signingKey.basis"] = "secret"
+				p.Spec.Pravega.Options["autoScale.security.auth.token.signingKey.basis"] = "secret"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return nil", func() {
+				Ω(err).Should(BeNil())
+			})
+		})
+		Context("Validating with authentication disabled and correct options", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = false
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "false"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return nil", func() {
+				Ω(err).Should(BeNil())
+			})
+
+		})
+		Context("Validating with authentication disabled and enabling authentication from segment store", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = false
+				p.Spec.Pravega.Options["autoScale.authEnabled"] = "true"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true")).Should(Equal(true))
+			})
+		})
+
+		Context("Validating with authentication enabled from controller and disabled from segmentstore", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "false"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")).Should(Equal(true))
+			})
+		})
+		Context("Validating with authentication enabled from controller and not providing option in segmentstore", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable field is not present")).Should(Equal(true))
+			})
+		})
+		Context("Validating with authentication enabled from controller and not providing controller token signing key", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.authEnabled"] = "true"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "controller.security.auth.delegationToken.signingKey.basis field is not present")).Should(Equal(true))
+			})
+		})
+		Context("Validating with authentication enabled from controller and not providing segment store token signing key", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
+				p.Spec.Pravega.Options["controller.auth.tokenSigningKey"] = "secret"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "autoScale.security.auth.token.signingKey.basis field is not present")).Should(Equal(true))
+			})
+		})
+		Context("Validating with authentication enabled from controller and providing different sigining key for controller and segmentstore", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
+				p.Spec.Pravega.Options["controller.auth.tokenSigningKey"] = "secret"
+				p.Spec.Pravega.Options["autoScale.security.auth.token.signingKey.basis"] = "secret1"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.ContainsAny(err.Error(), "controller and segmentstore signing key should have same value")).Should(Equal(true))
+			})
+		})
+	})
 })
