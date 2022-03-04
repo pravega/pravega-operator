@@ -1009,7 +1009,6 @@ func (p *PravegaCluster) ValidatePravegaVersion() error {
 	return nil
 }
 
-//
 func (p *PravegaCluster) validateConfigMap() error {
 	configmap := &corev1.ConfigMap{}
 	err := Mgr.GetClient().Get(context.TODO(),
