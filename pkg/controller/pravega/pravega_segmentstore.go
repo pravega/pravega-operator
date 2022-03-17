@@ -207,7 +207,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				VolumeMounts: volumeMounts,
 				Resources:    *p.Spec.Pravega.SegmentStoreResources,
 				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						Exec: &corev1.ExecAction{
 							Command: util.SegmentStoreReadinessCheck(p.Spec.Version, int32(containerport), 6061),
 						},
@@ -222,7 +222,7 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 					PeriodSeconds:       p.Spec.Pravega.SegmentStoreProbes.ReadinessProbe.PeriodSeconds,
 				},
 				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						Exec: &corev1.ExecAction{
 							Command: util.HealthcheckCommand(p.Spec.Version, int32(containerport), 6061),
 						},

@@ -8,15 +8,15 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-package pravegacluster
+package pravegacluster_test
 
 import (
 	"context"
 	"strings"
-	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
+	"github.com/pravega/pravega-operator/pkg/controller/pravegacluster"
 
 	pravegav1beta1 "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,11 +34,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestUpgrade(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pravega cluster")
-}
-
 var _ = Describe("Pravega Cluster Version Sync", func() {
 	const (
 		Name      = "example"
@@ -47,7 +42,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 	var (
 		s = scheme.Scheme
-		r *ReconcilePravegaCluster
+		r *pravegacluster.ReconcilePravegaCluster
 	)
 
 	var _ = Describe("Upgrade Test", func() {
@@ -81,8 +76,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, err = r.Reconcile(context.TODO(), req)
 			})
 
 			Context("First reconcile", func() {
@@ -96,7 +91,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, err = r.Reconcile(req)
+					_, err = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -125,15 +120,15 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				p.WithDefaults()
 				p.Spec.ExternalAccess.Enabled = true
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega := &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Version = "0.6.0"
 				// bypass the pods ready check in the upgrade logic
 				foundPravega.Status.SetPodsReadyConditionTrue()
 				client.Update(context.TODO(), foundPravega)
-				_, _ = r.Reconcile(req)
+				_, _ = r.Reconcile(context.TODO(), req)
 			})
 
 			Context("Upgrading Condition", func() {
@@ -163,7 +158,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -186,13 +181,13 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					// Segmentstore
 					sts = &appsv1.StatefulSet{}
 					name := p.StatefulSetNameForSegmentstore()
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+					_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 					targetImage, _ := foundPravega.PravegaTargetImage()
 					sts.Spec.Template.Spec.Containers[0].Image = targetImage
-					r.client.Update(context.TODO(), sts)
+					r.Client.Update(context.TODO(), sts)
 
-					_, _ = r.Reconcile(req)
-					_ = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
@@ -216,7 +211,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega.Spec.Pravega.SegmentStoreReplicas = 4
 					foundPravega.Status.SetPodsReadyConditionTrue()
 					client.Update(context.TODO(), foundPravega)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
@@ -239,7 +234,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 					foundPravega.Status.SetPodsReadyConditionTrue()
 					client.Update(context.TODO(), foundPravega)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 
@@ -265,7 +260,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega.Status.SetPodsReadyConditionTrue()
 					foundPravega.Status.CurrentVersion = "0.7.0"
 					client.Update(context.TODO(), foundPravega)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -278,7 +273,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				})
 			})
 		})
-		Context("syncClusterVersion when cluster in upgrading state", func() {
+		Context("SyncClusterVersion when cluster in upgrading state", func() {
 			var (
 				err          error
 				foundPravega *v1beta1.PravegaCluster
@@ -286,13 +281,13 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, err = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Status.SetUpgradingConditionTrue("UpgradeController", "0")
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 			})
 			It("Error should be nil when the target version is Empty", func() {
 				Ω(err).Should(BeNil())
@@ -301,26 +296,26 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				foundPravega.Status.SetUpgradingConditionTrue("UpgradeController", "0")
 				foundPravega.Status.TargetVersion = "0.6.1"
 				foundPravega.Status.CurrentVersion = "0.6.1"
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 				Ω(err).Should(BeNil())
 			})
 			It("Error should be not nil when the target version is not equal to current version", func() {
 				foundPravega.Status.SetUpgradingConditionTrue("UpgradeController", "0")
 				foundPravega.Status.TargetVersion = "0.7.1"
 				foundPravega.Status.CurrentVersion = "0.6.1"
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 				Ω(strings.ContainsAny(err.Error(), "failed to get statefulset ()")).Should(Equal(true))
 			})
 			It("Error should be nil when cluster is in rollbackfailedstate", func() {
 				p.Status.SetErrorConditionTrue("RollbackFailed", " ")
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("syncClusterVersion when cluster in rollback failed state", func() {
+		Context("SyncClusterVersion when cluster in rollback failed state", func() {
 			var (
 				err          error
 				foundPravega *v1beta1.PravegaCluster
@@ -328,20 +323,20 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, err = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Status.Init()
 				foundPravega.Status.SetErrorConditionTrue("RollbackFailed", " ")
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("syncClusterVersion when syncCompleted return true ", func() {
+		Context("SyncClusterVersion when syncCompleted return true ", func() {
 			var (
 				err          error
 				foundPravega *v1beta1.PravegaCluster
@@ -349,22 +344,22 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Status.TargetVersion = foundPravega.Spec.Version
 				foundPravega.Status.CurrentVersion = "0.5.0"
 				foundPravega.Status.Init()
 				foundPravega.Status.SetUpgradingConditionTrue(" ", " ")
-				r.client.Update(context.TODO(), foundPravega)
-				err = r.syncClusterVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				err = r.SyncClusterVersion(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("syncControllerVersion", func() {
+		Context("SyncControllerVersion", func() {
 			var (
 				err, err1, err2, err3 error
 				foundPravega          *v1beta1.PravegaCluster
@@ -372,21 +367,21 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
-				_, err1 = r.syncControllerVersion(foundPravega)
+				_, err1 = r.SyncControllerVersion(foundPravega)
 				deploy := pravega.MakeControllerDeployment(foundPravega)
-				r.client.Create(context.TODO(), deploy)
-				_, err2 = r.syncControllerVersion(foundPravega)
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: foundPravega.Namespace}, deploy)
+				r.Client.Create(context.TODO(), deploy)
+				_, err2 = r.SyncControllerVersion(foundPravega)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: foundPravega.Namespace}, deploy)
 				deploy.Status.UpdatedReplicas = 5
 				deploy.Status.Replicas = 3
-				r.client.Update(context.TODO(), deploy)
+				r.Client.Update(context.TODO(), deploy)
 				foundPravega.Status.TargetVersion = "0.5.0"
-				r.client.Update(context.TODO(), foundPravega)
-				_, err = r.syncControllerVersion(foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
+				_, err = r.SyncControllerVersion(foundPravega)
 				condition := appsv1.DeploymentCondition{
 					Type:    "Progressing",
 					Status:  corev1.ConditionFalse,
@@ -394,8 +389,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					Message: "",
 				}
 				deploy.Status.Conditions = append(deploy.Status.Conditions, condition)
-				r.client.Update(context.TODO(), deploy)
-				_, err3 = r.syncControllerVersion(foundPravega)
+				r.Client.Update(context.TODO(), deploy)
+				_, err3 = r.SyncControllerVersion(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
@@ -410,7 +405,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				Ω(strings.ContainsAny(err3.Error(), "failed due to ProgressDeadlineExceeded")).Should(Equal(true))
 			})
 		})
-		Context("syncSegmentStoreVersion", func() {
+		Context("SyncSegmentStoreVersion", func() {
 			var (
 				err, err1    error
 				foundPravega *v1beta1.PravegaCluster
@@ -418,20 +413,20 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				sts := pravega.MakeSegmentStoreStatefulSet(foundPravega)
-				r.client.Create(context.TODO(), sts)
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: foundPravega.Namespace}, sts)
-				_, err = r.syncSegmentStoreVersion(foundPravega)
+				r.Client.Create(context.TODO(), sts)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: foundPravega.Namespace}, sts)
+				_, err = r.SyncSegmentStoreVersion(foundPravega)
 				foundPravega.Status.TargetVersion = "0.5.0"
 				sts.Status.UpdatedReplicas = 5
 				sts.Status.Replicas = 3
-				r.client.Update(context.TODO(), sts)
-				r.client.Update(context.TODO(), foundPravega)
-				_, err1 = r.syncSegmentStoreVersion(foundPravega)
+				r.Client.Update(context.TODO(), sts)
+				r.Client.Update(context.TODO(), foundPravega)
+				_, err1 = r.SyncSegmentStoreVersion(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).ShouldNot(BeNil())
@@ -441,7 +436,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			})
 		})
 
-		Context("syncSegmentStoreVersionTo07 without old sts", func() {
+		Context("SyncSegmentStoreVersionTo07 without old sts", func() {
 			var (
 				err          error
 				foundPravega *v1beta1.PravegaCluster
@@ -449,18 +444,18 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Version = "0.7.0"
-				_, err = r.syncSegmentStoreVersionTo07(foundPravega)
+				_, err = r.SyncSegmentStoreVersionTo07(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("getDeployPodsWithVersion", func() {
+		Context("GetDeployPodsWithVersion", func() {
 			var (
 				deploy *appsv1.Deployment
 				client client.Client
@@ -468,17 +463,17 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				deploy = &appsv1.Deployment{}
-				r.client.Get(context.TODO(), types.NamespacedName{Name: p.DeploymentNameForController(), Namespace: p.Namespace}, deploy)
-				_, err = r.getDeployPodsWithVersion(deploy, "0.6.1")
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: p.DeploymentNameForController(), Namespace: p.Namespace}, deploy)
+				_, err = r.GetDeployPodsWithVersion(deploy, "0.6.1")
 				It("Error should be nil", func() {
 					Ω(err).Should(BeNil())
 				})
 			})
 		})
-		Context("deleteExternalServices", func() {
+		Context("DeleteExternalServices", func() {
 			var (
 				err, err1    error
 				foundPravega *v1beta1.PravegaCluster
@@ -486,22 +481,22 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
-				r.Reconcile(req)
+				r.Reconcile(context.TODO(), req)
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Pravega.SegmentStoreReplicas = 4
 				foundPravega.Spec.Version = "0.6.0"
 				foundPravega.Spec.ExternalAccess.Enabled = true
-				r.client.Update(context.TODO(), foundPravega)
+				r.Client.Update(context.TODO(), foundPravega)
 				svc := pravega.MakeSegmentStoreExternalServices(foundPravega)
-				r.client.Create(context.TODO(), svc[0])
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ServiceNameForSegmentStoreBelow07(0), Namespace: p.Namespace}, svc[0])
+				r.Client.Create(context.TODO(), svc[0])
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.ServiceNameForSegmentStoreBelow07(0), Namespace: p.Namespace}, svc[0])
 				foundPravega.Spec.Version = "0.7.0"
-				err = r.deleteExternalServices(foundPravega)
+				err = r.DeleteExternalServices(foundPravega)
 				foundPravega.Spec.Version = "0.5.0"
-				err1 = r.deleteExternalServices(foundPravega)
+				err1 = r.DeleteExternalServices(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
@@ -510,21 +505,21 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				Ω(err1).Should(BeNil())
 			})
 		})
-		Context("getOneOutdatedPod", func() {
+		Context("GetOneOutdatedPod", func() {
 			var (
 				sts *appsv1.StatefulSet
 				err error
 			)
 			BeforeEach(func() {
 				sts = &appsv1.StatefulSet{}
-				r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstore(), Namespace: p.Namespace}, sts)
-				_, err = r.getOneOutdatedPod(sts, "0.6.1")
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstore(), Namespace: p.Namespace}, sts)
+				_, err = r.GetOneOutdatedPod(sts, "0.6.1")
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("scaleSegmentStoreSTS", func() {
+		Context("ScaleSegmentStoreSTS", func() {
 			var (
 				sts, sts1 *appsv1.StatefulSet
 				err       error
@@ -534,16 +529,16 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				p.WithDefaults()
 				sts = pravega.MakeSegmentStoreStatefulSet(p)
 				sts1 = pravega.MakeSegmentStoreStatefulSet(p)
-				r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreBelow07(), Namespace: p.Namespace}, sts)
-				r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreAbove07(), Namespace: p.Namespace}, sts1)
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreBelow07(), Namespace: p.Namespace}, sts)
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstoreAbove07(), Namespace: p.Namespace}, sts1)
 				sts1.ObjectMeta.ResourceVersion = "2"
-				err = r.scaleSegmentStoreSTS(p, sts, sts1)
+				err = r.ScaleSegmentStoreSTS(p, sts, sts1)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
-		Context("syncSegmentStoreVersionTo07", func() {
+		Context("SyncSegmentStoreVersionTo07", func() {
 			var (
 				err          error
 				foundPravega *v1beta1.PravegaCluster
@@ -552,21 +547,21 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 			)
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega = &v1beta1.PravegaCluster{}
-				r.Reconcile(req)
+				r.Reconcile(context.TODO(), req)
 				sts = &appsv1.StatefulSet{}
 				p.Spec.Version = "0.7.0"
 				p.WithDefaults()
 				sts = pravega.MakeSegmentStoreStatefulSet(p)
 				client.Create(context.TODO(), sts)
-				_, _ = r.Reconcile(req)
-				_ = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: p.Namespace}, sts)
-				_ = r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, foundPravega)
+				_, _ = r.Reconcile(context.TODO(), req)
+				_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: p.Namespace}, sts)
+				_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, foundPravega)
 				sts.Status.ReadyReplicas = 5
 				*sts.Spec.Replicas = 5
-				r.client.Update(context.TODO(), sts)
+				r.Client.Update(context.TODO(), sts)
 				foundPravega.Spec.Version = "0.5.0"
 				p.Spec.Version = "0.5.0"
 				p.WithDefaults()
@@ -574,16 +569,16 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				client.Create(context.TODO(), sts1)
 				sts1.Status.ReadyReplicas = 2
 				*sts1.Spec.Replicas = 2
-				r.client.Update(context.TODO(), sts1)
-				r.client.Update(context.TODO(), foundPravega)
-				_, err = r.syncSegmentStoreVersionTo07(foundPravega)
+				r.Client.Update(context.TODO(), sts1)
+				r.Client.Update(context.TODO(), foundPravega)
+				_, err = r.SyncSegmentStoreVersionTo07(foundPravega)
 			})
 			It("Error should be nil", func() {
 				Ω(err).Should(BeNil())
 			})
 		})
 
-		Context("checkUpdatedPods with faulty and non-faultypod", func() {
+		Context("CheckUpdatedPods with faulty and non-faultypod", func() {
 			var (
 				result1, result2 bool
 				pod, pod1        []*corev1.Pod
@@ -612,14 +607,14 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 						},
 					},
 				}
-				r.client.Create(context.TODO(), testpod)
-				r.client.Create(context.TODO(), testpod1)
-				r.client.Get(context.TODO(), types.NamespacedName{Name: "test", Namespace: "default"}, testpod)
-				r.client.Get(context.TODO(), types.NamespacedName{Name: "test1", Namespace: "default"}, testpod1)
+				r.Client.Create(context.TODO(), testpod)
+				r.Client.Create(context.TODO(), testpod1)
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: "test", Namespace: "default"}, testpod)
+				r.Client.Get(context.TODO(), types.NamespacedName{Name: "test1", Namespace: "default"}, testpod1)
 				pod = append(pod, testpod)
-				result1, err = r.checkUpdatedPods(pod, "0.7.1")
+				result1, err = r.CheckUpdatedPods(pod, "0.7.1")
 				pod1 = append(pod1, testpod1)
-				result2, err1 = r.checkUpdatedPods(pod1, "0.7.1")
+				result2, err1 = r.CheckUpdatedPods(pod1, "0.7.1")
 			})
 			It("It should return false and non nil error", func() {
 				Ω(strings.ContainsAny(err.Error(), "failed because of CrashLoopBackOff")).Should(Equal(true))
@@ -662,8 +657,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 
 			BeforeEach(func() {
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, err = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, err = r.Reconcile(context.TODO(), req)
 			})
 
 			Context("First reconcile", func() {
@@ -677,7 +672,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, err = r.Reconcile(req)
+					_, err = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -711,8 +706,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				p.WithDefaults()
 				p.Spec.Pravega.SegmentStoreReplicas = 3
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega := &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Version = "0.5.0"
@@ -721,7 +716,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				foundPravega.Status.SetPodsReadyConditionFalse()
 				foundPravega.Status.SetErrorConditionTrue("UpgradeFailed", "some error")
 				client.Update(context.TODO(), foundPravega)
-				_, _ = r.Reconcile(req)
+				_, _ = r.Reconcile(context.TODO(), req)
 			})
 
 			Context("Rollback Triggered", func() {
@@ -748,7 +743,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -765,8 +760,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -783,10 +778,10 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -838,8 +833,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					BeforeEach(func() {
 						p1.WithDefaults()
 						p2.WithDefaults()
-						r = &ReconcilePravegaCluster{client: client, scheme: s}
-						_, _ = r.Reconcile(req)
+						r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+						_, _ = r.Reconcile(context.TODO(), req)
 						foundPravega = &v1beta1.PravegaCluster{}
 						_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 						foundPravega.Spec.Version = "0.6.0"
@@ -848,12 +843,12 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 						foundPravega.Status.SetPodsReadyConditionFalse()
 						foundPravega.Status.SetErrorConditionTrue("UpgradeFailed", "some error")
 						client.Update(context.TODO(), foundPravega)
-						//creating the new sts so that rollback gets triggered as it needs both sts
+						// creating the new sts so that rollback gets triggered as it needs both sts
 						newsts := pravega.MakeSegmentStoreStatefulSet(p2)
 						client.Create(context.TODO(), newsts)
-						_, _ = r.Reconcile(req)
-						_, _ = r.Reconcile(req)
-						_, _ = r.Reconcile(req)
+						_, _ = r.Reconcile(context.TODO(), req)
+						_, _ = r.Reconcile(context.TODO(), req)
+						_, _ = r.Reconcile(context.TODO(), req)
 						foundPravega = &v1beta1.PravegaCluster{}
 						_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 					})
@@ -863,26 +858,26 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 						Ω(rollbackCondition.Message).Should(Equal("0"))
 					})
 				})
-				Context("rollbackClusterVersion error case", func() {
+				Context("RollbackClusterVersion error case", func() {
 					var (
 						err          error
 						foundPravega *v1beta1.PravegaCluster
 					)
 					BeforeEach(func() {
 						foundPravega = &v1beta1.PravegaCluster{}
-						r.Reconcile(req)
+						r.Reconcile(context.TODO(), req)
 						deploy := pravega.MakeControllerDeployment(p)
-						r.client.Create(context.TODO(), deploy)
+						r.Client.Create(context.TODO(), deploy)
 						_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 						foundPravega.Status.TargetVersion = ""
-						r.client.Update(context.TODO(), foundPravega)
-						err = r.rollbackClusterVersion(foundPravega, "0.6.1")
+						r.Client.Update(context.TODO(), foundPravega)
+						err = r.RollbackClusterVersion(foundPravega, "0.6.1")
 					})
 					It("Error should not be nil", func() {
 						Ω(strings.ContainsAny(err.Error(), "failed to get statefulset ()")).Should(Equal(true))
 					})
 				})
-				Context("rollbackConditionFor07", func() {
+				Context("RollbackConditionFor07", func() {
 					var (
 						result       bool
 						foundPravega *v1beta1.PravegaCluster
@@ -890,20 +885,20 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					)
 					BeforeEach(func() {
 						foundPravega = &v1beta1.PravegaCluster{}
-						r.Reconcile(req)
+						r.Reconcile(context.TODO(), req)
 						sts = &appsv1.StatefulSet{}
 						p.Spec.Version = "0.7.0"
 						sts = pravega.MakeSegmentStoreStatefulSet(p)
 						client.Create(context.TODO(), sts)
-						_, _ = r.Reconcile(req)
-						_ = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: p.Namespace}, sts)
-						_ = r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, foundPravega)
+						_, _ = r.Reconcile(context.TODO(), req)
+						_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: p.Namespace}, sts)
+						_ = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, foundPravega)
 						sts.Status.ReadyReplicas = 2
 						*sts.Spec.Replicas = 2
-						r.client.Update(context.TODO(), sts)
+						r.Client.Update(context.TODO(), sts)
 						foundPravega.Spec.Version = "0.5.0"
-						r.client.Update(context.TODO(), foundPravega)
-						result = r.rollbackConditionFor07(foundPravega, sts)
+						r.Client.Update(context.TODO(), foundPravega)
+						result = r.RollbackConditionFor07(foundPravega, sts)
 					})
 					It("It should return true", func() {
 						Ω(result).To(Equal(true))
@@ -922,8 +917,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				}
 				p.WithDefaults()
 				client = fake.NewFakeClient(p)
-				r = &ReconcilePravegaCluster{client: client, scheme: s}
-				_, _ = r.Reconcile(req)
+				r = &pravegacluster.ReconcilePravegaCluster{Client: client, Scheme: s}
+				_, _ = r.Reconcile(context.TODO(), req)
 				foundPravega := &v1beta1.PravegaCluster{}
 				_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				foundPravega.Spec.Version = "0.5.0"
@@ -932,7 +927,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 				foundPravega.Status.SetPodsReadyConditionFalse()
 				foundPravega.Status.SetErrorConditionTrue("UpgradeFailed", "some error")
 				client.Update(context.TODO(), foundPravega)
-				_, _ = r.Reconcile(req)
+				_, _ = r.Reconcile(context.TODO(), req)
 			})
 
 			Context("Rollback Triggered", func() {
@@ -959,7 +954,7 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -976,8 +971,8 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})
@@ -994,10 +989,10 @@ var _ = Describe("Pravega Cluster Version Sync", func() {
 					foundPravega *v1beta1.PravegaCluster
 				)
 				BeforeEach(func() {
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
-					_, _ = r.Reconcile(req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
+					_, _ = r.Reconcile(context.TODO(), req)
 					foundPravega = &v1beta1.PravegaCluster{}
 					_ = client.Get(context.TODO(), req.NamespacedName, foundPravega)
 				})

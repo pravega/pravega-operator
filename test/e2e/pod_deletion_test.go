@@ -11,6 +11,8 @@
 package e2e
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -18,7 +20,8 @@ import (
 	"github.com/pravega/pravega-operator/test/e2e/e2eutil"
 )
 
-var _ = Describe("Scale Pravega cluster up and down", func() {
+// Test create and recreate a Pravega cluster with the same name
+var _ = Describe("Create and recreate Pravega cluster with same name", func() {
 	namespace := "default"
 	defaultCluster := e2eutil.NewDefaultCluster(namespace)
 
@@ -27,53 +30,34 @@ var _ = Describe("Scale Pravega cluster up and down", func() {
 	})
 	Context("When creating a new cluster", func() {
 		var (
-			pravega  *v1beta1.PravegaCluster
-			err      error
-			podCount int
+			pravega *v1beta1.PravegaCluster
+			err     error
 		)
-		initialVersion := "0.6.1"
-		upgradeVersion := "0.7.0"
 
 		It("should succeed", func() {
 			// creating the setup for running the test
 			err = e2eutil.InitialSetup(k8sClient, namespace)
 			Expect(err).NotTo(HaveOccurred())
 
-			defaultCluster.Spec.Version = initialVersion
-			defaultCluster.Spec.Pravega.Image = &v1beta1.ImageSpec{
-				Repository: "pravega/pravega",
-				PullPolicy: "IfNotPresent",
-			}
 			pravega, err = e2eutil.CreatePravegaCluster(k8sClient, defaultCluster)
 			Expect(err).NotTo(HaveOccurred())
 
 			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
-			podCount = 2
+			podCount := 2
 			Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 			Eventually(e2eutil.WaitForPravegaClusterToBecomeReady(k8sClient, pravega, podCount), timeout).Should(Succeed())
 		})
-
-		It("should upgrade successfully", func() {
+		It("should recreate deleted pods", func() {
 			// This is to get the latest Pravega cluster object
 			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(pravega.Status.CurrentVersion).To(Equal(initialVersion))
-			pravega.Spec.Version = upgradeVersion
-
-			err = e2eutil.UpdatePravegaCluster(k8sClient, pravega)
+			podDeleteCount := 1
+			err = e2eutil.DeletePods(k8sClient, pravega, podDeleteCount)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = e2eutil.WaitForPravegaClusterToUpgrade(k8sClient, pravega, upgradeVersion)
-			Expect(err).NotTo(HaveOccurred())
-
-			// This is to get the latest Pravega cluster object
-			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(pravega.Spec.Version).To(Equal(upgradeVersion))
-			Expect(pravega.Status.CurrentVersion).To(Equal(upgradeVersion))
-			Expect(pravega.Status.TargetVersion).To(Equal(""))
+			time.Sleep(60 * time.Second)
+			Eventually(e2eutil.WaitForPravegaClusterToBecomeReady(k8sClient, pravega, podDeleteCount), timeout).Should(Succeed())
 		})
 
 		It("should tear down the cluster successfully", func() {

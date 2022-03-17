@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 Dell Inc., or its subsidiaries. All Rights Reserved.
+ * Copyright (c) 2018-2022 Dell Inc., or its subsidiaries. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,54 +11,56 @@
 package e2e
 
 import (
-	"testing"
-	"time"
-
 	. "github.com/onsi/gomega"
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
+	"github.com/pravega/pravega-operator/test/e2e/e2eutil"
 )
 
-// Test create and recreate a Pravega cluster with the same name
-func testExternalCreateRecreateCluster(t *testing.T) {
-	g := NewGomegaWithT(t)
+import (
+	. "github.com/onsi/ginkgo"
+	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+)
 
-	doCleanup := true
-	ctx := framework.NewTestCtx(t)
-	defer func() {
-		if doCleanup {
-			ctx.Cleanup()
-		}
-	}()
-	namespace, err := ctx.GetNamespace()
-	g.Expect(err).NotTo(HaveOccurred())
-	f := framework.Global
+var _ = Describe("Test External access Pravega cluster", func() {
+	namespace := "default"
+	defaultCluster := e2eutil.NewDefaultCluster(namespace)
 
-	//creating the setup for running the test
-	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
+	BeforeEach(func() {
+		defaultCluster.WithDefaults()
+	})
+	Context("When creating a new cluster", func() {
+		var (
+			pravega  *v1beta1.PravegaCluster
+			err      error
+			podCount int
+		)
 
-	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
-	defaultCluster.WithDefaults()
+		It("should succeed", func() {
+			// creating the setup for running the test
+			err = e2eutil.InitialSetup(k8sClient, namespace)
+			Expect(err).NotTo(HaveOccurred())
 
-	pravega, err := pravega_e2eutil.CreatePravegaClusterForExternalAccess(t, f, ctx, defaultCluster)
-	g.Expect(err).NotTo(HaveOccurred())
+			pravega, err := e2eutil.CreatePravegaClusterForExternalAccess(k8sClient, defaultCluster)
+			Expect(err).NotTo(HaveOccurred())
 
-	time.Sleep(1 * time.Minute)
+			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+			podCount = 2
+			Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+			Eventually(e2eutil.WaitForPravegaClusterToBecomeReady(k8sClient, pravega, podCount), timeout).Should(Succeed())
+		})
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+		It("should have external access", func() {
+			// This is to get the latest Pravega cluster object
+			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.CheckExternalAccesss(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = e2eutil.CheckExternalAccesss(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+		})
 
-	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// No need to do cleanup since the cluster CR has already been deleted
-	doCleanup = false
-
-	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-}
+		It("should tear down the cluster successfully", func() {
+			err = e2eutil.DeletePravegaCluster(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+			Eventually(e2eutil.WaitForPravegaClusterToTerminate(k8sClient, pravega), timeout).Should(Succeed())
+		})
+	})
+})

@@ -17,13 +17,12 @@ import (
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestController(t *testing.T) {
@@ -33,19 +32,10 @@ func TestController(t *testing.T) {
 
 var _ = Describe("Controller", func() {
 
-	var _ = Describe("Controller Test", func() {
+	Context("Controller Test", func() {
 		var (
 			p *v1beta1.PravegaCluster
 		)
-
-		BeforeEach(func() {
-			p = &v1beta1.PravegaCluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
-				},
-			}
-			p.Spec.Version = "0.5.0"
-		})
 
 		Context("Empty Controller Service Type", func() {
 			var (
@@ -53,6 +43,12 @@ var _ = Describe("Controller", func() {
 			)
 
 			BeforeEach(func() {
+				p = &v1beta1.PravegaCluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "default",
+					},
+				}
+				p.Spec.Version = "0.5.0"
 				annotationsMap := map[string]string{
 					"service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
 				}
@@ -158,7 +154,7 @@ var _ = Describe("Controller", func() {
 				p.Spec.Pravega.ControllerSecurityContext = &securitycontext
 
 				p.Spec.Pravega.ControllerInitContainers = []corev1.Container{
-					corev1.Container{
+					{
 						Name:    "testing",
 						Image:   "dummy-image",
 						Command: []string{"sh", "-c", "ls;pwd"},

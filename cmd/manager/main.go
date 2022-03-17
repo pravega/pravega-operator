@@ -12,12 +12,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
+	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
 
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/pravega/pravega-operator/pkg/apis"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller"
@@ -25,6 +26,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/pravega/pravega-operator/pkg/version"
 	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -33,7 +35,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	logz "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 var (
@@ -53,7 +54,6 @@ func printVersion() {
 	log.Printf("Git SHA: %s", version.GitSHA)
 	log.Printf("Go Version: %s", runtime.Version())
 	log.Printf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
-	log.Printf("operator-sdk Version: %v", sdkVersion.Version)
 }
 
 func main() {
@@ -77,18 +77,18 @@ func main() {
 		log.Warn("----- Running with finalizer disabled. -----")
 	}
 
-	namespace, err := k8sutil.GetWatchNamespace()
-	if err != nil {
-		log.Fatal(err, "failed to get watch namespace")
+	namespace, ok := os.LookupEnv("WATCH_NAMESPACE")
+	if !ok {
+		log.Error(errors.New("env variable not set"), "failed to get watch namespace")
+		os.Exit(1)
 	}
-
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	operatorNs, err := k8sutil.GetOperatorNamespace()
+	operatorNs, err := GetOperatorNamespace()
 	if err != nil {
 		log.Error(err, "failed to get operator namespace")
 		os.Exit(1)
@@ -134,4 +134,16 @@ func main() {
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		log.Fatal(err, "manager exited non-zero")
 	}
+}
+
+func GetOperatorNamespace() (string, error) {
+	nsBytes, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", errors.New("file does not exist")
+		}
+		return "", err
+	}
+	ns := strings.TrimSpace(string(nsBytes))
+	return ns, nil
 }

@@ -27,12 +27,11 @@ var _ = Describe("Scale Pravega cluster up and down", func() {
 	})
 	Context("When creating a new cluster", func() {
 		var (
-			pravega  *v1beta1.PravegaCluster
-			err      error
-			podCount int
+			pravega *v1beta1.PravegaCluster
+			err     error
 		)
 		initialVersion := "0.6.1"
-		upgradeVersion := "0.7.0"
+		upgradeVersion := "0.7.0.xyz"
 
 		It("should succeed", func() {
 			// creating the setup for running the test
@@ -44,7 +43,13 @@ var _ = Describe("Scale Pravega cluster up and down", func() {
 				Repository: "pravega/pravega",
 				PullPolicy: "IfNotPresent",
 			}
-			pravega, err = e2eutil.CreatePravegaCluster(k8sClient, defaultCluster)
+
+			pravega, err := e2eutil.CreatePravegaCluster(k8sClient, defaultCluster)
+			Expect(err).NotTo(HaveOccurred())
+
+			// A default Pravega cluster should have 2 pods:  1 controller, 1 segment store
+			podCount := 2
+			err = e2eutil.WaitForPravegaClusterToBecomeReady(k8sClient, pravega, podCount)
 			Expect(err).NotTo(HaveOccurred())
 
 			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
@@ -53,12 +58,49 @@ var _ = Describe("Scale Pravega cluster up and down", func() {
 			Eventually(e2eutil.WaitForPravegaClusterToBecomeReady(k8sClient, pravega, podCount), timeout).Should(Succeed())
 		})
 
-		It("should upgrade successfully", func() {
+		It("should initiate rollback through failed upgrade", func() {
 			// This is to get the latest Pravega cluster object
 			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(pravega.Status.CurrentVersion).To(Equal(initialVersion))
+
+			pravega.Spec.Version = upgradeVersion
+
+			err = e2eutil.UpdatePravegaClusterRollback(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = e2eutil.WaitForPravegaClusterToFailUpgrade(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+
+			upgradeVersion = initialVersion
+
+			// This is to get the latest Pravega cluster object
+			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+
+			pravega.Spec.Version = upgradeVersion
+
+			err = e2eutil.UpdatePravegaCluster(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = e2eutil.WaitForPravegaClusterToRollback(k8sClient, pravega, upgradeVersion)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should have the right versions after rollback", func() {
+			// This is to get the latest Pravega cluster object
+			pravega, err = e2eutil.GetPravegaCluster(k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(pravega.Spec.Version).To(Equal(upgradeVersion))
+			Expect(pravega.Status.CurrentVersion).To(Equal(upgradeVersion))
+			Expect(pravega.Status.TargetVersion).To(Equal(""))
+		})
+
+		It("should finally upgarde successfully", func() {
+			upgradeVersion = "0.7.0"
+
 			pravega.Spec.Version = upgradeVersion
 
 			err = e2eutil.UpdatePravegaCluster(k8sClient, pravega)

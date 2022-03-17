@@ -44,19 +44,19 @@ import (
 // ReconcileTime is the delay between reconciliations
 const ReconcileTime = 30 * time.Second
 
-// Add creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
+// AddReconciler creates a new PravegaCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func Add(mgr manager.Manager) error {
-	return add(mgr, newReconciler(mgr))
+func AddReconciler(mgr manager.Manager) error {
+	return Add(mgr, NewReconciler(mgr))
 }
 
-// newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcilePravegaCluster{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+// NewReconciler returns a new reconcile.Reconciler
+func NewReconciler(mgr manager.Manager) reconcile.Reconciler {
+	return &ReconcilePravegaCluster{Client: mgr.GetClient(), Scheme: mgr.GetScheme()}
 }
 
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+// Add adds a new Controller to mgr with r as the reconcile.Reconciler
+func Add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New("pravegacluster-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -76,10 +76,10 @@ var _ reconcile.Reconciler = &ReconcilePravegaCluster{}
 
 // ReconcilePravegaCluster reconciles a PravegaCluster object
 type ReconcilePravegaCluster struct {
-	// This client, initialized using mgr.Client() above, is a split client
+	// This Client, initialized using mgr.Client() above, is a split Client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	Client client.Client
+	Scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a PravegaCluster object and makes changes based on the state read
@@ -87,12 +87,12 @@ type ReconcilePravegaCluster struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcilePravegaCluster) Reconcile(_ context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Printf("Reconciling PravegaCluster %s/%s\n", request.Namespace, request.Name)
 
 	// Fetch the PravegaCluster instance
 	pravegaCluster := &pravegav1beta1.PravegaCluster{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, pravegaCluster)
+	err := r.Client.Get(context.TODO(), request.NamespacedName, pravegaCluster)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -110,7 +110,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 	changed := pravegaCluster.WithDefaults()
 	if changed {
 		log.Printf("Setting default settings for pravega-cluster: %s", request.Name)
-		if err = r.client.Update(context.TODO(), pravegaCluster); err != nil {
+		if err = r.Client.Update(context.TODO(), pravegaCluster); err != nil {
 			log.Printf("Error applying defaults on Pravega Cluster %v", err)
 			return reconcile.Result{}, err
 		}
@@ -127,7 +127,7 @@ func (r *ReconcilePravegaCluster) Reconcile(request reconcile.Request) (reconcil
 
 func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err error) {
 
-	err = r.reconcileFinalizers(p)
+	err = r.ReconcileFinalizers(p)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile finalizers %v", err)
 	}
@@ -158,7 +158,7 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 	}
 
 	// Upgrade
-	err = r.syncClusterVersion(p)
+	err = r.SyncClusterVersion(p)
 	if err != nil {
 		return fmt.Errorf("failed to sync cluster version: %v", err)
 	}
@@ -176,9 +176,9 @@ func (r *ReconcilePravegaCluster) run(p *pravegav1beta1.PravegaCluster) (err err
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
+func (r *ReconcilePravegaCluster) ReconcileFinalizers(p *pravegav1beta1.PravegaCluster) (err error) {
 	currentPravegaCluster := &pravegav1beta1.PravegaCluster{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
 	if err != nil {
 		return fmt.Errorf("failed to get pravega cluster (%s): %v", p.Name, err)
 	}
@@ -186,21 +186,21 @@ func (r *ReconcilePravegaCluster) reconcileFinalizers(p *pravegav1beta1.PravegaC
 	if p.DeletionTimestamp.IsZero() && !config.DisableFinalizer {
 		if !util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = append(p.ObjectMeta.Finalizers, util.ZkFinalizer)
-			if err = r.client.Update(context.TODO(), p); err != nil {
+			if err = r.Client.Update(context.TODO(), p); err != nil {
 				return fmt.Errorf("failed to add the finalizer (%s): %v", p.Name, err)
 			}
 		}
 	} else {
 		if util.ContainsString(p.ObjectMeta.Finalizers, util.ZkFinalizer) {
 			p.ObjectMeta.Finalizers = util.RemoveString(p.ObjectMeta.Finalizers, util.ZkFinalizer)
-			if err = r.client.Update(context.TODO(), p); err != nil {
+			if err = r.Client.Update(context.TODO(), p); err != nil {
 				return fmt.Errorf("failed to update Pravega object (%s): %v", p.Name, err)
 			}
-			if err = r.cleanUpZookeeperMeta(p); err != nil {
+			if err = r.CleanUpZookeeperMeta(p); err != nil {
 				// emit an event for zk metadata cleanup failure
 				message := fmt.Sprintf("failed to cleanup pravega metadata from zookeeper (znode path: /pravega/%s): %v", p.Name, err)
 				event := p.NewApplicationEvent("ZKMETA_CLEANUP_ERROR", "ZK Metadata Cleanup Failed", message, "Error")
-				pubErr := r.client.Create(context.TODO(), event)
+				pubErr := r.Client.Create(context.TODO(), event)
 				if pubErr != nil {
 					log.Printf("Error publishing zk metadata cleanup failure event to k8s. %v", pubErr)
 				}
@@ -231,27 +231,27 @@ func (r *ReconcilePravegaCluster) reconcileControllerConfigMap(p *pravegav1beta1
 
 	currentConfigMap := &corev1.ConfigMap{}
 	configMap := pravega.MakeControllerConfigMap(p)
-	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
+	controllerutil.SetControllerReference(p, configMap, r.Scheme)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			err = r.client.Create(context.TODO(), configMap)
+			err = r.Client.Create(context.TODO(), configMap)
 			if err != nil && !errors.IsAlreadyExists(err) {
 				return err
 			}
 		}
 	} else {
 		currentConfigMap := &corev1.ConfigMap{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
+		err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForController(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
 			configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
-			err := r.client.Update(context.TODO(), configMap)
+			err := r.Client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
 			}
-			//restarting controller pods
-			if !r.checkVersionUpgradeTriggered(p) {
+			// restarting controller pods
+			if !r.CheckVersionUpgradeTriggered(p) {
 				err = r.restartDeploymentPod(p)
 				if err != nil {
 					return err
@@ -266,28 +266,28 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreConfigMap(p *pravegav1bet
 	currentConfigMap := &corev1.ConfigMap{}
 	segmentStorePortUpdated := false
 	configMap := pravega.MakeSegmentstoreConfigMap(p)
-	controllerutil.SetControllerReference(p, configMap, r.scheme)
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
+	controllerutil.SetControllerReference(p, configMap, r.Scheme)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			err = r.client.Create(context.TODO(), configMap)
+			err = r.Client.Create(context.TODO(), configMap)
 			if err != nil && !errors.IsAlreadyExists(err) {
 				return err
 			}
 		}
 	} else {
 		currentConfigMap := &corev1.ConfigMap{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
+		err = r.Client.Get(context.TODO(), types.NamespacedName{Name: p.ConfigMapNameForSegmentstore(), Namespace: p.Namespace}, currentConfigMap)
 		eq := util.CompareConfigMap(currentConfigMap, configMap)
 		if !eq {
 			configMap.ObjectMeta.ResourceVersion = currentConfigMap.ObjectMeta.ResourceVersion
 			segmentStorePortUpdated = r.checkSegmentStorePortUpdated(p, currentConfigMap)
-			err := r.client.Update(context.TODO(), configMap)
+			err := r.Client.Update(context.TODO(), configMap)
 			if err != nil {
 				return err
 			}
-			//restarting sts pods
-			if !r.checkVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
+			// restarting sts pods
+			if !r.CheckVersionUpgradeTriggered(p) && !segmentStorePortUpdated {
 				err = r.restartStsPod(p)
 
 				if err != nil {
@@ -315,9 +315,9 @@ func (r *ReconcilePravegaCluster) checkSegmentStorePortUpdated(p *pravegav1beta1
 	return false
 }
 
-func (r *ReconcilePravegaCluster) checkVersionUpgradeTriggered(p *pravegav1beta1.PravegaCluster) bool {
+func (r *ReconcilePravegaCluster) CheckVersionUpgradeTriggered(p *pravegav1beta1.PravegaCluster) bool {
 	currentPravegaCluster := &pravegav1beta1.PravegaCluster{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: p.Name, Namespace: p.Namespace}, currentPravegaCluster)
 	if err == nil && currentPravegaCluster.Status.CurrentVersion != p.Spec.Version {
 		return true
 	}
@@ -343,43 +343,43 @@ func (r *ReconcilePravegaCluster) reconcilePdb(p *pravegav1beta1.PravegaCluster)
 func (r *ReconcilePravegaCluster) reconcileControllerPdb(p *pravegav1beta1.PravegaCluster) (err error) {
 
 	pdb := pravega.MakeControllerPodDisruptionBudget(p)
-	controllerutil.SetControllerReference(p, pdb, r.scheme)
-	err = r.client.Create(context.TODO(), pdb)
+	controllerutil.SetControllerReference(p, pdb, r.Scheme)
+	err = r.Client.Create(context.TODO(), pdb)
 
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	currentPdb := &policyv1beta1.PodDisruptionBudget{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
 	if err != nil {
 		return err
 	}
-	return r.updatePdb(currentPdb, pdb)
+	return r.UpdatePdb(currentPdb, pdb)
 }
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStorePdb(p *pravegav1beta1.PravegaCluster) (err error) {
 	pdb := pravega.MakeSegmentstorePodDisruptionBudget(p)
-	controllerutil.SetControllerReference(p, pdb, r.scheme)
-	err = r.client.Create(context.TODO(), pdb)
+	controllerutil.SetControllerReference(p, pdb, r.Scheme)
+	err = r.Client.Create(context.TODO(), pdb)
 
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
 
 	currentPdb := &policyv1beta1.PodDisruptionBudget{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
 	if err != nil {
 		return err
 	}
-	return r.updatePdb(currentPdb, pdb)
+	return r.UpdatePdb(currentPdb, pdb)
 }
 
-func (r *ReconcilePravegaCluster) updatePdb(currentPdb *policyv1beta1.PodDisruptionBudget, newPdb *policyv1beta1.PodDisruptionBudget) (err error) {
+func (r *ReconcilePravegaCluster) UpdatePdb(currentPdb *policyv1beta1.PodDisruptionBudget, newPdb *policyv1beta1.PodDisruptionBudget) (err error) {
 
 	if !reflect.DeepEqual(currentPdb.Spec.MaxUnavailable, newPdb.Spec.MaxUnavailable) {
 		currentPdb.Spec.MaxUnavailable = newPdb.Spec.MaxUnavailable
-		err = r.client.Update(context.TODO(), currentPdb)
+		err = r.Client.Update(context.TODO(), currentPdb)
 		if err != nil {
 			return fmt.Errorf("failed to update pdb (%s): %v", currentPdb.Name, err)
 		}
@@ -406,8 +406,8 @@ func (r *ReconcilePravegaCluster) reconcileService(p *pravegav1beta1.PravegaClus
 func (r *ReconcilePravegaCluster) reconcileControllerService(p *pravegav1beta1.PravegaCluster) (err error) {
 
 	service := pravega.MakeControllerService(p)
-	controllerutil.SetControllerReference(p, service, r.scheme)
-	err = r.client.Create(context.TODO(), service)
+	controllerutil.SetControllerReference(p, service, r.Scheme)
+	err = r.Client.Create(context.TODO(), service)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
@@ -417,13 +417,13 @@ func (r *ReconcilePravegaCluster) reconcileControllerService(p *pravegav1beta1.P
 
 func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1.PravegaCluster) (err error) {
 	headlessService := pravega.MakeSegmentStoreHeadlessService(p)
-	controllerutil.SetControllerReference(p, headlessService, r.scheme)
+	controllerutil.SetControllerReference(p, headlessService, r.Scheme)
 	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: headlessService.Name, Namespace: p.Namespace}, currentService)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: headlessService.Name, Namespace: p.Namespace}, currentService)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
-			err = r.client.Create(context.TODO(), headlessService)
+			err = r.Client.Create(context.TODO(), headlessService)
 			if err != nil && !errors.IsAlreadyExists(err) {
 				return err
 			}
@@ -433,7 +433,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 		if currentService.Spec.Ports[0].Port != headlessService.Spec.Ports[0].Port {
 			currentService.Spec.Ports[0].Port = headlessService.Spec.Ports[0].Port
 			currentService.Spec.Ports[0].TargetPort = headlessService.Spec.Ports[0].TargetPort
-			err = r.client.Update(context.TODO(), currentService)
+			err = r.Client.Update(context.TODO(), currentService)
 			if err != nil {
 				return fmt.Errorf("failed to update headless service port (%s): %v", currentService.Name, err)
 			}
@@ -444,11 +444,11 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 		currentservice := &corev1.Service{}
 		services := pravega.MakeSegmentStoreExternalServices(p)
 		for _, service := range services {
-			controllerutil.SetControllerReference(p, service, r.scheme)
-			err := r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, currentservice)
+			controllerutil.SetControllerReference(p, service, r.Scheme)
+			err := r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, currentservice)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					err = r.client.Create(context.TODO(), service)
+					err = r.Client.Create(context.TODO(), service)
 					if err != nil && !errors.IsAlreadyExists(err) {
 						return err
 					}
@@ -457,7 +457,7 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 				if service.Spec.Ports[0].Port != currentservice.Spec.Ports[0].Port {
 					currentservice.Spec.Ports[0].Port = service.Spec.Ports[0].Port
 					currentservice.Spec.Ports[0].TargetPort = service.Spec.Ports[0].TargetPort
-					err = r.client.Update(context.TODO(), currentservice)
+					err = r.Client.Update(context.TODO(), currentservice)
 					if err != nil {
 						return fmt.Errorf("failed to update external service port (%s): %v", currentservice.Name, err)
 					}
@@ -465,39 +465,39 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 
 				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
 				if !eq {
-					err := r.client.Delete(context.TODO(), currentservice)
+					err := r.Client.Delete(context.TODO(), currentservice)
 					if err != nil {
 						return err
 					}
-					err = r.client.Create(context.TODO(), service)
+					err = r.Client.Create(context.TODO(), service)
 					if err != nil && !errors.IsAlreadyExists(err) {
 						return err
 					}
 					pod := &corev1.Pod{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+					err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 					if err != nil {
 						return err
 					}
-					err = r.client.Delete(context.TODO(), pod)
+					err = r.Client.Delete(context.TODO(), pod)
 					if err != nil {
 						return err
 					}
 					start := time.Now()
-					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+					err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 					for err == nil && util.IsPodReady(pod) {
 						if time.Since(start) > 10*time.Minute {
 							return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", pod.Name)
 						}
-						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+						err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 						log.Printf("waiting for %v pod to be deleted", pod.Name)
 					}
 					start = time.Now()
-					err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+					err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 					for err == nil && !util.IsPodReady(pod) {
 						if time.Since(start) > 10*time.Minute {
 							return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", pod.Name)
 						}
-						err = r.client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
+						err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, pod)
 						log.Printf("waiting for %v pod to be in ready state", pod.Name)
 					}
 				}
@@ -508,8 +508,8 @@ func (r *ReconcilePravegaCluster) reconcileSegmentStoreService(p *pravegav1beta1
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) cleanUpZookeeperMeta(p *pravegav1beta1.PravegaCluster) (err error) {
-	if err = p.WaitForClusterToTerminate(r.client); err != nil {
+func (r *ReconcilePravegaCluster) CleanUpZookeeperMeta(p *pravegav1beta1.PravegaCluster) (err error) {
+	if err = p.WaitForClusterToTerminate(r.Client); err != nil {
 		return fmt.Errorf("failed to wait for cluster pods termination (%s): %v", p.Name, err)
 	}
 
@@ -539,25 +539,26 @@ func (r *ReconcilePravegaCluster) deployCluster(p *pravegav1beta1.PravegaCluster
 		if !util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 			newsts := &appsv1.StatefulSet{}
 			name := p.StatefulSetNameForSegmentstoreAbove07()
-			err = r.client.Get(context.TODO(),
+			err = r.Client.Get(context.TODO(),
 				types.NamespacedName{Name: name, Namespace: p.Namespace}, newsts)
 			if err != nil {
 				return fmt.Errorf("failed to get stateful-set (%s): %v", newsts.Name, err)
 			}
 			if newsts.Status.ReadyReplicas > 0 {
-				return r.deleteOldSegmentStoreIfExists(p)
+				return r.DeleteOldSegmentStoreIfExists(p)
 			}
 		}
 	}
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) error {
+// DeleteSTS removes statefulsets for versions under 0.7
+func (r *ReconcilePravegaCluster) DeleteSTS(p *pravegav1beta1.PravegaCluster) error {
 	// We should be here only in case of Pravega CR version migration
 	// to version 0.5.0 from version 0.4.x
 	sts := &appsv1.StatefulSet{}
 	stsName := p.StatefulSetNameForSegmentstoreBelow07()
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: stsName, Namespace: p.Namespace}, sts)
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: stsName, Namespace: p.Namespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// nothing to do since old STS was not found
@@ -566,7 +567,7 @@ func (r *ReconcilePravegaCluster) deleteSTS(p *pravegav1beta1.PravegaCluster) er
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
 	// delete sts, if found
-	r.client.Delete(context.TODO(), sts)
+	r.Client.Delete(context.TODO(), sts)
 	log.Printf("Deleted old SegmentStore STS %s", sts.Name)
 	return nil
 }
@@ -576,7 +577,7 @@ func (r *ReconcilePravegaCluster) deletePVC(p *pravegav1beta1.PravegaCluster) er
 	for i := 0; i < numPvcs; i++ {
 		pvcName := "cache-" + p.StatefulSetNameForSegmentstoreBelow07() + "-" + strconv.Itoa(i)
 		pvc := &corev1.PersistentVolumeClaim{}
-		err := r.client.Get(context.TODO(),
+		err := r.Client.Get(context.TODO(),
 			types.NamespacedName{Name: pvcName, Namespace: p.Namespace}, pvc)
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -591,7 +592,7 @@ func (r *ReconcilePravegaCluster) deletePVC(p *pravegav1beta1.PravegaCluster) er
 				Namespace: p.Namespace,
 			},
 		}
-		err = r.client.Delete(context.TODO(), pvcDelete)
+		err = r.Client.Delete(context.TODO(), pvcDelete)
 		if err != nil {
 			return err
 		}
@@ -599,8 +600,8 @@ func (r *ReconcilePravegaCluster) deletePVC(p *pravegav1beta1.PravegaCluster) er
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta1.PravegaCluster) error {
-	err := r.deleteSTS(p)
+func (r *ReconcilePravegaCluster) DeleteOldSegmentStoreIfExists(p *pravegav1beta1.PravegaCluster) error {
+	err := r.DeleteSTS(p)
 	if err != nil {
 		return err
 	}
@@ -613,7 +614,7 @@ func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta
 		for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 			extService := &corev1.Service{}
 			svcName := p.ServiceNameForSegmentStoreBelow07(i)
-			err := r.client.Get(context.TODO(), types.NamespacedName{Name: svcName, Namespace: p.Namespace}, extService)
+			err := r.Client.Get(context.TODO(), types.NamespacedName{Name: svcName, Namespace: p.Namespace}, extService)
 			if err != nil {
 				if errors.IsNotFound(err) {
 					// nothing to do since old STS was not found
@@ -621,7 +622,7 @@ func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta
 				}
 				return fmt.Errorf("failed to get external service (%s): %v", svcName, err)
 			}
-			r.client.Delete(context.TODO(), extService)
+			r.Client.Delete(context.TODO(), extService)
 			log.Printf("Deleted old SegmentStore external service %s", extService)
 		}
 	}
@@ -631,22 +632,22 @@ func (r *ReconcilePravegaCluster) deleteOldSegmentStoreIfExists(p *pravegav1beta
 func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaCluster) (err error) {
 
 	deployment := pravega.MakeControllerDeployment(p)
-	controllerutil.SetControllerReference(p, deployment, r.scheme)
-	err = r.client.Create(context.TODO(), deployment)
+	controllerutil.SetControllerReference(p, deployment, r.Scheme)
+	err = r.Client.Create(context.TODO(), deployment)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	} else if errors.IsAlreadyExists(err) {
 		foundDeploy := &appsv1.Deployment{}
 		name := p.DeploymentNameForController()
-		err := r.client.Get(context.TODO(),
+		err := r.Client.Get(context.TODO(),
 			types.NamespacedName{Name: name, Namespace: p.Namespace}, foundDeploy)
 		if err != nil {
 			return err
 		}
 
-		if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
+		if !r.CheckVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
 			foundDeploy.Spec.Template = deployment.Spec.Template
-			err = r.client.Update(context.TODO(), foundDeploy)
+			err = r.Client.Update(context.TODO(), foundDeploy)
 			if err != nil {
 				return fmt.Errorf("failed to update deployment set: %v", err)
 			}
@@ -658,30 +659,30 @@ func (r *ReconcilePravegaCluster) deployController(p *pravegav1beta1.PravegaClus
 
 func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCluster) (err error) {
 	statefulSet := pravega.MakeSegmentStoreStatefulSet(p)
-	controllerutil.SetControllerReference(p, statefulSet, r.scheme)
+	controllerutil.SetControllerReference(p, statefulSet, r.Scheme)
 	if statefulSet.Spec.VolumeClaimTemplates != nil {
 		for i := range statefulSet.Spec.VolumeClaimTemplates {
-			controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.scheme)
+			controllerutil.SetControllerReference(p, &statefulSet.Spec.VolumeClaimTemplates[i], r.Scheme)
 		}
 	}
 
-	err = r.client.Create(context.TODO(), statefulSet)
+	err = r.Client.Create(context.TODO(), statefulSet)
 	if err != nil {
 		if !errors.IsAlreadyExists(err) {
 			return err
 		} else {
 			sts := &appsv1.StatefulSet{}
 			name := p.StatefulSetNameForSegmentstore()
-			err := r.client.Get(context.TODO(),
+			err := r.Client.Get(context.TODO(),
 				types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 			if err != nil {
 				return err
 			}
 
-			if !r.checkVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
+			if !r.CheckVersionUpgradeTriggered(p) && !r.isRollbackTriggered(p) {
 				originalsts := sts.DeepCopy()
 				sts.Spec.Template = statefulSet.Spec.Template
-				err = r.client.Update(context.TODO(), sts)
+				err = r.Client.Update(context.TODO(), sts)
 				if err != nil {
 					return fmt.Errorf("failed to update stateful set: %v", err)
 				}
@@ -697,7 +698,7 @@ func (r *ReconcilePravegaCluster) deploySegmentStore(p *pravegav1beta1.PravegaCl
 			owRefs := sts.GetOwnerReferences()
 			if hasOldVersionOwnerReference(owRefs) {
 				log.Printf("Deleting SSS STS as it has old version owner ref.")
-				err = r.client.Delete(context.TODO(), sts)
+				err = r.Client.Delete(context.TODO(), sts)
 				if err != nil {
 					return err
 				}
@@ -719,7 +720,7 @@ func hasOldVersionOwnerReference(ownerreference []metav1.OwnerReference) bool {
 func (r *ReconcilePravegaCluster) restartStsPod(p *pravegav1beta1.PravegaCluster) error {
 
 	currentSts := &appsv1.StatefulSet{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstore(), Namespace: p.Namespace}, currentSts)
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: p.StatefulSetNameForSegmentstore(), Namespace: p.Namespace}, currentSts)
 	if err != nil {
 		return err
 	}
@@ -734,32 +735,32 @@ func (r *ReconcilePravegaCluster) restartStsPod(p *pravegav1beta1.PravegaCluster
 		Namespace:     currentSts.Namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), podList, podlistOps)
+	err = r.Client.List(context.TODO(), podList, podlistOps)
 	if err != nil {
 		return err
 	}
 
 	for _, podItem := range podList.Items {
-		err := r.client.Delete(context.TODO(), &podItem)
+		err := r.Client.Delete(context.TODO(), &podItem)
 		if err != nil {
 			return err
 		} else {
 			start := time.Now()
 			pod := &corev1.Pod{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for util.IsPodReady(pod) {
 				if time.Since(start) > 10*time.Minute {
 					return fmt.Errorf("failed to delete Segmentstore pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
 				}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			}
 			start = time.Now()
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for !util.IsPodReady(pod) {
 				if time.Since(start) > 10*time.Minute {
 					return fmt.Errorf("failed to get Segmentstore pod (%s) as ready for 10 mins ", podItem.ObjectMeta.Name)
 				}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			}
 		}
 	}
@@ -769,7 +770,7 @@ func (r *ReconcilePravegaCluster) restartStsPod(p *pravegav1beta1.PravegaCluster
 func (r *ReconcilePravegaCluster) restartDeploymentPod(p *pravegav1beta1.PravegaCluster) error {
 
 	currentDeployment := &appsv1.Deployment{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: p.DeploymentNameForController(), Namespace: p.Namespace}, currentDeployment)
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: p.DeploymentNameForController(), Namespace: p.Namespace}, currentDeployment)
 	if err != nil {
 		return err
 	}
@@ -784,28 +785,28 @@ func (r *ReconcilePravegaCluster) restartDeploymentPod(p *pravegav1beta1.Pravega
 		Namespace:     currentDeployment.Namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), podList, podlistOps)
+	err = r.Client.List(context.TODO(), podList, podlistOps)
 	if err != nil {
 		return err
 	}
 
 	for _, podItem := range podList.Items {
-		err := r.client.Delete(context.TODO(), &podItem)
+		err := r.Client.Delete(context.TODO(), &podItem)
 		if err != nil {
 			return err
 		} else {
 			start := time.Now()
 			pod := &corev1.Pod{}
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+			err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			for util.IsPodReady(pod) {
 				if time.Since(start) > 10*time.Minute {
 					return fmt.Errorf("failed to delete controller pod (%s) for 10 mins ", podItem.ObjectMeta.Name)
 				}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: podItem.ObjectMeta.Name, Namespace: podItem.ObjectMeta.Namespace}, pod)
 			}
 			deploy := &appsv1.Deployment{}
 			name := p.DeploymentNameForController()
-			err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+			err = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
 			if err != nil {
 				return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 			}
@@ -814,7 +815,7 @@ func (r *ReconcilePravegaCluster) restartDeploymentPod(p *pravegav1beta1.Pravega
 				if time.Since(start) > 10*time.Minute {
 					return fmt.Errorf("failed to make controller pod ready for 10 mins ")
 				}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+				err = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
 				if err != nil {
 					return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 				}
@@ -833,7 +834,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaClust
 		}
 	}
 
-	err = r.syncControllerSize(p)
+	err = r.SyncControllerSize(p)
 	if err != nil {
 		return err
 	}
@@ -844,7 +845,7 @@ func (r *ReconcilePravegaCluster) syncClusterSize(p *pravegav1beta1.PravegaClust
 func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1beta1.PravegaCluster) (err error) {
 	sts := &appsv1.StatefulSet{}
 	name := p.StatefulSetNameForSegmentstore()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, sts)
 	if err != nil {
 		return fmt.Errorf("failed to get stateful-set (%s): %v", sts.Name, err)
 	}
@@ -855,7 +856,7 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1beta1.Pravega
 			scaleDown = *sts.Spec.Replicas - p.Spec.Pravega.SegmentStoreReplicas
 		}
 		sts.Spec.Replicas = &(p.Spec.Pravega.SegmentStoreReplicas)
-		err = r.client.Update(context.TODO(), sts)
+		err = r.Client.Update(context.TODO(), sts)
 		if err != nil {
 			return fmt.Errorf("failed to update size of stateful-set (%s): %v", sts.Name, err)
 		}
@@ -878,17 +879,17 @@ func (r *ReconcilePravegaCluster) syncSegmentStoreSize(p *pravegav1beta1.Pravega
 	return nil
 }
 
-func (r *ReconcilePravegaCluster) syncControllerSize(p *pravegav1beta1.PravegaCluster) (err error) {
+func (r *ReconcilePravegaCluster) SyncControllerSize(p *pravegav1beta1.PravegaCluster) (err error) {
 	deploy := &appsv1.Deployment{}
 	name := p.DeploymentNameForController()
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: p.Namespace}, deploy)
 	if err != nil {
 		return fmt.Errorf("failed to get deployment (%s): %v", deploy.Name, err)
 	}
 
 	if *deploy.Spec.Replicas != p.Spec.Pravega.ControllerReplicas {
 		deploy.Spec.Replicas = &(p.Spec.Pravega.ControllerReplicas)
-		err = r.client.Update(context.TODO(), deploy)
+		err = r.Client.Update(context.TODO(), deploy)
 		if err != nil {
 			return fmt.Errorf("failed to update size of deployment (%s): %v", deploy.Name, err)
 		}
@@ -909,7 +910,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 		Namespace:     sts.Namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), pvcList, pvclistOps)
+	err = r.Client.List(context.TODO(), pvcList, pvclistOps)
 	if err != nil {
 		return err
 	}
@@ -923,7 +924,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetPvc(sts *appsv1.StatefulSet) er
 				},
 			}
 
-			err = r.client.Delete(context.TODO(), pvcDelete)
+			err = r.Client.Delete(context.TODO(), pvcDelete)
 			if err != nil {
 				return fmt.Errorf("failed to delete pvc: %v", err)
 			}
@@ -945,7 +946,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetExternalServices(sts *appsv1.St
 		Namespace:     sts.Namespace,
 		LabelSelector: selector,
 	}
-	err = r.client.List(context.TODO(), serviceList, servicelistOps)
+	err = r.Client.List(context.TODO(), serviceList, servicelistOps)
 	if err != nil {
 		return err
 	}
@@ -959,7 +960,7 @@ func (r *ReconcilePravegaCluster) syncStatefulSetExternalServices(sts *appsv1.St
 				},
 			}
 
-			err = r.client.Delete(context.TODO(), svcDelete)
+			err = r.Client.Delete(context.TODO(), svcDelete)
 			if err != nil {
 				return fmt.Errorf("failed to delete svc: %v", err)
 			}
@@ -978,7 +979,7 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1beta1.Prave
 		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()),
 	}
 	podList := &corev1.PodList{}
-	err := r.client.List(context.TODO(), podList, listOps)
+	err := r.Client.List(context.TODO(), podList, listOps)
 	if err != nil {
 		return err
 	}
@@ -1008,7 +1009,7 @@ func (r *ReconcilePravegaCluster) reconcileClusterStatus(p *pravegav1beta1.Prave
 	p.Status.Members.Ready = readyMembers
 	p.Status.Members.Unready = unreadyMembers
 
-	err = r.client.Status().Update(context.TODO(), p)
+	err = r.Client.Status().Update(context.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to update cluster status: %v", err)
 	}
@@ -1020,8 +1021,8 @@ func (r *ReconcilePravegaCluster) rollbackFailedUpgrade(p *pravegav1beta1.Praveg
 		// start rollback to previous version
 		previousVersion := p.Status.GetLastVersion()
 		log.Printf("Rolling back to last cluster version  %v", previousVersion)
-		//Rollback cluster to previous version
-		return r.rollbackClusterVersion(p, previousVersion)
+		// Rollback cluster to previous version
+		return r.RollbackClusterVersion(p, previousVersion)
 	}
 	return nil
 }
@@ -1033,7 +1034,7 @@ func (r *ReconcilePravegaCluster) isRollbackTriggered(p *pravegav1beta1.PravegaC
 	return false
 }
 
-//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
+// this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
 func (r *ReconcilePravegaCluster) IsClusterUpgradingTo07(p *pravegav1beta1.PravegaCluster) bool {
 	if !util.IsVersionBelow(p.Spec.Version, "0.7.0") && util.IsVersionBelow(p.Status.CurrentVersion, "0.7.0") {
 		return true

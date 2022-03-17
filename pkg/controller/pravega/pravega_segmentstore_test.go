@@ -13,7 +13,6 @@ package pravega_test
 import (
 	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/pravega"
@@ -22,18 +21,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-func TestSegmentStore(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pravega")
-}
-
 var _ = Describe("PravegaSegmentstore", func() {
 
-	var _ = Describe("SegmentStore Test", func() {
+	Context("SegmentStore Test", func() {
 		var (
 			p *v1beta1.PravegaCluster
 		)

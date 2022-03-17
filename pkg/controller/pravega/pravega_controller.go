@@ -168,7 +168,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				VolumeMounts: volumeMounts,
 				Resources:    *p.Spec.Pravega.ControllerResources,
 				ReadinessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						Exec: &corev1.ExecAction{
 							Command: util.ControllerReadinessCheck(p.Spec.Version, 10080, p.Spec.Authentication.IsEnabled()),
 						},
@@ -180,7 +180,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 					PeriodSeconds:       p.Spec.Pravega.ControllerProbes.ReadinessProbe.PeriodSeconds,
 				},
 				LivenessProbe: &corev1.Probe{
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						Exec: &corev1.ExecAction{
 							Command: util.HealthcheckCommand(p.Spec.Version, 9090, 10080),
 						},
@@ -211,7 +211,7 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 		podSpec.InitContainers = append(podSpec.InitContainers, p.Spec.Pravega.ControllerInitContainers...)
 	}
 	if p.Spec.Pravega.AuthImplementations != nil {
-		authContainers := []corev1.Container{}
+		var authContainers []corev1.Container
 		var mountPath string
 		if p.Spec.Pravega.AuthImplementations.MountPath != "" {
 			mountPath = p.Spec.Pravega.AuthImplementations.MountPath
@@ -258,28 +258,25 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 
 func configureControllerTLSSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.TLS.IsSecureController() {
-		addSecretVolumeWithMount(podSpec, p, tlsVolumeName, p.Spec.TLS.Static.ControllerSecret, tlsVolumeName, tlsMountDir)
+		addSecretVolumeWithMount(podSpec, tlsVolumeName, p.Spec.TLS.Static.ControllerSecret, tlsVolumeName, tlsMountDir)
 	}
 }
 
 func configureAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.PasswordAuthSecret != "" {
-		addSecretVolumeWithMount(podSpec, p, authVolumeName, p.Spec.Authentication.PasswordAuthSecret,
-			authVolumeName, authMountDir)
+		addSecretVolumeWithMount(podSpec, authVolumeName, p.Spec.Authentication.PasswordAuthSecret, authVolumeName, authMountDir)
 	}
 }
 
 func configureControllerAuthSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Authentication.IsEnabled() && p.Spec.Authentication.ControllerTokenSecret != "" {
-		addSecretVolumeWithMount(podSpec, p, controllerAuthVolumeName, p.Spec.Authentication.ControllerTokenSecret,
-			controllerAuthVolumeName, controllerAuthMountDir)
+		addSecretVolumeWithMount(podSpec, controllerAuthVolumeName, p.Spec.Authentication.ControllerTokenSecret, controllerAuthVolumeName, controllerAuthMountDir)
 	}
 }
 
 func configureControllerInfluxDBSecrets(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 	if p.Spec.Pravega.InfluxDBSecret.Secret != "" {
-		addSecretVolumeWithMount(podSpec, p, influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.Secret,
-			influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.MountPath)
+		addSecretVolumeWithMount(podSpec, influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.Secret, influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.MountPath)
 
 		podSpec.Containers[0].Env = []corev1.EnvVar{
 			{
@@ -290,9 +287,7 @@ func configureControllerInfluxDBSecrets(podSpec *corev1.PodSpec, p *api.PravegaC
 	}
 }
 
-func addSecretVolumeWithMount(podSpec *corev1.PodSpec, p *api.PravegaCluster,
-	volumeName string, secretName string,
-	mountName string, mountDir string) {
+func addSecretVolumeWithMount(podSpec *corev1.PodSpec, volumeName string, secretName string, mountName string, mountDir string) {
 	vol := corev1.Volume{
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{
