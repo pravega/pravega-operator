@@ -1268,12 +1268,10 @@ func (p *PravegaCluster) ValidateAuthenticationSettings() error {
 			return fmt.Errorf("controller and segmentstore token signing key should have same value")
 		}
 	} else {
-		newkey, ok := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
-		oldkey := ""
-		if !ok {
-			oldkey, ok = p.Spec.Pravega.Options["autoScale.authEnabled"]
-		}
-		if ok && (oldkey == "true" || newkey == "true") {
+		newkey, _ := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
+		oldkey, _ := p.Spec.Pravega.Options["autoScale.authEnabled"]
+
+		if oldkey == "true" || newkey == "true" {
 			return fmt.Errorf("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true")
 		}
 	}
