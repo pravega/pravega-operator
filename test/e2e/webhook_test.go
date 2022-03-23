@@ -295,18 +295,29 @@ func testWebhook(t *testing.T) {
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "The field autoScale.controller.connect.security.auth.enable should be present")
 	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable field is not present"))
+
 	authsettingsValidation.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "false"
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "The value for autoScale.controller.connect.security.auth.enable should not be false")
+	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable should be set to true"))
+
+	authsettingsValidation.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "dummy"
+	authsettingsValidation.Spec.Pravega.Options["autoScale.authEnabled"] = "dummy"
+	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
+	g.Expect(err).To(HaveOccurred(), "The value for autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be incorrect")
 	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true"))
+
+	authsettingsValidation.Spec.Pravega.Options["autoScale.authEnabled"] = ""
 	authsettingsValidation.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "Controller token sigining key should be present")
 	g.Expect(err.Error()).To(ContainSubstring("controller.security.auth.delegationToken.signingKey.basis field is not present"))
+
 	authsettingsValidation.Spec.Pravega.Options["controller.security.auth.delegationToken.signingKey.basis"] = "secret"
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "Segmentstore token sigining key should be present")
 	g.Expect(err.Error()).To(ContainSubstring("autoScale.security.auth.token.signingKey.basis field is not present"))
+
 	authsettingsValidation.Spec.Pravega.Options["autoScale.security.auth.token.signingKey.basis"] = "secret1"
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "Segmentstore and controller token sigining key should be same ")

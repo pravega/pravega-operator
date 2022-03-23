@@ -1229,14 +1229,23 @@ func (p *PravegaCluster) validateConfigMap() error {
 // when authentication is enabled/disabled.
 func (p *PravegaCluster) ValidateAuthenticationSettings() error {
 	if p.Spec.Authentication.Enabled == true {
-		newkey, ok := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
-		oldkey := ""
-		if !ok {
-			oldkey, ok = p.Spec.Pravega.Options["autoScale.authEnabled"]
-		}
-		if !ok {
+		newkey, _ := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
+		oldkey, _ := p.Spec.Pravega.Options["autoScale.authEnabled"]
+
+		if newkey == "" && oldkey == "" {
 			return fmt.Errorf("autoScale.controller.connect.security.auth.enable field is not present")
-		} else if newkey == "false" || oldkey == "false" {
+		}
+		if newkey == "" {
+			if oldkey != "true" {
+				return fmt.Errorf("autoScale.authEnabled should be set to true")
+			}
+		}
+		if oldkey == "" {
+			if newkey != "true" {
+				return fmt.Errorf("autoScale.controller.connect.security.auth.enable should be set to true")
+			}
+		}
+		if newkey != "true" && oldkey != "true" {
 			return fmt.Errorf("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")
 		}
 		signingkey1, ok := p.Spec.Pravega.Options["controller.security.auth.delegationToken.signingKey.basis"]

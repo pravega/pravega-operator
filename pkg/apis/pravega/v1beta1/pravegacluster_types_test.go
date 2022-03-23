@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -137,7 +138,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "request version is not in valid format")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "request version is not in valid format")).Should(Equal(true))
 			})
 		})
 
@@ -165,7 +166,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "found version is not in valid format")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "found version is not in valid format")).Should(Equal(true))
 			})
 
 		})
@@ -180,7 +181,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "downgrading the cluster from version 0.7.2 to 0.7.0 is not supported")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "downgrading the cluster from version 0.7.2 to 0.7.0 is not supported")).Should(Equal(true))
 			})
 		})
 
@@ -209,7 +210,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "failed to process the request, cluster is upgrading")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "failed to process the request, cluster is upgrading")).Should(Equal(true))
 			})
 		})
 
@@ -226,7 +227,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "failed to process the request, rollback in progress")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "failed to process the request, rollback in progress")).Should(Equal(true))
 			})
 		})
 
@@ -240,7 +241,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "failed to process the request, cluster is in error state")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "failed to process the request, cluster is in error state")).Should(Equal(true))
 			})
 		})
 
@@ -257,7 +258,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				err = p.ValidatePravegaVersion()
 			})
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Rollback to version 0.7.0 not supported")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Rollback to version 0.7.0 not supported")).Should(Equal(true))
 			})
 		})
 
@@ -517,7 +518,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources cannot be empty")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "spec.pravega.segmentStoreResources cannot be empty")).Should(Equal(true))
 			})
 		})
 
@@ -537,7 +538,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources.limits cannot be empty")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "spec.pravega.segmentStoreResources.limits cannot be empty")).Should(Equal(true))
 			})
 		})
 
@@ -603,7 +604,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
 			})
 		})
 
@@ -650,7 +651,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.cpu")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Missing required value for field spec.pravega.segmentStoreResources.limits.cpu")).Should(Equal(true))
 			})
 		})
 
@@ -699,7 +700,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "spec.pravega.segmentStoreResources.requests.memory value must be less than or equal to spec.pravega.segmentStoreResources.limits.memory")).Should(Equal(true))
 			})
 		})
 
@@ -723,7 +724,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "spec.pravega.segmentStoreResources.requests.cpu value must be less than or equal to spec.pravega.segmentStoreResources.limits.cpu")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "spec.pravega.segmentStoreResources.requests.cpu value must be less than or equal to spec.pravega.segmentStoreResources.limits.cpu")).Should(Equal(true))
 			})
 		})
 
@@ -749,7 +750,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Missing required value for option pravegaservice.cache.size.max")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Missing required value for option pravegaservice.cache.size.max")).Should(Equal(true))
 			})
 		})
 
@@ -775,7 +776,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Missing required value for Segment Store JVM Option -Xmx")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Missing required value for Segment Store JVM Option -Xmx")).Should(Equal(true))
 			})
 		})
 
@@ -801,7 +802,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Missing required value for Segment Store JVM option -XX:MaxDirectMemorySize")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Missing required value for Segment Store JVM option -XX:MaxDirectMemorySize")).Should(Equal(true))
 			})
 		})
 
@@ -827,6 +828,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
+				log.Printf("error is %v", err)
 				Ω(strings.ContainsAny(err.Error(), "MaxDirectMemorySize along with JVM Xmx value should be less than the total available memory!")).Should(Equal(true))
 			})
 		})
@@ -900,7 +902,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Cannot convert ensemble size from string to integer")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Cannot convert ensemble size from string to integer")).Should(Equal(true))
 			})
 		})
 
@@ -915,7 +917,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Cannot convert write quorum size from string to integer")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Cannot convert write quorum size from string to integer")).Should(Equal(true))
 			})
 		})
 
@@ -930,7 +932,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "Cannot convert ack quorum size from string to integer")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "Cannot convert ack quorum size from string to integer")).Should(Equal(true))
 			})
 		})
 
@@ -947,7 +949,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size")).Should(Equal(true))
 			})
 		})
 
@@ -964,7 +966,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.ensemble.size should be greater than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
@@ -981,7 +983,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be less than or equal to the value of option bookkeeper.ensemble.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
@@ -996,7 +998,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable can be only set to \"true\" \"false\" or \"\"")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable can be only set to \"true\" \"false\" or \"\"")).Should(Equal(true))
 			})
 		})
 
@@ -1014,7 +1016,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable should be set to false if bookkeeper.ensemble.size is 1")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "bookkeeper.write.quorum.racks.minimumCount.enable should be set to false if bookkeeper.ensemble.size is 1")).Should(Equal(true))
 			})
 		})
 
@@ -1031,7 +1033,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size")).Should(Equal(true))
 			})
 		})
 
@@ -1048,7 +1050,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.write.quorum.size should be greater than or equal to the value of option bookkeeper.ack.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 
@@ -1065,7 +1067,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "The value provided for the option bookkeeper.ack.quorum.size should be less than or equal to the value of option bookkeeper.write.quorum.size (default is 3)")).Should(Equal(true))
 			})
 		})
 	})
@@ -1128,7 +1130,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true")).Should(Equal(true))
 			})
 		})
 
@@ -1144,9 +1146,41 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable should be set to true")).Should(Equal(true))
 			})
 		})
+		Context("Validating with authentication enabled from controller and disabled from segmentstore using oldkey", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.authEnabled"] = "false"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.Contains(err.Error(), "autoScale.authEnabled should be set to true")).Should(Equal(true))
+			})
+		})
+		Context("Validating with authentication enabled from controller and incorrect values in segmentstore options", func() {
+			var (
+				err error
+			)
+
+			BeforeEach(func() {
+				p.Spec.Authentication.Enabled = true
+				p.Spec.Pravega.Options["autoScale.authEnabled"] = "dummy"
+				p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "false"
+				err = p.ValidateAuthenticationSettings()
+			})
+
+			It("Should return error", func() {
+				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")).Should(Equal(true))
+			})
+		})
+
 		Context("Validating with authentication enabled from controller and not providing option in segmentstore", func() {
 			var (
 				err error
@@ -1158,7 +1192,9 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "autoScale.controller.connect.security.auth.enable field is not present")).Should(Equal(true))
+				log.Printf("error  inside is %v", err)
+				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable field is not present")).Should(Equal(true))
+
 			})
 		})
 		Context("Validating with authentication enabled from controller and not providing controller token signing key", func() {
@@ -1173,7 +1209,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "controller.security.auth.delegationToken.signingKey.basis field is not present")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "controller.security.auth.delegationToken.signingKey.basis field is not present")).Should(Equal(true))
 			})
 		})
 		Context("Validating with authentication enabled from controller and not providing segment store token signing key", func() {
@@ -1189,7 +1225,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "autoScale.security.auth.token.signingKey.basis field is not present")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "autoScale.security.auth.token.signingKey.basis field is not present")).Should(Equal(true))
 			})
 		})
 		Context("Validating with authentication enabled from controller and providing different sigining key for controller and segmentstore", func() {
@@ -1206,7 +1242,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.ContainsAny(err.Error(), "controller and segmentstore token signing key should have same value")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "controller and segmentstore token signing key should have same value")).Should(Equal(true))
 			})
 		})
 	})
