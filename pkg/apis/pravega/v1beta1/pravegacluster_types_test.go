@@ -1116,7 +1116,6 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			It("Should return nil", func() {
 				Ω(err).Should(BeNil())
 			})
-
 		})
 		Context("Validating with authentication disabled and enabling authentication from segment store", func() {
 			var (
@@ -1149,6 +1148,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable should be set to true")).Should(Equal(true))
 			})
 		})
+
 		Context("Validating with authentication enabled from controller and disabled from segmentstore using oldkey", func() {
 			var (
 				err error
@@ -1164,6 +1164,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				Ω(strings.Contains(err.Error(), "autoScale.authEnabled should be set to true")).Should(Equal(true))
 			})
 		})
+
 		Context("Validating with authentication enabled from controller and incorrect values in segmentstore options", func() {
 			var (
 				err error
@@ -1197,6 +1198,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 
 			})
 		})
+
 		Context("Validating with authentication enabled from controller and not providing controller token signing key", func() {
 			var (
 				err error
@@ -1212,6 +1214,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				Ω(strings.Contains(err.Error(), "controller.security.auth.delegationToken.signingKey.basis field is not present")).Should(Equal(true))
 			})
 		})
+
 		Context("Validating with authentication enabled from controller and not providing segment store token signing key", func() {
 			var (
 				err error
@@ -1228,6 +1231,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 				Ω(strings.Contains(err.Error(), "autoScale.security.auth.token.signingKey.basis field is not present")).Should(Equal(true))
 			})
 		})
+
 		Context("Validating with authentication enabled from controller and providing different sigining key for controller and segmentstore", func() {
 			var (
 				err error
