@@ -1247,7 +1247,7 @@ func (p *PravegaCluster) ValidateAuthenticationSettings() error {
 		}
 		if oldkey != "" && newkey != "" {
 			if newkey != "true" || oldkey != "true" {
-				return fmt.Errorf("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")
+				return fmt.Errorf("Both autoScale.controller.connect.security.auth.enable and autoScale.authEnabled should be set to true")
 			}
 		}
 		signingkey1, ok := p.Spec.Pravega.Options["controller.security.auth.delegationToken.signingKey.basis"]

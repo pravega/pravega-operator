@@ -305,7 +305,7 @@ func testWebhook(t *testing.T) {
 	authsettingsValidation.Spec.Pravega.Options["autoScale.authEnabled"] = "dummy"
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "The value for autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be incorrect")
-	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true"))
+	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable and autoScale.authEnabled should be set to true"))
 
 	authsettingsValidation.Spec.Pravega.Options["autoScale.authEnabled"] = ""
 	authsettingsValidation.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
@@ -322,5 +322,11 @@ func testWebhook(t *testing.T) {
 	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
 	g.Expect(err).To(HaveOccurred(), "Segmentstore and controller token sigining key should be same ")
 	g.Expect(err.Error()).To(ContainSubstring("controller and segmentstore token signing key should have same value"))
+
+	authsettingsValidation.Spec.Authentication.Enabled = false
+	authsettingsValidation.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"] = "true"
+	pravega, err = pravega_e2eutil.CreatePravegaCluster(t, f, ctx, authsettingsValidation)
+	g.Expect(err).To(HaveOccurred(), "The field autoScale.controller.connect.security.auth.enable should not be set")
+	g.Expect(err.Error()).To(ContainSubstring("autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should not be set to true"))
 
 }

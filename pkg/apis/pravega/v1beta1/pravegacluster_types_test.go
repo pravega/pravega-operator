@@ -18,7 +18,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
-	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -828,7 +827,6 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				log.Printf("error is %v", err)
 				Ω(strings.ContainsAny(err.Error(), "MaxDirectMemorySize along with JVM Xmx value should be less than the total available memory!")).Should(Equal(true))
 			})
 		})
@@ -1178,7 +1176,7 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable/autoScale.authEnabled should be set to true")).Should(Equal(true))
+				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable and autoScale.authEnabled should be set to true")).Should(Equal(true))
 			})
 		})
 
@@ -1193,7 +1191,6 @@ var _ = Describe("PravegaCluster Types Spec", func() {
 			})
 
 			It("Should return error", func() {
-				log.Printf("error  inside is %v", err)
 				Ω(strings.Contains(err.Error(), "autoScale.controller.connect.security.auth.enable field is not present")).Should(Equal(true))
 
 			})
