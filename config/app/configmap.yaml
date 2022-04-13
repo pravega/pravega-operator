@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: pravega-cluster-app-config
+  namespace: default
+  labels:
+    app.kubernetes.io/name: pravega-cluster
+  annotations:
+    com.dellemc.kahm.subscribed: "true"
+data:
+  eventRules:  |-
+    rules:
+      - description: srs critical events
+        matchon:
+          - field: type
+            value: Critical
+        notifiers:
+          - streamingdata-srs
+  healthChecks:  |-
+  eventRemedies:  |-
+    symptoms:
+      - symptomid: PRAVEGA-0001 
+        description: Multiple Segment Store restarts have been detected in a short period of time.
+        remedies: 
+          - Check the resource utilization of Segment Store instances (e.g., Kubernetes client, dashboard). If they are low in resources (e.g., CPU/RAM), more resources should be provided to handle the workload induced.
+          - Check that the Zookeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Check that the Bookkeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Contact your Dell EMC support representative to help you solving the issue.
+      - symptomid: PRAVEGA-0002
+        description: Multiple Segment Container failures have been detected in a short period of time.
+        remedies: 
+          - Check that the Bookkeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Contact your Dell EMC support representative to help you solving the issue.
+      - symptomid: PRAVEGA-1000
+        description: A Stream operation has failed.
+        remedies: 
+          - If you are creating a Stream, please make sure that the Stream name is formed of valid characters.
+          - Check if the problem is related with the client's security credentials when operating against Pravega.
+          - Verify that the Controller and Segment Store service instances are not restarting, which can cause Stream operations to fail. 
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1001
+        description: A Transaction operation has failed.
+        remedies: 
+          - Check if the problem is related with the client's security credentials when operating against Pravega.
+          - Verify that the Controller and Segment Store service instances are not restarting, which can cause Transaction operations to fail. 
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1002
+        description: A Pravega Controller detected a Zookeeper session expiration.
+        remedies: 
+          - Check that the Zookeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1003
+        description: A Segment Store restart has been detected.
+        remedies: 
+          - Check the resource utilization of Segment Store instances (e.g., Kubernetes client, dashboard). If they are low in resources (e.g., CPU/RAM), more resources should be provided to handle the workload induced.
+          - Check that the Zookeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Check that the Bookkeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1004
+        description: A Segment Container restart has been detected.
+        remedies: 
+          - Check that the Bookkeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1005
+        description: Writes to Bookkeeper exhibit slow performance.
+        remedies: 
+          - Check that the Bookkeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Check the metrics of the storage infrastructure used by Bookkeeper volumes (e.g., VMWare vSAN, AWS EBS) and verify that there are no performance problems.
+          - Check that Bookies are not low in resources (i.e., CPU, RAM) or that their journal/ledger volumes are not reaching their maximum capacity.
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1006
+        description: Writes to Tier 2 exhibit slow performance.
+        remedies: 
+          - Check the health of your Tier 2 storage deployment (e.g., Isilon, ECS).
+          - Make sure that network connectivity from the Nautilus cluster to the Tier 2 deployment is working fine.
+          - Check that Pravega Segment Store instances are not low in resources (e.g., CPU, RAM).
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.
+      - symptomid: PRAVEGA-1007
+        description: Controller Stream/Transaction operations exhibit slow performance.
+        remedies: 
+          - Check the health of your Tier 2 storage deployment (e.g., Isilon, ECS).
+          - Check that the Zookeeper service is working properly (e.g., all instances are up and running without recent restarts).
+          - Check that Pravega Segment Store instances are not low in resources (e.g., CPU, RAM).
+          - Contact your Dell EMC support representative to help you solving the issue if it persists.

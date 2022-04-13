@@ -12,125 +12,107 @@ package e2e
 
 import (
 	"strings"
-	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testCMUpgradeCluster(t *testing.T) {
-	g := NewGomegaWithT(t)
+var _ = Describe("Configmap changes", func() {
+	Context("Validate configmap updates", func() {
+		It("Should allow only valid updates to configmap", func() {
 
-	doCleanup := true
-	ctx := framework.NewTestCtx(t)
-	defer func() {
-		if doCleanup {
-			ctx.Cleanup()
-		}
-	}()
+			//creating the setup for running the test
+			Expect(pravega_e2eutil.InitialSetup(&t, k8sClient, testNamespace)).NotTo(HaveOccurred())
 
-	namespace, err := ctx.GetNamespace()
-	g.Expect(err).NotTo(HaveOccurred())
-	f := framework.Global
+			cluster := pravega_e2eutil.NewDefaultCluster(testNamespace)
+			cluster.WithDefaults()
+			jvmOptsController := []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"}
+			jvmOptsSegmentStore := append(cluster.Spec.Pravega.SegmentStoreJVMOptions, "-XX:MaxRAMPercentage=50.0")
+			cluster.Spec.Pravega.Options["pravegaservice.container.count"] = "3"
+			cluster.Spec.Pravega.ControllerJvmOptions = jvmOptsController
+			cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
 
-	//creating the setup for running the test
-	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
+			pravega, err := pravega_e2eutil.CreatePravegaCluster(&t, k8sClient, cluster)
+			Expect(err).NotTo(HaveOccurred())
 
-	cluster := pravega_e2eutil.NewDefaultCluster(namespace)
+			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+			podSize := 2
+			err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(&t, k8sClient, pravega, podSize)
+			Expect(err).NotTo(HaveOccurred())
+			// This is to get the latest Pravega cluster object
+			pravega, err = pravega_e2eutil.GetPravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+			// Check configmap has correct values
+			c_cm := pravega.ConfigMapNameForController()
+			ss_cm := pravega.ConfigMapNameForSegmentstore()
+			err = pravega_e2eutil.CheckConfigMapUpdated(&t, k8sClient, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
+			Expect(err).NotTo(HaveOccurred())
+			jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=12345")
+			err = pravega_e2eutil.CheckConfigMapUpdated(&t, k8sClient, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
+			Expect(err).NotTo(HaveOccurred())
 
-	cluster.WithDefaults()
-	jvmOptsController := []string{"-XX:MaxDirectMemorySize=1g", "-XX:MaxRAMPercentage=50.0"}
-	jvmOptsSegmentStore := append(cluster.Spec.Pravega.SegmentStoreJVMOptions, "-XX:MaxRAMPercentage=50.0")
-	cluster.Spec.Pravega.Options["pravegaservice.container.count"] = "3"
-	cluster.Spec.Pravega.ControllerJvmOptions = jvmOptsController
-	cluster.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
+			//updating pravega options
+			jvmOptsController = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
+			jvmOptsSegmentStore = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
+			pravega.Spec.Pravega.ControllerJvmOptions = jvmOptsController
+			pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
+			pravega.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "2"
+			pravega.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "443"
+			pravega.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
+			pravega.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
 
-	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, cluster)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.UpdatePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// A default Pravega cluster should have 2 pods:  1 controller, 1 segment store
-	podSize := 2
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
+			//checking if the upgrade of option was successful
+			err = pravega_e2eutil.WaitForCMPravegaClusterToUpgrade(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			// This is to get the latest Pravega cluster object
+			pravega, err = pravega_e2eutil.GetPravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// Check configmap has correct values
-	c_cm := pravega.ConfigMapNameForController()
-	ss_cm := pravega.ConfigMapNameForSegmentstore()
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
-	g.Expect(err).NotTo(HaveOccurred())
-	jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=12345")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
-	g.Expect(err).NotTo(HaveOccurred())
+			stsName := pravega.StatefulSetNameForSegmentstore()
+			sts, err1 := pravega_e2eutil.GetSts(&t, k8sClient, stsName)
+			Expect(err1).NotTo(HaveOccurred())
+			Expect(sts.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
 
-	//updating pravega options
-	jvmOptsController = []string{"-XX:MaxDirectMemorySize=4g", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
-	jvmOptsSegmentStore = []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m", "-XX:MaxRAMPercentage=60.0", "-XX:+UseContainerSupport"}
-	pravega.Spec.Pravega.ControllerJvmOptions = jvmOptsController
-	pravega.Spec.Pravega.SegmentStoreJVMOptions = jvmOptsSegmentStore
-	pravega.Spec.Pravega.Options["bookkeeper.ack.quorum.size"] = "2"
-	pravega.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "443"
-	pravega.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
-	pravega.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
+			deployName := pravega.DeploymentNameForController()
+			deploy, err2 := pravega_e2eutil.GetDeployment(&t, k8sClient, deployName)
+			Expect(err2).NotTo(HaveOccurred())
+			Expect(deploy.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
+			// Sleeping for 1 min before read/write data
+			time.Sleep(60 * time.Second)
 
-	//updating pravegacluster
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			// Check configmap is  Updated
+			jvmOptsController = append(jvmOptsController, "bookkeeper.ack.quorum.size=2")
+			err = pravega_e2eutil.CheckConfigMapUpdated(&t, k8sClient, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
+			Expect(err).NotTo(HaveOccurred())
+			jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=443")
+			err = pravega_e2eutil.CheckConfigMapUpdated(&t, k8sClient, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
+			Expect(err).NotTo(HaveOccurred())
 
-	//checking if the upgrade of option was successful
-	err = pravega_e2eutil.WaitForCMPravegaClusterToUpgrade(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.WriteAndReadData(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			//updating pravega option
+			pravega.Spec.Pravega.Options["pravegaservice.container.count"] = "10"
 
-	stsName := pravega.StatefulSetNameForSegmentstore()
-	sts, err1 := pravega_e2eutil.GetSts(t, f, ctx, stsName)
-	g.Expect(err1).NotTo(HaveOccurred())
-	g.Expect(sts.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
+			//updating pravegacluster
+			err = pravega_e2eutil.UpdatePravegaCluster(&t, k8sClient, pravega)
 
-	deployName := pravega.DeploymentNameForController()
-	deploy, err2 := pravega_e2eutil.GetDeployment(t, f, ctx, deployName)
-	g.Expect(err2).NotTo(HaveOccurred())
-	g.Expect(deploy.Spec.Template.Spec.ServiceAccountName).To(Equal("pravega-components"))
-	// Sleeping for 1 min before read/write data
-	time.Sleep(60 * time.Second)
+			//should give an error
+			Expect(strings.ContainsAny(err.Error(), "controller.container.count should not be changed")).To(Equal(true))
 
-	// Check configmap is  Updated
-	jvmOptsController = append(jvmOptsController, "bookkeeper.ack.quorum.size=2")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, c_cm, "JAVA_OPTS", jvmOptsController)
-	g.Expect(err).NotTo(HaveOccurred())
-	jvmOptsSegmentStore = append(jvmOptsSegmentStore, "pravegaservice.service.listener.port=443")
-	err = pravega_e2eutil.CheckConfigMapUpdated(t, f, ctx, pravega, ss_cm, "JAVA_OPTS", jvmOptsSegmentStore)
-	g.Expect(err).NotTo(HaveOccurred())
+			// Delete cluster
+			err = pravega_e2eutil.DeletePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WriteAndReadData(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.WaitForPravegaClusterToTerminate(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	//updating pravega option
-	pravega.Spec.Pravega.Options["pravegaservice.container.count"] = "10"
-
-	//updating pravegacluster
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-
-	//should give an error
-	g.Expect(strings.ContainsAny(err.Error(), "controller.container.count should not be changed")).To(Equal(true))
-
-	// Delete cluster
-	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// No need to do cleanup since the cluster CR has already been deleted
-	doCleanup = false
-
-	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-}
+		})
+	})
+})

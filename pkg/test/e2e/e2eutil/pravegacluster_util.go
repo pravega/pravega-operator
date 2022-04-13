@@ -17,18 +17,19 @@ import (
 	"testing"
 	"time"
 
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
-	bkapi "github.com/pravega/bookkeeper-operator/pkg/apis/bookkeeper/v1alpha1"
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	bkapi "github.com/pravega/bookkeeper-operator/api/v1alpha1"
+	api "github.com/pravega/pravega-operator/api/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/util"
-	zkapi "github.com/pravega/zookeeper-operator/pkg/apis/zookeeper/v1beta1"
+	zkapi "github.com/pravega/zookeeper-operator/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	log "github.com/sirupsen/logrus"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -42,17 +43,17 @@ var (
 	VerificationTimeout  = time.Minute * 5
 )
 
-func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+func InitialSetup(t *testing.T, k8client client.Client, namespace string) error {
 	b := &bkapi.BookkeeperCluster{}
 	b.WithDefaults()
 	b.Name = "bookkeeper"
 	b.Namespace = namespace
-	err := DeleteBKCluster(t, f, ctx, b)
+	err := DeleteBKCluster(t, k8client, b)
 	if err != nil {
 		return err
 	}
 
-	err = WaitForBKClusterToTerminate(t, f, ctx, b)
+	err = WaitForBKClusterToTerminate(t, k8client, b)
 	if err != nil {
 		return err
 	}
@@ -62,12 +63,12 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.Name = "zookeeper"
 	z.Namespace = namespace
 
-	err = DeleteZKCluster(t, f, ctx, z)
+	err = DeleteZKCluster(t, k8client, z)
 	if err != nil {
 		return err
 	}
 
-	err = WaitForZKClusterToTerminate(t, f, ctx, z)
+	err = WaitForZKClusterToTerminate(t, k8client, z)
 	if err != nil {
 		return err
 	}
@@ -76,12 +77,12 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	z.Spec.Persistence.VolumeReclaimPolicy = "Delete"
 	z.Spec.Replicas = 1
 	z.Spec.Image.PullPolicy = "IfNotPresent"
-	z, err = CreateZKCluster(t, f, ctx, z)
+	z, err = CreateZKCluster(t, k8client, z)
 	if err != nil {
 		return err
 	}
 
-	err = WaitForZookeeperClusterToBecomeReady(t, f, ctx, z, 1)
+	err = WaitForZookeeperClusterToBecomeReady(t, k8client, z, 1)
 	if err != nil {
 		return err
 	}
@@ -91,16 +92,16 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	b.Namespace = namespace
 	b.Spec.Image.ImageSpec.PullPolicy = "IfNotPresent"
 	b.Spec.Version = "0.8.0"
-	b, err = CreateBKCluster(t, f, ctx, b)
+	b, err = CreateBKCluster(t, k8client, b)
 	if err != nil {
 		return err
 	}
-	err = WaitForBookkeeperClusterToBecomeReady(t, f, ctx, b, 3)
+	err = WaitForBookkeeperClusterToBecomeReady(t, k8client, b, 3)
 	if err != nil {
 		return err
 	}
 	// A workaround for issue 93
-	err = RestartTier2(t, f, ctx, namespace)
+	err = RestartTier2(t, k8client, namespace)
 	if err != nil {
 		return err
 	}
@@ -109,25 +110,27 @@ func InitialSetup(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 }
 
 // CreatePravegaCluster creates a PravegaCluster CR with the desired spec
-func CreatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster: %s", p.Name)
+func CreatePravegaCluster(t *testing.T, k8client client.Client, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	log.Printf("creating pravega cluster: %s", p.Name)
 	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
-	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	//err := k8client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 	pravega := &api.PravegaCluster{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-	t.Logf("created pravega cluster: %s", pravega.Name)
+	log.Printf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
 }
 
 // CreatePravegaClusterForExternalAccess creates a PravegaCluster CR with the desired spec for ExternalAccess
-func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster with External Access: %s", p.Name)
+func CreatePravegaClusterForExternalAccess(t *testing.T, k8client client.Client, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	log.Printf("creating pravega cluster with External Access: %s", p.Name)
 	p.WithDefaults()
 	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
@@ -135,23 +138,23 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, f *framework.Framework,
 	p.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
 	p.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
 	p.Spec.Pravega.SegmentStoreReplicas = 1
-	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
 	pravega := &api.PravegaCluster{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-	t.Logf("created pravega cluster: %s", pravega.Name)
+	log.Printf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
 }
 
 // CreatePravegaClusterWithTlsAuth creates a PravegaCluster CR with the desired spec for both Auth and Tls
-func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster with Auth and Tls: %s", p.Name)
+func CreatePravegaClusterWithTlsAuth(t *testing.T, k8client client.Client, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	log.Printf("creating pravega cluster with Auth and Tls: %s", p.Name)
 	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.Authentication.Enabled = true
@@ -176,6 +179,8 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *
 		"pravegaservice.security.tls.enable":                                "true",
 		"pravegaservice.security.tls.server.certificate.location":           "/etc/secret-volume/segmentstore01.pem",
 		"pravegaservice.security.tls.server.privateKey.location":            "/etc/secret-volume/segmentstore01.key.pem",
+		"pravegaservice.security.tls.server.keyStore.location":              "/etc/secret-volume/segmentstore01.jks",
+		"pravegaservice.security.tls.truststore.location":                   "/etc/secret-volume/ca-cert",
 		"autoScale.controller.connect.security.tls.enable":                  "true",
 		"autoScale.controller.connect.security.tls.truststore.location":     "/etc/secret-volume/ca-cert",
 		"bookkeeper.connect.security.tls.enable":                            "true",
@@ -189,25 +194,25 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, f *framework.Framework, ctx *
 	}
 	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
 
-	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
 	pravega := &api.PravegaCluster{}
 
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
 
-	t.Logf("created pravega cluster: %s", pravega.Name)
+	log.Printf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
 }
 
 // CreatePravegaClusterWithTls creates a PravegaCluster CR with the desired spec for tls
-func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
-	t.Logf("creating pravega cluster with tls: %s", p.Name)
+func CreatePravegaClusterWithTls(t *testing.T, k8client client.Client, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+	log.Printf("creating pravega cluster with tls: %s", p.Name)
 	p.Spec.Pravega.Image.PullPolicy = "IfNotPresent"
 	p.Spec.BookkeeperUri = "bookkeeper-bookie-headless:3181"
 	p.Spec.TLS.Static.ControllerSecret = "controller-tls"
@@ -245,28 +250,31 @@ func CreatePravegaClusterWithTls(t *testing.T, f *framework.Framework, ctx *fram
 	}
 	p.Spec.Pravega.SegmentStoreJVMOptions = []string{"-Xmx2g", "-XX:MaxDirectMemorySize=2g"}
 	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
-	err := f.Client.Create(goctx.TODO(), p, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
 	pravega := &api.PravegaCluster{}
 
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
 
-	t.Logf("created pravega cluster: %s", pravega.Name)
+	log.Printf("created pravega cluster: %s", pravega.Name)
 	return pravega, nil
 }
 
-func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
-	}
+func DeletePods(t *testing.T, k8client client.Client, p *api.PravegaCluster, size int) error {
 
-	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
+	podList := corev1.PodList{}
+	listOptions := []client.ListOption{
+		client.InNamespace(p.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(p.LabelsForPravegaCluster())},
+	}
+	err := k8client.List(goctx.TODO(), &podList, listOptions...)
+
 	if err != nil {
 		return err
 	}
@@ -274,60 +282,60 @@ func DeletePods(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p 
 
 	for i := 0; i < size; i++ {
 		pod = &podList.Items[i]
-		t.Logf("podnameis %v", pod.Name)
-		err := f.Client.Delete(goctx.TODO(), pod)
+		log.Printf("podnameis %v", pod.Name)
+		err := k8client.Delete(goctx.TODO(), pod)
 		if err != nil {
 			return fmt.Errorf("failed to delete pod: %v", err)
 		}
-		t.Logf("deleted pravega pod: %s", pod.Name)
+		log.Printf("deleted pravega pod: %s", pod.Name)
 	}
 	return nil
 }
 
 // CreateZKCluster creates a ZookeeperCluster CR with the desired spec
-func CreateZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
-	t.Logf("creating zookeeper cluster: %s", z.Name)
-	err := f.Client.Create(goctx.TODO(), z, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+func CreateZKCluster(t *testing.T, k8client client.Client, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+	log.Printf("creating zookeeper cluster: %s", z.Name)
+	err := k8client.Create(goctx.TODO(), z)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
 	zookeeper := &zkapi.ZookeeperCluster{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-	t.Logf("created zookeeper cluster: %s", z.Name)
+	log.Printf("created zookeeper cluster: %s", z.Name)
 	return zookeeper, nil
 }
 
 // CreateBKCluster creates a BookkeeperCluster CR with the desired spec
-func CreateBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
-	t.Logf("creating bookkeeper cluster: %s", b.Name)
+func CreateBKCluster(t *testing.T, k8client client.Client, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+	log.Printf("creating bookkeeper cluster: %s", b.Name)
 	b.Spec.EnvVars = "bookkeeper-configmap"
 	b.Spec.ZookeeperUri = "zookeeper-client:2181"
 	b.Spec.Probes.LivenessProbe.PeriodSeconds = 10
 	b.Spec.Probes.ReadinessProbe.PeriodSeconds = 10
 	b.Spec.Probes.LivenessProbe.TimeoutSeconds = 15
 	b.Spec.Probes.ReadinessProbe.TimeoutSeconds = 15
-	err := f.Client.Create(goctx.TODO(), b, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), b)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
 	}
 
 	bookkeeper := &bkapi.BookkeeperCluster{}
-	err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
+	err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
-	t.Logf("created bookkeeper cluster: %s", b.Name)
+	log.Printf("created bookkeeper cluster: %s", b.Name)
 	return bookkeeper, nil
 }
 
 // DeleteBKCluster deletes the BookkeeperCluster CR specified by cluster spec
-func DeleteBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
-	t.Logf("deleting bookkeeper cluster: %s", b.Name)
-	err := f.Client.Delete(goctx.TODO(), b)
+func DeleteBKCluster(t *testing.T, k8client client.Client, b *bkapi.BookkeeperCluster) error {
+	log.Printf("deleting bookkeeper cluster: %s", b.Name)
+	err := k8client.Delete(goctx.TODO(), b)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -335,14 +343,14 @@ func DeleteBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCt
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
 
-	t.Logf("deleted bookkeeper cluster: %s", b.Name)
+	log.Printf("deleted bookkeeper cluster: %s", b.Name)
 	return nil
 }
 
 // DeletePravegaCluster deletes the PravegaCluster CR specified by cluster spec
-func DeletePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("deleting pravega cluster: %s", p.Name)
-	err := f.Client.Delete(goctx.TODO(), p)
+func DeletePravegaCluster(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("deleting pravega cluster: %s", p.Name)
+	err := k8client.Delete(goctx.TODO(), p)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
@@ -350,41 +358,41 @@ func DeletePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.T
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
 
-	t.Logf("deleted pravega cluster: %s", p.Name)
+	log.Printf("deleted pravega cluster: %s", p.Name)
 	return nil
 }
 
 // DeleteZKCluster deletes the ZookeeperCluster CR specified by cluster spec
-func DeleteZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
-	t.Logf("deleting zookeeper cluster: %s", z.Name)
-	err := f.Client.Delete(goctx.TODO(), z)
+func DeleteZKCluster(t *testing.T, k8client client.Client, z *zkapi.ZookeeperCluster) error {
+	log.Printf("deleting zookeeper cluster: %s", z.Name)
+	err := k8client.Delete(goctx.TODO(), z)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil
 		}
 		return fmt.Errorf("failed to delete CR: %v", err)
 	}
-	t.Logf("deleted zookeeper cluster: %s", z.Name)
+	log.Printf("deleted zookeeper cluster: %s", z.Name)
 	return nil
 }
 
 // UpdatePravegaCluster updates the PravegaCluster CR
-func UpdatePravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("updating pravega cluster: %s", p.Name)
+func UpdatePravegaCluster(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("updating pravega cluster: %s", p.Name)
 	p.Spec.Pravega.RollbackTimeout = 10
-	err := f.Client.Update(goctx.TODO(), p)
+	err := k8client.Update(goctx.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to update CR: %v", err)
 	}
 
-	t.Logf("updated pravega cluster: %s", p.Name)
+	log.Printf("updated pravega cluster: %s", p.Name)
 	return nil
 }
 
 // GetPravegaCluster returns the latest PravegaCluster CR
-func GetPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) (*api.PravegaCluster, error) {
+func GetPravegaCluster(t *testing.T, k8client client.Client, p *api.PravegaCluster) (*api.PravegaCluster, error) {
 	pravega := &api.PravegaCluster{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: p.Name}, pravega)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
@@ -392,9 +400,9 @@ func GetPravegaCluster(t *testing.T, f *framework.Framework, ctx *framework.Test
 }
 
 // GetBKCluster returns the latest BookkeeperCluster CR
-func GetBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
+func GetBKCluster(t *testing.T, k8client client.Client, b *bkapi.BookkeeperCluster) (*bkapi.BookkeeperCluster, error) {
 	bookkeeper := &bkapi.BookkeeperCluster{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: b.Namespace, Name: b.Name}, bookkeeper)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
@@ -402,9 +410,9 @@ func GetBKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 }
 
 // GetZKCluster returns the latest ZookeeperCluster CR
-func GetZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
+func GetZKCluster(t *testing.T, k8client client.Client, z *zkapi.ZookeeperCluster) (*zkapi.ZookeeperCluster, error) {
 	zookeeper := &zkapi.ZookeeperCluster{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: z.Namespace, Name: z.Name}, zookeeper)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain created CR: %v", err)
 	}
@@ -412,16 +420,16 @@ func GetZKCluster(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 }
 
 // WaitForPravegaClusterToBecomeReady will wait until all cluster pods are ready
-func WaitForPravegaClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, size int) error {
-	t.Logf("waiting for cluster pods to become ready: %s", p.Name)
+func WaitForPravegaClusterToBecomeReady(t *testing.T, k8client client.Client, p *api.PravegaCluster, size int) error {
+	log.Printf("waiting for cluster pods to become ready: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, k8client, p)
 		if err != nil {
 			return false, err
 		}
 
-		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(api.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -434,21 +442,21 @@ func WaitForPravegaClusterToBecomeReady(t *testing.T, f *framework.Framework, ct
 		return err
 	}
 
-	t.Logf("pravega cluster ready: %s", p.Name)
+	log.Printf("pravega cluster ready: %s", p.Name)
 	return nil
 }
 
 // WaitForBooClusterToBecomeReady will wait until all Bookkeeper cluster pods are ready
-func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster, size int) error {
-	t.Logf("waiting for cluster pods to become ready: %s", b.Name)
+func WaitForBookkeeperClusterToBecomeReady(t *testing.T, k8client client.Client, b *bkapi.BookkeeperCluster, size int) error {
+	log.Printf("waiting for cluster pods to become ready: %s", b.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetBKCluster(t, f, ctx, b)
+		cluster, err := GetBKCluster(t, k8client, b)
 		if err != nil {
 			return false, err
 		}
 
-		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(bkapi.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -461,21 +469,21 @@ func WaitForBookkeeperClusterToBecomeReady(t *testing.T, f *framework.Framework,
 		return err
 	}
 
-	t.Logf("bookkeeper cluster ready: %s", b.Name)
+	log.Printf("bookkeeper cluster ready: %s", b.Name)
 	return nil
 }
 
 // WaitForZookeeperClusterToBecomeReady will wait until all zookeeper cluster pods are ready
-func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster, size int) error {
-	t.Logf("waiting for cluster pods to become ready: %s", z.Name)
+func WaitForZookeeperClusterToBecomeReady(t *testing.T, k8client client.Client, z *zkapi.ZookeeperCluster, size int) error {
+	log.Printf("waiting for cluster pods to become ready: %s", z.Name)
 
 	err := wait.Poll(RetryInterval, ReadyTimeout, func() (done bool, err error) {
-		cluster, err := GetZKCluster(t, f, ctx, z)
+		cluster, err := GetZKCluster(t, k8client, z)
 		if err != nil {
 			return false, err
 		}
 
-		t.Logf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(zkapi.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -488,16 +496,16 @@ func WaitForZookeeperClusterToBecomeReady(t *testing.T, f *framework.Framework, 
 		return err
 	}
 
-	t.Logf("zookeeper cluster ready: %s", z.Name)
+	log.Printf("zookeeper cluster ready: %s", z.Name)
 	return nil
 }
 
 // WaitForPravegaClusterToUpgrade will wait until all pods are upgraded
-func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
-	t.Logf("waiting for cluster to upgrade: %s", p.Name)
+func WaitForPravegaClusterToUpgrade(t *testing.T, k8client client.Client, p *api.PravegaCluster, targetVersion string) error {
+	log.Printf("waiting for cluster to upgrade: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
-		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, k8client, p)
 		if err != nil {
 			return false, err
 		}
@@ -505,7 +513,7 @@ func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *f
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		t.Logf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if errorCondition.Status == corev1.ConditionTrue {
 			return false, fmt.Errorf("failed upgrading cluster: [%s] %s", errorCondition.Reason, errorCondition.Message)
@@ -522,16 +530,16 @@ func WaitForPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *f
 		return err
 	}
 
-	t.Logf("pravega cluster upgraded: %s", p.Name)
+	log.Printf("pravega cluster upgraded: %s", p.Name)
 	return nil
 }
 
 // WaitForPravegaClusterToRollback will wait until all pods have completed Rollback
-func WaitForPravegaClusterToRollback(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
-	t.Logf("waiting for cluster to Rollback: %s", p.Name)
+func WaitForPravegaClusterToRollback(t *testing.T, k8client client.Client, p *api.PravegaCluster, targetVersion string) error {
+	log.Printf("waiting for cluster to Rollback: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
-		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, k8client, p)
 		if err != nil {
 			return false, err
 		}
@@ -539,7 +547,7 @@ func WaitForPravegaClusterToRollback(t *testing.T, f *framework.Framework, ctx *
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionRollback)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		t.Logf("\twaiting for cluster to Rollback (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("\twaiting for cluster to Rollback (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
 			// Cluster upgraded
@@ -552,16 +560,16 @@ func WaitForPravegaClusterToRollback(t *testing.T, f *framework.Framework, ctx *
 		return err
 	}
 
-	t.Logf("pravega cluster Completed Rollback: %s", p.Name)
+	log.Printf("pravega cluster Completed Rollback: %s", p.Name)
 	return nil
 }
 
 // WaitForPravegaClusterToFailUpgrade will wait till Upgrade Fails
-func WaitForPravegaClusterToFailUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster, targetVersion string) error {
-	t.Logf("waiting for cluster to Fail upgrade: %s", p.Name)
+func WaitForPravegaClusterToFailUpgrade(t *testing.T, k8client client.Client, p *api.PravegaCluster, targetVersion string) error {
+	log.Printf("waiting for cluster to Fail upgrade: %s", p.Name)
 
 	err := wait.Poll(RetryInterval, UpgradeTimeout, func() (done bool, err error) {
-		cluster, err := GetPravegaCluster(t, f, ctx, p)
+		cluster, err := GetPravegaCluster(t, k8client, p)
 		if err != nil {
 			return false, err
 		}
@@ -569,7 +577,7 @@ func WaitForPravegaClusterToFailUpgrade(t *testing.T, f *framework.Framework, ct
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		t.Logf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if upgradeCondition.Status == corev1.ConditionFalse && errorCondition.Status == corev1.ConditionTrue {
 			// Cluster upgraded Failed
@@ -582,19 +590,22 @@ func WaitForPravegaClusterToFailUpgrade(t *testing.T, f *framework.Framework, ct
 		return err
 	}
 
-	t.Logf("pravega cluster upgraded: %s", p.Name)
+	log.Printf("pravega cluster upgraded: %s", p.Name)
 	return nil
 }
 
-func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("waiting for cluster to upgrade post cm changes: %s", p.Name)
+func WaitForCMPravegaClusterToUpgrade(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("waiting for cluster to upgrade post cm changes: %s", p.Name)
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
+	podList := corev1.PodList{}
+	listOptions := []client.ListOption{
+		client.InNamespace(p.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(p.LabelsForPravegaCluster())},
 	}
+	err := k8client.List(goctx.TODO(), &podList, listOptions...)
 
 	// Checking if all pods are getting restarted
-	podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
+
 	if err != nil {
 		return err
 	}
@@ -602,19 +613,19 @@ func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx 
 	for i := range podList.Items {
 		pod := &podList.Items[i]
 		name := pod.Name
-		t.Logf("waiting for pods to terminate, running pods (%v)", pod.Name)
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		log.Printf("waiting for pods to terminate, running pods (%v)", pod.Name)
+		err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
 		start := time.Now()
 		for util.IsPodReady(pod) {
 			if time.Since(start) > 5*time.Minute {
 				return fmt.Errorf("failed to delete Segmentstore pod (%s) for 5 mins ", name)
 			}
-			err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+			err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
 		}
 	}
 
 	//Checking if all pods are in ready state
-	podList, err = f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
+	err = k8client.List(goctx.TODO(), &podList, listOptions...)
 	if err != nil {
 		return err
 	}
@@ -622,14 +633,14 @@ func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx 
 	for i := range podList.Items {
 		pod := &podList.Items[i]
 		name := pod.Name
-		t.Logf("waiting for pods to terminate, running pods (%v)", pod.Name)
-		err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+		log.Printf("waiting for pods to terminate, running pods (%v)", pod.Name)
+		err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
 		start := time.Now()
 		for !util.IsPodReady(pod) {
 			if time.Since(start) > 5*time.Minute {
 				return fmt.Errorf("failed to delete Segmentstore pod (%s) for 5 mins ", name)
 			}
-			err = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
+			err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: p.Namespace, Name: name}, pod)
 		}
 	}
 
@@ -637,16 +648,18 @@ func WaitForCMPravegaClusterToUpgrade(t *testing.T, f *framework.Framework, ctx 
 }
 
 // WaitForPravegaClusterToTerminate will wait until all cluster pods are terminated
-func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("waiting for pravega cluster to terminate: %s", p.Name)
+func WaitForPravegaClusterToTerminate(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("waiting for pravega cluster to terminate: %s", p.Name)
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(p.LabelsForPravegaCluster()).String(),
+	listOptions := []client.ListOption{
+		client.InNamespace(p.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(p.LabelsForPravegaCluster())},
 	}
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(p.Namespace).List(goctx.TODO(), listOptions)
+		podList := corev1.PodList{}
+		err = k8client.List(goctx.TODO(), &podList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -656,7 +669,7 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 			pod := &podList.Items[i]
 			names = append(names, pod.Name)
 		}
-		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		log.Printf("waiting for pods to terminate, running pods (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -669,7 +682,8 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(p.Namespace).List(goctx.TODO(), listOptions)
+		pvcList := corev1.PersistentVolumeClaimList{}
+		err = k8client.List(goctx.TODO(), &pvcList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -679,7 +693,7 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 			pvc := &pvcList.Items[i]
 			names = append(names, pvc.Name)
 		}
-		t.Logf("waiting for pvc to terminate (%v)", names)
+		log.Printf("waiting for pvc to terminate (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -690,21 +704,23 @@ func WaitForPravegaClusterToTerminate(t *testing.T, f *framework.Framework, ctx 
 		return err
 	}
 
-	t.Logf("pravega cluster terminated: %s", p.Name)
+	log.Printf("pravega cluster terminated: %s", p.Name)
 	return nil
 }
 
 // WaitForZKClusterToTerminate will wait until all zookeeper cluster pods are terminated
-func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, z *zkapi.ZookeeperCluster) error {
-	t.Logf("waiting for zookeeper cluster to terminate: %s", z.Name)
+func WaitForZKClusterToTerminate(t *testing.T, k8client client.Client, z *zkapi.ZookeeperCluster) error {
+	log.Printf("waiting for zookeeper cluster to terminate: %s", z.Name)
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{"app": z.GetName()}).String(),
+	listOptions := []client.ListOption{
+		client.InNamespace(z.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(map[string]string{"app": z.GetName()})},
 	}
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(z.Namespace).List(goctx.TODO(), listOptions)
+		podList := corev1.PodList{}
+		err = k8client.List(goctx.TODO(), &podList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -714,7 +730,7 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 			pod := &podList.Items[i]
 			names = append(names, pod.Name)
 		}
-		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		log.Printf("waiting for pods to terminate, running pods (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -727,7 +743,8 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(z.Namespace).List(goctx.TODO(), listOptions)
+		pvcList := corev1.PersistentVolumeClaimList{}
+		err = k8client.List(goctx.TODO(), &pvcList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -737,7 +754,7 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 			pvc := &pvcList.Items[i]
 			names = append(names, pvc.Name)
 		}
-		t.Logf("waiting for pvc to terminate (%v)", names)
+		log.Printf("waiting for pvc to terminate (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -749,21 +766,23 @@ func WaitForZKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 		return err
 	}
 
-	t.Logf("zookeeper cluster terminated: %s", z.Name)
+	log.Printf("zookeeper cluster terminated: %s", z.Name)
 	return nil
 }
 
 // WaitForBKClusterToTerminate will wait until all Bookkeeper cluster pods are terminated
-func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, b *bkapi.BookkeeperCluster) error {
-	t.Logf("waiting for Bookkeeper cluster to terminate: %s", b.Name)
+func WaitForBKClusterToTerminate(t *testing.T, k8client client.Client, b *bkapi.BookkeeperCluster) error {
+	log.Printf("waiting for Bookkeeper cluster to terminate: %s", b.Name)
 
-	listOptions := metav1.ListOptions{
-		LabelSelector: labels.SelectorFromSet(map[string]string{"app": b.GetName()}).String(),
+	listOptions := []client.ListOption{
+		client.InNamespace(b.GetNamespace()),
+		client.MatchingLabelsSelector{Selector: labels.SelectorFromSet(map[string]string{"bookkeeper_cluster": b.GetName()})},
 	}
 
 	// Wait for Pods to terminate
 	err := wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		podList, err := f.KubeClient.CoreV1().Pods(b.Namespace).List(goctx.TODO(), listOptions)
+		podList := corev1.PodList{}
+		err = k8client.List(goctx.TODO(), &podList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -773,7 +792,7 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 			pod := &podList.Items[i]
 			names = append(names, pod.Name)
 		}
-		t.Logf("waiting for pods to terminate, running pods (%v)", names)
+		log.Printf("waiting for pods to terminate, running pods (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -786,7 +805,8 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 
 	// Wait for PVCs to terminate
 	err = wait.Poll(RetryInterval, TerminateTimeout, func() (done bool, err error) {
-		pvcList, err := f.KubeClient.CoreV1().PersistentVolumeClaims(b.Namespace).List(goctx.TODO(), listOptions)
+		pvcList := corev1.PersistentVolumeClaimList{}
+		err = k8client.List(goctx.TODO(), &pvcList, listOptions...)
 		if err != nil {
 			return false, err
 		}
@@ -796,7 +816,7 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 			pvc := &pvcList.Items[i]
 			names = append(names, pvc.Name)
 		}
-		t.Logf("waiting for pvc to terminate (%v)", names)
+		log.Printf("waiting for pvc to terminate (%v)", names)
 		if len(names) != 0 {
 			return false, nil
 		}
@@ -808,28 +828,29 @@ func WaitForBKClusterToTerminate(t *testing.T, f *framework.Framework, ctx *fram
 		return err
 	}
 
-	t.Logf("bookkeeper cluster terminated: %s", b.Name)
+	log.Printf("bookkeeper cluster terminated: %s", b.Name)
 	return nil
 }
 
 // WriteAndReadData writes sample data and reads it back from the given Pravega cluster
-func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("writing and reading data from pravega cluster: %s", p.Name)
+func WriteAndReadData(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("writing and reading data from pravega cluster: %s", p.Name)
 	testJob := NewTestWriteReadJob(p.Namespace, p.ServiceNameForController())
-	err := f.Client.Create(goctx.TODO(), testJob, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err := k8client.Create(goctx.TODO(), testJob)
+
 	if err != nil {
 		return fmt.Errorf("failed to create job: %s", err)
 	}
 
 	err = wait.Poll(RetryInterval, VerificationTimeout, func() (done bool, err error) {
-		job, err := f.KubeClient.BatchV1().Jobs(p.Namespace).Get(goctx.TODO(), testJob.Name, metav1.GetOptions{})
+		err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: testJob.Namespace, Name: testJob.Name}, testJob)
 		if err != nil {
 			return false, err
 		}
-		if job.Status.CompletionTime.IsZero() {
+		if testJob.Status.CompletionTime.IsZero() {
 			return false, nil
 		}
-		if job.Status.Failed > 0 {
+		if testJob.Status.Failed > 0 {
 			return false, fmt.Errorf("failed to write and read data from cluster")
 		}
 		return true, nil
@@ -839,49 +860,49 @@ func WriteAndReadData(t *testing.T, f *framework.Framework, ctx *framework.TestC
 		return err
 	}
 
-	t.Logf("pravega cluster validated: %s", p.Name)
+	log.Printf("pravega cluster validated: %s", p.Name)
 	return nil
 }
 
 // UpdatePravegaClusterRollback updates the PravegaCluster CR for Rollback
-func UpdatePravegaClusterRollback(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, p *api.PravegaCluster) error {
-	t.Logf("updating pravega cluster: %s", p.Name)
+func UpdatePravegaClusterRollback(t *testing.T, k8client client.Client, p *api.PravegaCluster) error {
+	log.Printf("updating pravega cluster: %s", p.Name)
 	p.Spec.Pravega.RollbackTimeout = 1
-	err := f.Client.Update(goctx.TODO(), p)
+	err := k8client.Update(goctx.TODO(), p)
 	if err != nil {
 		return fmt.Errorf("failed to Rollback CR: %v", err)
 	}
 
-	t.Logf("completed Rollback of pravega cluster: %s", p.Name)
+	log.Printf("completed Rollback of pravega cluster: %s", p.Name)
 	return nil
 }
 
 // CheckExternalAccesss Checks if External Access is enabled or not
-func CheckExternalAccesss(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster) error {
+func CheckExternalAccesss(t *testing.T, k8client client.Client, pravega *api.PravegaCluster) error {
 
 	ssSvc := &corev1.Service{}
 	conSvc := &corev1.Service{}
-	_ = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForSegmentStore(0)}, ssSvc)
-	_ = f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForController()}, conSvc)
+	_ = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForSegmentStore(0)}, ssSvc)
+	_ = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: pravega.ServiceNameForController()}, conSvc)
 
 	if len(conSvc.Status.LoadBalancer.Ingress) == 0 || len(ssSvc.Status.LoadBalancer.Ingress) == 0 {
 		return fmt.Errorf("External Access is not enabled")
 	}
-	t.Logf("pravega cluster External Acess Validated: %s", pravega.Name)
+	log.Printf("pravega cluster External Acess Validated: %s", pravega.Name)
 	return nil
 }
 
-func CheckServiceExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, svcName string) error {
+func CheckServiceExists(t *testing.T, k8client client.Client, pravega *api.PravegaCluster, svcName string) error {
 	svc := &corev1.Service{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: svcName}, svc)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: svcName}, svc)
 	if err != nil {
 		return fmt.Errorf("service doesnt exist: %v", err)
 	}
 	return nil
 }
-func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, stsName string) error {
+func CheckStsExists(t *testing.T, k8client client.Client, pravega *api.PravegaCluster, stsName string) error {
 	sts := &appsv1.StatefulSet{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: stsName}, sts)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: stsName}, sts)
 	if err != nil {
 		return fmt.Errorf("sts doesnt exist: %v", err)
 	}
@@ -889,9 +910,9 @@ func CheckStsExists(t *testing.T, f *framework.Framework, ctx *framework.TestCtx
 	return nil
 }
 
-func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, pravega *api.PravegaCluster, cmName string, key string, values []string) error {
+func CheckConfigMapUpdated(t *testing.T, k8client client.Client, pravega *api.PravegaCluster, cmName string, key string, values []string) error {
 	cm := &corev1.ConfigMap{}
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: cmName}, cm)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: pravega.Namespace, Name: cmName}, cm)
 	if err != nil {
 		return fmt.Errorf("failed to obtain configmap: %v", err)
 	}
@@ -909,10 +930,10 @@ func CheckConfigMapUpdated(t *testing.T, f *framework.Framework, ctx *framework.
 }
 
 // GetSts returns the sts
-func GetSts(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, stsName string) (*appsv1.StatefulSet, error) {
+func GetSts(t *testing.T, k8client client.Client, stsName string) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{}
 	ns := "default"
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: stsName}, sts)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: stsName}, sts)
 	if err != nil {
 		return nil, fmt.Errorf("sts doesnt exist: %v", err)
 	}
@@ -921,10 +942,10 @@ func GetSts(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, stsNam
 }
 
 // GetDeployment returns the deployment
-func GetDeployment(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, deployName string) (*appsv1.Deployment, error) {
+func GetDeployment(t *testing.T, k8client client.Client, deployName string) (*appsv1.Deployment, error) {
 	deploy := &appsv1.Deployment{}
 	ns := "default"
-	err := f.Client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: deployName}, deploy)
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: ns, Name: deployName}, deploy)
 	if err != nil {
 		return nil, fmt.Errorf("Deployment doesnt exist: %v", err)
 	}
@@ -932,20 +953,22 @@ func GetDeployment(t *testing.T, f *framework.Framework, ctx *framework.TestCtx,
 	return deploy, nil
 }
 
-func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, namespace string) error {
+func RestartTier2(t *testing.T, k8client client.Client, namespace string) error {
 	t.Log("restarting tier2 storage")
 	tier2 := NewTier2(namespace)
-	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
+	err := k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: tier2.Name}, tier2)
+	//	_, err := f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
 
 	if err == nil {
-		err := f.Client.Delete(goctx.TODO(), tier2)
+		err := k8client.Delete(goctx.TODO(), tier2)
 		if err != nil {
 			return fmt.Errorf("failed to delete tier2: %v", err)
 		}
 	}
 
 	err = wait.Poll(RetryInterval, 3*time.Minute, func() (done bool, err error) {
-		_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
+		err = k8client.Get(goctx.TODO(), types.NamespacedName{Namespace: namespace, Name: tier2.Name}, tier2)
+		//	_, err = f.KubeClient.CoreV1().PersistentVolumeClaims(namespace).Get(goctx.TODO(), tier2.Name, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return true, nil
@@ -960,11 +983,11 @@ func RestartTier2(t *testing.T, f *framework.Framework, ctx *framework.TestCtx, 
 	}
 
 	tier2 = NewTier2(namespace)
-	err = f.Client.Create(goctx.TODO(), tier2, &framework.CleanupOptions{TestContext: ctx, Timeout: CleanupTimeout, RetryInterval: CleanupRetryInterval})
+	err = k8client.Create(goctx.TODO(), tier2)
 	if err != nil {
 		return fmt.Errorf("failed to create tier2: %s", err)
 	}
 
-	t.Logf("pravega cluster tier2 restarted")
+	log.Printf("pravega cluster tier2 restarted")
 	return nil
 }

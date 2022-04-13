@@ -8,7 +8,7 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 ARG DOCKER_REGISTRY
-ARG GO_VERSION=1.16.15
+ARG GO_VERSION=1.17
 ARG ALPINE_VERSION=3.15
 
 FROM ${DOCKER_REGISTRY:+$DOCKER_REGISTRY/}golang:${GO_VERSION}-alpine${ALPINE_VERSION} as go-builder
@@ -23,16 +23,20 @@ ARG GIT_SHA=0000000
 WORKDIR /src
 
 COPY pkg ./pkg
-COPY cmd ./cmd
 COPY go.mod ./
 COPY go.sum ./
 
 # Download all dependencies.
 RUN go mod download
 
+# Copy the go source
+COPY main.go main.go
+COPY api/ api/
+COPY controllers/ controllers/
+
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o /src/${PROJECT_NAME} \
     -ldflags "-X ${REPO_PATH}/pkg/version.Version=${VERSION} -X ${REPO_PATH}/pkg/version.GitSHA=${GIT_SHA}" \
-    /src/cmd/manager
+    main.go
 
 # =============================================================================
 FROM ${DOCKER_REGISTRY:+$DOCKER_REGISTRY/}alpine:${ALPINE_VERSION} AS final

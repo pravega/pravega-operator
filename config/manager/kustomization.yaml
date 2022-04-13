@@ -1,0 +1,8 @@
+resources:
+- manager.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: pravega/pravega-operator
+  newName: testpravegaop/pravega-operator-testimages
+  newTag: 0.5.7-1-46bbd1e

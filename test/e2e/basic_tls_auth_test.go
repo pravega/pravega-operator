@@ -11,49 +11,32 @@
 package e2e
 
 import (
-	"testing"
-
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-// Test create and recreate a Pravega cluster with the same name
-func testCreatePravegaClusterWithAuthAndTls(t *testing.T) {
-	g := NewGomegaWithT(t)
+var _ = Describe("Test create pravega cluster with TLS", func() {
+	Context("Create cluster with TLS", func() {
+		It("Cluster creation should be successful", func() {
 
-	doCleanup := true
-	ctx := framework.NewTestCtx(t)
-	defer func() {
-		if doCleanup {
-			ctx.Cleanup()
-		}
-	}()
-	namespace, err := ctx.GetNamespace()
-	g.Expect(err).NotTo(HaveOccurred())
-	f := framework.Global
+			Expect(pravega_e2eutil.InitialSetup(&t, k8sClient, testNamespace)).NotTo(HaveOccurred())
+			defaultCluster := pravega_e2eutil.NewDefaultCluster(testNamespace)
+			defaultCluster.WithDefaults()
 
-	//creating the setup for running the test
-	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
+			pravega, err := pravega_e2eutil.CreatePravegaClusterWithTlsAuth(&t, k8sClient, defaultCluster)
+			Expect(err).NotTo(HaveOccurred())
 
-	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
-	defaultCluster.WithDefaults()
+			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+			podSize := 2
+			err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(&t, k8sClient, pravega, podSize)
+			Expect(err).NotTo(HaveOccurred())
 
-	pravega, err := pravega_e2eutil.CreatePravegaClusterWithTlsAuth(t, f, ctx, defaultCluster)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.DeletePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
-	podSize := 2
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// No need to do cleanup since the cluster CR has already been deleted
-	doCleanup = false
-
-	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-}
+			err = pravega_e2eutil.WaitForPravegaClusterToTerminate(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+})
