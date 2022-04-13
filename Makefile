@@ -21,6 +21,12 @@ DOCKER_TEST_PASS=testpravegaop
 DOCKER_TEST_USER=testpravegaop
 
 .PHONY: all  build check clean test
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
 
 all: check build test
 
@@ -29,7 +35,6 @@ build: build-go build-image
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
 
 deploy: manifests kustomize
 	cd config/manager && $(KUSTOMIZE) edit set image pravega/pravega-operator=$(TEST_IMAGE)
@@ -81,6 +86,15 @@ deploy: manifests kustomize
 undeploy:
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy-test: manifests kustomize
+	cd config/test
+	$(KUSTOMIZE) build config/test | kubectl apply -f -
+
+# Undeploy controller in the configured Kubernetes cluster in ~/.kube/config
+undeploy-test: manifests kustomize
+	cd config/test
+	$(KUSTOMIZE) build config/test | kubectl apply -f -
 
 build-image:
 	docker build --build-arg DOCKER_REGISTRY=$(DOCKER_REGISTRY) --build-arg VERSION=$(VERSION) --build-arg GIT_SHA=$(GIT_SHA) -t $(REPO):$(VERSION) .
@@ -102,10 +116,12 @@ test-e2e-remote:
 	 make undeploy
 
 test-e2e-local:
-	operator-sdk test local ./test/e2e --operator-namespace default --up-local --go-test-flags "-v -timeout 0"
+	make deploy-test
+	RUN_LOCAL=true go test -v -timeout 2h ./test/e2e... -args -ginkgo.v
+	make undeploy-test
 
 run-local:
-	operator-sdk up local --operator-flags -webhook=false
+	go run ./main.go
 
 login:
 	echo "$(DOCKER_TEST_PASS)" | docker login -u "$(DOCKER_TEST_USER)" --password-stdin
