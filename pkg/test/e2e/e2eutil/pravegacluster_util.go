@@ -429,7 +429,7 @@ func WaitForPravegaClusterToBecomeReady(t *testing.T, k8client client.Client, p 
 			return false, err
 		}
 
-		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("waiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(api.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -456,7 +456,7 @@ func WaitForBookkeeperClusterToBecomeReady(t *testing.T, k8client client.Client,
 			return false, err
 		}
 
-		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("waiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(bkapi.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -483,7 +483,7 @@ func WaitForZookeeperClusterToBecomeReady(t *testing.T, k8client client.Client, 
 			return false, err
 		}
 
-		log.Printf("\twaiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
+		log.Printf("waiting for pods to become ready (%d/%d), pods (%v)", cluster.Status.ReadyReplicas, size, cluster.Status.Members.Ready)
 
 		_, condition := cluster.Status.GetClusterCondition(zkapi.ClusterConditionPodsReady)
 		if condition != nil && condition.Status == corev1.ConditionTrue && cluster.Status.ReadyReplicas == int32(size) {
@@ -513,7 +513,7 @@ func WaitForPravegaClusterToUpgrade(t *testing.T, k8client client.Client, p *api
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		log.Printf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("waiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if errorCondition.Status == corev1.ConditionTrue {
 			return false, fmt.Errorf("failed upgrading cluster: [%s] %s", errorCondition.Reason, errorCondition.Message)
@@ -547,7 +547,7 @@ func WaitForPravegaClusterToRollback(t *testing.T, k8client client.Client, p *ap
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionRollback)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		log.Printf("\twaiting for cluster to Rollback (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("waiting for cluster to Rollback (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if upgradeCondition.Status == corev1.ConditionFalse && cluster.Status.CurrentVersion == targetVersion {
 			// Cluster upgraded
@@ -577,7 +577,7 @@ func WaitForPravegaClusterToFailUpgrade(t *testing.T, k8client client.Client, p 
 		_, upgradeCondition := cluster.Status.GetClusterCondition(api.ClusterConditionUpgrading)
 		_, errorCondition := cluster.Status.GetClusterCondition(api.ClusterConditionError)
 
-		log.Printf("\twaiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
+		log.Printf("waiting for cluster to upgrade (upgrading: %s; error: %s)", upgradeCondition.Status, errorCondition.Status)
 
 		if upgradeCondition.Status == corev1.ConditionFalse && errorCondition.Status == corev1.ConditionTrue {
 			// Cluster upgraded Failed
