@@ -79,9 +79,8 @@ KUSTOMIZE=$(shell which kustomize)
 endif
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
-	cd config/manager && $(KUSTOMIZE) edit set image pravega/bookkeeper-operator=$(TEST_IMAGE)
+	cd config/manager && $(KUSTOMIZE) edit set image pravega/pravega-operator=$(TEST_IMAGE)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
-
 
 # Undeploy controller in the configured Kubernetes cluster in ~/.kube/config
 undeploy:
