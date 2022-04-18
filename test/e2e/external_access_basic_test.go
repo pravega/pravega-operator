@@ -20,7 +20,7 @@ import (
 
 var _ = Describe("External Access tests", func() {
 	Context("Creating cluster with external access", func() {
-		It("Creation of pods should be successful", func() {
+		It("Should create pods successfully", func() {
 
 			//creating the setup for running the test
 			Expect(pravega_e2eutil.InitialSetup(&t, k8sClient, testNamespace)).NotTo(HaveOccurred())

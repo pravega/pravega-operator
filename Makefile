@@ -7,6 +7,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 
 SHELL=/bin/bash -o pipefail
+# This flag works only with controller-gen 0.6.2
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 PROJECT_NAME=pravega-operator
 REPO=testpravegaop/$(PROJECT_NAME)

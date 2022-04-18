@@ -53,6 +53,7 @@ func init() {
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
 	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(v1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 
 }
