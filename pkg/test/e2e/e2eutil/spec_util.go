@@ -15,7 +15,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	api "github.com/pravega/pravega-operator/pkg/apis/pravega/v1beta1"
+	api "github.com/pravega/pravega-operator/api/v1beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

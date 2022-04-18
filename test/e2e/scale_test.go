@@ -11,81 +11,65 @@
 package e2e
 
 import (
-	"testing"
-
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	pravega_e2eutil "github.com/pravega/pravega-operator/pkg/test/e2e/e2eutil"
 )
 
-func testScaleCluster(t *testing.T) {
-	g := NewGomegaWithT(t)
+var _ = Describe("Scale operation", func() {
+	Context("Check Scaling of pods", func() {
+		It("Scaling of pods should be successful", func() {
 
-	doCleanup := true
-	ctx := framework.NewTestCtx(t)
-	defer func() {
-		if doCleanup {
-			ctx.Cleanup()
-		}
-	}()
+			//creating the setup for running the test
+			Expect(pravega_e2eutil.InitialSetup(&t, k8sClient, testNamespace)).NotTo(HaveOccurred())
+			defaultCluster := pravega_e2eutil.NewDefaultCluster(testNamespace)
+			defaultCluster.WithDefaults()
 
-	namespace, err := ctx.GetNamespace()
-	g.Expect(err).NotTo(HaveOccurred())
-	f := framework.Global
+			pravega, err := pravega_e2eutil.CreatePravegaCluster(&t, k8sClient, defaultCluster)
+			Expect(err).NotTo(HaveOccurred())
 
-	//creating the setup for running the test
-	err = pravega_e2eutil.InitialSetup(t, f, ctx, namespace)
-	g.Expect(err).NotTo(HaveOccurred())
+			// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
+			podSize := 2
+			err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(&t, k8sClient, pravega, podSize)
+			Expect(err).NotTo(HaveOccurred())
 
-	defaultCluster := pravega_e2eutil.NewDefaultCluster(namespace)
-	defaultCluster.WithDefaults()
+			// This is to get the latest Pravega cluster object
+			pravega, err = pravega_e2eutil.GetPravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	pravega, err := pravega_e2eutil.CreatePravegaCluster(t, f, ctx, defaultCluster)
-	g.Expect(err).NotTo(HaveOccurred())
+			// Scale up Pravega cluster, increase segment store size by 1
+			pravega.Spec.Pravega.SegmentStoreReplicas = 2
+			pravega.Spec.Pravega.ControllerReplicas = 2
+			podSize = 4
 
-	// A default Pravega cluster should have 2 pods: 1 controller, 1 segment store
-	podSize := 2
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.UpdatePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(&t, k8sClient, pravega, podSize)
+			Expect(err).NotTo(HaveOccurred())
 
-	// Scale up Pravega cluster, increase segment store size by 1
-	pravega.Spec.Pravega.SegmentStoreReplicas = 2
-	pravega.Spec.Pravega.ControllerReplicas = 2
-	podSize = 4
+			// This is to get the latest Pravega cluster object
+			pravega, err = pravega_e2eutil.GetPravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			// Scale down Pravega cluster back to default
+			pravega.Spec.Pravega.SegmentStoreReplicas = 1
+			pravega.Spec.Pravega.ControllerReplicas = 1
+			podSize = 2
 
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.UpdatePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	// This is to get the latest Pravega cluster object
-	pravega, err = pravega_e2eutil.GetPravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(&t, k8sClient, pravega, podSize)
+			Expect(err).NotTo(HaveOccurred())
 
-	// Scale down Pravega cluster back to default
-	pravega.Spec.Pravega.SegmentStoreReplicas = 1
-	pravega.Spec.Pravega.ControllerReplicas = 1
-	podSize = 2
+			// Delete cluster
+			err = pravega_e2eutil.DeletePravegaCluster(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.UpdatePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
+			err = pravega_e2eutil.WaitForPravegaClusterToTerminate(&t, k8sClient, pravega)
+			Expect(err).NotTo(HaveOccurred())
 
-	err = pravega_e2eutil.WaitForPravegaClusterToBecomeReady(t, f, ctx, pravega, podSize)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// Delete cluster
-	err = pravega_e2eutil.DeletePravegaCluster(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	// No need to do cleanup since the cluster CR has already been deleted
-	doCleanup = false
-
-	err = pravega_e2eutil.WaitForPravegaClusterToTerminate(t, f, ctx, pravega)
-	g.Expect(err).NotTo(HaveOccurred())
-
-}
+		})
+	})
+})

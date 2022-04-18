@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pravega-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: pravega-operator
+  template:
+    metadata:
+      labels:
+        name: pravega-operator
+        component: pravega-operator
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: pravega-operator
+      containers:
+      - name: pravega-operator
+        image: pravega/pravega-operator:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6000
+          name: metrics
+        command:
+        - pravega-operator
+        env:
+        - name: WATCH_NAMESPACE
+          value: ""
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "pravega-operator"
+        volumeMounts:
+        - name: webhook-cert
+          mountPath: "/tmp/k8s-webhook-server/serving-certs"
+          readOnly: true
+        - name: versions-volume
+          mountPath: "/tmp/config"
+      volumes:
+      - name: webhook-cert
+        secret:
+          secretName: selfsigned-cert-tls
+      - name: versions-volume
+        configMap:
+          name: supported-versions-map

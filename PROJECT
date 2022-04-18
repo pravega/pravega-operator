@@ -1,0 +1,31 @@
+domain: pravega.pravega.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: pravega-operator
+repo: github.com/pravega/pravega-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: pravega.pravega.io
+  group: pravegaclusters
+  kind: PravegaCluster
+  path: github.com/pravega/pravega-operator/api/v1beta1
+  version: v1beta1
+  webhooks:
+    conversion: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: pravega.pravega.io
+  group: pravegaclusters
+  kind: PravegaCluster
+  path: github.com/pravega/pravega-operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

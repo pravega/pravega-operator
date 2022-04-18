@@ -1,0 +1,4 @@
+resources:
+  - rbac.yaml
+  - role.yaml
+  - role_binding.yaml
