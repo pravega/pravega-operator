@@ -47,24 +47,24 @@ jobs:
         pub_key=$(cat ~/.ssh/id_rsa.pub)
         echo "publc key is $pub_key"
         echo "packet-cli ssh-key create --key  \"$(cat ~/.ssh/id_rsa.pub)\"  --label \"pravega\""
-        packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "pravega-travis"
+        packet-cli ssh-key create --key  "$(cat ~/.ssh/id_rsa.pub)"  --label "jpablo-pravega-travis"
     - name: Creating nodes
       run: |
         cd .. && tar -czvf pravega-operator.tar.gz pravega-operator
-        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f ams1
-        packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
-        CLUSTER_ID=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
+        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.small.x86 -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 -f da11
+        packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
+        CLUSTER_ID=$(packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
         echo "cluster id is $CLUSTER_ID"
-        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  ams1
-        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c1.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  ams1
-        MASTER_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' ')
-        while [ "$MASTER_STATE" != "active" ]; do MASTER_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' '`;sleep 30;done
+        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c3.small.x86 -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 -f  da11
+        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c3.small.x86 -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 -f  da11
+        MASTER_STATE=$(packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' ')
+        while [ "$MASTER_STATE" != "active" ]; do MASTER_STATE=`packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         CLUSTER_IP=$(packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' ')
         echo "Cluster IP is $CLUSTER_IP"
-        WORKER1_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' ')
-        while [ "$WORKER1_STATE" != "active" ]; do WORKER1_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' '`;sleep 30;done
-        WORKER2_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' ')
-        while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
+        WORKER1_STATE=$(packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' ')
+        while [ "$WORKER1_STATE" != "active" ]; do WORKER1_STATE=`packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker1" | awk '{print $10}' | tr -d ' '`;sleep 30;done
+        WORKER2_STATE=$(packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' ')
+        while [ "$WORKER2_STATE" != "active" ]; do WORKER2_STATE=`packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker2" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         echo "CLUSTER_ID=$CLUSTER_ID" >> $GITHUB_ENV
         echo "CLUSTER_IP=$CLUSTER_IP" >> $GITHUB_ENV
         pwd;ls
@@ -74,9 +74,9 @@ jobs:
         pwd;ls
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "sudo apt-get update;tar -xzvf /root/pravega-operator.tar.gz"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP /root/pravega-operator/test/e2e/resources/kubernetes_master_install.sh
-        CLUSTER_ID1=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
+        CLUSTER_ID1=`packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker1" | awk '{print $2}' | tr -d ' '`
         CLUSTER_IP1=`packet-cli device get -i $CLUSTER_ID1 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
-        CLUSTER_ID2=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-worker2" | awk '{print $2}' | tr -d ' '`
+        CLUSTER_ID2=`packet-cli device get -p 7ab7c2b6-86b1-4fbb-b9cc-cfe11a2f7cf8 | grep $CLUSTER_NAME"-worker2" | awk '{print $2}' | tr -d ' '`
         CLUSTER_IP2=`packet-cli device get -i $CLUSTER_ID2 -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' '`
         scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r ../pravega-operator.tar.gz  root@$CLUSTER_IP1:/root/
         scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r ../pravega-operator.tar.gz  root@$CLUSTER_IP2:/root/
