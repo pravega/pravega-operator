@@ -399,7 +399,8 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 	}
 
 	if ready {
-		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion)
+		labels := p.LabelsForPravegaCluster()
+		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion, labels)
 		if err != nil {
 			return false, err
 		}
@@ -652,9 +653,9 @@ func (r *PravegaClusterReconciler) checkUpdatedPods(pods []*corev1.Pod, version 
 	return true, nil
 }
 
-func (r *PravegaClusterReconciler) getOneOutdatedPod(sts *appsv1.StatefulSet, version string) (*corev1.Pod, error) {
+func (r *PravegaClusterReconciler) getOneOutdatedPod(sts *appsv1.StatefulSet, version string, labels map[string]string) (*corev1.Pod, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: sts.Spec.Template.Labels,
+		MatchLabels: labels,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert label selector: %v", err)
