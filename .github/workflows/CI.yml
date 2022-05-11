@@ -147,3 +147,4 @@ jobs:
         echo y | packet-cli device  delete -i $CLUSTER_ID
         echo y | packet-cli device  delete -i $CLUSTER_ID1
         echo y | packet-cli device  delete -i $CLUSTER_ID2
+
