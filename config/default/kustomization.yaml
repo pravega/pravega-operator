@@ -11,6 +11,9 @@ namespace: default
 #  someName: someValue
 
 bases:
+- ../manifests
+- ../certmanager
+- ../webhook
 - ../crd
 - ../manager
 - ../rbac
