@@ -7,8 +7,8 @@ The purpose of this script is to sequentially deploy all the dependencies (i.e. 
   - Kubernetes 1.16+ with Beta APIs
   - Helm 3.2.1+
   - LongTerm Storage ([options for long term storage](https://github.com/pravega/pravega-operator/blob/master/doc/longtermstorage.md))
-  - Cert-Manager v0.15.0+
-  - An Issuer and a Certificate (either self-signed or CA signed) for the Bookkeeper Operator (refer to [this](https://github.com/pravega/bookkeeper-operator/blob/master/deploy/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
+  - Cert-Manager v1.0+
+  - An Issuer and a Certificate (either self-signed or CA signed) for the Bookkeeper Operator (refer to [this](https://github.com/pravega/bookkeeper-operator/blob/master/config/certmanager/certificate.yaml) manifest to create a self-signed certificate in the default namespace)
 
 We use cert-manager for certificate management for webhook services in Kubernetes. In case you plan to use the same, you would need to [install cert-manager](https://cert-manager.io/docs/installation/kubernetes/)
 
