@@ -193,6 +193,8 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, k8client client.Client, p *ap
 		"pravega.client.auth.method":                                        "Basic",
 		"controller.security.tls.protocolVersion":                           "TLSv1.2",
 		"pravegaservice.security.tls.protocolVersion":                       "TLSv1.2",
+		"pravegaservice.security.tls.server.keyStore.pwd.location":          "/etc/secret-volume/pass-secret-tls",
+		"pravegaservice.security.tls.certificate.autoReload.enable":         "true",
 	}
 	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
 
