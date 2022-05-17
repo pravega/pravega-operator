@@ -124,7 +124,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls; kubectl create secret generic controller-tls \
         --from-file=./controller01.pem \
-        --from-file=./tls.crt\
+        --from-file=./tls.crt \
         --from-file=./controller01.key.pem \
         --from-file=./controller01.jks \
         --from-file=./pass-secret-tls"
