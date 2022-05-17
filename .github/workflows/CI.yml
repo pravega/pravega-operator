@@ -105,7 +105,6 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/certificate.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/webhook.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/bk-config-map.yaml"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/bk-version-map.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/service_account.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/role.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/role_binding.yaml"

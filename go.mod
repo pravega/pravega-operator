@@ -14,8 +14,8 @@ require (
 	k8s.io/client-go v0.23.5
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 	sigs.k8s.io/controller-runtime v0.11.0
-	github.com/pravega/bookkeeper-operator v0.1.8-0.20220407130627-e5b636d606a4 // indirect
-	github.com/pravega/zookeeper-operator v0.2.14-0.20220411113324-c9bd4fa6af29 // indirect
+	github.com/pravega/bookkeeper-operator v0.1.8
+	github.com/pravega/zookeeper-operator v0.2.14
 )
 
 require (
