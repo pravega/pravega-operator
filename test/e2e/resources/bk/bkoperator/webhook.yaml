@@ -7,7 +7,7 @@ spec:
   ports:
   - port: 443
     protocol: TCP
-    targetPort: 443
+    targetPort: 9443
   selector:
     component: bookkeeper-operator
   sessionAffinity: None
@@ -40,5 +40,5 @@ webhooks:
     - bookkeeperclusters
     scope: "*"
   admissionReviewVersions: ["v1beta1", "v1"]
-  sideEffects: None  
+  sideEffects: None
   timeoutSeconds: 30
