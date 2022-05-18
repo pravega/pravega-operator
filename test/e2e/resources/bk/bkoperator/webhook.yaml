@@ -40,5 +40,5 @@ webhooks:
     - bookkeeperclusters
     scope: "*"
   admissionReviewVersions: ["v1beta1", "v1"]
-  sideEffects: None  
+  sideEffects: None
   timeoutSeconds: 30
