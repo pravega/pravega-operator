@@ -36,12 +36,7 @@ spec:
             - name: webhook-cert
               mountPath: "/tmp/k8s-webhook-server/serving-certs"
               readOnly: true
-            - name: versions-volume
-              mountPath: "/tmp/config"
       volumes:
         - name: webhook-cert
           secret:
             secretName: selfsigned-cert-tls-bk
-        - name: versions-volume
-          configMap:
-            name: bk-supported-versions-map

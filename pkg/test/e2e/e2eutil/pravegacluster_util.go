@@ -172,7 +172,7 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, k8client client.Client, p *ap
 		"controller.security.tls.enable":                                    "true",
 		"controller.security.tls.server.certificate.location":               "/etc/secret-volume/controller01.pem",
 		"controller.security.tls.server.privateKey.location":                "/etc/secret-volume/controller01.key.pem",
-		"controller.security.tls.trustStore.location":                       "/etc/secret-volume/ca-cert",
+		"controller.security.tls.trustStore.location":                       "/etc/secret-volume/tls.crt",
 		"controller.security.tls.server.keyStore.location":                  "/etc/secret-volume/controller01.jks",
 		"controller.security.tls.server.keyStore.pwd.location":              "/etc/secret-volume/pass-secret-tls",
 		"controller.security.pwdAuthHandler.accountsDb.location":            "/etc/auth-passwd-volume/pass-secret-tls-auth.txt",
@@ -180,9 +180,9 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, k8client client.Client, p *ap
 		"pravegaservice.security.tls.server.certificate.location":           "/etc/secret-volume/segmentstore01.pem",
 		"pravegaservice.security.tls.server.privateKey.location":            "/etc/secret-volume/segmentstore01.key.pem",
 		"pravegaservice.security.tls.server.keyStore.location":              "/etc/secret-volume/segmentstore01.jks",
-		"pravegaservice.security.tls.truststore.location":                   "/etc/secret-volume/ca-cert",
+		"pravegaservice.security.tls.truststore.location":                   "/etc/secret-volume/tls.crt",
 		"autoScale.controller.connect.security.tls.enable":                  "true",
-		"autoScale.controller.connect.security.tls.truststore.location":     "/etc/secret-volume/ca-cert",
+		"autoScale.controller.connect.security.tls.truststore.location":     "/etc/secret-volume/tls.crt",
 		"bookkeeper.connect.security.tls.enable":                            "true",
 		"bookkeeper.connect.security.tls.trustStore.location":               "empty",
 		"autoScale.controller.connect.security.tls.validateHostName.enable": "true",
@@ -191,6 +191,10 @@ func CreatePravegaClusterWithTlsAuth(t *testing.T, k8client client.Client, p *ap
 		"autoScale.security.auth.token.signingKey.basis":                    "secret",
 		"pravega.client.auth.token":                                         "YWRtaW46MTExMV9hYWFh",
 		"pravega.client.auth.method":                                        "Basic",
+		"controller.security.tls.protocolVersion":                           "TLSv1.2",
+		"pravegaservice.security.tls.protocolVersion":                       "TLSv1.2",
+		"pravegaservice.security.tls.server.keyStore.pwd.location":          "/etc/secret-volume/pass-secret-tls",
+		"pravegaservice.security.tls.certificate.autoReload.enable":         "true",
 	}
 	p.Spec.Pravega.ControllerJvmOptions = []string{"-XX:MaxDirectMemorySize=1g"}
 

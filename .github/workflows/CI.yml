@@ -51,12 +51,12 @@ jobs:
     - name: Creating nodes
       run: |
         cd .. && tar -czvf pravega-operator.tar.gz pravega-operator
-        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f da11
+        packet-cli device create  -H  $CLUSTER_NAME"-master"  -o "ubuntu_20_04" -P c3.medium.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f da11
         packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}'
         CLUSTER_ID=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $2}' | tr -d ' ')
         echo "cluster id is $CLUSTER_ID"
-        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  da11
-        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c3.small.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  da11
+        packet-cli device create  -H  $CLUSTER_NAME"-worker1"  -o "ubuntu_20_04" -P c3.medium.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  da11
+        packet-cli device create  -H  $CLUSTER_NAME"-worker2"  -o "ubuntu_20_04" -P c3.medium.x86 -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 -f  da11
         MASTER_STATE=$(packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' ')
         while [ "$MASTER_STATE" != "active" ]; do MASTER_STATE=`packet-cli device get -p 454b8b42-33d3-4e7e-8acf-1d1a5fec7e85 | grep $CLUSTER_NAME"-master" | awk '{print $10}' | tr -d ' '`;sleep 30;done
         CLUSTER_IP=$(packet-cli device get -i $CLUSTER_ID -y | grep "\- address:" | head -1 |awk '{print $3}' | tr -d ' ')
@@ -105,7 +105,6 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/certificate.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/webhook.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/bk-config-map.yaml"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/bk-version-map.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/service_account.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/role.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bkoperator/role_binding.yaml"
@@ -125,13 +124,13 @@ jobs:
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls; kubectl create secret generic controller-tls \
         --from-file=./controller01.pem \
-        --from-file=./ca-cert \
+        --from-file=./tls.crt \
         --from-file=./controller01.key.pem \
         --from-file=./controller01.jks \
         --from-file=./pass-secret-tls"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "cd /root/pravega-operator/test/e2e/resources/key_tls; kubectl create secret generic segmentstore-tls \
         --from-file=./segmentstore01.pem \
-        --from-file=./ca-cert \
+        --from-file=./tls.crt \
         --from-file=./segmentstore01.jks \
         --from-file=./pass-secret-tls \
         --from-file=./segmentstore01.key.pem"

@@ -40,7 +40,7 @@ const (
 
 	// DefaultPravegaVersion is the default tag used for for the Pravega
 	// Docker image
-	DefaultPravegaVersion = "0.9.0"
+	DefaultPravegaVersion = "0.11.0"
 
 	// OperatorNameEnvVar is env variable for operator name
 	OperatorNameEnvVar = "OPERATOR_NAME"
