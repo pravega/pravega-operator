@@ -34,7 +34,7 @@ deploy_cluster () {
 
 	# Installing the issuer and certificate
 	set +ex
-	kubectl create -f ../deploy/certificate.yaml
+	kubectl create -f ../config/certmanager/certificate.yaml
 	set -ex
 
 	# Installing the Pravega Operator
