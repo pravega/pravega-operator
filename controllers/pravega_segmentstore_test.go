@@ -124,6 +124,14 @@ var _ = Describe("PravegaSegmentstore", func() {
 								TimeoutSeconds:      2,
 							},
 						},
+						SegmentStorePodTolerations: []corev1.Toleration{
+							{
+								Key:      "segmentStore",
+								Operator: "Equal",
+								Value:    "val1",
+								Effect:   "NoSchedule",
+							},
+						},
 					},
 					TLS: &v1beta1.TLSPolicy{
 						Static: &v1beta1.StaticTLS{
@@ -235,6 +243,13 @@ var _ = Describe("PravegaSegmentstore", func() {
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.FailureThreshold).Should(Equal(int32(5)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.SuccessThreshold).Should(Equal(int32(1)))
 					Ω(podTemplate.Spec.Containers[0].ReadinessProbe.TimeoutSeconds).Should(Equal(int32(2)))
+				})
+				It("should have segmentStore pod tolerations", func() {
+					podTemplate := pravega.MakeSegmentStorePodTemplate(p)
+					Ω(podTemplate.Spec.Tolerations[0].Key).Should(Equal("segmentStore"))
+					Ω(podTemplate.Spec.Tolerations[0].Operator).Should(Equal(corev1.TolerationOperator("Equal")))
+					Ω(podTemplate.Spec.Tolerations[0].Value).Should(Equal("val1"))
+					Ω(podTemplate.Spec.Tolerations[0].Effect).Should(Equal(corev1.TaintEffect("NoSchedule")))
 				})
 			})
 		})

@@ -196,8 +196,9 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: p.Spec.Pravega.ControllerPodAffinity,
-		Volumes:  volumes,
+		Affinity:    p.Spec.Pravega.ControllerPodAffinity,
+		Volumes:     volumes,
+		Tolerations: p.Spec.Pravega.ControllerPodTolerations,
 	}
 	if p.Spec.Pravega.ControllerServiceAccountName != "" {
 		podSpec.ServiceAccountName = p.Spec.Pravega.ControllerServiceAccountName

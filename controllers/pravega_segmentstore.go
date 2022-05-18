@@ -238,8 +238,9 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 				},
 			},
 		},
-		Affinity: p.Spec.Pravega.SegmentStorePodAffinity,
-		Volumes:  volumes,
+		Affinity:    p.Spec.Pravega.SegmentStorePodAffinity,
+		Volumes:     volumes,
+		Tolerations: p.Spec.Pravega.SegmentStorePodTolerations,
 	}
 
 	if p.Spec.Pravega.SegmentStoreServiceAccountName != "" {

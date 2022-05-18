@@ -75,6 +75,22 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 							},
 						},
 					},
+					ControllerPodTolerations: []corev1.Toleration{
+						{
+							Key:      "controller",
+							Operator: "Equal",
+							Value:    "val1",
+							Effect:   "NoSchedule",
+						},
+					},
+					SegmentStorePodTolerations: []corev1.Toleration{
+						{
+							Key:      "segmentStore",
+							Operator: "Equal",
+							Value:    "val1",
+							Effect:   "NoSchedule",
+						},
+					},
 				},
 			}
 			p1.WithDefaults()
@@ -396,6 +412,10 @@ var _ = Describe("PravegaCluster DeepCopy", func() {
 			p2.Spec.Pravega.SegmentStoreProbes.LivenessProbe = p1.Spec.Pravega.SegmentStoreProbes.LivenessProbe.DeepCopy()
 			Ω(p2.Spec.Pravega.ControllerProbes.ReadinessProbe.InitialDelaySeconds).To(Equal(int32(0)))
 			Ω(p2.Spec.Pravega.SegmentStoreProbes.LivenessProbe.FailureThreshold).To(Equal(int32(1)))
+		})
+		It("checking pod tolerations", func() {
+			Ω(p2.Spec.Pravega.ControllerPodTolerations[0].Key).To(Equal("controller"))
+			Ω(p2.Spec.Pravega.SegmentStorePodTolerations[0].Key).To(Equal("segmentStore"))
 		})
 	})
 })

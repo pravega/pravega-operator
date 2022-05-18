@@ -324,6 +324,12 @@ type PravegaSpec struct {
 	// SegmentStoreProbes specifies the values for configurable fields of Readiness and Liveness Probes
 	// for the segmentstore pods.
 	SegmentStoreProbes *Probes `json:"segmentStoreProbes,omitempty"`
+
+	// Tolerations for the Controller pods.
+	ControllerPodTolerations []corev1.Toleration `json:"controllerPodTolerations,omitempty"`
+
+	// Tolerations for the SegmentStore pods.
+	SegmentStorePodTolerations []corev1.Toleration `json:"segmentStorePodTolerations,omitempty"`
 }
 
 type Probes struct {
