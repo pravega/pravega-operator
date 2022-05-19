@@ -400,6 +400,7 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 
 	if ready {
 		labels := p.LabelsForPravegaCluster()
+		labels["component"] = "pravega-segmentstore"
 		pod, err := r.getOneOutdatedPod(sts, p.Status.TargetVersion, labels)
 		if err != nil {
 			return false, err
