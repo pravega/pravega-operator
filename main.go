@@ -32,10 +32,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 
-	controllerconfig "github.com/pravega/bookkeeper-operator/pkg/controller/config"
-	"github.com/pravega/bookkeeper-operator/pkg/util"
 	v1beta1 "github.com/pravega/pravega-operator/api/v1beta1"
 	"github.com/pravega/pravega-operator/controllers"
+	controllerconfig "github.com/pravega/pravega-operator/pkg/controller/config"
+	"github.com/pravega/pravega-operator/pkg/util"
 	"github.com/pravega/pravega-operator/pkg/version"
 	"github.com/sirupsen/logrus"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
@@ -57,7 +57,7 @@ var (
 func init() {
 	flag.BoolVar(&versionFlag, "version", false, "Show version and quit")
 	flag.BoolVar(&controllerconfig.TestMode, "test", false, "Enable test mode. Do not use this flag in production")
-	flag.BoolVar(&controllerconfig.DisableFinalizer, "disableFinalizer", false, "Disable finalizers for bookkeeperclusters. Use this flag with awareness of the consequences")
+	flag.BoolVar(&controllerconfig.DisableFinalizer, "disableFinalizer", false, "Disable finalizers for pravegaclusters. Use this flag with awareness of the consequences")
 	flag.BoolVar(&webhookFlag, "webhook", true, "Enable webhook, the default is enabled.")
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1beta1.AddToScheme(scheme))
