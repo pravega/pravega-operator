@@ -405,7 +405,7 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
 	var maxUnavailable intstr.IntOrString
 
-	if p.Spec.Pravega.MaxUnavailableControllerReplicas == int32(1) {
+	if p.Spec.Pravega.ControllerReplicas == int32(1) {
 		maxUnavailable = intstr.FromInt(0)
 	} else {
 		maxUnavailable = intstr.FromInt(int(p.Spec.Pravega.MaxUnavailableControllerReplicas))
