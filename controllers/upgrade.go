@@ -374,9 +374,15 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 	// Pod template already updated
 	log.Printf("statefulset (%s) status: %d updated, %d ready, %d target", sts.Name,
 		sts.Status.UpdatedReplicas, sts.Status.ReadyReplicas, sts.Status.Replicas)
+	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
+	if err != nil {
+		return false, err
+	}
+
 	// Check whether the upgrade is in progress or has completed
 	if sts.Status.UpdatedReplicas == sts.Status.Replicas &&
-		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas {
+		sts.Status.UpdatedReplicas == sts.Status.ReadyReplicas &&
+		*sts.Spec.Replicas == (int32)(len(pods)) {
 		// StatefulSet upgrade completed
 		return true, nil
 	}
@@ -388,10 +394,6 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 	}
 
 	// If all replicas are ready, upgrade an old pod
-	pods, err := r.getStsPodsWithVersion(sts, p.Status.TargetVersion)
-	if err != nil {
-		return false, err
-	}
 	ready, err := r.checkUpdatedPods(pods, p.Status.TargetVersion)
 	if err != nil {
 		// Abort if there is any errors with the updated pods

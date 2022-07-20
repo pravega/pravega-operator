@@ -359,6 +359,7 @@ func (r *PravegaClusterReconciler) updatePdb(currentPdb *policyv1beta1.PodDisrup
 
 	if !reflect.DeepEqual(currentPdb.Spec.MaxUnavailable, newPdb.Spec.MaxUnavailable) {
 		currentPdb.Spec.MaxUnavailable = newPdb.Spec.MaxUnavailable
+		currentPdb.Spec.MinAvailable = newPdb.Spec.MinAvailable
 		err = r.Client.Update(context.TODO(), currentPdb)
 		if err != nil {
 			return fmt.Errorf("failed to update pdb (%s): %v", currentPdb.Name, err)
