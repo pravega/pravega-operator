@@ -704,8 +704,10 @@ func (r *PravegaClusterReconciler) restartStsPod(p *pravegav1beta1.PravegaCluste
 	if err != nil {
 		return err
 	}
+	labels := p.LabelsForPravegaCluster()
+	labels["component"] = "pravega-segmentstore"
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{
-		MatchLabels: currentSts.Spec.Template.Labels,
+		MatchLabels: labels,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to convert label selector: %v", err)
