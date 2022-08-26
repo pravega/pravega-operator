@@ -19,6 +19,7 @@ import (
 	api "github.com/pravega/pravega-operator/api/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/util"
+	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -250,9 +251,14 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	if p.Spec.Pravega.SegmentStoreSecurityContext != nil {
 		podSpec.SecurityContext = p.Spec.Pravega.SegmentStoreSecurityContext
 	}
-
+	if p.Spec.Pravega.SegmentStoreContainers != nil {
+		podSpec.Containers = append(podSpec.Containers, p.Spec.Pravega.SegmentStoreContainers...)
+	}
 	if p.Spec.Pravega.SegmentStoreInitContainers != nil {
 		podSpec.InitContainers = p.Spec.Pravega.SegmentStoreInitContainers
+	}
+	if p.Spec.Pravega.SegmentStoreContainerEnv != nil {
+		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, p.Spec.Pravega.SegmentStoreContainerEnv...)
 	}
 	configureSegmentstoreSecret(&podSpec, p)
 
@@ -309,6 +315,7 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 
 	if p.Spec.Pravega.DebugLogging {
+		log.Printf("Anisha enabled debug logging")
 		configData["log.level"] = "DEBUG"
 	}
 
