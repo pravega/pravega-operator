@@ -336,6 +336,9 @@ type PravegaSpec struct {
 
 	// Containers defines to support multi containers
 	SegmentStoreContainers []v1.Container `json:"segmentStoreContainers,omitempty"`
+
+	// SegmentStoreAdditionalVolumes defines customised volumes to be used in SegmentStore pods
+	SegmentStoreAdditionalVolumes []v1.Volume `json:"segementStoreAdditionalvolumes,omitempty"`
 }
 
 type Probes struct {

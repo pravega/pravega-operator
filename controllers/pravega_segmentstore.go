@@ -257,6 +257,9 @@ func makeSegmentstorePodSpec(p *api.PravegaCluster) corev1.PodSpec {
 	if p.Spec.Pravega.SegmentStoreInitContainers != nil {
 		podSpec.InitContainers = p.Spec.Pravega.SegmentStoreInitContainers
 	}
+	if p.Spec.Pravega.SegmentStoreAdditionalVolumes != nil {
+		podSpec.Volumes = append(podSpec.Volumes, p.Spec.Pravega.SegmentStoreAdditionalVolumes...)
+	}
 	if p.Spec.Pravega.SegmentStoreContainerEnv != nil {
 		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, p.Spec.Pravega.SegmentStoreContainerEnv...)
 	}
