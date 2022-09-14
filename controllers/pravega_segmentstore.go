@@ -19,7 +19,6 @@ import (
 	api "github.com/pravega/pravega-operator/api/v1beta1"
 	"github.com/pravega/pravega-operator/pkg/controller/config"
 	"github.com/pravega/pravega-operator/pkg/util"
-	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
@@ -318,7 +317,6 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	}
 
 	if p.Spec.Pravega.DebugLogging {
-		log.Printf("Anisha enabled debug logging")
 		configData["log.level"] = "DEBUG"
 	}
 
