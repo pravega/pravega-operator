@@ -236,6 +236,9 @@ type PravegaSpec struct {
 	// that need to be configured into the ss pod as environmental variables
 	SegmentStoreEnvVars string `json:"segmentStoreEnvVars,omitempty"`
 
+	// Provides the list of env variables that can be passed to segmentStore pods.
+	SegmentStoreContainerEnv []v1.EnvVar `json:"segmentStoreContainerEnv,omitempty"`
+
 	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
 	// either as an environment variable or by mounting it to a volume
 	// +optional
@@ -330,6 +333,12 @@ type PravegaSpec struct {
 
 	// Tolerations for the SegmentStore pods.
 	SegmentStorePodTolerations []corev1.Toleration `json:"segmentStorePodTolerations,omitempty"`
+
+	// Containers defines to support multi containers
+	SegmentStoreContainers []v1.Container `json:"segmentStoreContainers,omitempty"`
+
+	// SegmentStoreAdditionalVolumes defines customised volumes to be used in SegmentStore pods
+	SegmentStoreAdditionalVolumes []v1.Volume `json:"segmentStoreAdditionalVolumes,omitempty"`
 }
 
 type Probes struct {
