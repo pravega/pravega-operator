@@ -415,7 +415,7 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 		log.Infof("upgrading pod: %s", pod.Name)
 
 		err = r.Client.Delete(context.TODO(), pod)
-		if err != nil {
+		if err != nil && !errors.IsNotFound(err) {
 			return false, err
 		}
 	}
