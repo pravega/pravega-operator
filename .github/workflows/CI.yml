@@ -112,7 +112,7 @@ jobs:
         sleep 30s
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create -f /root/pravega-operator/test/e2e/resources/bk/bk-cluster.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl -n default create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=testpravegaop --docker-password=c155d654-3c09-48aa-a62d-2d5178454784 --docker-email=prabhaker.saxena75g@gmail.com"
-        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.18 --binary;gvm use go1.18 --default;git config --global --add safe.directory /root/bookkeeper-operator"
+        ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer);source /root/.gvm/scripts/gvm;gvm install go1.18 --binary;gvm use go1.18 --default;git config --global --add safe.directory /root/pravega-operator"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml"
         ssh -o StrictHostKeyChecking=no root@$CLUSTER_IP "kubectl create -f /root/pravega-operator/config/crd/bases/pravega.pravega.io_pravegaclusters.yaml"
