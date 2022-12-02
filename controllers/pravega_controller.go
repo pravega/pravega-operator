@@ -211,6 +211,9 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	if p.Spec.Pravega.ControllerInitContainers != nil {
 		podSpec.InitContainers = append(podSpec.InitContainers, p.Spec.Pravega.ControllerInitContainers...)
 	}
+	if p.Spec.Pravega.ControllerEnvVars != nil {
+		podSpec.Containers[0].Env = p.Spec.Pravega.ControllerEnvVars
+	}
 	if p.Spec.Pravega.AuthImplementations != nil {
 		authContainers := []corev1.Container{}
 		var mountPath string
