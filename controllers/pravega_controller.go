@@ -211,6 +211,10 @@ func makeControllerPodSpec(p *api.PravegaCluster) *corev1.PodSpec {
 	if p.Spec.Pravega.ControllerInitContainers != nil {
 		podSpec.InitContainers = append(podSpec.InitContainers, p.Spec.Pravega.ControllerInitContainers...)
 	}
+	podSpec.Containers[0].Env = []corev1.EnvVar{}
+	if p.Spec.Pravega.ControllerEnvVars != nil {
+		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, p.Spec.Pravega.ControllerEnvVars...)
+	}
 	if p.Spec.Pravega.AuthImplementations != nil {
 		authContainers := []corev1.Container{}
 		var mountPath string
@@ -282,12 +286,10 @@ func configureControllerInfluxDBSecrets(podSpec *corev1.PodSpec, p *api.PravegaC
 		addSecretVolumeWithMount(podSpec, p, influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.Secret,
 			influxDBSecretVolumeName, p.Spec.Pravega.InfluxDBSecret.MountPath)
 
-		podSpec.Containers[0].Env = []corev1.EnvVar{
-			{
-				Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
-				Value: p.Spec.Pravega.InfluxDBSecret.MountPath,
-			},
-		}
+		podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, corev1.EnvVar{
+			Name:  "INFLUX_DB_SECRET_MOUNT_PATH",
+			Value: p.Spec.Pravega.InfluxDBSecret.MountPath,
+		})
 	}
 }
 
