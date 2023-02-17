@@ -26,7 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -330,7 +330,7 @@ func (r *PravegaClusterReconciler) reconcileControllerPdb(p *pravegav1beta1.Prav
 		return err
 	}
 
-	currentPdb := &policyv1beta1.PodDisruptionBudget{}
+	currentPdb := &policyv1.PodDisruptionBudget{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
 	if err != nil {
 		return err
@@ -347,7 +347,7 @@ func (r *PravegaClusterReconciler) reconcileSegmentStorePdb(p *pravegav1beta1.Pr
 		return err
 	}
 
-	currentPdb := &policyv1beta1.PodDisruptionBudget{}
+	currentPdb := &policyv1.PodDisruptionBudget{}
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: pdb.Name, Namespace: p.Namespace}, currentPdb)
 	if err != nil {
 		return err
@@ -355,7 +355,7 @@ func (r *PravegaClusterReconciler) reconcileSegmentStorePdb(p *pravegav1beta1.Pr
 	return r.updatePdb(currentPdb, pdb)
 }
 
-func (r *PravegaClusterReconciler) updatePdb(currentPdb *policyv1beta1.PodDisruptionBudget, newPdb *policyv1beta1.PodDisruptionBudget) (err error) {
+func (r *PravegaClusterReconciler) updatePdb(currentPdb *policyv1.PodDisruptionBudget, newPdb *policyv1.PodDisruptionBudget) (err error) {
 
 	if !reflect.DeepEqual(currentPdb.Spec.MaxUnavailable, newPdb.Spec.MaxUnavailable) {
 		currentPdb.Spec.MaxUnavailable = newPdb.Spec.MaxUnavailable

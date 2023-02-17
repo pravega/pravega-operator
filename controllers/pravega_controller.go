@@ -21,7 +21,7 @@ import (
 	"github.com/pravega/pravega-operator/pkg/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -402,7 +402,7 @@ func MakeControllerService(p *api.PravegaCluster) *corev1.Service {
 	}
 }
 
-func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.PodDisruptionBudget {
+func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1.PodDisruptionBudget {
 	var maxUnavailable intstr.IntOrString
 
 	if p.Spec.Pravega.ControllerReplicas == int32(1) {
@@ -410,16 +410,16 @@ func MakeControllerPodDisruptionBudget(p *api.PravegaCluster) *policyv1beta1.Pod
 	} else {
 		maxUnavailable = intstr.FromInt(int(p.Spec.Pravega.MaxUnavailableControllerReplicas))
 	}
-	return &policyv1beta1.PodDisruptionBudget{
+	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "PodDisruptionBudget",
-			APIVersion: "policy/v1beta1",
+			APIVersion: "policy/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      p.PdbNameForController(),
 			Namespace: p.Namespace,
 		},
-		Spec: policyv1beta1.PodDisruptionBudgetSpec{
+		Spec: policyv1.PodDisruptionBudgetSpec{
 			MaxUnavailable: &maxUnavailable,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: p.LabelsForController(),
