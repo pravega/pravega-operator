@@ -239,6 +239,9 @@ type PravegaSpec struct {
 	// Provides the list of env variables that can be passed to segmentStore pods.
 	SegmentStoreContainerEnv []v1.EnvVar `json:"segmentStoreContainerEnv,omitempty"`
 
+	// Provides the list of env variables that can be passed to controller pods.
+	ControllerEnvVars []v1.EnvVar `json:"controllerEnvVars,omitempty"`
+
 	// SegmentStoreSecret specifies whether or not any secret needs to be configured into the ss pod
 	// either as an environment variable or by mounting it to a volume
 	// +optional
