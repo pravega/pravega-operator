@@ -17,7 +17,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -359,19 +359,19 @@ var _ = Describe("PravegaCluster Controller", func() {
 					BeforeEach(func() {
 						res, err = r.Reconcile(ctx, req)
 						p.WithDefaults()
-						currentpdb := &policyv1beta1.PodDisruptionBudget{}
+						currentpdb := &policyv1.PodDisruptionBudget{}
 						r.Client.Get(context.TODO(), types.NamespacedName{Name: p.PdbNameForSegmentstore(), Namespace: p.Namespace}, currentpdb)
 						maxUnavailable := intstr.FromInt(3)
-						newpdb := &policyv1beta1.PodDisruptionBudget{
+						newpdb := &policyv1.PodDisruptionBudget{
 							TypeMeta: metav1.TypeMeta{
 								Kind:       "PodDisruptionBudget",
-								APIVersion: "policy/v1beta1",
+								APIVersion: "policy/v1",
 							},
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "test-name",
 								Namespace: p.Namespace,
 							},
-							Spec: policyv1beta1.PodDisruptionBudgetSpec{
+							Spec: policyv1.PodDisruptionBudgetSpec{
 								MaxUnavailable: &maxUnavailable,
 								Selector: &metav1.LabelSelector{
 									MatchLabels: p.LabelsForController(),
