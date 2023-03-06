@@ -400,7 +400,6 @@ func (r *PravegaClusterReconciler) reconcileControllerService(p *pravegav1beta1.
 		} else {
 			return err
 		}
-
 	} else {
 		currentService.ObjectMeta.Labels = service.ObjectMeta.Labels
 		currentService.ObjectMeta.Annotations = service.ObjectMeta.Annotations
