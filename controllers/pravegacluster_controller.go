@@ -396,7 +396,6 @@ func (r *PravegaClusterReconciler) reconcileControllerService(p *pravegav1beta1.
 			if err != nil && !errors.IsAlreadyExists(err) {
 				return err
 			}
-
 		} else {
 			return err
 		}
@@ -408,7 +407,6 @@ func (r *PravegaClusterReconciler) reconcileControllerService(p *pravegav1beta1.
 		if err != nil {
 			return fmt.Errorf("failed to update  service (%s): %v", service.Name, err)
 		}
-
 	}
 	return nil
 }
