@@ -388,11 +388,29 @@ func (r *PravegaClusterReconciler) reconcileControllerService(p *pravegav1beta1.
 
 	service := MakeControllerService(p)
 	controllerutil.SetControllerReference(p, service, r.Scheme)
-	err = r.Client.Create(context.TODO(), service)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
-	}
+	currentService := &corev1.Service{}
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: service.Name, Namespace: p.Namespace}, currentService)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = r.Client.Create(context.TODO(), service)
+			if err != nil && !errors.IsAlreadyExists(err) {
+				return err
+			}
 
+		} else {
+			return err
+		}
+
+	} else {
+		currentService.ObjectMeta.Labels = service.ObjectMeta.Labels
+		currentService.ObjectMeta.Annotations = service.ObjectMeta.Annotations
+		currentService.Spec.Selector = service.Spec.Selector
+		err = r.Client.Update(context.TODO(), currentService)
+		if err != nil {
+			return fmt.Errorf("failed to update  service (%s): %v", service.Name, err)
+		}
+
+	}
 	return nil
 }
 
