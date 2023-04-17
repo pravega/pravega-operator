@@ -35,6 +35,7 @@ func NewDefaultCluster(namespace string) *api.PravegaCluster {
 		},
 		Spec: api.ClusterSpec{
 			Pravega: &api.PravegaSpec{
+				ControllerReplicas:     1,
 				Options:                map[string]string{"pravegaservice.cache.size.max": "1610612736"},
 				SegmentStoreJVMOptions: []string{"-Xmx1g", "-XX:MaxDirectMemorySize=2560m"},
 				SegmentStoreResources: &corev1.ResourceRequirements{
