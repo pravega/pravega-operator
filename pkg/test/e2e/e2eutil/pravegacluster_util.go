@@ -138,6 +138,7 @@ func CreatePravegaClusterForExternalAccess(t *testing.T, k8client client.Client,
 	p.Spec.Pravega.ControllerServiceAccountName = "pravega-components"
 	p.Spec.Pravega.SegmentStoreServiceAccountName = "pravega-components"
 	p.Spec.Pravega.SegmentStoreReplicas = 1
+	p.Spec.Pravega.ControllerReplicas = 1
 	err := k8client.Create(goctx.TODO(), p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create CR: %v", err)
