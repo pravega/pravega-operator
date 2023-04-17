@@ -285,9 +285,6 @@ func MakeSegmentstoreConfigMap(p *api.PravegaCluster) *corev1.ConfigMap {
 	if _, ok := p.Spec.Pravega.Options["pravegaservice.service.listener.port"]; !ok {
 		p.Spec.Pravega.Options["pravegaservice.service.listener.port"] = "12345"
 	}
-	if _, ok := p.Spec.Pravega.Options["pravegaservice.admin.listener.port"]; !ok {
-		p.Spec.Pravega.Options["pravegaservice.admin.listener.port"] = "9999"
-	}
 
 	javaOpts = util.OverrideDefaultJVMOptions(javaOpts, p.Spec.Pravega.SegmentStoreJVMOptions)
 
@@ -522,7 +519,6 @@ func configureInfluxDBSecret(podSpec *corev1.PodSpec, p *api.PravegaCluster) {
 
 func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
 	serviceport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
-	adminPort, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.admin.listener.port"])
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -538,11 +534,6 @@ func MakeSegmentStoreHeadlessService(p *api.PravegaCluster) *corev1.Service {
 				{
 					Name:     "server",
 					Port:     int32(serviceport),
-					Protocol: "TCP",
-				},
-				{
-					Name:     "cli",
-					Port:     int32(adminPort),
 					Protocol: "TCP",
 				},
 			},
@@ -591,7 +582,6 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	serviceType := getSSServiceType(p)
 	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
 	serviceport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
-	adminPort, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.admin.listener.port"])
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		ssPodName := p.ServiceNameForSegmentStore(i)
 		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
@@ -619,12 +609,6 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 						Port:       int32(serviceport),
 						Protocol:   "TCP",
 						TargetPort: intstr.FromInt(serviceport),
-					},
-					{
-						Name:       "cli",
-						Port:       int32(adminPort),
-						Protocol:   "TCP",
-						TargetPort: intstr.FromInt(adminPort),
 					},
 				},
 				ExternalTrafficPolicy: corev1.ServiceExternalTrafficPolicyTypeLocal,
