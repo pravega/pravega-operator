@@ -363,11 +363,6 @@ type Probe struct {
 }
 
 func (s *PravegaSpec) withDefaults() (changed bool) {
-	if !config.TestMode && s.ControllerReplicas < 1 {
-		changed = true
-		s.ControllerReplicas = 1
-	}
-
 	if s.RollbackTimeout < 1 {
 		changed = true
 		s.RollbackTimeout = 10
