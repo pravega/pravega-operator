@@ -36,7 +36,7 @@ func init() {
 	versionRegexp = regexp.MustCompile(MajorMinorVersionRegexp)
 }
 
-//function to check if v1 is below v2 or not
+// function to check if v1 is below v2 or not
 func IsVersionBelow(v1 string, v2 string) bool {
 	if v1 == "" {
 		return true

@@ -424,7 +424,7 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 	return false, nil
 }
 
-//this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
+// this function is to check are we doing a rollback in case of a upgrade failure while upgrading from a version below 07 to a version above 07
 func (r *PravegaClusterReconciler) IsClusterRollbackingFrom07(p *pravegav1beta1.PravegaCluster) bool {
 	if util.IsVersionBelow(p.Spec.Version, "0.7.0") && r.IsAbove07STSPresent(p) {
 		return true
@@ -432,7 +432,7 @@ func (r *PravegaClusterReconciler) IsClusterRollbackingFrom07(p *pravegav1beta1.
 	return false
 }
 
-//This function checks if stsabove07 exsists
+// This function checks if stsabove07 exsists
 func (r *PravegaClusterReconciler) IsAbove07STSPresent(p *pravegav1beta1.PravegaCluster) bool {
 	stsAbove07 := &appsv1.StatefulSet{}
 	name := p.StatefulSetNameForSegmentstoreAbove07()
@@ -491,7 +491,7 @@ func (r *PravegaClusterReconciler) deleteExternalServices(p *pravegav1beta1.Prav
 	return nil
 }
 
-//To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
+// To handle upgrade/rollback from Pravega version < 0.7 to Pravega Version >= 0.7
 func (r *PravegaClusterReconciler) syncSegmentStoreVersionTo07(p *pravegav1beta1.PravegaCluster) (synced bool, err error) {
 	p.Status.UpdateProgress(pravegav1beta1.UpdatingSegmentstoreReason, "0")
 	newsts := MakeSegmentStoreStatefulSet(p)
@@ -581,7 +581,7 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersionTo07(p *pravegav1beta1
 	return false, nil
 }
 
-//this function will check if furter increment or decrement in pods needed in case of rollback from version 0.7
+// this function will check if furter increment or decrement in pods needed in case of rollback from version 0.7
 func (r *PravegaClusterReconciler) rollbackConditionFor07(p *pravegav1beta1.PravegaCluster, sts *appsv1.StatefulSet) bool {
 	if r.IsClusterRollbackingFrom07(p) && sts.Status.ReadyReplicas == *sts.Spec.Replicas {
 		return true
@@ -589,7 +589,7 @@ func (r *PravegaClusterReconciler) rollbackConditionFor07(p *pravegav1beta1.Prav
 	return false
 }
 
-//this function will check if furter increment or decrement in pods needed in case of upgrade to version 0.7 or above
+// this function will check if furter increment or decrement in pods needed in case of upgrade to version 0.7 or above
 func (r *PravegaClusterReconciler) upgradeConditionFor07(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) bool {
 	if oldsts.Status.ReadyReplicas+newsts.Status.ReadyReplicas == p.Spec.Pravega.SegmentStoreReplicas && newsts.Status.ReadyReplicas == *newsts.Spec.Replicas {
 		return true
@@ -597,7 +597,7 @@ func (r *PravegaClusterReconciler) upgradeConditionFor07(p *pravegav1beta1.Prave
 	return false
 }
 
-//this function will increase two replicas of the new sts and delete 2 replicas of the old sts everytime it's called
+// this function will increase two replicas of the new sts and delete 2 replicas of the old sts everytime it's called
 func (r *PravegaClusterReconciler) scaleSegmentStoreSTS(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = *newsts.Spec.Replicas + 2
 	err := r.Client.Update(context.TODO(), newsts)
@@ -612,7 +612,7 @@ func (r *PravegaClusterReconciler) scaleSegmentStoreSTS(p *pravegav1beta1.Praveg
 	return nil
 }
 
-//This function will remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
+// This function will remove the pvc's attached with the old sts and deleted it when old sts replicas have become 0
 func (r *PravegaClusterReconciler) transitionToNewSTS(p *pravegav1beta1.PravegaCluster, newsts *appsv1.StatefulSet, oldsts *appsv1.StatefulSet) error {
 	*newsts.Spec.Replicas = p.Spec.Pravega.SegmentStoreReplicas
 	err := r.Client.Update(context.TODO(), newsts)
