@@ -306,7 +306,7 @@ func (p *PravegaCluster) ConfigMapNameForController() string {
 	return fmt.Sprintf("%s-pravega-controller", p.Name)
 }
 
-//to return name of segmentstore based on the version
+// to return name of segmentstore based on the version
 func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
 	if util.IsVersionBelow(p.Spec.Version, "0.7.0") {
 		return p.StatefulSetNameForSegmentstoreBelow07()
@@ -314,12 +314,12 @@ func (p *PravegaCluster) StatefulSetNameForSegmentstore() string {
 	return p.StatefulSetNameForSegmentstoreAbove07()
 }
 
-//if version is above or equals to 0.7 this name will be assigned
+// if version is above or equals to 0.7 this name will be assigned
 func (p *PravegaCluster) StatefulSetNameForSegmentstoreAbove07() string {
 	return fmt.Sprintf("%s-%s", p.Name, p.Spec.Pravega.SegmentStoreStsNameSuffix)
 }
 
-//if version is below 0.7 this name will be assigned
+// if version is below 0.7 this name will be assigned
 func (p *PravegaCluster) StatefulSetNameForSegmentstoreBelow07() string {
 	return fmt.Sprintf("%s-pravega-segmentstore", p.Name)
 }

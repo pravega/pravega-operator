@@ -1031,7 +1031,7 @@ func (r *PravegaClusterReconciler) isRollbackTriggered(p *pravegav1beta1.Pravega
 	return false
 }
 
-//this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
+// this function will return true only in case of upgrading from a version below 0.7 to pravega version 0.7 or later
 func (r *PravegaClusterReconciler) IsClusterUpgradingTo07(p *pravegav1beta1.PravegaCluster) bool {
 	if !util.IsVersionBelow(p.Spec.Version, "0.7.0") && util.IsVersionBelow(p.Status.CurrentVersion, "0.7.0") {
 		return true
