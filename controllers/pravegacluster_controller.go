@@ -434,6 +434,20 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 				return fmt.Errorf("failed to update headless service port (%s): %v", currentService.Name, err)
 			}
 		}
+		if len(currentService.Spec.Ports) == 1 {
+			currentService.Spec.Ports = append(currentService.Spec.Ports, headlessService.Spec.Ports[1])
+			err = r.Client.Update(context.TODO(), currentService)
+			if err != nil {
+				return fmt.Errorf("failed to update headless service admin port (%s): %v", currentService.Name, err)
+			}
+		} else if currentService.Spec.Ports[1].Port != headlessService.Spec.Ports[1].Port {
+			currentService.Spec.Ports[1].Port = headlessService.Spec.Ports[1].Port
+			currentService.Spec.Ports[1].TargetPort = headlessService.Spec.Ports[1].TargetPort
+			err = r.Client.Update(context.TODO(), currentService)
+			if err != nil {
+				return fmt.Errorf("failed to update headless service admin port (%s): %v", currentService.Name, err)
+			}
+		}
 	}
 
 	if p.Spec.ExternalAccess.Enabled {
@@ -456,6 +470,20 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 					err = r.Client.Update(context.TODO(), currentservice)
 					if err != nil {
 						return fmt.Errorf("failed to update external service port (%s): %v", currentservice.Name, err)
+					}
+				}
+				if len(currentservice.Spec.Ports) == 1 {
+					currentservice.Spec.Ports = append(currentservice.Spec.Ports, service.Spec.Ports[1])
+					err = r.Client.Update(context.TODO(), currentservice)
+					if err != nil {
+						return fmt.Errorf("failed to update external service admin port (%s): %v", currentservice.Name, err)
+					}
+				} else if service.Spec.Ports[1].Port != currentservice.Spec.Ports[1].Port {
+					currentservice.Spec.Ports[1].Port = service.Spec.Ports[1].Port
+					currentservice.Spec.Ports[1].TargetPort = service.Spec.Ports[1].TargetPort
+					err = r.Client.Update(context.TODO(), currentservice)
+					if err != nil {
+						return fmt.Errorf("failed to update external service admin port (%s): %v", currentservice.Name, err)
 					}
 				}
 
