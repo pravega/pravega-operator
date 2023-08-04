@@ -7,8 +7,8 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
 	github.com/operator-framework/operator-lib v0.7.0
-	github.com/pravega/bookkeeper-operator v0.1.8
-	github.com/pravega/zookeeper-operator v0.2.14
+	github.com/pravega/bookkeeper-operator v0.1.9
+	github.com/pravega/zookeeper-operator v0.2.15
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
 	github.com/sirupsen/logrus v1.8.1
 	k8s.io/api v0.23.5
