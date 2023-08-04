@@ -495,6 +495,7 @@ github.com/pravega/bookkeeper-operator v0.1.9 h1:TosdENQj3cIUQCDAtg5oq0mqJHkiKIN
 github.com/pravega/bookkeeper-operator v0.1.9/go.mod h1:32YzOTmM9zsekuwbBrSg+E6PlGSyf5owPio2gfmXOw4=
 github.com/pravega/zookeeper-operator v0.2.14 h1:iWkPSUSXvwCTp7PhVDQVwvFCkmr5UIZcmCr0x/ZNW+s=
 github.com/pravega/zookeeper-operator v0.2.14/go.mod h1:tNbufibI7PFF/KxljEwNq5SpsbhzXetNZr7eCgx4Cx8=
+github.com/pravega/zookeeper-operator v0.2.15 h1:u7m8S3DFKDcLLk6aSBUFxhJb22HL0IAYE8qxycd4Bdo=
 github.com/pravega/zookeeper-operator v0.2.15/go.mod h1:Ijkj9cqQjl4O0OAVLY0mVKvs3nAEnmp4vVTdbk7k0Ak=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.3/go.mod h1:/TN21ttK/J9q6uSwhBd54HahCDft0ttaMvbicHlPoso=
