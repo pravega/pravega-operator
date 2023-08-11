@@ -442,7 +442,7 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 		if updateService {
 			err = r.Client.Update(context.TODO(), currentService)
 			if err != nil {
-				return fmt.Errorf("failed to update headless service admin port (%s): %v", currentService.Name, err)
+				return fmt.Errorf("failed to update headless service ports (%s): %v", currentService.Name, err)
 			}
 		}
 	}
@@ -478,7 +478,7 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 				if updateService {
 					err = r.Client.Update(context.TODO(), currentservice)
 					if err != nil {
-						return fmt.Errorf("failed to update external service admin port (%s): %v", currentservice.Name, err)
+						return fmt.Errorf("failed to update external service ports (%s): %v", currentservice.Name, err)
 					}
 				}
 				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
