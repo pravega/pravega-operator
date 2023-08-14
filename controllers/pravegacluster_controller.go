@@ -425,13 +425,24 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 			}
 		}
 	} else {
-
+		updateService := false
 		if currentService.Spec.Ports[0].Port != headlessService.Spec.Ports[0].Port {
 			currentService.Spec.Ports[0].Port = headlessService.Spec.Ports[0].Port
 			currentService.Spec.Ports[0].TargetPort = headlessService.Spec.Ports[0].TargetPort
+			updateService = true
+		}
+		if len(currentService.Spec.Ports) == 1 {
+			currentService.Spec.Ports = append(currentService.Spec.Ports, headlessService.Spec.Ports[1])
+			updateService = true
+		} else if currentService.Spec.Ports[1].Port != headlessService.Spec.Ports[1].Port {
+			currentService.Spec.Ports[1].Port = headlessService.Spec.Ports[1].Port
+			currentService.Spec.Ports[1].TargetPort = headlessService.Spec.Ports[1].TargetPort
+			updateService = true
+		}
+		if updateService {
 			err = r.Client.Update(context.TODO(), currentService)
 			if err != nil {
-				return fmt.Errorf("failed to update headless service port (%s): %v", currentService.Name, err)
+				return fmt.Errorf("failed to update headless service ports (%s): %v", currentService.Name, err)
 			}
 		}
 	}
@@ -450,15 +461,26 @@ func (r *PravegaClusterReconciler) reconcileSegmentStoreService(p *pravegav1beta
 					}
 				}
 			} else {
+				updateService := false
 				if service.Spec.Ports[0].Port != currentservice.Spec.Ports[0].Port {
 					currentservice.Spec.Ports[0].Port = service.Spec.Ports[0].Port
 					currentservice.Spec.Ports[0].TargetPort = service.Spec.Ports[0].TargetPort
+					updateService = true
+				}
+				if len(currentservice.Spec.Ports) == 1 {
+					currentservice.Spec.Ports = append(currentservice.Spec.Ports, service.Spec.Ports[1])
+					updateService = true
+				} else if service.Spec.Ports[1].Port != currentservice.Spec.Ports[1].Port {
+					currentservice.Spec.Ports[1].Port = service.Spec.Ports[1].Port
+					currentservice.Spec.Ports[1].TargetPort = service.Spec.Ports[1].TargetPort
+					updateService = true
+				}
+				if updateService {
 					err = r.Client.Update(context.TODO(), currentservice)
 					if err != nil {
-						return fmt.Errorf("failed to update external service port (%s): %v", currentservice.Name, err)
+						return fmt.Errorf("failed to update external service ports (%s): %v", currentservice.Name, err)
 					}
 				}
-
 				eq := reflect.DeepEqual(currentservice.Annotations["external-dns.alpha.kubernetes.io/hostname"], service.Annotations["external-dns.alpha.kubernetes.io/hostname"])
 				if !eq {
 					err := r.Client.Delete(context.TODO(), currentservice)
