@@ -385,7 +385,7 @@ func (p *PravegaCluster) validateConfigMap() error {
 // ValidateAuthenticationSettings checks for correct options passed to pravega
 // when authentication is enabled/disabled.
 func (p *PravegaCluster) ValidateAuthenticationSettings() error {
-	if p.Spec.Authentication.Enabled == true {
+	if p.Spec.Authentication != nil && p.Spec.Authentication.Enabled == true {
 		newkey, _ := p.Spec.Pravega.Options["autoScale.controller.connect.security.auth.enable"]
 		oldkey, _ := p.Spec.Pravega.Options["autoScale.authEnabled"]
 
