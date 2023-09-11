@@ -641,6 +641,7 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 		}
 		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
 			service.Spec.Ports[0].Port = int32(serviceport) + i
+			service.Spec.Ports[1].Port = int32(adminPort) + i
 			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
 		}
 		services[i] = service
