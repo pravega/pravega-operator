@@ -414,6 +414,7 @@ func (r *PravegaClusterReconciler) syncSegmentStoreVersion(p *pravegav1beta1.Pra
 				return false, err
 			}
 			if *sts.Spec.Replicas == (int32)(len(pods)) {
+				log.Infof("All segmentstore pods are upadted")
 				return false, nil
 			}
 			return false, fmt.Errorf("could not obtain outdated pod")
