@@ -132,6 +132,9 @@ type ClusterSpec struct {
 	// +optional
 	BookkeeperUri string `json:"bookkeeperUri"`
 
+	// Reserved ports
+	ReservedPortList []int32 `json:"reservedPortList,omitempty"`
+
 	// Pravega configuration
 	// +optional
 	Pravega *PravegaSpec `json:"pravega"`

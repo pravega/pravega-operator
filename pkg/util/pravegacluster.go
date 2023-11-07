@@ -138,6 +138,15 @@ func ContainsString(slice []string, str string) bool {
 	return false
 }
 
+func ContainsElement(items []int32, elem int32) bool {
+	for _, item := range items {
+		if item == elem {
+			return true
+		}
+	}
+	return false
+}
+
 func RemoveString(slice []string, str string) (result []string) {
 	for _, item := range slice {
 		if item == str {
