@@ -593,6 +593,10 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 	services := make([]*corev1.Service, p.Spec.Pravega.SegmentStoreReplicas)
 	serviceport, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.service.listener.port"])
 	adminPort, _ := strconv.Atoi(p.Spec.Pravega.Options["pravegaservice.admin.listener.port"])
+
+	currentServicePort := int32(serviceport)
+	currentAdminPort := int32(adminPort)
+
 	for i := int32(0); i < p.Spec.Pravega.SegmentStoreReplicas; i++ {
 		ssPodName := p.ServiceNameForSegmentStore(i)
 		annotationMap := p.Spec.Pravega.SegmentStoreServiceAnnotations
@@ -640,11 +644,20 @@ func MakeSegmentStoreExternalServices(p *api.PravegaCluster) []*corev1.Service {
 			service.Spec.ExternalTrafficPolicy = corev1.ServiceExternalTrafficPolicyTypeLocal
 		}
 		if p.Spec.Pravega.SegmentStoreLoadBalancerIP != "" {
-			service.Spec.Ports[0].Port = int32(serviceport) + i
-			service.Spec.Ports[1].Port = int32(adminPort) + i
+			for util.ContainsElement(p.Spec.ReservedPortList, currentServicePort) {
+				currentServicePort++
+			}
+			service.Spec.Ports[0].Port = currentServicePort
+			for util.ContainsElement(p.Spec.ReservedPortList, currentAdminPort) {
+				currentAdminPort++
+			}
+			service.Spec.Ports[1].Port = currentAdminPort
 			service.Spec.LoadBalancerIP = p.Spec.Pravega.SegmentStoreLoadBalancerIP
+			currentServicePort++
+			currentAdminPort++
 		}
 		services[i] = service
+
 	}
 	return services
 }
