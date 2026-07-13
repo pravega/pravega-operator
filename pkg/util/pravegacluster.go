@@ -220,18 +220,29 @@ func UpdateOneJVMOption(arg string, om *OrderedMap) {
 
 	// Parse option starting with "-XX"
 	if strings.HasPrefix(arg, "-XX:") {
-		if arg[4] == '+' || arg[4] == '-' {
-			if _, ok := om.m[arg[5:]]; !ok {
-				om.keys = append(om.keys, arg[5:])
-			}
-			om.m[arg[5:]] = string(arg[4])
+		body := arg[len("-XX:"):]
+		if body == "" {
+			// Malformed option such as a bare "-XX:"; nothing to parse.
 			return
 		}
-		s := strings.Split(arg[4:], "=")
-		if _, ok := om.m[s[0]]; !ok {
-			om.keys = append(om.keys, s[0])
+		if body[0] == '+' || body[0] == '-' {
+			key := body[1:]
+			if _, ok := om.m[key]; !ok {
+				om.keys = append(om.keys, key)
+			}
+			om.m[key] = string(body[0])
+			return
 		}
-		om.m[s[0]] = s[1]
+		parts := strings.SplitN(body, "=", 2)
+		key := parts[0]
+		value := ""
+		if len(parts) == 2 {
+			value = parts[1]
+		}
+		if _, ok := om.m[key]; !ok {
+			om.keys = append(om.keys, key)
+		}
+		om.m[key] = value
 		return
 	}
 
