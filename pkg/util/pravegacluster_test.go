@@ -116,6 +116,13 @@ var _ = Describe("pravegacluster", func() {
 			Ω(result[0]).To(Equal("-Xms1024m"))
 			Ω(result1[0]).To(Equal("-Xms512m"))
 		})
+		It("should not panic on malformed -XX options", func() {
+			malformed := []string{"-XX:", "-XX:Boom", "-yy:mem", ""}
+			Ω(func() { OverrideDefaultJVMOptions([]string{}, malformed) }).ShouldNot(Panic())
+			// a well-formed value option still round-trips unchanged
+			out := OverrideDefaultJVMOptions([]string{}, []string{"-XX:MaxRAMPercentage=75.0"})
+			Ω(out).To(ContainElement("-XX:MaxRAMPercentage=75.0"))
+		})
 	})
 
 	Context("RemoveString", func() {
